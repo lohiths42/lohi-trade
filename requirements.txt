@@ -1,0 +1,78 @@
+# LOHI-TRADE Requirements
+# Python 3.14.2
+
+# Core Trading & Data Processing
+pandas>=2.2.0
+numpy>=1.26.0
+# pandas-ta>=0.3.14b0  # Temporarily disabled - numba doesn't support Python 3.14 yet
+# Use ta-lib or implement indicators manually
+ta-lib>=0.4.28
+vectorbt>=0.26.0
+yfinance>=0.2.36
+nubra-sdk>=0.3.5
+
+# Redis & Event Bus
+redis>=5.0.1
+hiredis>=2.3.2
+
+# Database
+duckdb>=0.10.0
+
+# Web Framework & Dashboard
+streamlit>=1.31.0
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+websockets>=12.0
+websocket-client>=1.7.0
+
+# Machine Learning
+scikit-learn>=1.4.0
+
+# NLP & Sentiment Analysis
+spacy>=3.7.2
+transformers>=4.37.0
+torch>=2.2.0
+onnxruntime>=1.17.0
+sentencepiece>=0.1.99
+
+# News & RSS
+feedparser>=6.0.11
+beautifulsoup4>=4.12.3
+lxml>=5.1.0
+requests>=2.31.0
+
+# Telegram Bot
+python-telegram-bot>=20.8
+
+# Fuzzy Matching
+rapidfuzz>=3.6.1
+
+# Testing
+pytest>=8.0.0
+pytest-asyncio>=0.23.4
+pytest-mock>=3.12.0
+pytest-cov>=4.1.0
+hypothesis>=6.98.0
+
+# Utilities
+python-dotenv>=1.0.1
+pyyaml>=6.0.1
+python-dateutil>=2.8.2
+pytz>=2024.1
+
+# Authentication
+PyJWT>=2.8.0
+bcrypt>=4.0.0
+
+# Logging & Monitoring
+structlog>=24.1.0
+
+# Type Checking & Code Quality
+mypy>=1.8.0
+black>=24.1.1
+ruff>=0.2.0
+
+# Broker APIs (if available on PyPI)
+# Note: Shoonya and Angel One may need manual installation
+# shoonya-api
+# angelone-api

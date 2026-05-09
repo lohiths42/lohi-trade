@@ -1,0 +1,36 @@
+{
+  "version": "52.0.0",
+  "files": {
+    "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6": {
+      "displayName": "LoHiTradeCdn/Custom::S3AutoDeleteObjectsCustomResourceProvider Code",
+      "source": {
+        "path": "asset.faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "current_account-ap-south-1-71873f77": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-ap-south-1",
+          "objectKey": "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6.zip",
+          "region": "ap-south-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-ap-south-1"
+        }
+      }
+    },
+    "6bec6541c14389e41a01fc5fc5bd70a6d1291491c5032be69462b500d42cfcca": {
+      "displayName": "LoHiTradeCdn Template",
+      "source": {
+        "path": "LoHiTradeCdn.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "current_account-ap-south-1-5b3ba002": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-ap-south-1",
+          "objectKey": "6bec6541c14389e41a01fc5fc5bd70a6d1291491c5032be69462b500d42cfcca.json",
+          "region": "ap-south-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-ap-south-1"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}

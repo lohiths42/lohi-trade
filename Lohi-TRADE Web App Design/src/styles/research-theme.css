@@ -1,0 +1,478 @@
+/* ==========================================================================
+   LOHI-RESEARCH · Quartr-inspired Editorial Theme
+   ---------------------------------------------------------------------------
+   Grounded in Quartr's public brand guidelines (quartr.com/brand):
+     "Our black and white foundation creates a neutral stage, allowing the
+      thousands of company brands on our platform to shine."
+
+   Implications for this theme:
+     • Monochrome foundation — pure black / pure white surfaces.
+     • Near-zero chromatic accents. The only brand color in chrome is the
+       status semantic (bull green, bear red) and a razor-thin underline
+       accent. Company logos and data visualisations bring the color.
+     • A serif "Edge"-style display face for long-form editorial
+       headlines, summaries, and thesis bodies.
+     • A generous, quiet sans-serif for UI chrome, tags, and controls —
+       Quartr's Quik-style label/body/title/headline/display scale is
+       expressed through `--qr-text-*` tokens below.
+     • 1px hairlines, not cards-on-cards. Large white space. Lowercase
+       editorial kickers with wide tracking.
+
+   Scoped via `data-surface='research'` on <html>, so flipping modes does
+   not unmount the tree.
+   ========================================================================== */
+
+:root[data-surface='research'][data-theme='light'],
+:root[data-surface='research'][data-theme='light'] .research-shell {
+  /* ── Surface · pure paper ──────────────────────────────────────── */
+  --surface-0: #ffffff;              /* body */
+  --surface-1: #ffffff;              /* shell */
+  --surface-2: #ffffff;              /* cards */
+  --surface-3: #f7f7f7;              /* input / hover */
+  --surface-4: #ededed;              /* pressed */
+
+  /* Hairlines — the principal structural device */
+  --line-1: rgba(0, 0, 0, 0.06);
+  --line-2: rgba(0, 0, 0, 0.12);
+  --line-3: rgba(0, 0, 0, 0.22);
+  --scrim: rgba(0, 0, 0, 0.55);
+
+  /* Type — high-contrast graphite on paper */
+  --fg-primary: #000000;
+  --fg-secondary: #2b2b2b;
+  --fg-muted: #6e6e6e;
+  --fg-subtle: #9a9a9a;
+
+  /* Brand chrome — intentionally monochrome.
+     The "accent" is black itself, not a color, so company/chart colors
+     are the only chromatic elements on the page. */
+  --accent: #000000;
+  --accent-2: #000000;
+  --accent-gradient: #000000;
+  --accent-glow: rgba(0, 0, 0, 0.08);
+
+  /* Editorial coral — reserved exclusively for Edge kicker callouts. */
+  --editorial: #c1301b;
+  --editorial-soft: #fbe8e4;
+  --editorial-ink: #380900;
+
+  /* Sentiment — muted, print-like */
+  --bull: #0b8a4a;
+  --bull-glow: rgba(11, 138, 74, 0.18);
+  --bull-soft: #e9f3ed;
+  --bear: #b8271a;
+  --bear-glow: rgba(184, 39, 26, 0.18);
+  --bear-soft: #fae9e7;
+  --warn: #a07000;
+  --warn-soft: #f6edd8;
+}
+
+:root[data-surface='research'][data-theme='dark'],
+:root[data-surface='research'][data-theme='dark'] .research-shell {
+  /* ── Surface · pure OLED black (the inverse of the paper mode) ── */
+  --surface-0: #000000;
+  --surface-1: #000000;
+  --surface-2: #0a0a0a;
+  --surface-3: #141414;
+  --surface-4: #1d1d1d;
+
+  --line-1: rgba(255, 255, 255, 0.06);
+  --line-2: rgba(255, 255, 255, 0.14);
+  --line-3: rgba(255, 255, 255, 0.26);
+  --scrim: rgba(0, 0, 0, 0.75);
+
+  --fg-primary: #ffffff;
+  --fg-secondary: #d4d4d4;
+  --fg-muted: #8e8e8e;
+  --fg-subtle: #5a5a5a;
+
+  /* In dark, the "accent" becomes white — still no hue, just contrast. */
+  --accent: #ffffff;
+  --accent-2: #ffffff;
+  --accent-gradient: #ffffff;
+  --accent-glow: rgba(255, 255, 255, 0.12);
+
+  --editorial: #ff7a66;
+  --editorial-soft: rgba(255, 122, 102, 0.14);
+  --editorial-ink: #0b0b0b;
+
+  --bull: #2ec27e;
+  --bull-glow: rgba(46, 194, 126, 0.22);
+  --bull-soft: rgba(46, 194, 126, 0.10);
+  --bear: #ff6b5a;
+  --bear-glow: rgba(255, 107, 90, 0.22);
+  --bear-soft: rgba(255, 107, 90, 0.10);
+  --warn: #ffc25c;
+  --warn-soft: rgba(255, 194, 92, 0.10);
+}
+
+/* ==========================================================================
+   Typography — Quik-inspired scale (label / body / title / headline / display)
+   with an "Edge"-style serif reserved for long-form editorial surfaces.
+   ========================================================================== */
+
+.research-shell {
+  /* UI sans — a close match to Quartr's editorial sans; falls back through
+     common system stacks so no web font is required. */
+  font-family:
+    'Inter', 'Neue Haas Grotesk Display', 'SF Pro Text',
+    ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-feature-settings: 'ss01', 'cv11';
+}
+
+/* Tightened tabular numerics — always on for any numeric token. */
+.research-shell .qr-tabular {
+  font-feature-settings: 'tnum' 1, 'lnum' 1, 'cv11';
+  letter-spacing: -0.005em;
+}
+
+/* Type scale — mirror Quartr's `--quik_text-size-*` hierarchy. */
+.research-shell {
+  --qr-size-label-sm: 10.5px;
+  --qr-size-label-md: 11.5px;
+  --qr-size-label-lg: 12.5px;
+  --qr-size-body-sm: 12.5px;
+  --qr-size-body-md: 14px;
+  --qr-size-body-lg: 16px;
+  --qr-size-title-sm: 16px;
+  --qr-size-title-md: 18px;
+  --qr-size-title-lg: 22px;
+  --qr-size-headline-sm: 26px;
+  --qr-size-headline-md: 32px;
+  --qr-size-headline-lg: 40px;
+  --qr-size-display-sm: 48px;
+  --qr-size-display-md: 60px;
+  --qr-size-display-lg: 76px;
+}
+
+/* "Edge"-style serif — the editorial long-form voice. Reserved for
+   headlines, thesis bodies, and brief sections. Falls back through print
+   stacks so it works on any host. */
+.research-shell .qr-serif,
+.research-shell .qr-display,
+.research-shell .qr-headline {
+  font-family:
+    'Source Serif 4', 'Source Serif Pro', 'Noto Serif',
+    'Charter', 'Georgia', 'Times New Roman', serif;
+  font-feature-settings: 'liga' 1, 'dlig' 1;
+}
+
+.research-shell .qr-display {
+  font-size: var(--qr-size-display-sm);
+  line-height: 1.02;
+  letter-spacing: -0.028em;
+  font-weight: 500;
+}
+.research-shell .qr-display--lg {
+  font-size: var(--qr-size-display-md);
+}
+.research-shell .qr-headline {
+  font-size: var(--qr-size-headline-sm);
+  line-height: 1.12;
+  letter-spacing: -0.018em;
+  font-weight: 500;
+}
+.research-shell .qr-title {
+  font-size: var(--qr-size-title-lg);
+  line-height: 1.22;
+  letter-spacing: -0.012em;
+  font-weight: 600;
+}
+
+.research-shell .qr-body {
+  font-size: var(--qr-size-body-md);
+  line-height: 1.55;
+  letter-spacing: 0;
+  color: var(--fg-secondary);
+}
+.research-shell .qr-body--lg {
+  font-size: var(--qr-size-body-lg);
+  line-height: 1.6;
+}
+
+/* Kicker — the wide-tracking, uppercase micro-label used above headlines
+   everywhere on Quartr's editorial pages. */
+.research-shell .qr-kicker {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+/* A coral kicker, reserved for Edge-branded (long-form editorial) items. */
+.research-shell .qr-kicker--edge {
+  color: var(--editorial);
+  letter-spacing: 0.2em;
+}
+
+/* Label — small caps-ish chrome label (buttons, tags). */
+.research-shell .qr-label {
+  font-size: var(--qr-size-label-lg);
+  letter-spacing: 0.01em;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   Cards — hairline rectangles, not shadows; quiet, print-like.
+   Cards are *separators*, not surfaces. Content mostly sits on the page.
+   ========================================================================== */
+
+.research-shell .qr-rule {
+  height: 1px;
+  width: 100%;
+  background: var(--line-2);
+  margin: 20px 0;
+  border: 0;
+}
+
+.research-shell .qr-card {
+  background: var(--surface-2);
+  border: 1px solid var(--line-2);
+  border-radius: 2px;                /* square-ish — not rounded chips */
+  box-shadow: none;
+  transition: border-color var(--dur-2) var(--ease-out);
+}
+.research-shell .qr-card:hover {
+  border-color: var(--line-3);
+}
+
+/* "Grid" card — the zero-radius editorial tile used on feed pages. */
+.research-shell .qr-tile {
+  background: var(--surface-2);
+  border-top: 1px solid var(--line-2);
+  padding: 18px 0;
+}
+.research-shell .qr-tile + .qr-tile {
+  /* borderless stack — rows are separated by a single top rule */
+}
+
+/* ==========================================================================
+   Tags & pills — minimal, monochrome, uppercase
+   ========================================================================== */
+
+.research-shell .qr-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 2px;
+  background: transparent;
+  color: var(--fg-primary);
+  border: 1px solid var(--line-3);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.research-shell .qr-tag--edge {
+  border-color: var(--editorial);
+  color: var(--editorial);
+}
+
+.research-shell .qr-tag--bull {
+  border-color: var(--bull);
+  color: var(--bull);
+}
+.research-shell .qr-tag--bear {
+  border-color: var(--bear);
+  color: var(--bear);
+}
+
+/* Conviction meter — 2px hairline, no gradient (just solid fg). */
+.research-shell .qr-meter {
+  display: block;
+  height: 2px;
+  width: 100%;
+  background: var(--line-2);
+  border-radius: 0;
+  overflow: hidden;
+}
+.research-shell .qr-meter > span {
+  display: block;
+  height: 100%;
+  background: var(--fg-primary);
+  border-radius: inherit;
+}
+
+/* ==========================================================================
+   Buttons — Quartr's pill-shaped monochrome buttons
+   ========================================================================== */
+
+.research-shell .qr-btn {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: var(--qr-size-body-sm);
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  color: var(--surface-2);
+  background: var(--fg-primary);
+  transition: transform var(--dur-2) var(--ease-out), opacity var(--dur-2) var(--ease-out);
+  white-space: nowrap;
+}
+.research-shell .qr-btn:hover {
+  opacity: 0.86;
+}
+.research-shell .qr-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.research-shell .qr-btn--ghost {
+  background: transparent;
+  color: var(--fg-primary);
+  border: 1px solid var(--line-3);
+}
+.research-shell .qr-btn--ghost:hover {
+  background: var(--surface-3);
+  opacity: 1;
+}
+
+.research-shell .qr-link {
+  all: unset;
+  cursor: pointer;
+  font-size: var(--qr-size-body-sm);
+  font-weight: 600;
+  color: var(--fg-primary);
+  border-bottom: 1px solid var(--fg-primary);
+  padding-bottom: 1px;
+}
+.research-shell .qr-link:hover {
+  opacity: 0.7;
+}
+
+/* ==========================================================================
+   Inputs — borderless bottom-rule variant, very Quartr
+   ========================================================================== */
+
+.research-shell .qr-input {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line-2);
+  padding: 10px 0;
+  font-size: var(--qr-size-body-md);
+  color: var(--fg-primary);
+  outline: none;
+  transition: border-color var(--dur-2) var(--ease-out);
+}
+.research-shell .qr-input::placeholder {
+  color: var(--fg-muted);
+}
+.research-shell .qr-input:focus {
+  border-color: var(--fg-primary);
+}
+
+/* A boxed input variant for compact forms. */
+.research-shell .qr-input--boxed {
+  padding: 10px 12px;
+  border-radius: 2px;
+  border: 1px solid var(--line-2);
+  background: var(--surface-2);
+}
+.research-shell .qr-input--boxed:focus {
+  border-color: var(--fg-primary);
+}
+
+/* ==========================================================================
+   Editorial "masthead" — newspaper-style hero ribbon for the Research
+   landing. Pure typography, no gradient.
+   ========================================================================== */
+
+.research-shell .qr-masthead {
+  position: relative;
+  padding: 40px 0 28px;
+  border-bottom: 1px solid var(--line-3);
+  /* Title rule on top (Quartr uses a 1px top rule on the homepage). */
+  border-top: 1px solid var(--line-3);
+  margin-top: 4px;
+}
+
+.research-shell .qr-masthead .qr-kicker {
+  color: var(--editorial);
+  letter-spacing: 0.2em;
+  margin-bottom: 14px;
+}
+
+.research-shell .qr-masthead .qr-display {
+  color: var(--fg-primary);
+}
+
+.research-shell .qr-masthead .qr-body--lg {
+  max-width: 640px;
+  color: var(--fg-secondary);
+}
+
+/* ==========================================================================
+   Navigation — flat, uppercase, hairline underline on active
+   ========================================================================== */
+
+.research-shell .qr-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg-secondary);
+  text-decoration: none;
+  border: 0;
+  background: transparent;
+  transition: color var(--dur-2) var(--ease-out), background var(--dur-2) var(--ease-out);
+}
+.research-shell .qr-nav-link:hover {
+  color: var(--fg-primary);
+  background: var(--surface-3);
+}
+.research-shell .qr-nav-link[aria-current='page'] {
+  color: var(--fg-primary);
+  font-weight: 700;
+  background: var(--surface-3);
+}
+
+/* ==========================================================================
+   Tickers — "ticker ribbon" row used on the brief header, monospace-ish
+   ========================================================================== */
+
+.research-shell .qr-ticker {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+  letter-spacing: -0.01em;
+}
+.research-shell .qr-ticker__symbol {
+  font-weight: 800;
+  color: var(--fg-primary);
+  letter-spacing: 0.01em;
+}
+.research-shell .qr-ticker__price {
+  font-weight: 600;
+  color: var(--fg-primary);
+}
+.research-shell .qr-ticker__delta--bull { color: var(--bull); }
+.research-shell .qr-ticker__delta--bear { color: var(--bear); }
+
+/* ==========================================================================
+   Accessibility
+   ========================================================================== */
+
+.research-shell :focus-visible {
+  outline: 2px solid var(--fg-primary);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .research-shell * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

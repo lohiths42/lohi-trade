@@ -1,0 +1,146 @@
+{
+  "/LoHiTradeCdn/Custom::S3AutoDeleteObjectsCustomResourceProvider": [
+    {
+      "type": "aws:cdk:is-custom-resource-handler-customResourceProvider",
+      "data": true
+    }
+  ],
+  "/LoHiTradeCdn/AWSCloudFrontPartitionHostedZoneIdMap": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "AWSCloudFrontPartitionHostedZoneIdMap"
+    }
+  ],
+  "/LoHiTradeCdn/CloudFrontDistributionDomain": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CloudFrontDistributionDomain"
+    }
+  ],
+  "/LoHiTradeCdn/HostedZoneId": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "HostedZoneId"
+    }
+  ],
+  "/LoHiTradeCdn/CloudFrontCertificateArn": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CloudFrontCertificateArn"
+    }
+  ],
+  "/LoHiTradeCdn/AlbCertificateArn": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "AlbCertificateArn"
+    }
+  ],
+  "/LoHiTradeCdn/WebAppBucketName": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "WebAppBucketName"
+    }
+  ],
+  "/LoHiTradeCdn/BootstrapVersion": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BootstrapVersion"
+    }
+  ],
+  "/LoHiTradeCdn/CheckBootstrapVersion": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CheckBootstrapVersion"
+    }
+  ],
+  "/LoHiTradeCdn/WebAppBucket/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "WebAppBucket8F6FA179"
+    },
+    {
+      "type": "aws:cdk:analytics:mixin",
+      "data": {
+        "mixin": "aws-cdk-lib.aws_s3.mixins.BucketAutoDeleteObjects"
+      }
+    }
+  ],
+  "/LoHiTradeCdn/Custom::S3AutoDeleteObjectsCustomResourceProvider/Role": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092"
+    }
+  ],
+  "/LoHiTradeCdn/Custom::S3AutoDeleteObjectsCustomResourceProvider/Handler": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F"
+    }
+  ],
+  "/LoHiTradeCdn/WebAppOAI/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "WebAppOAI5ED67000"
+    }
+  ],
+  "/LoHiTradeCdn/PlatformHostedZone/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "PlatformHostedZoneBD077061"
+    }
+  ],
+  "/LoHiTradeCdn/CloudFrontCert/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CloudFrontCertC2FD7286"
+    }
+  ],
+  "/LoHiTradeCdn/AlbCert/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "AlbCert78D082F5"
+    }
+  ],
+  "/LoHiTradeCdn/WebAppDistribution/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "WebAppDistribution4473AB7E"
+    }
+  ],
+  "/LoHiTradeCdn/CloudFrontARecord/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CloudFrontARecord1A728491"
+    }
+  ],
+  "/LoHiTradeCdn/AlbARecord/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "AlbARecord12CBD03B"
+    }
+  ],
+  "/LoHiTradeCdn/CDKMetadata/Default": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CDKMetadata"
+    }
+  ],
+  "/LoHiTradeCdn/WebAppBucket/Policy/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "WebAppBucketPolicy542A2969"
+    },
+    {
+      "type": "aws:cdk:analytics:mixin",
+      "data": {
+        "mixin": "aws-cdk-lib.aws_s3.mixins.BucketPolicyStatements"
+      }
+    }
+  ],
+  "/LoHiTradeCdn/WebAppBucket/AutoDeleteObjectsCustomResource/Default": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "WebAppBucketAutoDeleteObjectsCustomResourceEF114EAA"
+    }
+  ]
+}

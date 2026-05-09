@@ -1,0 +1,2 @@
+redis ping failed
+indexer worker cannot start; redis unavailable

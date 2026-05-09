@@ -1,0 +1,100 @@
+# Guardrail ruleset v1 (design §10.3, Req 16.2, 16.3, 16.4, 16.9, 16.10).
+#
+# Each rule has:
+#   id:        stable identifier used by RefusalResult.rule_id and in logs.
+#   name:      snake_case human label.
+#   phase:     "input" (pre-Sub_Agent) or "output" (post-Sub_Agent).
+#   action:    "refuse" | "modify" | "allow" — semantics per design §3.6.
+#   patterns:  list of Python re-syntax regex patterns. Matching is case
+#              insensitive where the pattern starts with (?i).
+#   replacement: (modify-only) string to substitute for each match.
+#
+# The ordering within this file is load order; PydanticGuardrail walks
+# rules top-to-bottom and short-circuits on the first ``refuse`` hit
+# per phase.
+version: v1
+rules:
+  - id: JB-001
+    name: system_prompt_override
+    phase: input
+    action: refuse
+    patterns:
+      - "(?i)ignore\\s+(previous|prior|all)\\s+instructions"
+      - "(?i)disregard\\s+(the\\s+)?system"
+      - "(?i)you\\s+are\\s+now\\s+"
+      - "(?i)forget\\s+everything"
+  - id: JB-002
+    name: prompt_leak
+    phase: input
+    action: refuse
+    patterns:
+      - "(?i)show\\s+(your\\s+)?system\\s+prompt"
+      - "(?i)print\\s+(the\\s+)?prompt"
+      - "(?i)reveal\\s+instructions"
+  - id: RP-001
+    name: trade_advice
+    phase: input
+    action: refuse
+    patterns:
+      - "(?i)should\\s+I\\s+(buy|sell|hold)"
+      - "(?i)(buy|sell|hold)\\s+recommendation"
+      - "(?i)price\\s+target"
+      - "(?i)trade\\s+suggestion"
+      - "(?i)place\\s+(an\\s+)?order"
+  - id: DLP-001
+    name: destructive_sql_prevention
+    phase: input
+    action: refuse
+    patterns:
+      - "(?i)\\b(DROP|TRUNCATE|DELETE\\s+FROM|ALTER\\s+TABLE.*DROP)\\b"
+      - "(?i)\\bDELETE\\s+.*\\bWHERE\\b"
+      - "(?i)\\bRM\\s+-RF\\b"
+      - "(?i)\\bSHUTDOWN\\b"
+      - "(?i)\\bFORMAT\\s+[A-Z]:"
+  - id: DLP-002
+    name: backup_path_protection
+    phase: input
+    action: refuse
+    patterns:
+      - "(?i)(delete|remove|wipe|destroy|erase)\\s+(all\\s+)?(backup|snapshot|archive)"
+      - "(?i)(clear|purge|clean)\\s+(the\\s+)?(backup|snapshot|data)"
+  - id: DLP-003
+    name: credential_extraction_prevention
+    phase: input
+    action: refuse
+    patterns:
+      - "(?i)(show|print|display|reveal|give)\\s+(me\\s+)?(the\\s+)?(api.?key|secret|password|token|credential|mpin)"
+      - "(?i)(what\\s+is|tell\\s+me)\\s+(the\\s+)?(api.?key|secret|password|token|credential)"
+  - id: TA-001
+    name: tool_allowlist
+    phase: output
+    action: modify
+    patterns:
+      - "<tool_call>"
+      - "<function_call>"
+      - "(?i)\\bos\\.system\\("
+      - "(?i)\\bsubprocess\\."
+      - "(?i)\\beval\\("
+      - "(?i)\\bexec\\("
+    replacement: "[REDACTED-UNSAFE-CODE]"
+  - id: PII-001
+    name: pan_redaction
+    phase: output
+    action: modify
+    patterns:
+      - "[A-Z]{5}[0-9]{4}[A-Z]"
+    replacement: "[REDACTED-PAN]"
+  - id: PII-002
+    name: aadhaar_redaction
+    phase: output
+    action: modify
+    patterns:
+      - "\\b[2-9][0-9]{3}\\s?[0-9]{4}\\s?[0-9]{4}\\b"
+    replacement: "[REDACTED-AADHAAR]"
+  - id: PII-003
+    name: phone_redaction
+    phase: output
+    action: modify
+    patterns:
+      - "(?i)\\b(\\+91|91)?[\\s-]?[6-9][0-9]{9}\\b"
+    replacement: "[REDACTED-PHONE]"

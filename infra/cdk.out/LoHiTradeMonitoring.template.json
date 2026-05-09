@@ -1,0 +1,663 @@
+{
+ "Resources": {
+  "AlarmNotificationTopic58BFACC9": {
+   "Type": "AWS::SNS::Topic",
+   "Properties": {
+    "DisplayName": "LOHI-TRADE Platform Alarms",
+    "TopicName": "lohi-trade-alarms"
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeMonitoring/AlarmNotificationTopic/Resource"
+   }
+  },
+  "EcsCpuGateway3230F2DB": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmActions": [
+     {
+      "Ref": "AlarmNotificationTopic58BFACC9"
+     }
+    ],
+    "AlarmDescription": "ECS gateway CPU utilization >80%",
+    "AlarmName": "lohi-trade-ecs-cpu-gateway",
+    "ComparisonOperator": "GreaterThanThreshold",
+    "Dimensions": [
+     {
+      "Name": "ClusterName",
+      "Value": {
+       "Fn::ImportValue": "LoHiTradeEcs:ExportsOutputRefLoHiTradeCluster8EA56130F575F5B5"
+      }
+     },
+     {
+      "Name": "ServiceName",
+      "Value": {
+       "Fn::ImportValue": "LoHiTradeEcs:ExportsOutputFnGetAttSvcGatewayService4A1DECE5Name231B0E01"
+      }
+     }
+    ],
+    "EvaluationPeriods": 2,
+    "MetricName": "CPUUtilization",
+    "Namespace": "AWS/ECS",
+    "Period": 300,
+    "Statistic": "Average",
+    "Threshold": 80
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeMonitoring/EcsCpuGateway/Resource"
+   }
+  },
+  "EcsMemGateway73DFE0D7": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmActions": [
+     {
+      "Ref": "AlarmNotificationTopic58BFACC9"
+     }
+    ],
+    "AlarmDescription": "ECS gateway memory utilization >80%",
+    "AlarmName": "lohi-trade-ecs-mem-gateway",
+    "ComparisonOperator": "GreaterThanThreshold",
+    "Dimensions": [
+     {
+      "Name": "ClusterName",
+      "Value": {
+       "Fn::ImportValue": "LoHiTradeEcs:ExportsOutputRefLoHiTradeCluster8EA56130F575F5B5"
+      }
+     },
+     {
+      "Name": "ServiceName",
+      "Value": {
+       "Fn::ImportValue": "LoHiTradeEcs:ExportsOutputFnGetAttSvcGatewayService4A1DECE5Name231B0E01"
+      }
+     }
+    ],
+    "EvaluationPeriods": 2,
+    "MetricName": "MemoryUtilization",
+    "Namespace": "AWS/ECS",
+    "Period": 300,
+    "Statistic": "Average",
+    "Threshold": 80
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeMonitoring/EcsMemGateway/Resource"
+   }
+  },
+  "EcsCpuSoldier2856CE90": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmActions": [
+     {
+      "Ref": "AlarmNotificationTopic58BFACC9"
+     }
+    ],
+    "AlarmDescription": "ECS soldier CPU utilization >80%",
+    "AlarmName": "lohi-trade-ecs-cpu-soldier",
+    "ComparisonOperator": "GreaterThanThreshold",
+    "Dimensions": [
+     {
+      "Name": "ClusterName",
+      "Value": {
+       "Fn::ImportValue": "LoHiTradeEcs:ExportsOutputRefLoHiTradeCluster8EA56130F575F5B5"
+      }
+     },
+     {
+      "Name": "ServiceName",
+      "Value": {
+       "Fn::ImportValue": "LoHiTradeEcs:ExportsOutputFnGetAttSvcSoldierService82D16F65Name8250B044"
+      }
+     }
+    ],
+    "EvaluationPeriods": 2,
+    "MetricName": "CPUUtilization",
+    "Namespace": "AWS/ECS",
+    "Period": 300,
+    "Statistic": "Average",
+    "Threshold": 80
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeMonitoring/EcsCpuSoldier/Resource"
+   }
+  },
+  "EcsMemSoldier38125093": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmActions": [
+     {
+      "Ref": "AlarmNotificationTopic58BFACC9"
+     }
+    ],
+    "AlarmDescription": "ECS soldier memory utilization >80%",
+    "AlarmName": "lohi-trade-ecs-mem-soldier",
+    "ComparisonOperator": "GreaterThanThreshold",
+    "Dimensions": [
+     {
+      "Name": "ClusterName",
+      "Value": {
+       "Fn::ImportValue": "LoHiTradeEcs:ExportsOutputRefLoHiTradeCluster8EA56130F575F5B5"
+      }
+     },
+     {
+      "Name": "ServiceName",
+      "Value": {
+       "Fn::ImportValue": "LoHiTradeEcs:ExportsOutputFnGetAttSvcSoldierService82D16F65Name8250B044"
+      }
+     }
+    ],
+    "EvaluationPeriods": 2,
+    "MetricName": "MemoryUtilization",
+    "Namespace": "AWS/ECS",
+    "Period": 300,
+    "Statistic": "Average",
+    "Threshold": 80
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeMonitoring/EcsMemSoldier/Resource"
+   }
+  },
+  "EcsCpuCommander0DCA863F": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmActions": [
+     {
+      "Ref": "AlarmNotificationTopic58BFACC9"
+     }
+    ],
+    "AlarmDescription": "ECS commander CPU utilization >80%",
+    "AlarmName": "lohi-trade-ecs-cpu-commander",
+    "ComparisonOperator": "GreaterThanThreshold",
+    "Dimensions": [
+     {
+      "Name": "ClusterName",
+      "Value": {
+       "Fn::ImportValue": "LoHiTradeEcs:ExportsOutputRefLoHiTradeCluster8EA56130F575F5B5"
+      }
+     },
+     {
+      "Name": "ServiceName",
+      "Value": {
+       "Fn::ImportValue": "LoHiTradeEcs:ExportsOutputFnGetAttSvcCommanderServiceE0CA40A5Name003691ED"
+      }
+     }
+    ],
+    "EvaluationPeriods": 2,
+    "MetricName": "CPUUtilization",
+    "Namespace": "AWS/ECS",
+    "Period": 300,
+    "Statistic": "Average",
+    "Threshold": 80
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeMonitoring/EcsCpuCommander/Resource"
+   }
+  },
+  "EcsMemCommanderCE5D5591": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmActions": [
+     {
+      "Ref": "AlarmNotificationTopic58BFACC9"
+     }
+    ],
+    "AlarmDescription": "ECS commander memory utilization >80%",
+    "AlarmName": "lohi-trade-ecs-mem-commander",
+    "ComparisonOperator": "GreaterThanThreshold",
+    "Dimensions": [
+     {
+      "Name": "ClusterName",
+      "Value": {
+       "Fn::ImportValue": "LoHiTradeEcs:ExportsOutputRefLoHiTradeCluster8EA56130F575F5B5"
+      }
+     },
+     {
+      "Name": "ServiceName",
+      "Value": {
+       "Fn::ImportValue": "LoHiTradeEcs:ExportsOutputFnGetAttSvcCommanderServiceE0CA40A5Name003691ED"
+      }
+     }
+    ],
+    "EvaluationPeriods": 2,
+    "MetricName": "MemoryUtilization",
+    "Namespace": "AWS/ECS",
+    "Period": 300,
+    "Statistic": "Average",
+    "Threshold": 80
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeMonitoring/EcsMemCommander/Resource"
+   }
+  },
+  "EcsCpuRmsOmsB57F0730": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmActions": [
+     {
+      "Ref": "AlarmNotificationTopic58BFACC9"
+     }
+    ],
+    "AlarmDescription": "ECS rms-oms CPU utilization >80%",
+    "AlarmName": "lohi-trade-ecs-cpu-rms-oms",
+    "ComparisonOperator": "GreaterThanThreshold",
+    "Dimensions": [
+     {
+      "Name": "ClusterName",
+      "Value": {
+       "Fn::ImportValue": "LoHiTradeEcs:ExportsOutputRefLoHiTradeCluster8EA56130F575F5B5"
+      }
+     },
+     {
+      "Name": "ServiceName",
+      "Value": {
+       "Fn::ImportValue": "LoHiTradeEcs:ExportsOutputFnGetAttSvcRmsOmsService691DF647NameF9594488"
+      }
+     }
+    ],
+    "EvaluationPeriods": 2,
+    "MetricName": "CPUUtilization",
+    "Namespace": "AWS/ECS",
+    "Period": 300,
+    "Statistic": "Average",
+    "Threshold": 80
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeMonitoring/EcsCpuRmsOms/Resource"
+   }
+  },
+  "EcsMemRmsOms6EE6D59B": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmActions": [
+     {
+      "Ref": "AlarmNotificationTopic58BFACC9"
+     }
+    ],
+    "AlarmDescription": "ECS rms-oms memory utilization >80%",
+    "AlarmName": "lohi-trade-ecs-mem-rms-oms",
+    "ComparisonOperator": "GreaterThanThreshold",
+    "Dimensions": [
+     {
+      "Name": "ClusterName",
+      "Value": {
+       "Fn::ImportValue": "LoHiTradeEcs:ExportsOutputRefLoHiTradeCluster8EA56130F575F5B5"
+      }
+     },
+     {
+      "Name": "ServiceName",
+      "Value": {
+       "Fn::ImportValue": "LoHiTradeEcs:ExportsOutputFnGetAttSvcRmsOmsService691DF647NameF9594488"
+      }
+     }
+    ],
+    "EvaluationPeriods": 2,
+    "MetricName": "MemoryUtilization",
+    "Namespace": "AWS/ECS",
+    "Period": 300,
+    "Statistic": "Average",
+    "Threshold": 80
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeMonitoring/EcsMemRmsOms/Resource"
+   }
+  },
+  "EcsCpuMarketDataCollectorBCCCFECD": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmActions": [
+     {
+      "Ref": "AlarmNotificationTopic58BFACC9"
+     }
+    ],
+    "AlarmDescription": "ECS market-data-collector CPU utilization >80%",
+    "AlarmName": "lohi-trade-ecs-cpu-market-data-collector",
+    "ComparisonOperator": "GreaterThanThreshold",
+    "Dimensions": [
+     {
+      "Name": "ClusterName",
+      "Value": {
+       "Fn::ImportValue": "LoHiTradeEcs:ExportsOutputRefLoHiTradeCluster8EA56130F575F5B5"
+      }
+     },
+     {
+      "Name": "ServiceName",
+      "Value": {
+       "Fn::ImportValue": "LoHiTradeEcs:ExportsOutputFnGetAttSvcMarketDataCollectorServiceD47F6457Name3312A1E2"
+      }
+     }
+    ],
+    "EvaluationPeriods": 2,
+    "MetricName": "CPUUtilization",
+    "Namespace": "AWS/ECS",
+    "Period": 300,
+    "Statistic": "Average",
+    "Threshold": 80
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeMonitoring/EcsCpuMarketDataCollector/Resource"
+   }
+  },
+  "EcsMemMarketDataCollector626B4A29": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmActions": [
+     {
+      "Ref": "AlarmNotificationTopic58BFACC9"
+     }
+    ],
+    "AlarmDescription": "ECS market-data-collector memory utilization >80%",
+    "AlarmName": "lohi-trade-ecs-mem-market-data-collector",
+    "ComparisonOperator": "GreaterThanThreshold",
+    "Dimensions": [
+     {
+      "Name": "ClusterName",
+      "Value": {
+       "Fn::ImportValue": "LoHiTradeEcs:ExportsOutputRefLoHiTradeCluster8EA56130F575F5B5"
+      }
+     },
+     {
+      "Name": "ServiceName",
+      "Value": {
+       "Fn::ImportValue": "LoHiTradeEcs:ExportsOutputFnGetAttSvcMarketDataCollectorServiceD47F6457Name3312A1E2"
+      }
+     }
+    ],
+    "EvaluationPeriods": 2,
+    "MetricName": "MemoryUtilization",
+    "Namespace": "AWS/ECS",
+    "Period": 300,
+    "Statistic": "Average",
+    "Threshold": 80
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeMonitoring/EcsMemMarketDataCollector/Resource"
+   }
+  },
+  "EcsCpuVerificationFE24F6AB": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmActions": [
+     {
+      "Ref": "AlarmNotificationTopic58BFACC9"
+     }
+    ],
+    "AlarmDescription": "ECS verification CPU utilization >80%",
+    "AlarmName": "lohi-trade-ecs-cpu-verification",
+    "ComparisonOperator": "GreaterThanThreshold",
+    "Dimensions": [
+     {
+      "Name": "ClusterName",
+      "Value": {
+       "Fn::ImportValue": "LoHiTradeEcs:ExportsOutputRefLoHiTradeCluster8EA56130F575F5B5"
+      }
+     },
+     {
+      "Name": "ServiceName",
+      "Value": {
+       "Fn::ImportValue": "LoHiTradeEcs:ExportsOutputFnGetAttSvcVerificationService8CEB70C0Name059ECDC9"
+      }
+     }
+    ],
+    "EvaluationPeriods": 2,
+    "MetricName": "CPUUtilization",
+    "Namespace": "AWS/ECS",
+    "Period": 300,
+    "Statistic": "Average",
+    "Threshold": 80
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeMonitoring/EcsCpuVerification/Resource"
+   }
+  },
+  "EcsMemVerificationCEEB7BD1": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmActions": [
+     {
+      "Ref": "AlarmNotificationTopic58BFACC9"
+     }
+    ],
+    "AlarmDescription": "ECS verification memory utilization >80%",
+    "AlarmName": "lohi-trade-ecs-mem-verification",
+    "ComparisonOperator": "GreaterThanThreshold",
+    "Dimensions": [
+     {
+      "Name": "ClusterName",
+      "Value": {
+       "Fn::ImportValue": "LoHiTradeEcs:ExportsOutputRefLoHiTradeCluster8EA56130F575F5B5"
+      }
+     },
+     {
+      "Name": "ServiceName",
+      "Value": {
+       "Fn::ImportValue": "LoHiTradeEcs:ExportsOutputFnGetAttSvcVerificationService8CEB70C0Name059ECDC9"
+      }
+     }
+    ],
+    "EvaluationPeriods": 2,
+    "MetricName": "MemoryUtilization",
+    "Namespace": "AWS/ECS",
+    "Period": 300,
+    "Statistic": "Average",
+    "Threshold": 80
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeMonitoring/EcsMemVerification/Resource"
+   }
+  },
+  "EcsCpuChatbotF09BBE9F": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmActions": [
+     {
+      "Ref": "AlarmNotificationTopic58BFACC9"
+     }
+    ],
+    "AlarmDescription": "ECS chatbot CPU utilization >80%",
+    "AlarmName": "lohi-trade-ecs-cpu-chatbot",
+    "ComparisonOperator": "GreaterThanThreshold",
+    "Dimensions": [
+     {
+      "Name": "ClusterName",
+      "Value": {
+       "Fn::ImportValue": "LoHiTradeEcs:ExportsOutputRefLoHiTradeCluster8EA56130F575F5B5"
+      }
+     },
+     {
+      "Name": "ServiceName",
+      "Value": {
+       "Fn::ImportValue": "LoHiTradeEcs:ExportsOutputFnGetAttSvcChatbotServiceC165481ANameA2F06296"
+      }
+     }
+    ],
+    "EvaluationPeriods": 2,
+    "MetricName": "CPUUtilization",
+    "Namespace": "AWS/ECS",
+    "Period": 300,
+    "Statistic": "Average",
+    "Threshold": 80
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeMonitoring/EcsCpuChatbot/Resource"
+   }
+  },
+  "EcsMemChatbot032097EB": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmActions": [
+     {
+      "Ref": "AlarmNotificationTopic58BFACC9"
+     }
+    ],
+    "AlarmDescription": "ECS chatbot memory utilization >80%",
+    "AlarmName": "lohi-trade-ecs-mem-chatbot",
+    "ComparisonOperator": "GreaterThanThreshold",
+    "Dimensions": [
+     {
+      "Name": "ClusterName",
+      "Value": {
+       "Fn::ImportValue": "LoHiTradeEcs:ExportsOutputRefLoHiTradeCluster8EA56130F575F5B5"
+      }
+     },
+     {
+      "Name": "ServiceName",
+      "Value": {
+       "Fn::ImportValue": "LoHiTradeEcs:ExportsOutputFnGetAttSvcChatbotServiceC165481ANameA2F06296"
+      }
+     }
+    ],
+    "EvaluationPeriods": 2,
+    "MetricName": "MemoryUtilization",
+    "Namespace": "AWS/ECS",
+    "Period": 300,
+    "Statistic": "Average",
+    "Threshold": 80
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeMonitoring/EcsMemChatbot/Resource"
+   }
+  },
+  "Alb5xxAlarm99BFF946": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmActions": [
+     {
+      "Ref": "AlarmNotificationTopic58BFACC9"
+     }
+    ],
+    "AlarmDescription": "ALB 5xx error count >10 in 5 minutes",
+    "AlarmName": "lohi-trade-alb-5xx",
+    "ComparisonOperator": "GreaterThanThreshold",
+    "Dimensions": [
+     {
+      "Name": "LoadBalancer",
+      "Value": {
+       "Fn::ImportValue": "LoHiTradeEcs:ExportsOutputFnGetAttLoHiTradeAlb2EF60F72LoadBalancerFullNameA80C56E0"
+      }
+     }
+    ],
+    "EvaluationPeriods": 2,
+    "MetricName": "HTTPCode_ELB_5XX_Count",
+    "Namespace": "AWS/ApplicationELB",
+    "Period": 300,
+    "Statistic": "Sum",
+    "Threshold": 10,
+    "TreatMissingData": "notBreaching"
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeMonitoring/Alb5xxAlarm/Resource"
+   }
+  },
+  "RdsCpuAlarm29EF1690": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmActions": [
+     {
+      "Ref": "AlarmNotificationTopic58BFACC9"
+     }
+    ],
+    "AlarmDescription": "RDS CPU utilization >70%",
+    "AlarmName": "lohi-trade-rds-cpu",
+    "ComparisonOperator": "GreaterThanThreshold",
+    "Dimensions": [
+     {
+      "Name": "DBInstanceIdentifier",
+      "Value": {
+       "Fn::ImportValue": "LoHiTradeData:ExportsOutputRefLoHiTradeDb6500F50FA23AF648"
+      }
+     }
+    ],
+    "EvaluationPeriods": 2,
+    "MetricName": "CPUUtilization",
+    "Namespace": "AWS/RDS",
+    "Period": 300,
+    "Statistic": "Average",
+    "Threshold": 70
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeMonitoring/RdsCpuAlarm/Resource"
+   }
+  },
+  "RedisMemoryAlarmE1DCE7EB": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmActions": [
+     {
+      "Ref": "AlarmNotificationTopic58BFACC9"
+     }
+    ],
+    "AlarmDescription": "Redis memory usage >80%",
+    "AlarmName": "lohi-trade-redis-memory",
+    "ComparisonOperator": "GreaterThanThreshold",
+    "Dimensions": [
+     {
+      "Name": "ReplicationGroupId",
+      "Value": {
+       "Fn::ImportValue": "LoHiTradeData:ExportsOutputRefLoHiTradeRedis7EA94D40"
+      }
+     }
+    ],
+    "EvaluationPeriods": 2,
+    "MetricName": "DatabaseMemoryUsagePercentage",
+    "Namespace": "AWS/ElastiCache",
+    "Period": 300,
+    "Statistic": "Average",
+    "Threshold": 80,
+    "TreatMissingData": "notBreaching"
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeMonitoring/RedisMemoryAlarm/Resource"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/yXJQQ6CMBBA0bOwb0ctvYDxABpxb8aiYaS0hJmmIU3vbsDVf8k3YKyFY4OZtetH7ekFpRN0o8LMz8KBoTziTE5dPmFHVc7H1GcUN0A5e1ym7e2odeM1yZykqtsqQwyHFk4WTPNlIr2kIDS94f7vDz6eyBp/AAAA"
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeMonitoring/CDKMetadata/Default"
+   }
+  }
+ },
+ "Outputs": {
+  "AlarmTopicArn": {
+   "Value": {
+    "Ref": "AlarmNotificationTopic58BFACC9"
+   }
+  },
+  "AlarmNames": {
+   "Value": "alb-5xx,ecs-cpu-chatbot,ecs-cpu-commander,ecs-cpu-gateway,ecs-cpu-market-data-collector,ecs-cpu-rms-oms,ecs-cpu-soldier,ecs-cpu-verification,ecs-mem-chatbot,ecs-mem-commander,ecs-mem-gateway,ecs-mem-market-data-collector,ecs-mem-rms-oms,ecs-mem-soldier,ecs-mem-verification,rds-cpu,redis-memory"
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

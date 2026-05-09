@@ -1,0 +1,13 @@
+node_modules
+build
+.git
+.gitignore
+*.md
+.env
+.env.*
+.vscode
+.hypothesis
+coverage
+.nyc_output
+*.log
+.DS_Store

@@ -1,0 +1,278 @@
+{
+  "/LoHiTradeVpc/VpcId": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "VpcId"
+    }
+  ],
+  "/LoHiTradeVpc/AlbSecurityGroupId": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "AlbSecurityGroupId"
+    }
+  ],
+  "/LoHiTradeVpc/EcsSecurityGroupId": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcsSecurityGroupId"
+    }
+  ],
+  "/LoHiTradeVpc/RedisSecurityGroupId": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "RedisSecurityGroupId"
+    }
+  ],
+  "/LoHiTradeVpc/RdsSecurityGroupId": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "RdsSecurityGroupId"
+    }
+  ],
+  "/LoHiTradeVpc/BootstrapVersion": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BootstrapVersion"
+    }
+  ],
+  "/LoHiTradeVpc/CheckBootstrapVersion": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CheckBootstrapVersion"
+    }
+  ],
+  "/LoHiTradeVpc/LoHiTradeVpc/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LoHiTradeVpcC9675F9D"
+    }
+  ],
+  "/LoHiTradeVpc/LoHiTradeVpc/IGW": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LoHiTradeVpcIGW681B1716"
+    }
+  ],
+  "/LoHiTradeVpc/LoHiTradeVpc/VPCGW": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LoHiTradeVpcVPCGW07052AC5"
+    }
+  ],
+  "/LoHiTradeVpc/AlbSecurityGroup/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "AlbSecurityGroup86A59E99"
+    }
+  ],
+  "/LoHiTradeVpc/AlbSecurityGroup/to LoHiTradeVpcEcsSecurityGroup7F9C43F2:8000": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "AlbSecurityGrouptoLoHiTradeVpcEcsSecurityGroup7F9C43F28000426D8A65"
+    }
+  ],
+  "/LoHiTradeVpc/EcsSecurityGroup/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcsSecurityGroup44008BF1"
+    }
+  ],
+  "/LoHiTradeVpc/EcsSecurityGroup/from LoHiTradeVpcAlbSecurityGroupD4DECFA3:8000": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcsSecurityGroupfromLoHiTradeVpcAlbSecurityGroupD4DECFA38000F551071C"
+    }
+  ],
+  "/LoHiTradeVpc/RedisSecurityGroup/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "RedisSecurityGroupB05951F6"
+    }
+  ],
+  "/LoHiTradeVpc/RedisSecurityGroup/from LoHiTradeVpcEcsSecurityGroup7F9C43F2:6379": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "RedisSecurityGroupfromLoHiTradeVpcEcsSecurityGroup7F9C43F2637907B4DE33"
+    }
+  ],
+  "/LoHiTradeVpc/RdsSecurityGroup/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "RdsSecurityGroup632A77E4"
+    }
+  ],
+  "/LoHiTradeVpc/RdsSecurityGroup/from LoHiTradeVpcEcsSecurityGroup7F9C43F2:5432": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "RdsSecurityGroupfromLoHiTradeVpcEcsSecurityGroup7F9C43F25432B133F245"
+    }
+  ],
+  "/LoHiTradeVpc/CDKMetadata/Default": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CDKMetadata"
+    }
+  ],
+  "/LoHiTradeVpc/Exports/Output{\"Fn::GetAtt\":[\"AlbSecurityGroup86A59E99\",\"GroupId\"]}": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ExportsOutputFnGetAttAlbSecurityGroup86A59E99GroupIdE3A37BC7"
+    }
+  ],
+  "/LoHiTradeVpc/Exports/Output{\"Ref\":\"LoHiTradeVpcPublicSubnet1Subnet3D86AC4E\"}": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ExportsOutputRefLoHiTradeVpcPublicSubnet1Subnet3D86AC4E58F63A3F"
+    }
+  ],
+  "/LoHiTradeVpc/Exports/Output{\"Ref\":\"LoHiTradeVpcPublicSubnet2SubnetB2177EF1\"}": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ExportsOutputRefLoHiTradeVpcPublicSubnet2SubnetB2177EF1C869996E"
+    }
+  ],
+  "/LoHiTradeVpc/Exports/Output{\"Ref\":\"LoHiTradeVpcPrivateSubnet1SubnetFFBB083D\"}": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ExportsOutputRefLoHiTradeVpcPrivateSubnet1SubnetFFBB083D27B2E795"
+    }
+  ],
+  "/LoHiTradeVpc/Exports/Output{\"Ref\":\"LoHiTradeVpcPrivateSubnet2SubnetD5F3E8EE\"}": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ExportsOutputRefLoHiTradeVpcPrivateSubnet2SubnetD5F3E8EE53634E8D"
+    }
+  ],
+  "/LoHiTradeVpc/Exports/Output{\"Fn::GetAtt\":[\"EcsSecurityGroup44008BF1\",\"GroupId\"]}": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ExportsOutputFnGetAttEcsSecurityGroup44008BF1GroupIdDE2CA5C5"
+    }
+  ],
+  "/LoHiTradeVpc/Exports/Output{\"Ref\":\"LoHiTradeVpcC9675F9D\"}": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ExportsOutputRefLoHiTradeVpcC9675F9DD6A87155"
+    }
+  ],
+  "/LoHiTradeVpc/Exports/Output{\"Fn::GetAtt\":[\"RdsSecurityGroup632A77E4\",\"GroupId\"]}": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ExportsOutputFnGetAttRdsSecurityGroup632A77E4GroupId9D343172"
+    }
+  ],
+  "/LoHiTradeVpc/Exports/Output{\"Fn::GetAtt\":[\"RedisSecurityGroupB05951F6\",\"GroupId\"]}": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ExportsOutputFnGetAttRedisSecurityGroupB05951F6GroupIdECA64B37"
+    }
+  ],
+  "/LoHiTradeVpc/LoHiTradeVpc/PublicSubnet1/Subnet": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LoHiTradeVpcPublicSubnet1Subnet3D86AC4E"
+    }
+  ],
+  "/LoHiTradeVpc/LoHiTradeVpc/PublicSubnet1/RouteTable": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LoHiTradeVpcPublicSubnet1RouteTable71223AAA"
+    }
+  ],
+  "/LoHiTradeVpc/LoHiTradeVpc/PublicSubnet1/RouteTableAssociation": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LoHiTradeVpcPublicSubnet1RouteTableAssociation4077B289"
+    }
+  ],
+  "/LoHiTradeVpc/LoHiTradeVpc/PublicSubnet1/DefaultRoute": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LoHiTradeVpcPublicSubnet1DefaultRoute29D8998F"
+    }
+  ],
+  "/LoHiTradeVpc/LoHiTradeVpc/PublicSubnet1/EIP": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LoHiTradeVpcPublicSubnet1EIP44AFA717"
+    }
+  ],
+  "/LoHiTradeVpc/LoHiTradeVpc/PublicSubnet1/NATGateway": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LoHiTradeVpcPublicSubnet1NATGatewayD357D1FA"
+    }
+  ],
+  "/LoHiTradeVpc/LoHiTradeVpc/PublicSubnet2/Subnet": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LoHiTradeVpcPublicSubnet2SubnetB2177EF1"
+    }
+  ],
+  "/LoHiTradeVpc/LoHiTradeVpc/PublicSubnet2/RouteTable": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LoHiTradeVpcPublicSubnet2RouteTable21C40A74"
+    }
+  ],
+  "/LoHiTradeVpc/LoHiTradeVpc/PublicSubnet2/RouteTableAssociation": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LoHiTradeVpcPublicSubnet2RouteTableAssociationEF004DDD"
+    }
+  ],
+  "/LoHiTradeVpc/LoHiTradeVpc/PublicSubnet2/DefaultRoute": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LoHiTradeVpcPublicSubnet2DefaultRoute1685FD67"
+    }
+  ],
+  "/LoHiTradeVpc/LoHiTradeVpc/PrivateSubnet1/Subnet": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LoHiTradeVpcPrivateSubnet1SubnetFFBB083D"
+    }
+  ],
+  "/LoHiTradeVpc/LoHiTradeVpc/PrivateSubnet1/RouteTable": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LoHiTradeVpcPrivateSubnet1RouteTableAC9354CF"
+    }
+  ],
+  "/LoHiTradeVpc/LoHiTradeVpc/PrivateSubnet1/RouteTableAssociation": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LoHiTradeVpcPrivateSubnet1RouteTableAssociation4073A656"
+    }
+  ],
+  "/LoHiTradeVpc/LoHiTradeVpc/PrivateSubnet1/DefaultRoute": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LoHiTradeVpcPrivateSubnet1DefaultRoute72410F0F"
+    }
+  ],
+  "/LoHiTradeVpc/LoHiTradeVpc/PrivateSubnet2/Subnet": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LoHiTradeVpcPrivateSubnet2SubnetD5F3E8EE"
+    }
+  ],
+  "/LoHiTradeVpc/LoHiTradeVpc/PrivateSubnet2/RouteTable": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LoHiTradeVpcPrivateSubnet2RouteTable0F6D4DB3"
+    }
+  ],
+  "/LoHiTradeVpc/LoHiTradeVpc/PrivateSubnet2/RouteTableAssociation": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LoHiTradeVpcPrivateSubnet2RouteTableAssociation7FB0B2ED"
+    }
+  ],
+  "/LoHiTradeVpc/LoHiTradeVpc/PrivateSubnet2/DefaultRoute": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LoHiTradeVpcPrivateSubnet2DefaultRouteB2D61159"
+    }
+  ]
+}

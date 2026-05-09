@@ -1,0 +1,766 @@
+{
+ "Resources": {
+  "LoHiTradeVpcC9675F9D": {
+   "Type": "AWS::EC2::VPC",
+   "Properties": {
+    "CidrBlock": "10.0.0.0/16",
+    "EnableDnsHostnames": true,
+    "EnableDnsSupport": true,
+    "InstanceTenancy": "default",
+    "Tags": [
+     {
+      "Key": "Name",
+      "Value": "LoHiTradeVpc/LoHiTradeVpc"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeVpc/LoHiTradeVpc/Resource"
+   }
+  },
+  "LoHiTradeVpcPublicSubnet1Subnet3D86AC4E": {
+   "Type": "AWS::EC2::Subnet",
+   "Properties": {
+    "AvailabilityZone": {
+     "Fn::Select": [
+      0,
+      {
+       "Fn::GetAZs": ""
+      }
+     ]
+    },
+    "CidrBlock": "10.0.0.0/24",
+    "MapPublicIpOnLaunch": true,
+    "Tags": [
+     {
+      "Key": "aws-cdk:subnet-name",
+      "Value": "Public"
+     },
+     {
+      "Key": "aws-cdk:subnet-type",
+      "Value": "Public"
+     },
+     {
+      "Key": "Name",
+      "Value": "LoHiTradeVpc/LoHiTradeVpc/PublicSubnet1"
+     }
+    ],
+    "VpcId": {
+     "Ref": "LoHiTradeVpcC9675F9D"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeVpc/LoHiTradeVpc/PublicSubnet1/Subnet"
+   }
+  },
+  "LoHiTradeVpcPublicSubnet1RouteTable71223AAA": {
+   "Type": "AWS::EC2::RouteTable",
+   "Properties": {
+    "Tags": [
+     {
+      "Key": "Name",
+      "Value": "LoHiTradeVpc/LoHiTradeVpc/PublicSubnet1"
+     }
+    ],
+    "VpcId": {
+     "Ref": "LoHiTradeVpcC9675F9D"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeVpc/LoHiTradeVpc/PublicSubnet1/RouteTable"
+   }
+  },
+  "LoHiTradeVpcPublicSubnet1RouteTableAssociation4077B289": {
+   "Type": "AWS::EC2::SubnetRouteTableAssociation",
+   "Properties": {
+    "RouteTableId": {
+     "Ref": "LoHiTradeVpcPublicSubnet1RouteTable71223AAA"
+    },
+    "SubnetId": {
+     "Ref": "LoHiTradeVpcPublicSubnet1Subnet3D86AC4E"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeVpc/LoHiTradeVpc/PublicSubnet1/RouteTableAssociation"
+   }
+  },
+  "LoHiTradeVpcPublicSubnet1DefaultRoute29D8998F": {
+   "Type": "AWS::EC2::Route",
+   "Properties": {
+    "DestinationCidrBlock": "0.0.0.0/0",
+    "GatewayId": {
+     "Ref": "LoHiTradeVpcIGW681B1716"
+    },
+    "RouteTableId": {
+     "Ref": "LoHiTradeVpcPublicSubnet1RouteTable71223AAA"
+    }
+   },
+   "DependsOn": [
+    "LoHiTradeVpcVPCGW07052AC5"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeVpc/LoHiTradeVpc/PublicSubnet1/DefaultRoute"
+   }
+  },
+  "LoHiTradeVpcPublicSubnet1EIP44AFA717": {
+   "Type": "AWS::EC2::EIP",
+   "Properties": {
+    "Domain": "vpc",
+    "Tags": [
+     {
+      "Key": "Name",
+      "Value": "LoHiTradeVpc/LoHiTradeVpc/PublicSubnet1"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeVpc/LoHiTradeVpc/PublicSubnet1/EIP"
+   }
+  },
+  "LoHiTradeVpcPublicSubnet1NATGatewayD357D1FA": {
+   "Type": "AWS::EC2::NatGateway",
+   "Properties": {
+    "AllocationId": {
+     "Fn::GetAtt": [
+      "LoHiTradeVpcPublicSubnet1EIP44AFA717",
+      "AllocationId"
+     ]
+    },
+    "SubnetId": {
+     "Ref": "LoHiTradeVpcPublicSubnet1Subnet3D86AC4E"
+    },
+    "Tags": [
+     {
+      "Key": "Name",
+      "Value": "LoHiTradeVpc/LoHiTradeVpc/PublicSubnet1"
+     }
+    ]
+   },
+   "DependsOn": [
+    "LoHiTradeVpcPublicSubnet1DefaultRoute29D8998F",
+    "LoHiTradeVpcPublicSubnet1RouteTableAssociation4077B289"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeVpc/LoHiTradeVpc/PublicSubnet1/NATGateway"
+   }
+  },
+  "LoHiTradeVpcPublicSubnet2SubnetB2177EF1": {
+   "Type": "AWS::EC2::Subnet",
+   "Properties": {
+    "AvailabilityZone": {
+     "Fn::Select": [
+      1,
+      {
+       "Fn::GetAZs": ""
+      }
+     ]
+    },
+    "CidrBlock": "10.0.1.0/24",
+    "MapPublicIpOnLaunch": true,
+    "Tags": [
+     {
+      "Key": "aws-cdk:subnet-name",
+      "Value": "Public"
+     },
+     {
+      "Key": "aws-cdk:subnet-type",
+      "Value": "Public"
+     },
+     {
+      "Key": "Name",
+      "Value": "LoHiTradeVpc/LoHiTradeVpc/PublicSubnet2"
+     }
+    ],
+    "VpcId": {
+     "Ref": "LoHiTradeVpcC9675F9D"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeVpc/LoHiTradeVpc/PublicSubnet2/Subnet"
+   }
+  },
+  "LoHiTradeVpcPublicSubnet2RouteTable21C40A74": {
+   "Type": "AWS::EC2::RouteTable",
+   "Properties": {
+    "Tags": [
+     {
+      "Key": "Name",
+      "Value": "LoHiTradeVpc/LoHiTradeVpc/PublicSubnet2"
+     }
+    ],
+    "VpcId": {
+     "Ref": "LoHiTradeVpcC9675F9D"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeVpc/LoHiTradeVpc/PublicSubnet2/RouteTable"
+   }
+  },
+  "LoHiTradeVpcPublicSubnet2RouteTableAssociationEF004DDD": {
+   "Type": "AWS::EC2::SubnetRouteTableAssociation",
+   "Properties": {
+    "RouteTableId": {
+     "Ref": "LoHiTradeVpcPublicSubnet2RouteTable21C40A74"
+    },
+    "SubnetId": {
+     "Ref": "LoHiTradeVpcPublicSubnet2SubnetB2177EF1"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeVpc/LoHiTradeVpc/PublicSubnet2/RouteTableAssociation"
+   }
+  },
+  "LoHiTradeVpcPublicSubnet2DefaultRoute1685FD67": {
+   "Type": "AWS::EC2::Route",
+   "Properties": {
+    "DestinationCidrBlock": "0.0.0.0/0",
+    "GatewayId": {
+     "Ref": "LoHiTradeVpcIGW681B1716"
+    },
+    "RouteTableId": {
+     "Ref": "LoHiTradeVpcPublicSubnet2RouteTable21C40A74"
+    }
+   },
+   "DependsOn": [
+    "LoHiTradeVpcVPCGW07052AC5"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeVpc/LoHiTradeVpc/PublicSubnet2/DefaultRoute"
+   }
+  },
+  "LoHiTradeVpcPrivateSubnet1SubnetFFBB083D": {
+   "Type": "AWS::EC2::Subnet",
+   "Properties": {
+    "AvailabilityZone": {
+     "Fn::Select": [
+      0,
+      {
+       "Fn::GetAZs": ""
+      }
+     ]
+    },
+    "CidrBlock": "10.0.2.0/24",
+    "MapPublicIpOnLaunch": false,
+    "Tags": [
+     {
+      "Key": "aws-cdk:subnet-name",
+      "Value": "Private"
+     },
+     {
+      "Key": "aws-cdk:subnet-type",
+      "Value": "Private"
+     },
+     {
+      "Key": "Name",
+      "Value": "LoHiTradeVpc/LoHiTradeVpc/PrivateSubnet1"
+     }
+    ],
+    "VpcId": {
+     "Ref": "LoHiTradeVpcC9675F9D"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeVpc/LoHiTradeVpc/PrivateSubnet1/Subnet"
+   }
+  },
+  "LoHiTradeVpcPrivateSubnet1RouteTableAC9354CF": {
+   "Type": "AWS::EC2::RouteTable",
+   "Properties": {
+    "Tags": [
+     {
+      "Key": "Name",
+      "Value": "LoHiTradeVpc/LoHiTradeVpc/PrivateSubnet1"
+     }
+    ],
+    "VpcId": {
+     "Ref": "LoHiTradeVpcC9675F9D"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeVpc/LoHiTradeVpc/PrivateSubnet1/RouteTable"
+   }
+  },
+  "LoHiTradeVpcPrivateSubnet1RouteTableAssociation4073A656": {
+   "Type": "AWS::EC2::SubnetRouteTableAssociation",
+   "Properties": {
+    "RouteTableId": {
+     "Ref": "LoHiTradeVpcPrivateSubnet1RouteTableAC9354CF"
+    },
+    "SubnetId": {
+     "Ref": "LoHiTradeVpcPrivateSubnet1SubnetFFBB083D"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeVpc/LoHiTradeVpc/PrivateSubnet1/RouteTableAssociation"
+   }
+  },
+  "LoHiTradeVpcPrivateSubnet1DefaultRoute72410F0F": {
+   "Type": "AWS::EC2::Route",
+   "Properties": {
+    "DestinationCidrBlock": "0.0.0.0/0",
+    "NatGatewayId": {
+     "Ref": "LoHiTradeVpcPublicSubnet1NATGatewayD357D1FA"
+    },
+    "RouteTableId": {
+     "Ref": "LoHiTradeVpcPrivateSubnet1RouteTableAC9354CF"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeVpc/LoHiTradeVpc/PrivateSubnet1/DefaultRoute"
+   }
+  },
+  "LoHiTradeVpcPrivateSubnet2SubnetD5F3E8EE": {
+   "Type": "AWS::EC2::Subnet",
+   "Properties": {
+    "AvailabilityZone": {
+     "Fn::Select": [
+      1,
+      {
+       "Fn::GetAZs": ""
+      }
+     ]
+    },
+    "CidrBlock": "10.0.3.0/24",
+    "MapPublicIpOnLaunch": false,
+    "Tags": [
+     {
+      "Key": "aws-cdk:subnet-name",
+      "Value": "Private"
+     },
+     {
+      "Key": "aws-cdk:subnet-type",
+      "Value": "Private"
+     },
+     {
+      "Key": "Name",
+      "Value": "LoHiTradeVpc/LoHiTradeVpc/PrivateSubnet2"
+     }
+    ],
+    "VpcId": {
+     "Ref": "LoHiTradeVpcC9675F9D"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeVpc/LoHiTradeVpc/PrivateSubnet2/Subnet"
+   }
+  },
+  "LoHiTradeVpcPrivateSubnet2RouteTable0F6D4DB3": {
+   "Type": "AWS::EC2::RouteTable",
+   "Properties": {
+    "Tags": [
+     {
+      "Key": "Name",
+      "Value": "LoHiTradeVpc/LoHiTradeVpc/PrivateSubnet2"
+     }
+    ],
+    "VpcId": {
+     "Ref": "LoHiTradeVpcC9675F9D"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeVpc/LoHiTradeVpc/PrivateSubnet2/RouteTable"
+   }
+  },
+  "LoHiTradeVpcPrivateSubnet2RouteTableAssociation7FB0B2ED": {
+   "Type": "AWS::EC2::SubnetRouteTableAssociation",
+   "Properties": {
+    "RouteTableId": {
+     "Ref": "LoHiTradeVpcPrivateSubnet2RouteTable0F6D4DB3"
+    },
+    "SubnetId": {
+     "Ref": "LoHiTradeVpcPrivateSubnet2SubnetD5F3E8EE"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeVpc/LoHiTradeVpc/PrivateSubnet2/RouteTableAssociation"
+   }
+  },
+  "LoHiTradeVpcPrivateSubnet2DefaultRouteB2D61159": {
+   "Type": "AWS::EC2::Route",
+   "Properties": {
+    "DestinationCidrBlock": "0.0.0.0/0",
+    "NatGatewayId": {
+     "Ref": "LoHiTradeVpcPublicSubnet1NATGatewayD357D1FA"
+    },
+    "RouteTableId": {
+     "Ref": "LoHiTradeVpcPrivateSubnet2RouteTable0F6D4DB3"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeVpc/LoHiTradeVpc/PrivateSubnet2/DefaultRoute"
+   }
+  },
+  "LoHiTradeVpcIGW681B1716": {
+   "Type": "AWS::EC2::InternetGateway",
+   "Properties": {
+    "Tags": [
+     {
+      "Key": "Name",
+      "Value": "LoHiTradeVpc/LoHiTradeVpc"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeVpc/LoHiTradeVpc/IGW"
+   }
+  },
+  "LoHiTradeVpcVPCGW07052AC5": {
+   "Type": "AWS::EC2::VPCGatewayAttachment",
+   "Properties": {
+    "InternetGatewayId": {
+     "Ref": "LoHiTradeVpcIGW681B1716"
+    },
+    "VpcId": {
+     "Ref": "LoHiTradeVpcC9675F9D"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeVpc/LoHiTradeVpc/VPCGW"
+   }
+  },
+  "AlbSecurityGroup86A59E99": {
+   "Type": "AWS::EC2::SecurityGroup",
+   "Properties": {
+    "GroupDescription": "ALB — accepts inbound HTTPS (443) only",
+    "SecurityGroupIngress": [
+     {
+      "CidrIp": "0.0.0.0/0",
+      "Description": "Allow HTTPS from internet",
+      "FromPort": 443,
+      "IpProtocol": "tcp",
+      "ToPort": 443
+     }
+    ],
+    "VpcId": {
+     "Ref": "LoHiTradeVpcC9675F9D"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeVpc/AlbSecurityGroup/Resource"
+   }
+  },
+  "AlbSecurityGrouptoLoHiTradeVpcEcsSecurityGroup7F9C43F28000426D8A65": {
+   "Type": "AWS::EC2::SecurityGroupEgress",
+   "Properties": {
+    "Description": "Allow ALB to forward to ECS tasks",
+    "DestinationSecurityGroupId": {
+     "Fn::GetAtt": [
+      "EcsSecurityGroup44008BF1",
+      "GroupId"
+     ]
+    },
+    "FromPort": 8000,
+    "GroupId": {
+     "Fn::GetAtt": [
+      "AlbSecurityGroup86A59E99",
+      "GroupId"
+     ]
+    },
+    "IpProtocol": "tcp",
+    "ToPort": 8000
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeVpc/AlbSecurityGroup/to LoHiTradeVpcEcsSecurityGroup7F9C43F2:8000"
+   }
+  },
+  "EcsSecurityGroup44008BF1": {
+   "Type": "AWS::EC2::SecurityGroup",
+   "Properties": {
+    "GroupDescription": "ECS tasks — accepts traffic from ALB only",
+    "SecurityGroupEgress": [
+     {
+      "CidrIp": "0.0.0.0/0",
+      "Description": "Allow all outbound traffic by default",
+      "IpProtocol": "-1"
+     }
+    ],
+    "VpcId": {
+     "Ref": "LoHiTradeVpcC9675F9D"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeVpc/EcsSecurityGroup/Resource"
+   }
+  },
+  "EcsSecurityGroupfromLoHiTradeVpcAlbSecurityGroupD4DECFA38000F551071C": {
+   "Type": "AWS::EC2::SecurityGroupIngress",
+   "Properties": {
+    "Description": "Allow traffic from ALB on app port",
+    "FromPort": 8000,
+    "GroupId": {
+     "Fn::GetAtt": [
+      "EcsSecurityGroup44008BF1",
+      "GroupId"
+     ]
+    },
+    "IpProtocol": "tcp",
+    "SourceSecurityGroupId": {
+     "Fn::GetAtt": [
+      "AlbSecurityGroup86A59E99",
+      "GroupId"
+     ]
+    },
+    "ToPort": 8000
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeVpc/EcsSecurityGroup/from LoHiTradeVpcAlbSecurityGroupD4DECFA3:8000"
+   }
+  },
+  "RedisSecurityGroupB05951F6": {
+   "Type": "AWS::EC2::SecurityGroup",
+   "Properties": {
+    "GroupDescription": "ElastiCache Redis — accepts traffic from ECS only",
+    "SecurityGroupEgress": [
+     {
+      "CidrIp": "255.255.255.255/32",
+      "Description": "Disallow all traffic",
+      "FromPort": 252,
+      "IpProtocol": "icmp",
+      "ToPort": 86
+     }
+    ],
+    "VpcId": {
+     "Ref": "LoHiTradeVpcC9675F9D"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeVpc/RedisSecurityGroup/Resource"
+   }
+  },
+  "RedisSecurityGroupfromLoHiTradeVpcEcsSecurityGroup7F9C43F2637907B4DE33": {
+   "Type": "AWS::EC2::SecurityGroupIngress",
+   "Properties": {
+    "Description": "Allow Redis traffic from ECS tasks",
+    "FromPort": 6379,
+    "GroupId": {
+     "Fn::GetAtt": [
+      "RedisSecurityGroupB05951F6",
+      "GroupId"
+     ]
+    },
+    "IpProtocol": "tcp",
+    "SourceSecurityGroupId": {
+     "Fn::GetAtt": [
+      "EcsSecurityGroup44008BF1",
+      "GroupId"
+     ]
+    },
+    "ToPort": 6379
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeVpc/RedisSecurityGroup/from LoHiTradeVpcEcsSecurityGroup7F9C43F2:6379"
+   }
+  },
+  "RdsSecurityGroup632A77E4": {
+   "Type": "AWS::EC2::SecurityGroup",
+   "Properties": {
+    "GroupDescription": "RDS PostgreSQL — accepts traffic from ECS only",
+    "SecurityGroupEgress": [
+     {
+      "CidrIp": "255.255.255.255/32",
+      "Description": "Disallow all traffic",
+      "FromPort": 252,
+      "IpProtocol": "icmp",
+      "ToPort": 86
+     }
+    ],
+    "VpcId": {
+     "Ref": "LoHiTradeVpcC9675F9D"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeVpc/RdsSecurityGroup/Resource"
+   }
+  },
+  "RdsSecurityGroupfromLoHiTradeVpcEcsSecurityGroup7F9C43F25432B133F245": {
+   "Type": "AWS::EC2::SecurityGroupIngress",
+   "Properties": {
+    "Description": "Allow PostgreSQL traffic from ECS tasks",
+    "FromPort": 5432,
+    "GroupId": {
+     "Fn::GetAtt": [
+      "RdsSecurityGroup632A77E4",
+      "GroupId"
+     ]
+    },
+    "IpProtocol": "tcp",
+    "SourceSecurityGroupId": {
+     "Fn::GetAtt": [
+      "EcsSecurityGroup44008BF1",
+      "GroupId"
+     ]
+    },
+    "ToPort": 5432
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeVpc/RdsSecurityGroup/from LoHiTradeVpcEcsSecurityGroup7F9C43F2:5432"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/32O0WrCQBBFv8X3zdqm+QERkbzokhRfy2Q6raNxN+zONATx3yWxmIdCn+6dw2U4uc2Lwr4soE8Zfp6zlht7rQXwbKBPH4S5vR46NOsvf3Br47RpGWttPMnI5lYFFXqHpqWZz2yVUkAG4eCf47FsSjfGDmQLQj0MxkX+AaH5cemFoqfn4GHye61EAI8X8mJqQo0swzYG7SaHf8HmO1JKf3DpJ34zFaWgESfLvUqncjNukGPwyzf7Wth8cUrMWVQvfCFbPfIOOuOI9U8BAAA="
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeVpc/CDKMetadata/Default"
+   }
+  }
+ },
+ "Outputs": {
+  "VpcId": {
+   "Value": {
+    "Ref": "LoHiTradeVpcC9675F9D"
+   }
+  },
+  "AlbSecurityGroupId": {
+   "Value": {
+    "Fn::GetAtt": [
+     "AlbSecurityGroup86A59E99",
+     "GroupId"
+    ]
+   }
+  },
+  "EcsSecurityGroupId": {
+   "Value": {
+    "Fn::GetAtt": [
+     "EcsSecurityGroup44008BF1",
+     "GroupId"
+    ]
+   }
+  },
+  "RedisSecurityGroupId": {
+   "Value": {
+    "Fn::GetAtt": [
+     "RedisSecurityGroupB05951F6",
+     "GroupId"
+    ]
+   }
+  },
+  "RdsSecurityGroupId": {
+   "Value": {
+    "Fn::GetAtt": [
+     "RdsSecurityGroup632A77E4",
+     "GroupId"
+    ]
+   }
+  },
+  "ExportsOutputFnGetAttAlbSecurityGroup86A59E99GroupIdE3A37BC7": {
+   "Value": {
+    "Fn::GetAtt": [
+     "AlbSecurityGroup86A59E99",
+     "GroupId"
+    ]
+   },
+   "Export": {
+    "Name": "LoHiTradeVpc:ExportsOutputFnGetAttAlbSecurityGroup86A59E99GroupIdE3A37BC7"
+   }
+  },
+  "ExportsOutputRefLoHiTradeVpcPublicSubnet1Subnet3D86AC4E58F63A3F": {
+   "Value": {
+    "Ref": "LoHiTradeVpcPublicSubnet1Subnet3D86AC4E"
+   },
+   "Export": {
+    "Name": "LoHiTradeVpc:ExportsOutputRefLoHiTradeVpcPublicSubnet1Subnet3D86AC4E58F63A3F"
+   }
+  },
+  "ExportsOutputRefLoHiTradeVpcPublicSubnet2SubnetB2177EF1C869996E": {
+   "Value": {
+    "Ref": "LoHiTradeVpcPublicSubnet2SubnetB2177EF1"
+   },
+   "Export": {
+    "Name": "LoHiTradeVpc:ExportsOutputRefLoHiTradeVpcPublicSubnet2SubnetB2177EF1C869996E"
+   }
+  },
+  "ExportsOutputRefLoHiTradeVpcPrivateSubnet1SubnetFFBB083D27B2E795": {
+   "Value": {
+    "Ref": "LoHiTradeVpcPrivateSubnet1SubnetFFBB083D"
+   },
+   "Export": {
+    "Name": "LoHiTradeVpc:ExportsOutputRefLoHiTradeVpcPrivateSubnet1SubnetFFBB083D27B2E795"
+   }
+  },
+  "ExportsOutputRefLoHiTradeVpcPrivateSubnet2SubnetD5F3E8EE53634E8D": {
+   "Value": {
+    "Ref": "LoHiTradeVpcPrivateSubnet2SubnetD5F3E8EE"
+   },
+   "Export": {
+    "Name": "LoHiTradeVpc:ExportsOutputRefLoHiTradeVpcPrivateSubnet2SubnetD5F3E8EE53634E8D"
+   }
+  },
+  "ExportsOutputFnGetAttEcsSecurityGroup44008BF1GroupIdDE2CA5C5": {
+   "Value": {
+    "Fn::GetAtt": [
+     "EcsSecurityGroup44008BF1",
+     "GroupId"
+    ]
+   },
+   "Export": {
+    "Name": "LoHiTradeVpc:ExportsOutputFnGetAttEcsSecurityGroup44008BF1GroupIdDE2CA5C5"
+   }
+  },
+  "ExportsOutputRefLoHiTradeVpcC9675F9DD6A87155": {
+   "Value": {
+    "Ref": "LoHiTradeVpcC9675F9D"
+   },
+   "Export": {
+    "Name": "LoHiTradeVpc:ExportsOutputRefLoHiTradeVpcC9675F9DD6A87155"
+   }
+  },
+  "ExportsOutputFnGetAttRdsSecurityGroup632A77E4GroupId9D343172": {
+   "Value": {
+    "Fn::GetAtt": [
+     "RdsSecurityGroup632A77E4",
+     "GroupId"
+    ]
+   },
+   "Export": {
+    "Name": "LoHiTradeVpc:ExportsOutputFnGetAttRdsSecurityGroup632A77E4GroupId9D343172"
+   }
+  },
+  "ExportsOutputFnGetAttRedisSecurityGroupB05951F6GroupIdECA64B37": {
+   "Value": {
+    "Fn::GetAtt": [
+     "RedisSecurityGroupB05951F6",
+     "GroupId"
+    ]
+   },
+   "Export": {
+    "Name": "LoHiTradeVpc:ExportsOutputFnGetAttRedisSecurityGroupB05951F6GroupIdECA64B37"
+   }
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

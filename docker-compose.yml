@@ -1,0 +1,75 @@
+version: "3.9"
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: lohi
+      POSTGRES_PASSWORD: lohi
+      POSTGRES_DB: lohitrade
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lohi -d lohitrade"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  backend-gateway:
+    build:
+      context: ./backend-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - DB_PATH=/data/lohi_trade.db
+      - CONFIG_PATH=/config/settings.yaml
+      - DATABASE_URL=postgresql://lohi:lohi@postgres:5432/lohitrade
+      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:5173
+    volumes:
+      - ./data:/data
+      - ./config:/config
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./Lohi-TRADE Web App Design
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - backend-gateway
+
+volumes:
+  redis-data:
+  pg-data:

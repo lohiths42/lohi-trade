@@ -1,0 +1,1327 @@
+================================================================================
+                         LOHI-TRADE DESIGN DOCUMENT
+          Event-Driven Hybrid Algorithmic Trading System for Indian
+                           Equity Markets (NSE/BSE)
+================================================================================
+
+TABLE OF CONTENTS
+-----------------
+1.  Executive Summary
+2.  System Overview and Core Innovation
+3.  High-Level Architecture
+4.  Layer-by-Layer Architecture Detail
+    4.1  Ingestion Layer
+    4.2  Processing Layer — The Soldier (Fast Path)
+    4.3  Processing Layer — The Commander (Slow Path)
+    4.4  Execution Layer
+    4.5  State Layer
+    4.6  UI Layer
+5.  Data Flow
+6.  Component Interfaces and Data Structures
+7.  Trading Strategies
+8.  Risk Management System (RMS)
+9.  Database Schema
+10. Redis Streams Schema
+11. Configuration Management
+12. Backtesting Engine
+13. Paper Trading Mode
+14. Frontend Web Application
+    14.1  Frontend Architecture
+    14.2  Pages and Components
+    14.3  Frontend-Backend Integration
+    14.4  Frontend Enhancements
+15. Backend Gateway (FastAPI)
+16. Deployment and Containerization
+17. Error Handling and Recovery
+18. Testing Strategy
+19. Performance Targets
+20. Security
+21. Regulatory Compliance
+22. Project Structure
+23. Technology Stack
+
+
+================================================================================
+1. EXECUTIVE SUMMARY
+================================================================================
+
+LOHI-TRADE is a locally-hosted, event-driven algorithmic trading system designed
+for personal proprietary intraday trading on Indian equity markets (NSE/BSE). It
+runs entirely on a MacBook Pro M3 Pro, with no cloud dependencies.
+
+The system's core innovation is a dual-engine architecture:
+
+  - "The Soldier" — a fast technical analysis engine that processes real-time
+    market data, builds candles, computes indicators, and generates trading
+    signals using three strategies (Mean Reversion, Trend Following, Opening
+    Range Breakout).
+
+  - "The Commander" — a slower AI/NLP engine that ingests financial news from
+    RSS feeds, resolves company entities to NSE tickers, runs FinBERT sentiment
+    analysis (accelerated via ONNX on the Apple Neural Engine), and produces
+    per-symbol sentiment bias with exponential time decay.
+
+These two engines converge at the Execution Layer, where every technical signal
+is filtered through the Commander's sentiment bias before passing through a
+9-check Risk Management System (RMS), position sizing, and order execution via
+broker APIs (Shoonya primary, Angel One backup).
+
+The system includes a React web dashboard, a Streamlit dashboard, Telegram
+notifications, comprehensive backtesting, paper trading mode, and full audit
+logging. All inter-component communication flows through Redis Streams.
+
+Target capital: INR 2,00,000. Risk per trade: 1%. Max daily loss: 2%.
+
+
+================================================================================
+2. SYSTEM OVERVIEW AND CORE INNOVATION
+================================================================================
+
+The fundamental insight behind LOHI-TRADE is that technical signals alone
+produce too many false positives. By filtering technical signals through
+AI-driven sentiment analysis, the system rejects trades that contradict current
+news sentiment, improving overall trade quality.
+
+Key characteristics:
+  - Event-driven architecture using Redis Streams for loose coupling
+  - Fail-safe design with kill switch and multiple risk layers
+  - Local-first: all processing on local hardware, no cloud dependencies
+  - Comprehensive testability with property-based tests (hypothesis library)
+  - Full observability via structured logging, dashboard, and Telegram alerts
+  - SEBI-compliant for personal proprietary trading
+  - Optimized for Apple M3 Pro: performance cores for latency-sensitive ops,
+    efficiency cores for background processing, Neural Engine for FinBERT
+
+Supported broker APIs:
+  - Shoonya (Finvasia) — primary
+  - Angel One — backup with automatic failover
+
+Trading universe: Nifty 50 constituents
+Trading hours: 9:30 AM – 3:10 PM IST (signals), square-off at 3:15 PM IST
+
+
+================================================================================
+3. HIGH-LEVEL ARCHITECTURE
+================================================================================
+
+  +-------------------------------------------------------------------+
+  |                      INGESTION LAYER                              |
+  |  WebSocket Client    RSS Poller (News)    Instrument Master       |
+  +----------+----------------+-----------------------+---------------+
+             |                |                       |
+             v                v                       v
+  +-------------------------------------------------------------------+
+  |                  REDIS STREAMS (Event Bus)                        |
+  |  ticks - candles - indicators - signals - news - sentiment - bias |
+  |  orders - fills - positions - kill_switch - commands              |
+  +------+-------------------+----------------------------+-----------+
+         |                   |                            |
+         v                   v                            v
+  +--------------+   +--------------+           +------------------+
+  | THE SOLDIER  |   |THE COMMANDER |           | EXECUTION LAYER  |
+  | (Fast Path)  |   | (Slow Path)  |           |                  |
+  |              |   |              |           | RMS (9 checks)   |
+  | Candle Build |   | RSS Poller   |--sig+-->  | Position Sizer   |
+  | Indicators   |   | Deduplicator |  bias     | OMS              |
+  | Strategies   |   | Entity Res.  |           | Position Mgr     |
+  | Signals      |   | FinBERT      |           | Kill Switch      |
+  |              |   | Bias Calc    |           | Paper Trading    |
+  +--------------+   +--------------+           +--------+---------+
+                                                         |
+                                                         v
+  +-------------------------------------------------------------------+
+  |                       STATE LAYER                                 |
+  |  Redis (Streams,     SQLite (Trades,       DuckDB (Historical    |
+  |   Kill Switch)        Orders, Positions,    OHLCV, Parquet)      |
+  |                       Sentiment, Audit)                           |
+  +-------------------------------------------------------------------+
+                              |
+                              v
+  +-------------------------------------------------------------------+
+  |                        UI LAYER                                   |
+  |  React Web Dashboard    Streamlit Dashboard    Telegram Bot       |
+  +-------------------------------------------------------------------+
+
+
+================================================================================
+4. LAYER-BY-LAYER ARCHITECTURE DETAIL
+================================================================================
+
+4.1 INGESTION LAYER
+--------------------
+
+Responsible for acquiring all external data and publishing to Redis Streams.
+
+Component            Source                    Output Stream     Frequency
+---------            ------                    -------------     ---------
+WebSocket Client     Shoonya / Angel One API   stream:ticks      Real-time
+RSS Poller           MoneyControl, ET, Mint    stream:news_raw   Every 60s
+Instrument Master    Broker API (NSE dump)     Local file + DB   Daily at startup
+
+WebSocket Client:
+  - Maintains persistent connections to the primary broker
+  - Handles reconnection with exponential backoff (1s, 2s, 4s, 8s, max 30s)
+  - Publishes raw tick data (LTP, volume, timestamp) per subscribed symbol
+  - Heartbeat monitoring: alert if no ticks for 5 seconds
+  - Supports both Shoonya and Angel One via adapter pattern
+  - Processes minimum 1000 ticks/second without data loss
+
+RSS Poller:
+  - Fetches RSS feeds from MoneyControl, Economic Times, LiveMint
+  - Extracts title, summary, published date, source URL
+  - Polls every 60 seconds during market hours
+
+Instrument Master:
+  - Downloads daily NSE instrument master mapping symbols to broker tokens
+  - Stores in JSON format (nifty50_tokens.json)
+  - Required for WebSocket subscriptions and order placement
+  - Validates all configured symbols exist at startup
+
+
+4.2 PROCESSING LAYER — THE SOLDIER (Fast Path)
+------------------------------------------------
+
+The technical analysis engine. Processes ticks into actionable trading signals
+with sub-second latency.
+
+  Ticks -> Candle Builder -> Indicator Engine -> Strategy Engine -> Signal Pipeline
+
+Component          Input              Output                Description
+---------          -----              ------                -----------
+Candle Builder     Raw ticks          1m/5m/15m OHLCV       Aggregates ticks into
+                                      candles               multi-timeframe candles
+Indicator Engine   Candles            Indicator values       Computes RSI, MACD, BB,
+                                                            VWAP, EMA, Supertrend, ATR
+Strategy Engine    Indicators+Candles Raw signals            Runs Mean Reversion, Trend
+                                                            Following, and ORB strategies
+Signal Pipeline    Raw signals        Filtered signals       Deduplicates, enforces
+                                                            trading hours, publishes
+
+Candle Builder:
+  - Builds 1-minute, 5-minute, and 15-minute candles using time-based bucketing
+  - Maintains in-memory state for current candles (reset daily)
+  - Handles market gaps by carrying forward last known price
+  - Publishes completed candles within 100ms of period completion
+
+Indicator Engine:
+  - Uses pandas-ta library for all indicator calculations
+  - Calculates: RSI(14), MACD(12,26,9), Bollinger Bands(20,2), VWAP,
+    EMA(9), EMA(21), Supertrend(7,3), ATR(14)
+  - Maintains rolling window of last 100 candles per symbol
+  - Calculates all indicators in single pass for efficiency
+  - Waits for minimum required periods before producing values
+  - Calculates independently for each subscribed symbol
+
+Strategy Engine:
+  - Three independent, stateless strategies run in parallel per symbol
+  - Each signal includes entry price, stop loss (ATR-based), and target price
+  - No signals generated outside trading hours (9:30 AM – 3:10 PM IST)
+  - Checks for existing positions/pending orders before generating signals
+
+
+4.3 PROCESSING LAYER — THE COMMANDER (Slow Path)
+--------------------------------------------------
+
+The AI/NLP sentiment analysis engine. Processes financial news into per-symbol
+sentiment bias.
+
+  RSS Feeds -> Deduplicator -> Entity Resolver -> FinBERT -> Bias Calculator
+
+Component            Input            Output                  Description
+---------            -----            ------                  -----------
+RSS Poller           RSS feed URLs    Raw articles            Fetches news every 60s
+News Deduplicator    Raw articles     Unique articles         SHA-256 content hash dedup
+Entity Resolver      Article text     (article, ticker) pairs spaCy NER + fuzzy matching
+Sentiment Analyzer   Article text     Sentiment score [-1,+1] FinBERT ONNX + keyword boost
+Bias Calculator      Sentiment scores Per-symbol bias         Time-decayed aggregation
+Bias Scheduler       Timer            Updated bias values     Recalculates every 5 minutes
+
+News Deduplication:
+  - Content hash: SHA-256 of normalized title + first 200 characters
+  - Hash stored in Redis Set with 24-hour TTL
+  - Duplicates discarded, earliest version retained
+
+Entity Resolution:
+  - Uses spaCy en_core_web_sm for Named Entity Recognition (ORG entities)
+  - Fuzzy matching with rapidfuzz library (threshold 0.85)
+  - Ticker mapping dictionary covering 500+ NSE-listed companies
+  - Supports multiple companies per article
+  - Unmapped entities logged and skipped
+
+Sentiment Analysis:
+  - FinBERT model (ProsusAI/finbert) from HuggingFace
+  - Converted to ONNX format for Apple Neural Engine acceleration
+  - ONNX Runtime with CoreML execution provider
+  - Classifies as POSITIVE, NEGATIVE, or NEUTRAL with confidence scores
+  - Indian market keyword boosters applied after base sentiment:
+    Positive: "SEBI approval" (+0.1), "record profit" (+0.15), "dividend" (+0.08)
+    Negative: "regulatory penalty" (-0.15), "fraud" (-0.2), "downgrade" (-0.12)
+  - Processes articles within 2 seconds of ingestion
+  - Defaults to NEUTRAL on inference failure
+
+Bias Calculation:
+  - Aggregates all sentiment from last 24 hours per ticker
+  - Exponential time decay: weight = exp(-lambda * hours_ago)
+    where lambda = ln(2)/4 (half-life of 4 hours)
+  - Weighted average: bias_score = sum(score * weight) / sum(weight)
+  - Classification:
+    BULLISH:  score > 0.2
+    BEARISH:  score < -0.2
+    NEUTRAL:  -0.2 <= score <= 0.2
+  - Recalculated every 5 minutes during market hours
+  - Published to stream:bias:{ticker} and stored in SQLite
+
+
+4.4 EXECUTION LAYER
+--------------------
+
+Converts signals into orders with comprehensive risk management.
+
+  Signal + Bias -> RMS (9 checks) -> Position Sizer -> OMS -> Broker API
+                                                           -> Paper Trading
+
+Components:
+
+  Risk Management System (RMS):
+    Every order passes through 9 sequential pre-order checks. If any check
+    fails, the order is rejected and logged. See Section 8 for full details.
+
+  Position Sizer:
+    Calculates order quantity based on 1% capital risk rule:
+      quantity = (capital * risk_pct) / (entry_price - stop_loss)
+    Enforces max position size of 20% of capital.
+    Rounds to nearest integer. Rejects if quantity < 1.
+
+  Order Management System (OMS):
+    - Places orders via broker API with rate limiting (8 req/sec)
+    - Uses MIS (Margin Intraday Square-off) product type for all orders
+    - Retry logic: up to 2 retries with 500ms delay on broker rejection
+    - Polls order status every 1 second for pending orders
+    - Cancels orders unfilled after 60 seconds
+    - Places stop-loss and target orders immediately after fill
+    - Implements trailing stop-loss (moves stop up by 50% of profit)
+    - Forces square-off of all positions at 3:15 PM IST
+    - Stores all orders in SQLite
+
+  Position Manager:
+    - Manages open positions: stop-loss, target, trailing stop
+    - OCO (one-cancels-other) logic for stop/target pairs
+    - Calculates realized P&L on position close
+    - Forced square-off at 3:15 PM IST
+
+  Kill Switch:
+    - Emergency halt stored in Redis (kill_switch:active)
+    - Auto-triggers on: Nifty > 2% drop in 10 min OR daily loss > 2%
+    - Manual triggers: Streamlit dashboard button, Telegram /killswitch
+    - When activated: RMS rejects all new orders, OMS cancels all pending
+      orders within 5 seconds, Telegram notification sent immediately
+    - Requires manual deactivation (no auto-reset) — safety by design
+
+  Paper Trading Engine:
+    - Simulates order fills without broker API calls
+    - Applies configurable fill delay (100-500ms) and slippage (0.05%)
+    - Uses next available tick price for fill simulation
+    - All paper trades logged with "PAPER" prefix
+
+
+4.5 STATE LAYER
+----------------
+
+Three storage systems serve different access patterns:
+
+Store          Technology      Purpose                    Access Pattern
+-----          ----------      -------                    --------------
+Event Bus      Redis Streams   Inter-component messaging  High-freq read/write
+Operational DB SQLite          Trades, orders, positions  Transactional R/W
+Historical DB  DuckDB          Historical OHLCV data      Analytical queries
+
+Redis Streams:
+  - Ordered, persistent event logs
+  - Each component reads from input stream(s), writes to output stream(s)
+  - Consumer groups ensure at-least-once delivery
+  - Also stores kill switch state and real-time data
+
+SQLite:
+  - All operational state with WAL mode for concurrent reads
+  - Tables: trades, orders, sentiment_log, bias_log, audit_log, trade_notes
+  - Daily backup at 4:00 PM IST to data/backups/
+  - 30-day backup retention
+  - Write retry: up to 3 times with exponential backoff (1s, 2s, 4s)
+
+DuckDB:
+  - Columnar Parquet format, partitioned by date
+  - Optimized for backtesting engine's analytical queries
+  - 2+ years daily data, 30 days intraday data
+  - Auto-updated daily at 6:00 PM IST
+
+
+4.6 UI LAYER
+-------------
+
+Component              Technology          Features
+---------              ----------          --------
+React Web Dashboard    React + Vite + TS   Real-time P&L, positions, orders,
+                                           analytics, sentiment, charts,
+                                           kill switch, settings, logs
+Streamlit Dashboard    Streamlit (Python)  P&L cards, positions table, signals
+                                           log, trades history, kill switch
+Telegram Bot           python-telegram-bot Trade notifications, kill switch
+                                           alerts, daily summary, commands
+
+
+================================================================================
+5. DATA FLOW
+================================================================================
+
+TICK-TO-TRADE FLOW (The Soldier Path):
+  1. Broker WebSocket -> tick data (LTP, volume, timestamp)
+  2. Candle Builder aggregates ticks -> completed 5m candle
+  3. Indicator Engine computes RSI, MACD, BB, VWAP, EMA, Supertrend, ATR
+  4. Strategy Engine evaluates entry conditions -> raw signal
+  5. Signal Pipeline filters (dedup, hours) -> validated signal
+  6. RMS runs 9 pre-order checks (including bias from Commander)
+  7. Position Sizer calculates quantity
+  8. OMS places order via broker API (or Paper Trading Engine)
+  9. Position Manager tracks fill -> manages SL/target/trailing
+  10. Notifications sent via Telegram
+
+NEWS-TO-BIAS FLOW (The Commander Path):
+  1. RSS Poller fetches articles from financial news sources
+  2. News Deduplicator filters already-seen articles (content hash)
+  3. Entity Resolver extracts company names -> maps to NSE tickers
+  4. Sentiment Analyzer (FinBERT ONNX) scores each article [-1, +1]
+  5. Scores stored in SQLite with timestamp
+  6. Bias Scheduler (every 5 min) aggregates time-decayed scores
+  7. Bias published to Redis -> consumed by RMS bias filter
+
+SIGNAL FILTERING (Convergence Point):
+  The Soldier and Commander converge at RMS check #9 (Bias Filter):
+    BUY signal  + BEARISH bias  -> Signal REJECTED
+    SELL signal + BULLISH bias  -> Signal REJECTED
+    Any signal  + NEUTRAL bias  -> Signal ALLOWED
+    BUY signal  + BULLISH bias  -> Signal ALLOWED (confluence)
+    SELL signal + BEARISH bias  -> Signal ALLOWED (confluence)
+
+
+================================================================================
+6. COMPONENT INTERFACES AND DATA STRUCTURES
+================================================================================
+
+CORE DATA STRUCTURES:
+
+  Tick:
+    symbol: str, token: int, ltp: float, volume: int,
+    timestamp: datetime, exchange: str
+
+  Candle:
+    symbol: str, timeframe: str, open: float, high: float, low: float,
+    close: float, volume: int, timestamp: datetime, is_complete: bool
+
+  IndicatorSet:
+    symbol: str, timeframe: str, timestamp: datetime,
+    rsi_14: float, macd: float, macd_signal: float, macd_hist: float,
+    bb_upper: float, bb_middle: float, bb_lower: float, vwap: float,
+    ema_9: float, ema_21: float, supertrend: float,
+    supertrend_direction: int (1=bullish, -1=bearish),
+    atr_14: float, volume_avg_20: float
+
+  Signal:
+    signal_id: str (UUID), symbol: str, strategy: str,
+    side: str (BUY/SELL), entry_price: float, stop_loss: float,
+    target: float, quantity: int, timestamp: datetime,
+    indicators: IndicatorSet
+
+  NewsArticle:
+    article_id: str (UUID), source: str, title: str, content: str,
+    url: str, published_at: datetime, fetched_at: datetime,
+    content_hash: str
+
+  SentimentResult:
+    article_id: str, ticker: str, sentiment: str (POS/NEG/NEU),
+    confidence: float, raw_score: float, boosted_score: float,
+    timestamp: datetime
+
+  BiasResult:
+    ticker: str, bias: str (BULLISH/NEUTRAL/BEARISH), score: float,
+    confidence: float, article_count: int, timestamp: datetime
+
+  Order:
+    order_id: str, symbol: str, side: str, order_type: str,
+    quantity: int, price: float (optional), trigger_price: float (optional),
+    product_type: str (MIS), status: str, broker_order_id: str (optional),
+    filled_qty: int, filled_price: float (optional), timestamp: datetime
+
+  Position:
+    position_id: str, symbol: str, side: str, entry_price: float,
+    quantity: int, current_price: float, unrealized_pnl: float,
+    stop_loss: float, target: float, entry_time: datetime, strategy: str
+
+  ValidationResult:
+    is_valid: bool, rejection_reason: str (optional),
+    checks_passed: list[str], checks_failed: list[str], timestamp: datetime
+
+
+COMPONENT INTERFACES:
+
+  WebSocketClient:
+    connect(broker, credentials) -> None
+    subscribe(symbols: list[str]) -> None
+    on_tick(callback) -> None
+    disconnect() -> None
+    is_connected() -> bool
+
+  CandleBuilder:
+    __init__(timeframes: list[str])  # ['1m', '5m', '15m']
+    process_tick(tick: Tick) -> None
+    get_current_candle(symbol, timeframe) -> Candle | None
+    on_candle_complete(callback) -> None
+
+  IndicatorEngine:
+    calculate_indicators(candles: DataFrame) -> IndicatorSet
+    get_latest_indicators(symbol) -> IndicatorSet | None
+
+  Strategy (abstract):
+    generate_signal(indicators, candles) -> Signal | None
+    Implementations: MeanReversionStrategy, TrendFollowingStrategy,
+                     OpeningRangeBreakoutStrategy
+
+  RSSPoller:
+    __init__(sources: list[RSSSource])
+    start_polling(interval_seconds=60) -> None
+    stop_polling() -> None
+
+  EntityResolver:
+    __init__(ticker_map: dict[str, str])
+    resolve_entities(article: NewsArticle) -> list[str]  # tickers
+
+  SentimentAnalyzer:
+    __init__(model_path: str)
+    analyze(text: str) -> SentimentResult
+    analyze_batch(texts: list[str]) -> list[SentimentResult]
+
+  BiasCalculator:
+    calculate_bias(ticker: str) -> BiasResult
+    get_current_bias(ticker: str) -> BiasResult | None
+
+  RiskManagementSystem:
+    validate_order(signal: Signal) -> ValidationResult
+    get_current_exposure() -> ExposureMetrics
+    activate_kill_switch(reason: str) -> None
+    deactivate_kill_switch() -> None
+
+  PositionSizer:
+    calculate_quantity(signal, capital, risk_pct) -> int
+
+  OrderManagementSystem:
+    place_order(order: Order) -> OrderResult
+    cancel_order(order_id: str) -> bool
+    get_order_status(order_id: str) -> OrderStatus
+    monitor_fills() -> None
+    square_off_all_positions() -> None
+
+  KillSwitch:
+    activate(reason: str) -> None
+    deactivate() -> None
+    is_active() -> bool
+    get_activation_reason() -> str | None
+
+  TelegramBot:
+    send_message(text: str) -> None
+    send_trade_notification(trade) -> None
+    send_daily_summary() -> None
+    handle_command(command: str) -> str
+
+
+================================================================================
+7. TRADING STRATEGIES
+================================================================================
+
+All strategies operate on 5-minute candles during market hours (9:30 AM – 3:10
+PM IST). Every signal is filtered through The Commander's sentiment bias.
+
+STRATEGY 1: MEAN REVERSION
+---------------------------
+Identifies oversold conditions expecting a snap-back to the mean.
+
+Entry Conditions (BUY — all must be true simultaneously):
+  - RSI(14) < 30                    (extremely weak momentum)
+  - Price < Lower Bollinger Band    (statistically cheap)
+  - Volume > 1.5x 20-period avg    (institutional participation)
+  - Price > VWAP                    (institutional support)
+
+Exit:
+  - Stop Loss:     Entry - 1.5 * ATR(14)
+  - Target:        Entry + 3.0 * ATR(14)    (2:1 risk-reward)
+  - Trailing Stop: Moves up by 50% of unrealized profit
+  - Square-off:    3:15 PM IST
+
+Best in: Choppy, range-bound markets with high-volume mean-reverting stocks.
+
+
+STRATEGY 2: TREND FOLLOWING
+----------------------------
+Captures sustained directional moves when multiple trend indicators align.
+
+Entry Conditions (BUY — all must be true simultaneously):
+  - EMA(9) crosses above EMA(21)    (short-term trend up)
+  - MACD line > 0                   (medium-term momentum bullish)
+  - MACD histogram increasing       (momentum accelerating)
+  - Price > VWAP                    (institutional support)
+  - Supertrend(7,3) direction = 1   (trend confirmation)
+  - Volume > 20-period average      (adequate participation)
+
+Exit:
+  - Stop Loss:     Entry - 1.5 * ATR(14)
+  - Target:        Entry + 3.0 * ATR(14)    (2:1 risk-reward)
+  - Trailing Stop: Moves up by 50% of unrealized profit
+  - Square-off:    3:15 PM IST
+
+Best in: Strong trending days, sector-wide momentum, directional news catalysts.
+
+
+STRATEGY 3: OPENING RANGE BREAKOUT (ORB)
+------------------------------------------
+Trades the breakout from the first 15-minute trading range.
+
+Opening Range: 9:15 AM – 9:30 AM IST (first 15 minutes)
+  Range High = highest price during range period
+  Range Low  = lowest price during range period
+
+Entry Conditions:
+  BUY:  Price breaks above range high + 0.1% buffer
+  SELL: Price breaks below range low  - 0.1% buffer
+  Additional: Volume > 2x average at breakout candle
+  Active window: 9:30 AM – 10:30 AM IST only
+
+Exit:
+  - Stop Loss:     Opposite end of opening range
+  - Target:        2x range width from entry
+  - Trailing Stop: Moves by 50% of unrealized profit
+  - Square-off:    3:15 PM IST
+
+Best in: High-volatility opens, gap opens with follow-through.
+
+
+================================================================================
+8. RISK MANAGEMENT SYSTEM (RMS)
+================================================================================
+
+Every order passes through 9 sequential pre-order checks. ALL must pass.
+
+Check  Name                Description
+-----  ----                -----------
+  1    Kill Switch         Is the kill switch active?
+  2    Trading Hours       Is current time within 9:30 AM – 3:10 PM IST?
+  3    Daily Loss Limit    Has daily loss exceeded 2% of capital (INR 4,000)?
+  4    Position Limit      Are there already 5 open positions?
+  5    Position Size       Does the order exceed 20% of capital?
+  6    Order Count         Have 20 orders been placed today?
+  7    Cooldown            Is the 5-minute post-loss cooldown active?
+  8    Volatility Guard    Has Nifty dropped > 2% in last 10 minutes?
+  9    Bias Filter         Does Commander's bias conflict with signal direction?
+
+Bias Filter Rules:
+  BUY  + BEARISH bias -> REJECTED
+  SELL + BULLISH bias -> REJECTED
+  All other combinations -> ALLOWED
+
+On rejection: reason published to stream:rejections, logged to SQLite audit_log.
+On pass: order forwarded to Position Sizer within 50ms.
+
+Auto kill switch triggers:
+  - Daily loss exceeds 2% of capital
+  - Nifty drops > 2% in 10-minute window
+
+POSITION SIZING:
+  Formula: quantity = (capital * risk_per_trade_pct / 100) / (entry - stop_loss)
+  Max risk per trade: 1% of capital (INR 2,000 for INR 2,00,000)
+  Max position size: 20% of capital (INR 40,000)
+  Quantity rounded to nearest integer; rejected if < 1
+
+Example:
+  Capital: INR 2,00,000, Risk: 1% = INR 2,000
+  Entry: INR 1,000, Stop Loss: INR 980, Risk/share: INR 20
+  Raw quantity: 2,000 / 20 = 100 shares
+  Position value: 100 * 1,000 = INR 1,00,000 (50% of capital)
+  Max allowed: 20% = INR 40,000 -> Final quantity: 40 shares
+
+
+================================================================================
+9. DATABASE SCHEMA
+================================================================================
+
+SQLite (Operational Database):
+
+  trades:
+    id, trade_id (unique), symbol, side, strategy, entry_price, exit_price,
+    quantity, entry_time, exit_time, realized_pnl, stop_loss, target,
+    exit_reason, created_at
+    Indexes: symbol, entry_time
+
+  orders:
+    id, order_id (unique), trade_id (FK), symbol, side, order_type, quantity,
+    price, trigger_price, status, broker_order_id, filled_qty, filled_price,
+    rejection_reason, created_at, updated_at
+    Indexes: status, created_at
+
+  sentiment_log:
+    id, article_id, ticker, sentiment, confidence, raw_score, boosted_score,
+    news_title, news_source, created_at
+    Indexes: ticker, created_at
+
+  bias_log:
+    id, ticker, bias, score, confidence, article_count, created_at
+    Indexes: (ticker, created_at)
+
+  audit_log:
+    id, event_type, component, message, metadata, created_at
+    Indexes: event_type, created_at
+
+  trade_notes (frontend enhancement):
+    id, trade_id, note_text (max 2000 chars), created_at, updated_at
+    Indexes: trade_id
+
+DuckDB (Historical/Analytical Database):
+  - Historical OHLCV data in Parquet format, partitioned by date
+  - 2+ years daily data, 30 days intraday (1-minute) data
+  - Sources: yfinance (daily), Shoonya API (intraday)
+  - Auto-updated daily at 6:00 PM IST
+
+
+================================================================================
+10. REDIS STREAMS SCHEMA
+================================================================================
+
+Stream                              Maxlen  Consumer
+------                              ------  --------
+stream:ticks:{symbol}               1000    CandleBuilder
+stream:candles:{symbol}:{timeframe} 500     IndicatorEngine
+stream:indicators:{symbol}          100     StrategyEngine
+stream:signals                      1000    RMS
+stream:news                         5000    EntityResolver
+stream:entities                     5000    SentimentAnalyzer
+stream:sentiment                    10000   BiasCalculator
+stream:bias:{ticker}                100     RMS
+stream:commands                     1000    OMS/RMS (user actions from frontend)
+stream:rejections                   1000    Dashboard/Monitoring
+
+Redis Keys:
+  kill_switch:active   -> boolean
+  kill_switch:reason   -> string
+  news_hashes          -> Set (24-hour TTL, for deduplication)
+
+
+================================================================================
+11. CONFIGURATION MANAGEMENT
+================================================================================
+
+All configuration in config/settings.yaml. Sensitive values use ${ENV_VAR}
+syntax, resolved from .env file or system environment at startup.
+
+Key Configuration Sections:
+
+  capital:
+    total: 200000                    # INR
+    risk_per_trade_pct: 1.0          # 1% per trade
+    max_position_size_pct: 20.0      # 20% max single position
+    max_daily_loss_pct: 2.0          # 2% daily loss limit
+
+  risk_limits:
+    max_open_positions: 5
+    max_orders_per_day: 20
+    cooldown_after_loss_minutes: 5
+    volatility_guard_threshold_pct: 2.0
+    volatility_guard_window_minutes: 10
+
+  trading_hours:
+    market_open: "09:15"
+    trading_start: "09:30"
+    trading_end: "15:10"
+    square_off_time: "15:15"
+    market_close: "15:30"
+
+  broker:
+    primary: shoonya
+    backup: angelone
+    (credentials via ${ENV_VAR} references)
+
+  strategies:
+    mean_reversion:
+      rsi_period: 14, rsi_oversold: 30, bb_period: 20, bb_std: 2.0,
+      volume_multiplier: 1.5
+    trend_following:
+      ema_fast: 9, ema_slow: 21, macd_fast: 12, macd_slow: 26,
+      macd_signal: 9, volume_multiplier: 1.0
+    opening_range_breakout:
+      range_start: "09:15", range_end: "09:30",
+      volume_multiplier: 2.0, breakout_buffer_pct: 0.1
+
+  sentiment:
+    bias_bullish_threshold: 0.2
+    bias_bearish_threshold: -0.2
+    time_decay_half_life_hours: 4
+    lookback_hours: 24
+    recalculation_interval_minutes: 5
+
+  telegram:
+    bot_token: ${TELEGRAM_BOT_TOKEN}
+    chat_id: ${TELEGRAM_CHAT_ID}
+    rate_limit_messages_per_hour: 20
+
+  redis: host: localhost, port: 6379, db: 0
+
+  database:
+    sqlite_path: data/lohi_trade.db
+    duckdb_path: data/historical.duckdb
+    backup_path: data/backups
+    backup_time: "16:00"
+
+  logging: level: INFO, log_dir: logs, max_file_size_mb: 10, backup_count: 5
+
+  paper_trading:
+    enabled: true
+    simulated_fill_delay_ms: [100, 500]
+    simulated_slippage_pct: 0.05
+
+  symbols: [RELIANCE, TCS, INFY, HDFCBANK, ICICIBANK, ...]  # Nifty 50
+
+Environment Variables Required:
+  SHOONYA_API_KEY, SHOONYA_CLIENT_ID, SHOONYA_PASSWORD, SHOONYA_TOTP_KEY,
+  SHOONYA_IMEI, ANGELONE_API_KEY, ANGELONE_CLIENT_ID, ANGELONE_PASSWORD,
+  ANGELONE_TOTP_KEY, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
+
+
+================================================================================
+12. BACKTESTING ENGINE
+================================================================================
+
+Vectorized backtesting engine for validating strategies against historical data.
+
+Transaction Costs (realistic Indian market):
+  STT:              0.025% (sell side only)
+  Exchange Charges: 0.00345% (both sides)
+  GST:              18% on brokerage + exchange charges
+  Stamp Duty:       0.003% (buy side only)
+  Slippage:         0.05% (both sides)
+
+Performance Metrics Calculated:
+  - Sharpe Ratio (risk-free rate: 6% Indian T-bill proxy)
+  - Maximum Drawdown
+  - Win Rate
+  - Profit Factor (gross profit / gross loss)
+  - Total Return
+
+Minimum Thresholds (before promoting to live):
+  Sharpe Ratio:  > 1.5
+  Max Drawdown:  < 5%
+  Win Rate:      > 45%
+  Profit Factor: > 1.5
+
+Trade logs include: trade_id, symbol, strategy, direction, entry/exit prices,
+entry/exit times, exit_reason, quantity, gross_pnl, net_pnl, holding_period.
+
+Data sources: yfinance (daily, 2+ years), Shoonya API (intraday, 30 days).
+Storage: DuckDB with Parquet partitioning by date.
+
+
+================================================================================
+13. PAPER TRADING MODE
+================================================================================
+
+Enabled via config: paper_trading.enabled = true
+
+Behavior:
+  - OMS simulates order placement without calling broker API
+  - Fill price = next available tick price after order placement
+  - Random fill delay: 100-500ms
+  - Simulated slippage: 0.05%
+  - All paper trades stored in main SQLite DB with paper_trade flag
+  - Telegram notifications prefixed with "PAPER"
+  - All RMS checks enforced identically to live mode
+  - Kill switch works in paper mode
+  - Separate tracking for paper P&L calculations
+
+Recommended: Run paper trading for at least 2 weeks before going live.
+
+
+================================================================================
+14. FRONTEND WEB APPLICATION
+================================================================================
+
+14.1 FRONTEND ARCHITECTURE
+---------------------------
+
+The React web dashboard (in Lohi-TRADE Web App Design/) provides a modern,
+real-time trading interface replacing the Streamlit dashboard.
+
+Technology Stack:
+  - React 18 + Vite + TypeScript
+  - Radix UI components (shadcn/ui style)
+  - Recharts for analytics charts
+  - Lightweight Charts (TradingView) for price charts
+  - Zustand for state management
+  - React Router for navigation
+  - Socket.IO client for WebSocket real-time updates
+  - Axios for HTTP API calls
+
+The frontend connects to a FastAPI backend gateway (port 8000) which bridges
+to the existing Redis Streams and SQLite database. The frontend itself runs
+on port 3000.
+
+Architecture:
+  React Frontend (Vite, port 3000)
+    -> lib/api-client.ts          (axios HTTP client)
+    -> hooks/use-websocket.ts     (Socket.IO client)
+    -> stores/                    (Zustand state stores)
+    -> pages/                     (Route-based pages)
+
+  FastAPI Gateway (port 8000)
+    -> REST endpoints for data retrieval and user actions
+    -> Socket.IO server for real-time event push
+    -> Redis Stream consumer for backend events
+    -> SQLite query service for historical data
+
+
+14.2 PAGES AND COMPONENTS
+---------------------------
+
+The frontend provides these pages:
+
+  1. Login Page — Username/password + TOTP two-factor authentication
+  2. Dashboard — Real-time P&L cards, system health, kill switch toggle,
+     market overview with mini chart widgets per symbol
+  3. Positions — Open positions table with real-time price updates,
+     close/modify actions
+  4. Orders — Order history with status filtering, cancel pending orders
+  5. Soldier (Technical Analysis) — Signals table, live price chart with
+     indicator overlays (EMA, BB, Supertrend), RSI/MACD/Volume panels,
+     strategy statistics
+  6. Commander (AI Sentiment) — Bias table, news articles with sentiment,
+     sentiment timeline chart, news source statistics
+  7. Analytics — Equity curve, daily P&L bar chart, strategy performance
+     breakdown, trade distribution, hourly heatmap, top winners/losers,
+     CSV export, PDF report generation
+  8. History — Trade history with trade journal (notes per trade)
+  9. Settings — Capital, risk limits, trading hours, strategy parameters,
+     watchlist management, P&L alert thresholds
+  10. Logs — System log viewer with level/component filtering, search,
+      auto-refresh, CSV export
+  11. Backtest — Backtest results viewer with equity curves, metrics,
+      trade-by-trade logs, CSV export
+
+Shared Components:
+  - ErrorBoundary — Catches React errors gracefully
+  - ErrorState — Displays error messages with retry buttons
+  - LoadingSkeleton — Skeleton loaders during data fetch
+  - Toast — Ephemeral notification system
+  - NotificationCenter — Persistent notification history (bell icon, last 100)
+  - CommandPalette — Ctrl+K keyboard shortcut for quick navigation
+  - ConnectionStatus — WebSocket connection indicator
+  - VirtualTable — Virtualized scrolling for large tables (>50 rows)
+  - ThemeProvider — Dark/light theme toggle with CSS custom properties
+
+
+14.3 FRONTEND-BACKEND INTEGRATION
+-----------------------------------
+
+REST API Endpoints (FastAPI Gateway):
+
+  Method  Endpoint                          Description
+  ------  --------                          -----------
+  GET     /api/health                       Health check
+  POST    /api/auth/login                   Authenticate credentials
+  POST    /api/auth/verify-totp             Verify TOTP code, issue JWT
+  POST    /api/auth/logout                  Invalidate session
+  GET     /api/positions                    Open positions
+  POST    /api/positions/{id}/close         Close position
+  PUT     /api/positions/{id}/stop-loss     Update stop loss
+  PUT     /api/positions/{id}/target        Update target
+  GET     /api/orders                       Orders with filters
+  POST    /api/orders/{id}/cancel           Cancel pending order
+  GET     /api/trades                       Trade history
+  POST    /api/trades/{id}/notes            Save trade journal note
+  GET     /api/signals                      Recent signals
+  GET     /api/bias                         Current bias all tickers
+  GET     /api/news                         News articles
+  GET     /api/analytics/equity-curve       Equity curve data
+  GET     /api/analytics/daily-pnl          Daily P&L
+  GET     /api/analytics/strategy-perf      Per-strategy metrics
+  GET     /api/config                       Current configuration
+  PUT     /api/config                       Update configuration
+  GET     /api/kill-switch                  Kill switch status
+  POST    /api/kill-switch/toggle           Toggle kill switch
+  GET     /api/logs                         System logs
+  GET     /api/backtests                    Backtest results
+
+WebSocket Events (Socket.IO):
+
+  Server -> Client:
+    price_tick, position_update, order_update, signal_generated,
+    bias_update, kill_switch_toggle, log_entry
+
+  Client -> Server:
+    close_position, cancel_order, modify_stop_loss, modify_target,
+    toggle_kill_switch
+
+Data Flow:
+  - REST for initial page load and user actions
+  - WebSocket for real-time streaming updates
+  - Gateway reads from existing Redis Streams (no modification)
+  - Gateway queries existing SQLite tables (no schema changes)
+  - User commands published to stream:commands for backend consumption
+
+
+14.4 FRONTEND ENHANCEMENTS
+----------------------------
+
+Ten additional enhancements implemented on top of the base frontend:
+
+  1. CSV Export — Export data from Analytics, Backtest, and Logs pages as CSV
+     files with RFC 4180 escaping, respecting active filters.
+
+  2. Virtual Scrolling — Tables with >50 rows use windowed rendering
+     (visible rows + 10 buffer) via @tanstack/react-virtual for smooth
+     scrolling without browser freezing.
+
+  3. Global Keyboard Shortcuts — Ctrl+K opens command palette, Escape closes
+     modals, Ctrl+Shift+K toggles kill switch, Ctrl+E exports CSV, Shift+?
+     shows help. Suppressed when focused on input elements.
+
+  4. Notification Center — Bell icon in header with unread badge. Stores last
+     100 notifications in localStorage. Categories: trade, system, alert, user.
+     Auto-prunes entries older than 7 days.
+
+  5. Dark/Light Theme Toggle — Sun/moon icon in header. CSS custom properties
+     for both themes. Persisted in localStorage. Default: dark.
+
+  6. Watchlist / Symbol Selector — Settings page section for adding/removing
+     monitored symbols with autocomplete from instrument master. Saves via
+     PUT /api/config.
+
+  7. P&L Alerts — Configurable threshold rules (absolute/percentage profit/loss).
+     Evaluated on every WebSocket P&L update. Each alert fires at most once per
+     session. Persisted in localStorage + backend sync.
+
+  8. Trade Journal — Click a trade in History to open notes panel. Free-form
+     text (max 2000 chars) saved to backend via REST API. Stored in SQLite
+     trade_notes table. Note icon on rows with saved notes.
+
+  9. Mini Chart Widgets — Dashboard "Market Overview" section with one sparkline
+     per monitored symbol showing last 50 price ticks, LTP, and % change.
+     Responsive grid: 4 cols desktop, 2 tablet, 1 mobile. Click navigates to
+     Soldier page.
+
+  10. PDF Report Generation — "Generate Report" button on Analytics page.
+      Composes end-of-day summary (date, P&L, win rate, trades, strategy
+      breakdown, top winners/losers, equity curve). Print-friendly layout
+      with INR formatting. Opens browser print dialog.
+
+
+================================================================================
+15. BACKEND GATEWAY (FastAPI)
+================================================================================
+
+The FastAPI gateway (in backend-gateway/) bridges the React frontend with the
+existing Python backend infrastructure.
+
+Structure:
+  backend-gateway/
+    app/
+      main.py              FastAPI app + Socket.IO mount
+      config.py            Gateway configuration
+      routers/             REST endpoint routers
+        auth.py, positions.py, orders.py, trades.py, signals.py,
+        bias.py, analytics.py, config.py, kill_switch.py, health.py,
+        broker.py, paper_trading.py
+      services/
+        db_service.py      SQLite query service
+        redis_consumer.py  Redis Stream consumer
+        auth_service.py    JWT + TOTP authentication
+        analytics_service.py  Computed analytics
+      websocket.py         Socket.IO event handlers
+      models/              Pydantic response models
+
+Key Dependencies:
+  fastapi, uvicorn[standard], python-socketio, redis, pydantic, pyyaml,
+  python-dotenv, PyJWT, pyotp, passlib
+
+Integration:
+  - Connects to existing Redis (localhost:6379)
+  - Queries existing SQLite (data/lohi_trade.db)
+  - Creates consumer group "frontend_gateway" on Redis Streams
+  - Publishes user commands to stream:commands
+  - Does NOT modify existing backend components or data structures
+  - Can run concurrently with Streamlit dashboard
+  - CORS configured for frontend origin (localhost:3000)
+  - JWT authentication with 24-hour token expiration
+  - Rate limiting: 100 requests/minute per user
+
+
+================================================================================
+16. DEPLOYMENT AND CONTAINERIZATION
+================================================================================
+
+Docker Compose orchestrates three services:
+
+  Service            Port   Description
+  -------            ----   -----------
+  redis              6379   Redis 7 Alpine with AOF persistence
+  backend-gateway    8000   FastAPI gateway
+  frontend           3000   React Vite app
+
+Volumes:
+  - redis-data: Redis persistence
+  - ./data:/data: SQLite databases, backups, logs, models
+  - ./config:/config: settings.yaml
+
+Environment Variables:
+  - JWT_SECRET, ADMIN_USERNAME, ADMIN_PASSWORD
+  - REDIS_HOST, REDIS_PORT, DB_PATH, CONFIG_PATH
+  - CORS_ORIGINS
+  - VITE_API_URL (frontend)
+
+Health Checks:
+  - Redis: redis-cli ping (every 10s)
+  - Gateway: curl http://localhost:8000/api/health (every 15s)
+
+Startup Order: Redis -> Backend Gateway -> Frontend
+
+For development without Docker:
+  1. docker-compose up -d redis
+  2. cd backend-gateway && uvicorn app.main:app --port 8000
+  3. cd "Lohi-TRADE Web App Design" && npm run dev
+
+
+================================================================================
+17. ERROR HANDLING AND RECOVERY
+================================================================================
+
+Category                    Strategy                    Fallback
+--------                    --------                    --------
+Network (WebSocket, API)    Exponential backoff retry   Switch to backup broker
+Data Processing (Candles)   Log and continue others     Skip symbol, don't crash
+Sentiment (FinBERT, NER)    Default to NEUTRAL          Log for manual review
+Risk Management             Reject order, log reason    Telegram alert if repeated
+Order Execution             Retry 2x with 500ms delay   Cancel and notify
+Database (SQLite)           Retry 3x with exp backoff   In-memory buffer
+Redis (Event Bus)           Reconnect every 5 seconds   Buffer 10K events in memory
+Kill Switch Triggers        Immediate halt              Manual deactivation required
+
+Error Logging Standard:
+  All errors logged with: timestamp (ISO 8601), component name, error level,
+  human-readable message, stack trace, context (symbol, order_id, etc.),
+  correlation ID for cross-component tracing.
+
+Circuit Breaker Pattern:
+  - Broker API: open circuit after 5 consecutive failures
+  - Redis: activate kill switch if unavailable > 60 seconds
+
+
+================================================================================
+18. TESTING STRATEGY
+================================================================================
+
+Dual testing approach: unit tests + property-based tests.
+
+Unit Tests (pytest):
+  - Specific examples, edge cases, error conditions
+  - Mock external dependencies (broker API, Redis, SQLite)
+  - Coverage target: 80% for core trading logic
+  - Fast feedback: < 5 seconds
+
+Property-Based Tests (hypothesis library for Python, fast-check for TypeScript):
+  - Universal properties across all valid inputs
+  - Minimum 100 iterations per property test
+  - 80+ testable properties covering:
+    * Data processing (OHLCV correctness, indicator calculation)
+    * Signal generation (strategy conditions, trading hours, dedup)
+    * News/sentiment (deduplication, entity resolution, classification)
+    * Risk management (all 9 RMS checks, position sizing)
+    * Order execution (placement, retry, timeout, fill handling)
+    * Kill switch (activation, cancellation, notification)
+    * Backtesting (transaction costs, slippage, metrics)
+    * Paper trading (API bypass, fill simulation)
+    * Frontend (CSV export, virtual scrolling, theme, alerts, journal)
+
+Integration Tests:
+  - End-to-end flows: tick-to-signal, signal-to-order, news-to-bias
+  - Docker Compose for Redis, in-memory SQLite
+  - Mock broker API with realistic responses
+
+Performance Tests:
+  - Tick processing latency: 99th percentile < 10ms
+  - Throughput: 1000 ticks/second for 60 seconds without data loss
+  - Indicator calculation: < 50ms per symbol
+
+Paper Trading Validation:
+  - 10 trading days in paper mode before live deployment
+  - Verify no real broker API calls
+  - Verify all RMS checks enforced
+
+
+================================================================================
+19. PERFORMANCE TARGETS
+================================================================================
+
+Metric                          Target
+------                          ------
+Tick processing latency         < 10ms (tick receipt to Event Bus publish)
+Candle building latency         < 100ms (candle completion to publish)
+Indicator calculation latency   < 50ms per symbol
+Order validation latency        < 50ms (signal receipt to OMS forwarding)
+Order placement latency         < 100ms (OMS to broker API)
+Tick throughput                 1000+ ticks/second without data loss
+FinBERT inference               < 2 seconds per article
+Frontend FCP                    < 1.5 seconds
+Frontend TTI                    < 3 seconds
+Frontend Lighthouse score       > 90
+
+Hardware Optimization (M3 Pro):
+  - Performance cores: WebSocket, candle building, indicators, signals, orders
+  - Efficiency cores: News polling, entity resolution, bias calc, DB writes
+  - Neural Engine: FinBERT ONNX inference via CoreML execution provider
+  - Memory warning threshold: 4GB RSS
+
+
+================================================================================
+20. SECURITY
+================================================================================
+
+  - JWT authentication with 24-hour expiration for frontend
+  - TOTP two-factor authentication for login
+  - httpOnly cookies for JWT storage (not localStorage)
+  - CSRF protection for state-changing requests
+  - HTTPS for all API communication in production
+  - Content Security Policy (CSP) headers
+  - Input sanitization to prevent XSS
+  - Rate limiting: 100 req/min per user, 5 auth attempts/min
+  - Credentials stored in .env (gitignored), referenced via ${ENV_VAR}
+  - No sensitive data in client-side code
+  - Secure WebSocket (wss://) in production
+  - Auto-logout after 24 hours of inactivity
+
+
+================================================================================
+21. REGULATORY COMPLIANCE
+================================================================================
+
+  - All trades classified as "Speculative Business Income" for Indian tax
+  - Daily trade reports with all fields required for tax filing
+  - STT calculation (0.025% on sell side) tracked for tax deduction
+  - Monthly and annual P&L summary reports
+  - Trade records retained for minimum 7 years (Indian tax law)
+  - CSV export for import into tax software
+  - SEBI-compliant for personal proprietary trading
+
+
+================================================================================
+22. PROJECT STRUCTURE
+================================================================================
+
+LOHI-TRADE/
+  .kiro/specs/                    Kiro IDE specifications
+    lohi-trade/                   Core backend spec (requirements, design, tasks)
+    lohi-trade-frontend/          Frontend spec
+    frontend-backend-integration/ Integration spec
+    frontend-enhancements/        Enhancement spec
+
+  src/                            Python source code
+    ingestion/                    WebSocket client, RSS poller, broker adapters,
+                                  instrument master, ticker mapper
+    soldier/                      Candle builder, indicator engine, strategy
+                                  engine, signal pipeline, candle publisher
+    commander/                    RSS poller, news deduplicator, entity resolver,
+                                  sentiment analyzer, bias calculator, bias
+                                  scheduler
+    execution/                    RMS, position sizer, OMS, position manager,
+                                  kill switch, paper trading
+    state/                        Redis client, event bus, SQLite database,
+                                  DuckDB, database backup, schema
+    ui/                           Streamlit dashboard, Telegram bot
+    utils/                        Configuration loader, structured logging
+
+  tests/                          Python test suite
+    test_*.py                     Unit tests for all components
+    test_prop_*.py                Property-based tests (hypothesis)
+    test_performance.py           Performance/latency tests
+
+  backend-gateway/                FastAPI backend gateway
+    app/
+      main.py                     FastAPI app + Socket.IO
+      routers/                    REST endpoint routers
+      services/                   DB service, Redis consumer, auth, analytics
+      websocket.py                Socket.IO event handlers
+
+  Lohi-TRADE Web App Design/     React frontend
+    src/
+      App.tsx                     Router setup
+      main.tsx                    Entry point with ThemeProvider
+      pages/                      DashboardPage, PositionsPage, OrdersPage,
+                                  SoldierPage, CommanderPage, AnalyticsPage,
+                                  HistoryPage, SettingsPage, LogsPage,
+                                  BacktestPage, LoginPage
+      components/
+        ui/                       shadcn/ui components (button, card, table, etc.)
+        shared/                   ErrorBoundary, Toast, NotificationCenter,
+                                  CommandPalette, VirtualTable, ConnectionStatus,
+                                  LoadingSkeleton, ErrorState
+        dashboard/                MiniChartWidget
+        history/                  TradeJournal
+        settings/                 WatchlistSection, AlertsSection
+        figma/                    ImageWithFallback
+      lib/                        api-client, types, csv-exporter, theme-provider,
+                                  shortcut-manager, report-generator
+      stores/                     notification-store, alert-store, watchlist-store
+      hooks/                      use-websocket
+
+  config/                         settings.yaml, settings.yaml.template
+  scripts/                        startup.py, shutdown.py, convert_finbert_onnx.py,
+                                  generate_ticker_map.py, seed_demo_data.py,
+                                  paper_simulation.py, verify_*.py
+  docs/                           ARCHITECTURE.md, STRATEGIES.md, CONFIGURATION.md,
+                                  BACKTESTING.md, FAQ.md, REDIS_SETUP.md
+  data/                           (gitignored) databases, backups, logs, models
+  docker-compose.yml              Redis + Gateway + Frontend containers
+  pyproject.toml                  Python project config and dependencies
+  requirements.txt                Python dependencies
+  start.sh                        Quick-start script
+
+
+================================================================================
+23. TECHNOLOGY STACK
+================================================================================
+
+BACKEND (Python 3.11+):
+  Core:         Redis Streams, SQLite (WAL mode), DuckDB
+  Broker APIs:  Shoonya (Finvasia), Angel One
+  Technical:    pandas, pandas-ta, numpy
+  AI/NLP:       FinBERT (ONNX), ONNX Runtime (CoreML), spaCy, rapidfuzz
+  Web:          FastAPI, uvicorn, python-socketio
+  Auth:         PyJWT, pyotp, passlib
+  Notifications: python-telegram-bot
+  Dashboard:    Streamlit
+  Data:         yfinance, DuckDB, Parquet
+  Testing:      pytest, hypothesis, pytest-mock
+  Tooling:      uv (package manager), black, ruff, mypy
+
+FRONTEND (TypeScript):
+  Core:         React 18, Vite, TypeScript 5
+  UI:           Radix UI (shadcn/ui), Tailwind CSS, Lucide icons
+  State:        Zustand
+  Data:         Axios, React Query (@tanstack/react-query)
+  Real-time:    Socket.IO client
+  Charts:       Recharts, Lightweight Charts (TradingView)
+  Virtualization: @tanstack/react-virtual
+  Validation:   Zod
+  Testing:      Vitest, React Testing Library, fast-check
+
+INFRASTRUCTURE:
+  Container:    Docker, Docker Compose
+  Database:     Redis 7 Alpine, SQLite, DuckDB
+  Hardware:     MacBook Pro M3 Pro (11 cores, Neural Engine)
+  OS:           macOS 13.0+
+
+
+================================================================================
+                              END OF DOCUMENT
+================================================================================

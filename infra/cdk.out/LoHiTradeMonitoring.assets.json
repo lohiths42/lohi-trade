@@ -1,0 +1,21 @@
+{
+  "version": "52.0.0",
+  "files": {
+    "c53fb06b4dd706344ce0830c694ce6e64c8003d0cab1ff324d3935c2eeba751f": {
+      "displayName": "LoHiTradeMonitoring Template",
+      "source": {
+        "path": "LoHiTradeMonitoring.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "current_account-ap-south-1-0e1e47a4": {
+          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-ap-south-1",
+          "objectKey": "c53fb06b4dd706344ce0830c694ce6e64c8003d0cab1ff324d3935c2eeba751f.json",
+          "region": "ap-south-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-ap-south-1"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}

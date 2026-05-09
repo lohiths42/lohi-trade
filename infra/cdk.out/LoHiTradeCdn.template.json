@@ -1,0 +1,524 @@
+{
+ "Resources": {
+  "WebAppBucket8F6FA179": {
+   "Type": "AWS::S3::Bucket",
+   "Properties": {
+    "BucketEncryption": {
+     "ServerSideEncryptionConfiguration": [
+      {
+       "ServerSideEncryptionByDefault": {
+        "SSEAlgorithm": "AES256"
+       }
+      }
+     ]
+    },
+    "PublicAccessBlockConfiguration": {
+     "BlockPublicAcls": true,
+     "BlockPublicPolicy": true,
+     "IgnorePublicAcls": true,
+     "RestrictPublicBuckets": true
+    },
+    "Tags": [
+     {
+      "Key": "aws-cdk:auto-delete-objects",
+      "Value": "true"
+     }
+    ]
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeCdn/WebAppBucket/Resource"
+   }
+  },
+  "WebAppBucketPolicy542A2969": {
+   "Type": "AWS::S3::BucketPolicy",
+   "Properties": {
+    "Bucket": {
+     "Ref": "WebAppBucket8F6FA179"
+    },
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "s3:PutBucketPolicy",
+        "s3:GetBucket*",
+        "s3:List*",
+        "s3:DeleteObject*"
+       ],
+       "Effect": "Allow",
+       "Principal": {
+        "AWS": {
+         "Fn::GetAtt": [
+          "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+          "Arn"
+         ]
+        }
+       },
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "WebAppBucket8F6FA179",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "WebAppBucket8F6FA179",
+             "Arn"
+            ]
+           },
+           "/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "s3:GetObject*",
+        "s3:GetBucket*",
+        "s3:List*"
+       ],
+       "Effect": "Allow",
+       "Principal": {
+        "CanonicalUser": {
+         "Fn::GetAtt": [
+          "WebAppOAI5ED67000",
+          "S3CanonicalUserId"
+         ]
+        }
+       },
+       "Resource": [
+        {
+         "Fn::GetAtt": [
+          "WebAppBucket8F6FA179",
+          "Arn"
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::GetAtt": [
+             "WebAppBucket8F6FA179",
+             "Arn"
+            ]
+           },
+           "/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": "s3:GetObject",
+       "Effect": "Allow",
+       "Principal": {
+        "CanonicalUser": {
+         "Fn::GetAtt": [
+          "WebAppOAI5ED67000",
+          "S3CanonicalUserId"
+         ]
+        }
+       },
+       "Resource": {
+        "Fn::Join": [
+         "",
+         [
+          {
+           "Fn::GetAtt": [
+            "WebAppBucket8F6FA179",
+            "Arn"
+           ]
+          },
+          "/*"
+         ]
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeCdn/WebAppBucket/Policy/Resource"
+   }
+  },
+  "WebAppBucketAutoDeleteObjectsCustomResourceEF114EAA": {
+   "Type": "Custom::S3AutoDeleteObjects",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
+      "Arn"
+     ]
+    },
+    "BucketName": {
+     "Ref": "WebAppBucket8F6FA179"
+    }
+   },
+   "DependsOn": [
+    "WebAppBucketPolicy542A2969"
+   ],
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeCdn/WebAppBucket/AutoDeleteObjectsCustomResource/Default"
+   }
+  },
+  "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Version": "2012-10-17",
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ]
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Sub": "arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeCdn/Custom::S3AutoDeleteObjectsCustomResourceProvider/Role"
+   }
+  },
+  "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-ap-south-1"
+     },
+     "S3Key": "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6.zip"
+    },
+    "Timeout": 900,
+    "MemorySize": 128,
+    "Handler": "index.handler",
+    "Role": {
+     "Fn::GetAtt": [
+      "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+      "Arn"
+     ]
+    },
+    "Runtime": "nodejs22.x",
+    "Description": {
+     "Fn::Join": [
+      "",
+      [
+       "Lambda function for auto-deleting objects in ",
+       {
+        "Ref": "WebAppBucket8F6FA179"
+       },
+       " S3 bucket."
+      ]
+     ]
+    }
+   },
+   "DependsOn": [
+    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeCdn/Custom::S3AutoDeleteObjectsCustomResourceProvider/Handler",
+    "aws:asset:path": "asset.faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6",
+    "aws:asset:property": "Code"
+   }
+  },
+  "WebAppOAI5ED67000": {
+   "Type": "AWS::CloudFront::CloudFrontOriginAccessIdentity",
+   "Properties": {
+    "CloudFrontOriginAccessIdentityConfig": {
+     "Comment": "OAI for LOHI-TRADE web app S3 bucket"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeCdn/WebAppOAI/Resource"
+   }
+  },
+  "PlatformHostedZoneBD077061": {
+   "Type": "AWS::Route53::HostedZone",
+   "Properties": {
+    "Name": "lohitrade.in."
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeCdn/PlatformHostedZone/Resource"
+   }
+  },
+  "CloudFrontCertC2FD7286": {
+   "Type": "AWS::CertificateManager::Certificate",
+   "Properties": {
+    "DomainName": "lohitrade.in",
+    "DomainValidationOptions": [
+     {
+      "DomainName": "lohitrade.in",
+      "HostedZoneId": {
+       "Ref": "PlatformHostedZoneBD077061"
+      }
+     }
+    ],
+    "SubjectAlternativeNames": [
+     "*.lohitrade.in"
+    ],
+    "Tags": [
+     {
+      "Key": "Name",
+      "Value": "LoHiTrade-CloudFront-Cert"
+     }
+    ],
+    "ValidationMethod": "DNS"
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeCdn/CloudFrontCert/Resource"
+   }
+  },
+  "AlbCert78D082F5": {
+   "Type": "AWS::CertificateManager::Certificate",
+   "Properties": {
+    "DomainName": "api.lohitrade.in",
+    "DomainValidationOptions": [
+     {
+      "DomainName": "api.lohitrade.in",
+      "HostedZoneId": {
+       "Ref": "PlatformHostedZoneBD077061"
+      }
+     }
+    ],
+    "Tags": [
+     {
+      "Key": "Name",
+      "Value": "LoHiTradeCdn/AlbCert"
+     }
+    ],
+    "ValidationMethod": "DNS"
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeCdn/AlbCert/Resource"
+   }
+  },
+  "WebAppDistribution4473AB7E": {
+   "Type": "AWS::CloudFront::Distribution",
+   "Properties": {
+    "DistributionConfig": {
+     "Aliases": [
+      "lohitrade.in",
+      "www.lohitrade.in"
+     ],
+     "CustomErrorResponses": [
+      {
+       "ErrorCachingMinTTL": 0,
+       "ErrorCode": 403,
+       "ResponseCode": 200,
+       "ResponsePagePath": "/index.html"
+      },
+      {
+       "ErrorCachingMinTTL": 0,
+       "ErrorCode": 404,
+       "ResponseCode": 200,
+       "ResponsePagePath": "/index.html"
+      }
+     ],
+     "DefaultCacheBehavior": {
+      "CachePolicyId": "658327ea-f89d-4fab-a63d-7e88639e58f6",
+      "Compress": true,
+      "TargetOriginId": "LoHiTradeCdnWebAppDistributionOrigin1736F0EEE",
+      "ViewerProtocolPolicy": "redirect-to-https"
+     },
+     "DefaultRootObject": "index.html",
+     "Enabled": true,
+     "HttpVersion": "http2",
+     "IPV6Enabled": true,
+     "Origins": [
+      {
+       "DomainName": {
+        "Fn::GetAtt": [
+         "WebAppBucket8F6FA179",
+         "RegionalDomainName"
+        ]
+       },
+       "Id": "LoHiTradeCdnWebAppDistributionOrigin1736F0EEE",
+       "S3OriginConfig": {
+        "OriginAccessIdentity": {
+         "Fn::Join": [
+          "",
+          [
+           "origin-access-identity/cloudfront/",
+           {
+            "Ref": "WebAppOAI5ED67000"
+           }
+          ]
+         ]
+        }
+       }
+      }
+     ],
+     "ViewerCertificate": {
+      "AcmCertificateArn": {
+       "Ref": "CloudFrontCertC2FD7286"
+      },
+      "MinimumProtocolVersion": "TLSv1.2_2021",
+      "SslSupportMethod": "sni-only"
+     }
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeCdn/WebAppDistribution/Resource"
+   }
+  },
+  "CloudFrontARecord1A728491": {
+   "Type": "AWS::Route53::RecordSet",
+   "Properties": {
+    "AliasTarget": {
+     "DNSName": {
+      "Fn::GetAtt": [
+       "WebAppDistribution4473AB7E",
+       "DomainName"
+      ]
+     },
+     "HostedZoneId": {
+      "Fn::FindInMap": [
+       "AWSCloudFrontPartitionHostedZoneIdMap",
+       {
+        "Ref": "AWS::Partition"
+       },
+       "zoneId"
+      ]
+     }
+    },
+    "HostedZoneId": {
+     "Ref": "PlatformHostedZoneBD077061"
+    },
+    "Name": "lohitrade.in.",
+    "Type": "A"
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeCdn/CloudFrontARecord/Resource"
+   }
+  },
+  "AlbARecord12CBD03B": {
+   "Type": "AWS::Route53::RecordSet",
+   "Properties": {
+    "AliasTarget": {
+     "DNSName": {
+      "Fn::Join": [
+       "",
+       [
+        "dualstack.",
+        {
+         "Fn::ImportValue": "LoHiTradeEcs:ExportsOutputFnGetAttLoHiTradeAlb2EF60F72DNSNameE446581A"
+        }
+       ]
+      ]
+     },
+     "HostedZoneId": {
+      "Fn::ImportValue": "LoHiTradeEcs:ExportsOutputFnGetAttLoHiTradeAlb2EF60F72CanonicalHostedZoneID0D134F58"
+     }
+    },
+    "HostedZoneId": {
+     "Ref": "PlatformHostedZoneBD077061"
+    },
+    "Name": "api.lohitrade.in.",
+    "Type": "A"
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeCdn/AlbARecord/Resource"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/5WOwU7DMBBEv6U5uwaacuGWpkJwQK2aGwgh19mEbRO78q4pVeR/R45BLRIXTp7ZeTvemZzN5/J6oo401fV+2uFWDhUrvRfqSG8D5XJYeL0HFmVjknoZsh4/0WR32eVa5CmXY0QyoYVnu4QOGFbbHWimLLyKFK1th/p0bk3+H91poWLF0IMZq4PQnfV146xhOawctmgKrYHosQbDyON/ZWTuI/MnsURih1vPaE3EL30QznqG21wOD5YY6mdrIEIXrtiAtq6O06Qq4CA0OMYGdbxWGdWCk0N5no13nW0IovTEtt8AWe80pLYf/StaO/uBNbiFIhAFEXDFqkXTxp0ndTh8y5Xng+cg1id+t+YqlzdzOZvsCHHqvGHsQW7S+wVEz4M5FQIAAA=="
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeCdn/CDKMetadata/Default"
+   }
+  }
+ },
+ "Mappings": {
+  "AWSCloudFrontPartitionHostedZoneIdMap": {
+   "aws": {
+    "zoneId": "Z2FDTNDATAQYW2"
+   },
+   "aws-cn": {
+    "zoneId": "Z3RFFRIM2A3IF5"
+   }
+  }
+ },
+ "Outputs": {
+  "CloudFrontDistributionDomain": {
+   "Value": {
+    "Fn::GetAtt": [
+     "WebAppDistribution4473AB7E",
+     "DomainName"
+    ]
+   }
+  },
+  "HostedZoneId": {
+   "Value": {
+    "Ref": "PlatformHostedZoneBD077061"
+   }
+  },
+  "CloudFrontCertificateArn": {
+   "Value": {
+    "Ref": "CloudFrontCertC2FD7286"
+   }
+  },
+  "AlbCertificateArn": {
+   "Value": {
+    "Ref": "AlbCert78D082F5"
+   }
+  },
+  "WebAppBucketName": {
+   "Value": {
+    "Ref": "WebAppBucket8F6FA179"
+   }
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}
