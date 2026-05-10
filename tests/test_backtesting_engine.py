@@ -1,5 +1,4 @@
-"""
-Unit tests for the BacktestingEngine.
+"""Unit tests for the BacktestingEngine.
 
 Covers: transaction costs, slippage, metrics calculation,
 trade logging, threshold validation, and full backtest runs.
@@ -10,17 +9,14 @@ import pandas as pd
 import pytest
 
 from src.backtesting.backtesting_engine import (
-    BacktestingEngine,
-    TradeRecord,
-    BacktestResult,
-    STT_RATE,
-    EXCHANGE_CHARGE_RATE,
-    GST_RATE,
-    STAMP_DUTY_RATE,
     BROKERAGE_PER_ORDER,
     SLIPPAGE_PCT,
+    STAMP_DUTY_RATE,
+    STT_RATE,
+    BacktestingEngine,
+    BacktestResult,
+    TradeRecord,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

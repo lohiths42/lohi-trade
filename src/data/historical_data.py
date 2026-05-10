@@ -1,5 +1,4 @@
-"""
-Historical data management for LOHI-TRADE system.
+"""Historical data management for LOHI-TRADE system.
 
 This module provides:
 - Download historical daily data for Nifty 50 using yfinance
@@ -14,9 +13,9 @@ Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 14.6, 14.7
 
 import logging
 import threading
-from datetime import datetime, date, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import pandas as pd
 
@@ -52,8 +51,7 @@ MIN_INTRADAY_DAYS = 30
 
 
 class HistoricalDataManager:
-    """
-    Manages historical OHLCV data download, storage, and retrieval.
+    """Manages historical OHLCV data download, storage, and retrieval.
 
     Supports:
     - Daily data via yfinance (2+ years)
@@ -70,18 +68,18 @@ class HistoricalDataManager:
         db_manager: Any,
         broker: Any = None,
     ):
-        """
-        Initialize HistoricalDataManager.
+        """Initialize HistoricalDataManager.
 
         Args:
             config: Application configuration object.
             db_manager: DatabaseConnectionManager with connect_duckdb().
             broker: Optional BrokerInterface for intraday data.
+
         """
         self.config = config
         self.db_manager = db_manager
         self.broker = broker
-        self._scheduler_thread: Optional[threading.Thread] = None
+        self._scheduler_thread: threading.Thread | None = None
         self._scheduler_running = False
 
         # Ensure DuckDB tables exist
@@ -129,12 +127,11 @@ class HistoricalDataManager:
 
     def download_daily_data(
         self,
-        symbols: List[str],
+        symbols: list[str],
         start_date: date,
         end_date: date,
     ) -> pd.DataFrame:
-        """
-        Download daily OHLCV data for *symbols* using yfinance.
+        """Download daily OHLCV data for *symbols* using yfinance.
 
         Args:
             symbols: List of NSE symbols (e.g. ["RELIANCE", "TCS"]).
@@ -143,12 +140,13 @@ class HistoricalDataManager:
 
         Returns:
             DataFrame with columns [symbol, date, open, high, low, close, volume].
+
         """
         if not YFINANCE_AVAILABLE:
             logger.warning("yfinance not available – returning empty DataFrame")
             return pd.DataFrame(columns=["symbol", "date", "open", "high", "low", "close", "volume"])
 
-        all_frames: List[pd.DataFrame] = []
+        all_frames: list[pd.DataFrame] = []
 
         for symbol in symbols:
             try:
@@ -188,11 +186,10 @@ class HistoricalDataManager:
 
     def download_intraday_data(
         self,
-        symbols: List[str],
+        symbols: list[str],
         days: int = 30,
     ) -> pd.DataFrame:
-        """
-        Download 1-minute intraday candles via the broker API.
+        """Download 1-minute intraday candles via the broker API.
 
         Args:
             symbols: List of NSE symbols.
@@ -200,12 +197,13 @@ class HistoricalDataManager:
 
         Returns:
             DataFrame with columns [symbol, timestamp, open, high, low, close, volume].
+
         """
         if self.broker is None:
             logger.warning("No broker configured – cannot download intraday data")
             return pd.DataFrame(columns=["symbol", "timestamp", "open", "high", "low", "close", "volume"])
 
-        all_frames: List[pd.DataFrame] = []
+        all_frames: list[pd.DataFrame] = []
         end_dt = datetime.now()
         start_dt = end_dt - timedelta(days=days)
 
@@ -252,8 +250,7 @@ class HistoricalDataManager:
     # ------------------------------------------------------------------
 
     def store_to_duckdb(self, data: pd.DataFrame, table_name: str) -> int:
-        """
-        Insert *data* into a DuckDB table, skipping duplicates.
+        """Insert *data* into a DuckDB table, skipping duplicates.
 
         Args:
             data: DataFrame whose columns match the target table.
@@ -261,6 +258,7 @@ class HistoricalDataManager:
 
         Returns:
             Number of rows inserted.
+
         """
         if data.empty:
             return 0
@@ -308,9 +306,8 @@ class HistoricalDataManager:
         data: pd.DataFrame,
         base_path: str,
         partition_by: str = "date",
-    ) -> List[str]:
-        """
-        Write *data* as Parquet files partitioned by *partition_by* column.
+    ) -> list[str]:
+        """Write *data* as Parquet files partitioned by *partition_by* column.
 
         Args:
             data: DataFrame to persist.
@@ -319,6 +316,7 @@ class HistoricalDataManager:
 
         Returns:
             List of partition directory paths written.
+
         """
         if data.empty:
             return []
@@ -326,7 +324,7 @@ class HistoricalDataManager:
         base = Path(base_path)
         base.mkdir(parents=True, exist_ok=True)
 
-        written_paths: List[str] = []
+        written_paths: list[str] = []
 
         if partition_by not in data.columns:
             # Fall back to writing a single file
@@ -358,9 +356,8 @@ class HistoricalDataManager:
         symbol: str,
         start_date: date,
         end_date: date,
-    ) -> List[date]:
-        """
-        Return business days in [start_date, end_date] that have no daily row.
+    ) -> list[date]:
+        """Return business days in [start_date, end_date] that have no daily row.
 
         Args:
             symbol: Trading symbol.
@@ -369,6 +366,7 @@ class HistoricalDataManager:
 
         Returns:
             Sorted list of missing business-day dates.
+
         """
         conn = self.db_manager.connect_duckdb()
         if conn is None:
@@ -390,10 +388,9 @@ class HistoricalDataManager:
     def backfill_missing(
         self,
         symbol: str,
-        missing_dates: List[date],
+        missing_dates: list[date],
     ) -> int:
-        """
-        Download and store daily data for each contiguous range in *missing_dates*.
+        """Download and store daily data for each contiguous range in *missing_dates*.
 
         Args:
             symbol: Trading symbol.
@@ -401,6 +398,7 @@ class HistoricalDataManager:
 
         Returns:
             Total number of rows stored.
+
         """
         if not missing_dates:
             return 0
@@ -419,7 +417,7 @@ class HistoricalDataManager:
         return total
 
     @staticmethod
-    def _contiguous_ranges(dates: List[date]) -> List[tuple]:
+    def _contiguous_ranges(dates: list[date]) -> list[tuple]:
         """Group sorted dates into (start, end) contiguous ranges."""
         if not dates:
             return []
@@ -445,8 +443,7 @@ class HistoricalDataManager:
         end_date: date,
         timeframe: str = "daily",
     ) -> pd.DataFrame:
-        """
-        Query stored historical data from DuckDB.
+        """Query stored historical data from DuckDB.
 
         Args:
             symbol: Trading symbol.
@@ -456,6 +453,7 @@ class HistoricalDataManager:
 
         Returns:
             DataFrame with OHLCV data.
+
         """
         conn = self.db_manager.connect_duckdb()
         if conn is None:
@@ -483,8 +481,7 @@ class HistoricalDataManager:
     # ------------------------------------------------------------------
 
     def schedule_daily_update(self) -> None:
-        """
-        Schedule a background thread that triggers a data update at 6:00 PM IST daily.
+        """Schedule a background thread that triggers a data update at 6:00 PM IST daily.
 
         The thread checks every 60 seconds whether it is past 18:00 IST and
         has not yet run today.  Call ``stop_scheduler()`` to terminate.
@@ -497,7 +494,7 @@ class HistoricalDataManager:
         def _run():
             import pytz
             ist = pytz.timezone("Asia/Kolkata")
-            last_run_date: Optional[date] = None
+            last_run_date: date | None = None
 
             while self._scheduler_running:
                 now_ist = datetime.now(ist)

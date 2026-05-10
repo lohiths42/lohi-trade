@@ -1,5 +1,4 @@
-"""
-Unit tests for IndicatorPublisher.
+"""Unit tests for IndicatorPublisher.
 
 Validates that calculated indicators are published to the correct Redis Stream
 with the expected message format and maxlen.
@@ -8,13 +7,13 @@ Requirements: 3.3, 3.5
 """
 
 from datetime import datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from src.soldier.candle_builder import Candle, CandleBuilder
 from src.soldier.indicator_engine import IndicatorEngine, IndicatorSet
 from src.soldier.indicator_publisher import (
-    IndicatorPublisher,
     INDICATOR_STREAM_MAXLEN,
+    IndicatorPublisher,
 )
 
 

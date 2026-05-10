@@ -81,6 +81,7 @@ def parse_pdf(path: str | Path) -> tuple[str, list[dict[str, Any]]]:
         message points operators at the exact pip package to install.
     FileNotFoundError
         Propagated from the filesystem layer when *path* does not exist.
+
     """
     pdf_path = Path(path)
     if not pdf_path.exists():
@@ -90,7 +91,7 @@ def parse_pdf(path: str | Path) -> tuple[str, list[dict[str, Any]]]:
         import pypdf  # noqa: PLC0415 — lazy per module docstring
     except ImportError as exc:
         raise RuntimeError(
-            "PDF parsing requires pypdf; pip install pypdf"
+            "PDF parsing requires pypdf; pip install pypdf",
         ) from exc
 
     # pdfplumber is an *optional* fallback — we never hard-require it.
@@ -128,7 +129,7 @@ def parse_pdf(path: str | Path) -> tuple[str, list[dict[str, Any]]]:
                 if plumber_doc is None:
                     plumber_doc = pdfplumber.open(str(pdf_path))
                 markdown_tables = _extract_tables_as_markdown(
-                    plumber_doc, page_index
+                    plumber_doc, page_index,
                 )
                 if markdown_tables:
                     # Keep whatever ``pypdf`` did extract — even sparse

@@ -1,5 +1,4 @@
-"""
-Tests for the OpeningRangeBreakoutStrategy.
+"""Tests for the OpeningRangeBreakoutStrategy.
 
 Validates:
 - BUY signal when price breaks above range with volume
@@ -17,15 +16,13 @@ Requirements: 4.4
 """
 
 from datetime import datetime
-from typing import Optional
 
 import pandas as pd
 import pytest
 
 from src.soldier.indicator_engine import IndicatorSet
-from src.soldier.strategy_engine import OpeningRangeBreakoutStrategy, Signal
+from src.soldier.strategy_engine import OpeningRangeBreakoutStrategy
 from src.utils.config import OpeningRangeBreakoutStrategy as ORBConfig
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -72,7 +69,7 @@ def _make_indicators(
 def _make_candles(
     close: float = 110.0,
     volume: float = 120000.0,
-    timestamp: Optional[datetime] = None,
+    timestamp: datetime | None = None,
 ) -> pd.DataFrame:
     """Create a minimal candles DataFrame with one row."""
     if timestamp is None:
@@ -85,7 +82,7 @@ def _make_candles(
             "close": [close],
             "volume": [volume],
             "timestamp": [timestamp],
-        }
+        },
     )
 
 

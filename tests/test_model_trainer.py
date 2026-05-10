@@ -1,20 +1,19 @@
+"""Unit tests for the ML Model Trainer.
 """
-Unit tests for the ML Model Trainer.
-"""
+
+import shutil
+import tempfile
+from datetime import UTC, datetime
 
 import numpy as np
 import pytest
-import tempfile
-import shutil
-from datetime import datetime, timezone
 
+from src.ml.feature_engine import NUM_FEATURES
 from src.ml.model_trainer import (
+    ModelMetrics,
     ModelTrainer,
     TrainingSample,
-    ModelMetrics,
-    MIN_TRAINING_SAMPLES,
 )
-from src.ml.feature_engine import NUM_FEATURES
 
 
 def _make_sample(label: float, seed: int = 0) -> TrainingSample:
@@ -32,7 +31,7 @@ def _make_sample(label: float, seed: int = 0) -> TrainingSample:
         features=features,
         label=label,
         symbol="TEST",
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
     )
 
 
@@ -78,7 +77,7 @@ class TestModelTrainer:
 
     def test_train_sufficient_samples(self, tmp_model_dir):
         trainer = ModelTrainer(
-            model_dir=tmp_model_dir, min_samples=20, retrain_threshold=9999
+            model_dir=tmp_model_dir, min_samples=20, retrain_threshold=9999,
         )
         samples = _generate_samples(40)
         for s in samples:
@@ -98,7 +97,7 @@ class TestModelTrainer:
 
     def test_predict_trained(self, tmp_model_dir):
         trainer = ModelTrainer(
-            model_dir=tmp_model_dir, min_samples=20, retrain_threshold=9999
+            model_dir=tmp_model_dir, min_samples=20, retrain_threshold=9999,
         )
         samples = _generate_samples(40)
         for s in samples:
@@ -113,7 +112,7 @@ class TestModelTrainer:
 
     def test_auto_retrain(self, tmp_model_dir):
         trainer = ModelTrainer(
-            model_dir=tmp_model_dir, min_samples=20, retrain_threshold=10
+            model_dir=tmp_model_dir, min_samples=20, retrain_threshold=10,
         )
         # Add 20 samples (enough to train)
         samples = _generate_samples(20)
@@ -164,7 +163,7 @@ class TestModelTrainer:
 
     def test_feature_importances(self, tmp_model_dir):
         trainer = ModelTrainer(
-            model_dir=tmp_model_dir, min_samples=20, retrain_threshold=9999
+            model_dir=tmp_model_dir, min_samples=20, retrain_threshold=9999,
         )
         samples = _generate_samples(40)
         for s in samples:
@@ -180,7 +179,7 @@ class TestModelTrainer:
             recall=0.8,
             f1_score=0.85,
             sample_count=100,
-            trained_at=datetime(2025, 1, 1, tzinfo=timezone.utc),
+            trained_at=datetime(2025, 1, 1, tzinfo=UTC),
             feature_importances={"rsi_14": 0.3, "macd_hist": 0.2},
         )
         d = m.to_dict()

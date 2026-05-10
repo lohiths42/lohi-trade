@@ -1,5 +1,4 @@
-"""
-Property-based tests for Sentiment Error Handling.
+"""Property-based tests for Sentiment Error Handling.
 
 Validates that the SentimentAnalyzer gracefully handles inference failures
 by defaulting to NEUTRAL sentiment with confidence 0.0, and that errors
@@ -16,15 +15,12 @@ Properties tested:
   5. ONNX session failure produces NEUTRAL fallback
 """
 
-import uuid
-from typing import Dict, Optional
 
 import numpy as np
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from src.commander.sentiment_analyzer import SentimentAnalyzer, SentimentResult
-
+from src.commander.sentiment_analyzer import SentimentAnalyzer
 
 # ---------------------------------------------------------------------------
 # Mocks that simulate failures
@@ -102,8 +98,7 @@ _ticker = st.sampled_from(["RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK", "
 
 
 class TestSentimentErrorHandlingProperties:
-    """
-    **Property 24: Sentiment Error Handling**
+    """**Property 24: Sentiment Error Handling**
     **Validates: Requirements 7.7**
     """
 

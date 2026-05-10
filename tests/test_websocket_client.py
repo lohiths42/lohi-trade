@@ -1,5 +1,4 @@
-"""
-Tests for WebSocket client tick ingestion.
+"""Tests for WebSocket client tick ingestion.
 
 Includes unit tests and property-based tests for:
 - Connection management
@@ -10,21 +9,23 @@ Includes unit tests and property-based tests for:
 """
 
 import time
-import pytest
-from datetime import datetime, timedelta
-from unittest.mock import Mock, MagicMock, patch, call
-from hypothesis import given, strategies as st, settings, assume
+from datetime import datetime
+from unittest.mock import Mock
 
-from src.ingestion.websocket_client import WebSocketClient, ConnectionStats
+import pytest
+from hypothesis import given, settings
+from hypothesis import strategies as st
+
 from src.ingestion.broker_interface import (
-    Tick,
-    BrokerInterface,
     BrokerCredentials,
+    BrokerInterface,
+    Tick,
+)
+from src.ingestion.broker_interface import (
     ConnectionError as BrokerConnectionError,
 )
+from src.ingestion.websocket_client import ConnectionStats, WebSocketClient
 from src.state.event_bus import EventBus
-from src.utils.config import Config
-
 
 # Test fixtures
 
@@ -102,9 +103,9 @@ def test_connect_success(websocket_client, mock_broker):
         client_id="test_client",
         password="test_password",
     )
-    
+
     result = websocket_client.connect(credentials)
-    
+
     assert result is True
     assert websocket_client.is_connected()
     assert mock_broker.connect.called
@@ -114,15 +115,15 @@ def test_connect_success(websocket_client, mock_broker):
 def test_connect_failure(websocket_client, mock_broker):
     """Test connection failure."""
     mock_broker.connect.return_value = False
-    
+
     credentials = BrokerCredentials(
         api_key="test_key",
         client_id="test_client",
         password="test_password",
     )
-    
+
     result = websocket_client.connect(credentials)
-    
+
     assert result is False
     assert not websocket_client.is_connected()
 
@@ -136,10 +137,10 @@ def test_disconnect(websocket_client, mock_broker):
         password="test_password",
     )
     websocket_client.connect(credentials)
-    
+
     # Disconnect
     websocket_client.disconnect()
-    
+
     assert mock_broker.disconnect.called
     assert websocket_client._stats.disconnected_at is not None
 
@@ -153,11 +154,11 @@ def test_subscribe_success(websocket_client, mock_broker):
         password="test_password",
     )
     websocket_client.connect(credentials)
-    
+
     # Subscribe
     symbols = ["RELIANCE", "TCS", "INFY"]
     result = websocket_client.subscribe(symbols)
-    
+
     assert result is True
     assert websocket_client._subscribed_symbols == symbols
     assert mock_broker.subscribe.called
@@ -166,7 +167,7 @@ def test_subscribe_success(websocket_client, mock_broker):
 def test_subscribe_not_connected(websocket_client):
     """Test subscription fails when not connected."""
     symbols = ["RELIANCE", "TCS"]
-    
+
     with pytest.raises(BrokerConnectionError):
         websocket_client.subscribe(symbols)
 
@@ -181,10 +182,10 @@ def test_unsubscribe(websocket_client, mock_broker):
     )
     websocket_client.connect(credentials)
     websocket_client.subscribe(["RELIANCE", "TCS", "INFY"])
-    
+
     # Unsubscribe
     result = websocket_client.unsubscribe(["TCS"])
-    
+
     assert result is True
     assert "TCS" not in websocket_client._subscribed_symbols
     assert "RELIANCE" in websocket_client._subscribed_symbols
@@ -194,21 +195,21 @@ def test_unsubscribe(websocket_client, mock_broker):
 def test_on_tick_publishes_to_event_bus(websocket_client, mock_event_bus, sample_tick):
     """Test that incoming tick is published to Event Bus."""
     websocket_client._on_tick(sample_tick)
-    
+
     # Verify Event Bus publish was called
     assert mock_event_bus.publish.called
-    
+
     # Check stream name
     call_args = mock_event_bus.publish.call_args
     assert call_args[1]["stream_name"] == f"stream:ticks:{sample_tick.symbol}"
-    
+
     # Check message content
     message = call_args[1]["message"]
     assert message["symbol"] == sample_tick.symbol
     assert message["token"] == sample_tick.token
     assert message["ltp"] == sample_tick.ltp
     assert message["volume"] == sample_tick.volume
-    
+
     # Check maxlen
     assert call_args[1]["maxlen"] == 1000
 
@@ -217,9 +218,9 @@ def test_on_tick_updates_statistics(websocket_client, sample_tick):
     """Test that tick processing updates statistics."""
     initial_received = websocket_client._stats.total_ticks_received
     initial_published = websocket_client._stats.total_ticks_published
-    
+
     websocket_client._on_tick(sample_tick)
-    
+
     assert websocket_client._stats.total_ticks_received == initial_received + 1
     assert websocket_client._stats.total_ticks_published == initial_published + 1
     assert websocket_client._stats.last_tick_timestamp is not None
@@ -228,7 +229,7 @@ def test_on_tick_updates_statistics(websocket_client, sample_tick):
 def test_on_tick_tracks_latency(websocket_client, sample_tick):
     """Test that tick processing tracks latency."""
     websocket_client._on_tick(sample_tick)
-    
+
     assert websocket_client._stats.tick_count_for_latency > 0
     assert websocket_client._stats.total_latency_ms > 0
     assert websocket_client._stats.average_latency_ms > 0
@@ -237,9 +238,9 @@ def test_on_tick_tracks_latency(websocket_client, sample_tick):
 def test_get_statistics(websocket_client, sample_tick):
     """Test getting connection statistics."""
     websocket_client._on_tick(sample_tick)
-    
+
     stats = websocket_client.get_statistics()
-    
+
     assert isinstance(stats, ConnectionStats)
     assert stats.total_ticks_received > 0
     assert stats.total_ticks_published > 0
@@ -248,12 +249,11 @@ def test_get_statistics(websocket_client, sample_tick):
 # Property-Based Tests
 
 @given(
-    reconnect_attempt=st.integers(min_value=1, max_value=10)
+    reconnect_attempt=st.integers(min_value=1, max_value=10),
 )
 @settings(max_examples=5, deadline=None)
 def test_property_reconnection_backoff(reconnect_attempt):
-    """
-    Property 2: WebSocket Reconnection Backoff
+    """Property 2: WebSocket Reconnection Backoff
     
     For any WebSocket connection failure, reconnection attempts should follow
     exponential backoff pattern (1s, 2s, 4s, 8s, max 30s).
@@ -265,9 +265,9 @@ def test_property_reconnection_backoff(reconnect_attempt):
     # Calculate expected backoff delay
     base_delay = 1
     max_delay = 30
-    
+
     expected_delay = min(base_delay * (2 ** (reconnect_attempt - 1)), max_delay)
-    
+
     # Verify exponential backoff formula
     if reconnect_attempt == 1:
         assert expected_delay == 1
@@ -282,10 +282,10 @@ def test_property_reconnection_backoff(reconnect_attempt):
     elif reconnect_attempt >= 6:
         # Should cap at 30 seconds
         assert expected_delay == 30
-    
+
     # Verify delay is within valid range
     assert 1 <= expected_delay <= 30
-    
+
     # Verify exponential growth (until cap)
     if reconnect_attempt < 6:
         assert expected_delay == base_delay * (2 ** (reconnect_attempt - 1))
@@ -299,8 +299,7 @@ def test_property_reconnection_backoff(reconnect_attempt):
 )
 @settings(max_examples=5, deadline=None)
 def test_property_tick_processing_throughput(num_symbols, ticks_per_symbol):
-    """
-    Property 4: Tick Processing Throughput
+    """Property 4: Tick Processing Throughput
 
     For any sequence of 1000+ ticks per second, all ticks should be processed
     and published to Event Bus without data loss.
@@ -350,7 +349,7 @@ def test_property_tick_processing_throughput(num_symbols, ticks_per_symbol):
                     volume=100 + t,
                     timestamp=datetime.now(),
                     exchange="NSE",
-                )
+                ),
             )
 
     # Process all ticks and measure throughput
@@ -394,15 +393,14 @@ def test_property_tick_processing_throughput(num_symbols, ticks_per_symbol):
 
 
 @given(
-    symbol=st.text(min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=('Lu',))),
+    symbol=st.text(min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=("Lu",))),
     token=st.integers(min_value=1000, max_value=9999),
     ltp=st.floats(min_value=100.0, max_value=10000.0, allow_nan=False, allow_infinity=False),
     volume=st.integers(min_value=1, max_value=10000000),
 )
 @settings(max_examples=5, deadline=None)
 def test_property_tick_to_event_bus_latency(symbol, token, ltp, volume):
-    """
-    Property 1: Tick to Event Bus Latency
+    """Property 1: Tick to Event Bus Latency
     
     For any tick received from the broker WebSocket, the time from receipt
     to Event_Bus publish should be less than 10 milliseconds.
@@ -421,19 +419,19 @@ def test_property_tick_to_event_bus_latency(symbol, token, ltp, volume):
     mock_broker.is_connected.return_value = True
     mock_broker.subscribe.return_value = True
     mock_broker.unsubscribe.return_value = True
-    
+
     mock_event_bus = Mock(spec=EventBus)
     mock_event_bus.publish.return_value = "1234567890-0"
-    
+
     mock_config = Mock()
-    
+
     # Create WebSocket client
     client = WebSocketClient(
         broker=mock_broker,
         event_bus=mock_event_bus,
         config=mock_config,
     )
-    
+
     # Create tick
     tick = Tick(
         symbol=symbol,
@@ -443,34 +441,33 @@ def test_property_tick_to_event_bus_latency(symbol, token, ltp, volume):
         timestamp=datetime.now(),
         exchange="NSE",
     )
-    
+
     # Process tick
     start_time = time.perf_counter()
     client._on_tick(tick)
     end_time = time.perf_counter()
-    
+
     # Calculate actual processing time
     processing_time_ms = (end_time - start_time) * 1000
-    
+
     # Verify tick was published
     assert mock_event_bus.publish.called
-    
+
     # Verify latency tracking
     assert client._stats.tick_count_for_latency > 0
     assert client._stats.total_latency_ms > 0
-    
+
     # Note: We can't guarantee < 10ms in unit tests due to mock overhead,
     # but we verify the tracking mechanism works
     assert processing_time_ms >= 0
 
 
 @given(
-    num_ticks=st.integers(min_value=1, max_value=1000)
+    num_ticks=st.integers(min_value=1, max_value=1000),
 )
 @settings(max_examples=5, deadline=None)
 def test_property_average_latency_calculation(num_ticks):
-    """
-    Test that average latency is calculated correctly.
+    """Test that average latency is calculated correctly.
     
     For any number of ticks processed, the average latency should be
     the sum of all latencies divided by the number of ticks.
@@ -482,18 +479,18 @@ def test_property_average_latency_calculation(num_ticks):
     mock_broker.is_connected.return_value = True
     mock_broker.subscribe.return_value = True
     mock_broker.unsubscribe.return_value = True
-    
+
     mock_event_bus = Mock(spec=EventBus)
     mock_event_bus.publish.return_value = "1234567890-0"
-    
+
     mock_config = Mock()
-    
+
     client = WebSocketClient(
         broker=mock_broker,
         event_bus=mock_event_bus,
         config=mock_config,
     )
-    
+
     # Process ticks
     for i in range(num_ticks):
         tick = Tick(
@@ -505,7 +502,7 @@ def test_property_average_latency_calculation(num_ticks):
             exchange="NSE",
         )
         client._on_tick(tick)
-    
+
     # Verify average latency calculation
     if client._stats.tick_count_for_latency > 0:
         expected_avg = client._stats.total_latency_ms / client._stats.tick_count_for_latency
@@ -514,16 +511,15 @@ def test_property_average_latency_calculation(num_ticks):
 
 @given(
     symbols=st.lists(
-        st.text(min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=('Lu',))),
+        st.text(min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=("Lu",))),
         min_size=1,
         max_size=50,
         unique=True,
-    )
+    ),
 )
 @settings(max_examples=5, deadline=None)
 def test_property_subscription_state_maintained(symbols):
-    """
-    Test that subscription state is maintained correctly.
+    """Test that subscription state is maintained correctly.
     
     For any list of symbols subscribed, the client should maintain
     the correct subscription state.
@@ -535,18 +531,18 @@ def test_property_subscription_state_maintained(symbols):
     mock_broker.is_connected.return_value = True
     mock_broker.subscribe.return_value = True
     mock_broker.unsubscribe.return_value = True
-    
+
     mock_event_bus = Mock(spec=EventBus)
     mock_event_bus.publish.return_value = "1234567890-0"
-    
+
     mock_config = Mock()
-    
+
     client = WebSocketClient(
         broker=mock_broker,
         event_bus=mock_event_bus,
         config=mock_config,
     )
-    
+
     # Connect
     credentials = BrokerCredentials(
         api_key="test_key",
@@ -554,10 +550,10 @@ def test_property_subscription_state_maintained(symbols):
         password="test_password",
     )
     client.connect(credentials)
-    
+
     # Subscribe
     client.subscribe(symbols)
-    
+
     # Verify subscription state
     assert set(client._subscribed_symbols) == set(symbols)
     assert len(client._subscribed_symbols) == len(symbols)

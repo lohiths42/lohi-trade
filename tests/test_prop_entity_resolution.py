@@ -1,5 +1,4 @@
-"""
-Property-based tests for EntityResolver.
+"""Property-based tests for EntityResolver.
 
 Tests entity resolution mapping, multi-entity association, and unmapped
 entity handling using hypothesis.
@@ -11,16 +10,14 @@ Properties tested:
 """
 
 import uuid
-from datetime import datetime, timezone
-from typing import Dict, List, Optional, Tuple
+from datetime import UTC, datetime
 
-from hypothesis import given, settings, assume
+from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
-from src.commander.entity_resolver import EntityResolver, ResolvedEntity
+from src.commander.entity_resolver import EntityResolver
 from src.commander.rss_poller import NewsArticle
 from src.ingestion.ticker_mapper import TickerMapper
-
 
 # ---------------------------------------------------------------------------
 # Test Fixtures: Mock spaCy model and helpers
@@ -43,14 +40,13 @@ class _MockSpacyDoc:
 
 
 class _ConfigurableSpacyModel:
-    """
-    Mock spaCy model that returns entities based on a lookup.
+    """Mock spaCy model that returns entities based on a lookup.
 
     Given a mapping of text substrings to entity names, it returns
     ORG entities for any configured company names found in the text.
     """
 
-    def __init__(self, entity_names: List[str]):
+    def __init__(self, entity_names: list[str]):
         self._entity_names = entity_names
 
     def __call__(self, text: str) -> _MockSpacyDoc:
@@ -63,12 +59,11 @@ class _ConfigurableSpacyModel:
 
 
 class _DirectSpacyModel:
-    """
-    Mock spaCy model that always returns a fixed list of entities.
+    """Mock spaCy model that always returns a fixed list of entities.
     Used when we want to control exactly which entities are extracted.
     """
 
-    def __init__(self, entities: List[str]):
+    def __init__(self, entities: list[str]):
         self._entities = entities
 
     def __call__(self, text: str) -> _MockSpacyDoc:
@@ -82,8 +77,8 @@ def _make_article(title: str = "Test article", content: str = "Test content") ->
         title=title,
         content=content,
         url=f"https://example.com/{uuid.uuid4().hex[:8]}",
-        published_at=datetime.now(timezone.utc),
-        fetched_at=datetime.now(timezone.utc),
+        published_at=datetime.now(UTC),
+        fetched_at=datetime.now(UTC),
         content_hash="test-hash",
     )
 
@@ -110,7 +105,7 @@ _ticker = st.text(
 def ticker_mapping_strategy(draw):
     """Generate a dictionary of company name -> ticker mappings."""
     num_entries = draw(st.integers(min_value=1, max_value=15))
-    mapping: Dict[str, str] = {}
+    mapping: dict[str, str] = {}
     for _ in range(num_entries):
         name = draw(_company_name).strip().lower()
         ticker = draw(_ticker).strip().upper()
@@ -121,9 +116,8 @@ def ticker_mapping_strategy(draw):
 
 
 @st.composite
-def mapped_entities_strategy(draw, mapping: Dict[str, str]):
-    """
-    Select a subset of company names from the mapping to use as entities.
+def mapped_entities_strategy(draw, mapping: dict[str, str]):
+    """Select a subset of company names from the mapping to use as entities.
     These are entities that SHOULD be resolved to tickers.
     """
     names = list(mapping.keys())
@@ -134,7 +128,7 @@ def mapped_entities_strategy(draw, mapping: Dict[str, str]):
             min_size=num_to_select,
             max_size=num_to_select,
             unique=True,
-        )
+        ),
     )
     return selected
 
@@ -153,8 +147,7 @@ def unmapped_entity_names(draw):
 
 
 class TestEntityResolutionMapping:
-    """
-    Property 19: Entity Resolution Mapping
+    """Property 19: Entity Resolution Mapping
 
     *For any* company name that exists in the ticker mapping dictionary,
     the entity resolver should correctly map it to the corresponding
@@ -166,8 +159,7 @@ class TestEntityResolutionMapping:
     @given(data=st.data())
     @settings(max_examples=25)
     def test_mapped_company_resolves_to_correct_ticker(self, data):
-        """
-        Property: For any company name in the ticker mapping, the resolver
+        """Property: For any company name in the ticker mapping, the resolver
         should return the correct ticker symbol.
 
         **Validates: Requirements 6.2**
@@ -209,8 +201,7 @@ class TestEntityResolutionMapping:
 
 
 class TestMultiEntityAssociation:
-    """
-    Property 20: Multi-Entity Article Association
+    """Property 20: Multi-Entity Article Association
 
     *For any* news article containing multiple company names, the entity
     resolver should associate the article with all identified tickers.
@@ -221,8 +212,7 @@ class TestMultiEntityAssociation:
     @given(data=st.data())
     @settings(max_examples=25)
     def test_all_entities_resolved_to_tickers(self, data):
-        """
-        Property: For any article with N company names (N >= 1), the resolver
+        """Property: For any article with N company names (N >= 1), the resolver
         should associate the article with all N corresponding ticker symbols.
 
         **Validates: Requirements 6.3**
@@ -239,7 +229,7 @@ class TestMultiEntityAssociation:
                 min_size=num_entities,
                 max_size=num_entities,
                 unique=True,
-            )
+            ),
         )
 
         expected_tickers = {mapping[n] for n in selected_names}
@@ -270,8 +260,7 @@ class TestMultiEntityAssociation:
     @given(data=st.data())
     @settings(max_examples=25)
     def test_entities_found_contains_all_raw_names(self, data):
-        """
-        Property: entities_found should contain all raw company names
+        """Property: entities_found should contain all raw company names
         extracted by NER.
 
         **Validates: Requirements 6.3**
@@ -285,7 +274,7 @@ class TestMultiEntityAssociation:
                 min_size=num_entities,
                 max_size=num_entities,
                 unique=True,
-            )
+            ),
         )
 
         mapper = TickerMapper(data_dir="data", fuzzy_threshold=0.85)
@@ -310,8 +299,7 @@ class TestMultiEntityAssociation:
 
 
 class TestUnmappedEntityHandling:
-    """
-    Property 21: Unmapped Entity Handling
+    """Property 21: Unmapped Entity Handling
 
     *For any* company name that cannot be mapped to a ticker, the entity
     resolver should log the unmapped entity and not include it in the
@@ -323,8 +311,7 @@ class TestUnmappedEntityHandling:
     @given(data=st.data())
     @settings(max_examples=25)
     def test_unmapped_entities_not_in_tickers(self, data):
-        """
-        Property: For any entity not in the ticker mapping, it should NOT
+        """Property: For any entity not in the ticker mapping, it should NOT
         appear in the resolved tickers list.
 
         **Validates: Requirements 6.4**
@@ -366,8 +353,7 @@ class TestUnmappedEntityHandling:
     @given(data=st.data())
     @settings(max_examples=25)
     def test_mixed_mapped_and_unmapped(self, data):
-        """
-        Property: When both mapped and unmapped entities are present,
+        """Property: When both mapped and unmapped entities are present,
         only mapped entities should appear in tickers, and unmapped
         entities should be in unmapped_entities.
 

@@ -1,22 +1,17 @@
+"""Unit tests for the Market Trend Predictor.
 """
-Unit tests for the Market Trend Predictor.
-"""
+
 
 import numpy as np
-import pytest
-from datetime import datetime, timezone
 
 from src.ml.market_predictor import (
-    MarketPredictor,
-    MarketRegime,
-    PatternSample,
-    extract_pattern_features,
-    compute_regime_label,
-    LOOKBACK_CANDLES,
-    FORECAST_CANDLES,
-    REGIME_UP,
     REGIME_DOWN,
     REGIME_SIDEWAYS,
+    REGIME_UP,
+    MarketPredictor,
+    PatternSample,
+    compute_regime_label,
+    extract_pattern_features,
 )
 
 
@@ -189,7 +184,7 @@ class TestMarketPredictor:
         # Predict with too few candles
         regime = mp.predict(
             np.array([100.0]), np.array([101.0]),
-            np.array([99.0]), np.array([1000.0])
+            np.array([99.0]), np.array([1000.0]),
         )
         assert regime.regime == REGIME_SIDEWAYS
 

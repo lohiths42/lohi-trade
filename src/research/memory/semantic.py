@@ -26,7 +26,8 @@ Design: §3.4, §4.1
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Final
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Final
 from uuid import UUID
 
 if TYPE_CHECKING:  # pragma: no cover - typing only
@@ -50,7 +51,7 @@ logger = logging.getLogger(__name__)
 # ``"symbol_fact:<SYMBOL>"`` — is also a valid kind and deliberately
 # uses the ``":"`` separator so it can be matched with a LIKE clause.
 _KNOWN_KINDS: Final[frozenset[str]] = frozenset(
-    {"preference", "watchlist_fact", "session_summary", "symbol_fact"}
+    {"preference", "watchlist_fact", "session_summary", "symbol_fact"},
 )
 
 
@@ -94,13 +95,14 @@ class SemanticMemory:
 
     Requirements: 4.3, 4.5, 4.6
     Design: §3.4, §4.1
+
     """
 
     def __init__(
         self,
         *,
         connection_factory: Callable[
-            [UUID], "AbstractAsyncContextManager[asyncpg.Connection]"
+            [UUID], AbstractAsyncContextManager[asyncpg.Connection],
         ],
     ) -> None:
         self._conn_factory = connection_factory
@@ -181,7 +183,7 @@ class SemanticMemory:
         # but guard anyway so a driver-level oddity surfaces clearly.
         if row is None:  # pragma: no cover - defensive
             raise RuntimeError(
-                "semantic_memory.add: INSERT … RETURNING id returned no row"
+                "semantic_memory.add: INSERT … RETURNING id returned no row",
             )
         return row["id"]
 
@@ -279,7 +281,7 @@ class SemanticMemory:
         async with self._conn_factory(user_id) as conn:
             if kind is None:
                 result = await conn.execute(
-                    "DELETE FROM research_semantic_memory"
+                    "DELETE FROM research_semantic_memory",
                 )
             else:
                 result = await conn.execute(

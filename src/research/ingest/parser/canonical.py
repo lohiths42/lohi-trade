@@ -65,7 +65,7 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, Final, Literal
 from uuid import UUID
 
@@ -110,10 +110,10 @@ _SECTION_END_TEMPLATE: Final[str] = "<!-- section:{name}:end -->"
 # comment.
 _SECTION_NAME_RE: Final[re.Pattern[str]] = re.compile(r"[a-z][a-z0-9_]*")
 _SECTION_START_RE: Final[re.Pattern[str]] = re.compile(
-    r"<!-- section:(?P<name>[a-z][a-z0-9_]*):start -->"
+    r"<!-- section:(?P<name>[a-z][a-z0-9_]*):start -->",
 )
 _SECTION_END_RE: Final[re.Pattern[str]] = re.compile(
-    r"<!-- section:(?P<name>[a-z][a-z0-9_]*):end -->"
+    r"<!-- section:(?P<name>[a-z][a-z0-9_]*):end -->",
 )
 
 # Matches the SHA-256 hex shape we persist on ``research_documents.sha256``.
@@ -168,7 +168,7 @@ class SectionSpan(BaseModel):
         """
         if not _SECTION_NAME_RE.fullmatch(value):
             raise ValueError(
-                f"section name must match [a-z][a-z0-9_]*, got {value!r}"
+                f"section name must match [a-z][a-z0-9_]*, got {value!r}",
             )
         return value
 
@@ -239,14 +239,14 @@ class CanonicalDoc(BaseModel):
         """Enforce 64-char lowercase hex so the value round-trips losslessly."""
         if not _SHA256_HEX_RE.fullmatch(value):
             raise ValueError(
-                "sha256 must be 64 lowercase hex characters"
+                "sha256 must be 64 lowercase hex characters",
             )
         return value
 
     @field_validator("sections")
     @classmethod
     def _sections_are_wellformed(
-        cls, value: list[SectionSpan]
+        cls, value: list[SectionSpan],
     ) -> list[SectionSpan]:
         """Reject overlapping, reversed, or duplicate-name section spans.
 
@@ -264,17 +264,17 @@ class CanonicalDoc(BaseModel):
             if span.end < span.start:
                 raise ValueError(
                     f"section {span.name!r} has end < start "
-                    f"({span.end} < {span.start})"
+                    f"({span.end} < {span.start})",
                 )
             if span.start < prev_end:
                 raise ValueError(
                     f"section {span.name!r} overlaps the preceding span "
-                    f"(start={span.start} < prev_end={prev_end})"
+                    f"(start={span.start} < prev_end={prev_end})",
                 )
             if span.name in seen_names:
                 raise ValueError(
                     f"duplicate section name {span.name!r}; merge spans "
-                    "before building a CanonicalDoc"
+                    "before building a CanonicalDoc",
                 )
             seen_names.add(span.name)
             prev_end = span.end
@@ -378,7 +378,7 @@ def parse_canonical(markdown: str) -> CanonicalDoc:
     if header != _HEADER_COMMENT:
         raise ValueError(
             f"unsupported canonical-doc format header: {header!r}; "
-            f"expected {_HEADER_COMMENT!r}"
+            f"expected {_HEADER_COMMENT!r}",
         )
 
     meta_payload, body_with_markers = _consume_meta_block(remainder)
@@ -456,12 +456,12 @@ def _isoformat_utc(value: datetime) -> str:
     inverse, giving us a guaranteed-clean round trip.
     """
     if value.tzinfo is None:
-        value = value.replace(tzinfo=timezone.utc)
+        value = value.replace(tzinfo=UTC)
     return value.isoformat()
 
 
 def _inject_section_markers(
-    canonical_text: str, sections: list[SectionSpan]
+    canonical_text: str, sections: list[SectionSpan],
 ) -> str:
     """Return ``canonical_text`` with start/end HTML comments inserted.
 
@@ -482,13 +482,13 @@ def _inject_section_markers(
             raise ValueError(
                 f"section {span.name!r} offsets out of range for "
                 f"canonical_text of length {len(canonical_text)}: "
-                f"start={span.start} end={span.end}"
+                f"start={span.start} end={span.end}",
             )
         insertions.append(
-            (span.start, _SECTION_START_TEMPLATE.format(name=span.name))
+            (span.start, _SECTION_START_TEMPLATE.format(name=span.name)),
         )
         insertions.append(
-            (span.end, _SECTION_END_TEMPLATE.format(name=span.name))
+            (span.end, _SECTION_END_TEMPLATE.format(name=span.name)),
         )
 
     # Sort descending by offset. At equal offsets we want the closing
@@ -568,10 +568,8 @@ def _consume_meta_block(markdown: str) -> tuple[dict[str, Any], str]:
     # — matches the printer's ``-->\n\n<body>`` layout so the body text
     # does not gain leading blank lines on the round trip.
     rest = markdown[body_start:]
-    if rest.startswith("\n"):
-        rest = rest[1:]
-    if rest.startswith("\n"):
-        rest = rest[1:]
+    rest = rest.removeprefix("\n")
+    rest = rest.removeprefix("\n")
     return payload, rest
 
 
@@ -589,11 +587,11 @@ def _extract_sections(
     markers: list[tuple[int, int, str, str]] = []  # (src_start, src_end, name, kind)
     for match in _SECTION_START_RE.finditer(body_with_markers):
         markers.append(
-            (match.start(), match.end(), match.group("name"), "start")
+            (match.start(), match.end(), match.group("name"), "start"),
         )
     for match in _SECTION_END_RE.finditer(body_with_markers):
         markers.append(
-            (match.start(), match.end(), match.group("name"), "end")
+            (match.start(), match.end(), match.group("name"), "end"),
         )
     markers.sort(key=lambda m: m[0])
 
@@ -612,7 +610,7 @@ def _extract_sections(
             # Overlap between regex matches (should never happen: the
             # two regexes are disjoint). Fail loud.
             raise ValueError(
-                f"overlapping section markers detected near offset {src_start}"
+                f"overlapping section markers detected near offset {src_start}",
             )
         out.append(body_with_markers[cursor:src_start])
         # Compute the post-strip offset: length of everything we have
@@ -621,17 +619,17 @@ def _extract_sections(
         if kind == "start":
             if name in pending_starts:
                 raise ValueError(
-                    f"nested or duplicate start marker for section {name!r}"
+                    f"nested or duplicate start marker for section {name!r}",
                 )
             pending_starts[name] = post_offset
         else:  # end
             if name not in pending_starts:
                 raise ValueError(
-                    f"end marker for section {name!r} without a preceding start"
+                    f"end marker for section {name!r} without a preceding start",
                 )
             start_offset = pending_starts.pop(name)
             spans.append(
-                SectionSpan(name=name, start=start_offset, end=post_offset)
+                SectionSpan(name=name, start=start_offset, end=post_offset),
             )
         cursor = src_end
 
@@ -641,7 +639,7 @@ def _extract_sections(
     if pending_starts:
         raise ValueError(
             "unterminated section start marker(s): "
-            f"{sorted(pending_starts.keys())}"
+            f"{sorted(pending_starts.keys())}",
         )
 
     # Sort by ``start`` so the round-trip yields the same ordering as a

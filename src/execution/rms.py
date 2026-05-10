@@ -1,5 +1,4 @@
-"""
-Risk Management System (RMS) for LOHI-TRADE.
+"""Risk Management System (RMS) for LOHI-TRADE.
 
 Validates all orders against 9 pre-order checks before forwarding to OMS.
 The checks are executed in order and all must pass for an order to proceed.
@@ -20,9 +19,9 @@ Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7, 9.8, 9.9, 10.1-10.11
 
 import json
 import time
-from dataclasses import dataclass, field
+from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Callable, Dict, List, Optional, Tuple
 
 from src.soldier.strategy_engine import Signal
 from src.state.database import DatabaseConnectionManager
@@ -48,12 +47,13 @@ class ValidationResult:
         checks_failed: List of check names that failed.
         timestamp: When validation was performed.
         latency_ms: Time taken for validation in milliseconds.
+
     """
 
     is_valid: bool
-    rejection_reason: Optional[str]
-    checks_passed: List[str]
-    checks_failed: List[str]
+    rejection_reason: str | None
+    checks_passed: list[str]
+    checks_failed: list[str]
     timestamp: datetime
     latency_ms: float = 0.0
 
@@ -70,6 +70,7 @@ class ExposureMetrics:
         daily_pnl_pct: Daily P&L as percentage of capital.
         orders_today: Number of orders placed today.
         max_position_size: Maximum allowed position value.
+
     """
 
     total_capital: float
@@ -82,8 +83,7 @@ class ExposureMetrics:
 
 
 class RiskManagementSystem:
-    """
-    Validates all orders against 9 pre-order checks before forwarding to OMS.
+    """Validates all orders against 9 pre-order checks before forwarding to OMS.
 
     The RMS consumes signals from stream:signals, fetches bias from
     stream:bias:{symbol}, and performs sequential validation checks.
@@ -102,10 +102,9 @@ class RiskManagementSystem:
         redis_client: RedisClient,
         event_bus: EventBus,
         db_manager: DatabaseConnectionManager,
-        now_fn: Optional[Callable[[], datetime]] = None,
+        now_fn: Callable[[], datetime] | None = None,
     ) -> None:
-        """
-        Initialize the Risk Management System.
+        """Initialize the Risk Management System.
 
         Args:
             config: Application configuration.
@@ -113,6 +112,7 @@ class RiskManagementSystem:
             event_bus: Event bus for publishing rejections.
             db_manager: Database manager for querying trades/orders and logging.
             now_fn: Optional callable returning current datetime (for testing).
+
         """
         self._config = config
         self._redis = redis_client
@@ -149,7 +149,7 @@ class RiskManagementSystem:
             f"max_loss={self._max_daily_loss_pct}%, "
             f"max_positions={self._max_open_positions}, "
             f"max_orders={self._max_orders_per_day}, "
-            f"volatility_benchmark={self._benchmark_index_name}"
+            f"volatility_benchmark={self._benchmark_index_name}",
         )
 
     # ------------------------------------------------------------------
@@ -157,8 +157,7 @@ class RiskManagementSystem:
     # ------------------------------------------------------------------
 
     def validate_order(self, signal: Signal) -> ValidationResult:
-        """
-        Validate a signal against all 9 pre-order checks.
+        """Validate a signal against all 9 pre-order checks.
 
         Checks are executed in order. All must pass for the order to be valid.
         On first failure, remaining checks are still evaluated so that the
@@ -171,15 +170,16 @@ class RiskManagementSystem:
 
         Returns:
             ValidationResult with pass/fail status, details, and latency_ms.
+
         """
         start_time = time.monotonic()
 
         now = self._now_fn()
-        checks_passed: List[str] = []
-        checks_failed: List[str] = []
-        first_rejection: Optional[str] = None
+        checks_passed: list[str] = []
+        checks_failed: list[str] = []
+        first_rejection: str | None = None
 
-        checks: List[Tuple[str, Callable[..., Optional[str]]]] = [
+        checks: list[tuple[str, Callable[..., str | None]]] = [
             ("kill_switch", lambda: self._check_kill_switch()),
             ("trading_hours", lambda: self._check_trading_hours(now)),
             ("daily_loss_limit", lambda: self._check_daily_loss_limit()),
@@ -217,35 +217,35 @@ class RiskManagementSystem:
         # Always log latency at INFO level
         logger.info(
             f"Order validation latency: {latency_ms:.2f}ms "
-            f"symbol={signal.symbol} side={signal.side}"
+            f"symbol={signal.symbol} side={signal.side}",
         )
 
         # Warn if latency exceeds 50ms threshold
         if latency_ms > 50:
             logger.warning(
                 f"Order validation latency exceeded 50ms: {latency_ms:.2f}ms "
-                f"symbol={signal.symbol} side={signal.side}"
+                f"symbol={signal.symbol} side={signal.side}",
             )
 
         if is_valid:
             logger.info(
                 f"Order PASSED all RMS checks: symbol={signal.symbol} "
-                f"side={signal.side} strategy={signal.strategy}"
+                f"side={signal.side} strategy={signal.strategy}",
             )
         else:
             logger.warning(
                 f"Order REJECTED: symbol={signal.symbol} side={signal.side} "
-                f"reason='{first_rejection}' failed_checks={checks_failed}"
+                f"reason='{first_rejection}' failed_checks={checks_failed}",
             )
 
         return result
 
     def get_current_exposure(self) -> ExposureMetrics:
-        """
-        Get current exposure and risk metrics.
+        """Get current exposure and risk metrics.
 
         Returns:
             ExposureMetrics with current capital, positions, and P&L data.
+
         """
         open_positions = self._get_open_position_count()
         daily_pnl = self._get_daily_pnl()
@@ -264,11 +264,11 @@ class RiskManagementSystem:
         )
 
     def activate_kill_switch(self, reason: str) -> None:
-        """
-        Activate the kill switch, halting all new orders.
+        """Activate the kill switch, halting all new orders.
 
         Args:
             reason: Reason for activation.
+
         """
         self._redis.set(self.KILL_SWITCH_KEY, "true")
         self._redis.set(self.KILL_SWITCH_REASON_KEY, reason)
@@ -289,13 +289,13 @@ class RiskManagementSystem:
     # Pre-order checks (return None if passed, rejection reason if failed)
     # ------------------------------------------------------------------
 
-    def _check_kill_switch(self) -> Optional[str]:
+    def _check_kill_switch(self) -> str | None:
         """Check 1: Reject if kill switch is active."""
         if self.is_kill_switch_active():
             return "Kill switch active"
         return None
 
-    def _check_trading_hours(self, now: datetime) -> Optional[str]:
+    def _check_trading_hours(self, now: datetime) -> str | None:
         """Check 2: Reject if outside trading hours (9:30 AM - 3:10 PM IST)."""
         current_minutes = now.hour * 60 + now.minute
         start_minutes = self._trading_start_hour * 60 + self._trading_start_minute
@@ -305,7 +305,7 @@ class RiskManagementSystem:
             return "Outside trading hours"
         return None
 
-    def _check_daily_loss_limit(self) -> Optional[str]:
+    def _check_daily_loss_limit(self) -> str | None:
         """Check 3: Reject if realized P&L today < -2% of capital."""
         daily_pnl = self._get_daily_pnl()
         loss_limit = -(self._max_daily_loss_pct / 100) * self._total_capital
@@ -313,19 +313,19 @@ class RiskManagementSystem:
         if daily_pnl < loss_limit:
             # Auto-activate kill switch on daily loss limit breach
             self.activate_kill_switch(
-                f"Daily loss limit exceeded: P&L={daily_pnl:.2f}, limit={loss_limit:.2f}"
+                f"Daily loss limit exceeded: P&L={daily_pnl:.2f}, limit={loss_limit:.2f}",
             )
             return "Daily loss limit exceeded"
         return None
 
-    def _check_position_limit(self) -> Optional[str]:
+    def _check_position_limit(self) -> str | None:
         """Check 4: Reject if open positions >= max (default 5)."""
         open_count = self._get_open_position_count()
         if open_count >= self._max_open_positions:
             return "Position limit reached"
         return None
 
-    def _check_position_size_limit(self, signal: Signal) -> Optional[str]:
+    def _check_position_size_limit(self, signal: Signal) -> str | None:
         """Check 5: Reject if order value > 20% of capital."""
         max_value = self._total_capital * (self._max_position_size_pct / 100)
         # Use entry_price * quantity if quantity is set, otherwise just entry_price
@@ -342,14 +342,14 @@ class RiskManagementSystem:
             return "Position size limit exceeded"
         return None
 
-    def _check_order_count_limit(self) -> Optional[str]:
+    def _check_order_count_limit(self) -> str | None:
         """Check 6: Reject if orders placed today >= max (default 20)."""
         orders_today = self._get_orders_today_count()
         if orders_today >= self._max_orders_per_day:
             return "Order count limit reached"
         return None
 
-    def _check_cooldown(self, now: datetime) -> Optional[str]:
+    def _check_cooldown(self, now: datetime) -> str | None:
         """Check 7: Reject if last trade was a loss and < 5 minutes ago."""
         last_trade = self._get_last_closed_trade()
         if last_trade is None:
@@ -378,7 +378,7 @@ class RiskManagementSystem:
             return f"Cooldown period active ({remaining.seconds}s remaining)"
         return None
 
-    def _check_volatility_guard(self, now: datetime) -> Optional[str]:
+    def _check_volatility_guard(self, now: datetime) -> str | None:
         """Check 8: Reject if benchmark index dropped > threshold in configured window.
 
         Uses the market-specific benchmark (Nifty 50 for India, S&P 500 for US, etc.)
@@ -390,12 +390,12 @@ class RiskManagementSystem:
             # Auto-activate kill switch on volatility guard trigger
             self.activate_kill_switch(
                 f"Volatility guard triggered: {self._benchmark_index_name} dropped "
-                f"{benchmark_drop_pct:.2f}% in {self._volatility_window_minutes} minutes"
+                f"{benchmark_drop_pct:.2f}% in {self._volatility_window_minutes} minutes",
             )
             return "Volatility guard triggered"
         return None
 
-    def _check_bias_filter(self, signal: Signal) -> Optional[str]:
+    def _check_bias_filter(self, signal: Signal) -> str | None:
         """Check 9: Reject BUY if BEARISH, reject SELL if BULLISH."""
         bias = self._get_current_bias(signal.symbol)
 
@@ -436,7 +436,7 @@ class RiskManagementSystem:
         try:
             conn = self._db.connect_sqlite()
             cursor = conn.execute(
-                "SELECT COUNT(*) as cnt FROM trades WHERE exit_time IS NULL"
+                "SELECT COUNT(*) as cnt FROM trades WHERE exit_time IS NULL",
             )
             row = cursor.fetchone()
             return int(row["cnt"]) if row else 0
@@ -459,14 +459,14 @@ class RiskManagementSystem:
             logger.error(f"Failed to get orders today count: {e}")
             return 0
 
-    def _get_last_closed_trade(self) -> Optional[Dict]:
+    def _get_last_closed_trade(self) -> dict | None:
         """Get the most recently closed trade."""
         try:
             conn = self._db.connect_sqlite()
             cursor = conn.execute(
                 "SELECT realized_pnl, exit_time FROM trades "
                 "WHERE exit_time IS NOT NULL "
-                "ORDER BY exit_time DESC LIMIT 1"
+                "ORDER BY exit_time DESC LIMIT 1",
             )
             row = cursor.fetchone()
             if row:
@@ -476,9 +476,8 @@ class RiskManagementSystem:
             logger.error(f"Failed to get last closed trade: {e}")
             return None
 
-    def _get_nifty_drop_pct(self, now: datetime) -> Optional[float]:
-        """
-        Get benchmark index percentage drop in the volatility window.
+    def _get_nifty_drop_pct(self, now: datetime) -> float | None:
+        """Get benchmark index percentage drop in the volatility window.
 
         Reads benchmark tick data from Redis to calculate the drop
         over the configured window (default 10 minutes).
@@ -488,18 +487,19 @@ class RiskManagementSystem:
 
         Returns:
             Percentage drop (positive means drop), or None if data unavailable.
+
         """
         return self._get_benchmark_drop_pct(now)
 
-    def _get_benchmark_drop_pct(self, now: datetime) -> Optional[float]:
-        """
-        Get benchmark index percentage drop in the volatility window.
+    def _get_benchmark_drop_pct(self, now: datetime) -> float | None:
+        """Get benchmark index percentage drop in the volatility window.
 
         Uses configurable Redis keys based on the active market's benchmark.
         Backward compatible: falls back to 'nifty:*' keys if market not configured.
 
         Returns:
             Percentage drop (positive means drop), or None if data unavailable.
+
         """
         try:
             key_prefix = self._benchmark_redis_key
@@ -521,9 +521,8 @@ class RiskManagementSystem:
             logger.error(f"Failed to calculate {self._benchmark_index_name} drop: {e}")
             return None
 
-    def _get_current_bias(self, symbol: str) -> Optional[str]:
-        """
-        Get current bias for a symbol from Redis.
+    def _get_current_bias(self, symbol: str) -> str | None:
+        """Get current bias for a symbol from Redis.
 
         Reads the latest bias from stream:bias:{symbol}.
 
@@ -532,6 +531,7 @@ class RiskManagementSystem:
 
         Returns:
             Bias string ('BULLISH', 'BEARISH', 'NEUTRAL') or None if unavailable.
+
         """
         try:
             bias_key = f"bias:{symbol}"
@@ -548,12 +548,12 @@ class RiskManagementSystem:
     # ------------------------------------------------------------------
 
     def log_rejection(self, signal: Signal, result: ValidationResult) -> None:
-        """
-        Log a rejection to the Event Bus and SQLite audit_log.
+        """Log a rejection to the Event Bus and SQLite audit_log.
 
         Args:
             signal: The rejected signal.
             result: The validation result with rejection details.
+
         """
         if result.is_valid:
             return
@@ -571,7 +571,7 @@ class RiskManagementSystem:
                 "timestamp": result.timestamp.isoformat(),
             }
             self._event_bus.publish(
-                REJECTION_STREAM, rejection_msg, maxlen=REJECTION_STREAM_MAXLEN
+                REJECTION_STREAM, rejection_msg, maxlen=REJECTION_STREAM_MAXLEN,
             )
         except Exception as e:
             logger.error(f"Failed to publish rejection to Event Bus: {e}")

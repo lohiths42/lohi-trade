@@ -1,5 +1,4 @@
-"""
-Property-based tests for Signal Completeness.
+"""Property-based tests for Signal Completeness.
 
 Uses hypothesis to verify that every signal produced by the SignalPipeline
 contains all required fields: entry_price, stop_loss, target (all finite
@@ -24,7 +23,6 @@ from datetime import datetime
 from unittest.mock import MagicMock
 
 import pandas as pd
-import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
@@ -39,7 +37,6 @@ from src.soldier.strategy_engine import (
 from src.utils.config import MeanReversionStrategy as MeanReversionConfig
 from src.utils.config import OpeningRangeBreakoutStrategy as ORBConfig
 from src.utils.config import TrendFollowingStrategy as TrendFollowingConfig
-
 
 # ---------------------------------------------------------------------------
 # Config helpers
@@ -309,8 +306,7 @@ def _signal_via_orb_pipeline(indicators, candles, range_high, range_low) -> Sign
 # ---------------------------------------------------------------------------
 
 class TestSignalCompletenessProperties:
-    """
-    **Validates: Requirements 4.5**
+    """**Validates: Requirements 4.5**
 
     Property 14: Signal Completeness
     """
@@ -320,8 +316,7 @@ class TestSignalCompletenessProperties:
     @given(data=mean_reversion_signal_inputs())
     @settings(max_examples=25)
     def test_mr_signal_has_valid_uuid(self, data):
-        """
-        Property: Every MeanReversion signal has a non-empty, valid UUID signal_id.
+        """Property: Every MeanReversion signal has a non-empty, valid UUID signal_id.
 
         **Validates: Requirements 4.5**
         """
@@ -333,8 +328,7 @@ class TestSignalCompletenessProperties:
     @given(data=trend_following_signal_inputs())
     @settings(max_examples=25)
     def test_tf_signal_has_valid_uuid(self, data):
-        """
-        Property: Every TrendFollowing signal has a non-empty, valid UUID signal_id.
+        """Property: Every TrendFollowing signal has a non-empty, valid UUID signal_id.
 
         **Validates: Requirements 4.5**
         """
@@ -347,8 +341,7 @@ class TestSignalCompletenessProperties:
     @given(data=orb_buy_signal_inputs())
     @settings(max_examples=25)
     def test_orb_buy_signal_has_valid_uuid(self, data):
-        """
-        Property: Every ORB BUY signal has a non-empty, valid UUID signal_id.
+        """Property: Every ORB BUY signal has a non-empty, valid UUID signal_id.
 
         **Validates: Requirements 4.5**
         """
@@ -360,8 +353,7 @@ class TestSignalCompletenessProperties:
     @given(data=orb_sell_signal_inputs())
     @settings(max_examples=25)
     def test_orb_sell_signal_has_valid_uuid(self, data):
-        """
-        Property: Every ORB SELL signal has a non-empty, valid UUID signal_id.
+        """Property: Every ORB SELL signal has a non-empty, valid UUID signal_id.
 
         **Validates: Requirements 4.5**
         """
@@ -375,8 +367,7 @@ class TestSignalCompletenessProperties:
     @given(data=mean_reversion_signal_inputs())
     @settings(max_examples=25)
     def test_mr_signal_prices_finite_positive(self, data):
-        """
-        Property: Every MeanReversion signal has finite positive entry_price,
+        """Property: Every MeanReversion signal has finite positive entry_price,
         stop_loss, and target.
 
         **Validates: Requirements 4.5**
@@ -392,8 +383,7 @@ class TestSignalCompletenessProperties:
     @given(data=trend_following_signal_inputs())
     @settings(max_examples=25)
     def test_tf_signal_prices_finite_positive(self, data):
-        """
-        Property: Every TrendFollowing signal has finite positive entry_price,
+        """Property: Every TrendFollowing signal has finite positive entry_price,
         stop_loss, and target.
 
         **Validates: Requirements 4.5**
@@ -408,8 +398,7 @@ class TestSignalCompletenessProperties:
     @given(data=orb_buy_signal_inputs())
     @settings(max_examples=25)
     def test_orb_buy_signal_prices_finite_positive(self, data):
-        """
-        Property: Every ORB BUY signal has finite positive entry_price,
+        """Property: Every ORB BUY signal has finite positive entry_price,
         stop_loss, and target.
 
         **Validates: Requirements 4.5**
@@ -424,8 +413,7 @@ class TestSignalCompletenessProperties:
     @given(data=orb_sell_signal_inputs())
     @settings(max_examples=25)
     def test_orb_sell_signal_prices_finite_positive(self, data):
-        """
-        Property: Every ORB SELL signal has finite positive entry_price,
+        """Property: Every ORB SELL signal has finite positive entry_price,
         stop_loss, and target.
 
         **Validates: Requirements 4.5**
@@ -443,8 +431,7 @@ class TestSignalCompletenessProperties:
     @given(data=mean_reversion_signal_inputs())
     @settings(max_examples=25)
     def test_mr_buy_price_ordering(self, data):
-        """
-        Property: For MeanReversion BUY signals, stop_loss < entry_price < target.
+        """Property: For MeanReversion BUY signals, stop_loss < entry_price < target.
 
         **Validates: Requirements 4.5**
         """
@@ -461,8 +448,7 @@ class TestSignalCompletenessProperties:
     @given(data=trend_following_signal_inputs())
     @settings(max_examples=25)
     def test_tf_buy_price_ordering(self, data):
-        """
-        Property: For TrendFollowing BUY signals, stop_loss < entry_price < target.
+        """Property: For TrendFollowing BUY signals, stop_loss < entry_price < target.
 
         **Validates: Requirements 4.5**
         """
@@ -479,8 +465,7 @@ class TestSignalCompletenessProperties:
     @given(data=orb_buy_signal_inputs())
     @settings(max_examples=25)
     def test_orb_buy_price_ordering(self, data):
-        """
-        Property: For ORB BUY signals, stop_loss < entry_price < target.
+        """Property: For ORB BUY signals, stop_loss < entry_price < target.
 
         **Validates: Requirements 4.5**
         """
@@ -500,8 +485,7 @@ class TestSignalCompletenessProperties:
     @given(data=orb_sell_signal_inputs())
     @settings(max_examples=25)
     def test_orb_sell_price_ordering(self, data):
-        """
-        Property: For ORB SELL signals, stop_loss > entry_price > target.
+        """Property: For ORB SELL signals, stop_loss > entry_price > target.
 
         **Validates: Requirements 4.5**
         """
@@ -520,8 +504,7 @@ class TestSignalCompletenessProperties:
     @given(data=mean_reversion_signal_inputs())
     @settings(max_examples=25)
     def test_mr_signal_valid_strategy(self, data):
-        """
-        Property: Every MeanReversion signal has strategy in VALID_STRATEGIES.
+        """Property: Every MeanReversion signal has strategy in VALID_STRATEGIES.
 
         **Validates: Requirements 4.5**
         """
@@ -532,8 +515,7 @@ class TestSignalCompletenessProperties:
     @given(data=trend_following_signal_inputs())
     @settings(max_examples=25)
     def test_tf_signal_valid_strategy(self, data):
-        """
-        Property: Every TrendFollowing signal has strategy in VALID_STRATEGIES.
+        """Property: Every TrendFollowing signal has strategy in VALID_STRATEGIES.
 
         **Validates: Requirements 4.5**
         """
@@ -544,8 +526,7 @@ class TestSignalCompletenessProperties:
     @given(data=orb_buy_signal_inputs())
     @settings(max_examples=25)
     def test_orb_signal_valid_strategy(self, data):
-        """
-        Property: Every ORB signal has strategy in VALID_STRATEGIES.
+        """Property: Every ORB signal has strategy in VALID_STRATEGIES.
 
         **Validates: Requirements 4.5**
         """
@@ -559,8 +540,7 @@ class TestSignalCompletenessProperties:
     @given(data=mean_reversion_signal_inputs())
     @settings(max_examples=25)
     def test_mr_signal_valid_side(self, data):
-        """
-        Property: Every MeanReversion signal has side in VALID_SIDES.
+        """Property: Every MeanReversion signal has side in VALID_SIDES.
 
         **Validates: Requirements 4.5**
         """
@@ -571,8 +551,7 @@ class TestSignalCompletenessProperties:
     @given(data=trend_following_signal_inputs())
     @settings(max_examples=25)
     def test_tf_signal_valid_side(self, data):
-        """
-        Property: Every TrendFollowing signal has side in VALID_SIDES.
+        """Property: Every TrendFollowing signal has side in VALID_SIDES.
 
         **Validates: Requirements 4.5**
         """
@@ -583,8 +562,7 @@ class TestSignalCompletenessProperties:
     @given(data=orb_buy_signal_inputs())
     @settings(max_examples=25)
     def test_orb_buy_signal_valid_side(self, data):
-        """
-        Property: Every ORB BUY signal has side in VALID_SIDES.
+        """Property: Every ORB BUY signal has side in VALID_SIDES.
 
         **Validates: Requirements 4.5**
         """
@@ -595,8 +573,7 @@ class TestSignalCompletenessProperties:
     @given(data=orb_sell_signal_inputs())
     @settings(max_examples=25)
     def test_orb_sell_signal_valid_side(self, data):
-        """
-        Property: Every ORB SELL signal has side in VALID_SIDES.
+        """Property: Every ORB SELL signal has side in VALID_SIDES.
 
         **Validates: Requirements 4.5**
         """
@@ -610,8 +587,7 @@ class TestSignalCompletenessProperties:
     @given(data=mean_reversion_signal_inputs())
     @settings(max_examples=25)
     def test_mr_signal_has_indicator_snapshot(self, data):
-        """
-        Property: Every MeanReversion signal includes a non-None IndicatorSet.
+        """Property: Every MeanReversion signal includes a non-None IndicatorSet.
 
         **Validates: Requirements 4.5**
         """
@@ -623,8 +599,7 @@ class TestSignalCompletenessProperties:
     @given(data=trend_following_signal_inputs())
     @settings(max_examples=25)
     def test_tf_signal_has_indicator_snapshot(self, data):
-        """
-        Property: Every TrendFollowing signal includes a non-None IndicatorSet.
+        """Property: Every TrendFollowing signal includes a non-None IndicatorSet.
 
         **Validates: Requirements 4.5**
         """
@@ -636,8 +611,7 @@ class TestSignalCompletenessProperties:
     @given(data=orb_buy_signal_inputs())
     @settings(max_examples=25)
     def test_orb_buy_signal_has_indicator_snapshot(self, data):
-        """
-        Property: Every ORB BUY signal includes a non-None IndicatorSet.
+        """Property: Every ORB BUY signal includes a non-None IndicatorSet.
 
         **Validates: Requirements 4.5**
         """
@@ -649,8 +623,7 @@ class TestSignalCompletenessProperties:
     @given(data=orb_sell_signal_inputs())
     @settings(max_examples=25)
     def test_orb_sell_signal_has_indicator_snapshot(self, data):
-        """
-        Property: Every ORB SELL signal includes a non-None IndicatorSet.
+        """Property: Every ORB SELL signal includes a non-None IndicatorSet.
 
         **Validates: Requirements 4.5**
         """

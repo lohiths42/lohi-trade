@@ -1,5 +1,4 @@
-"""
-Entity Resolver for The Commander.
+"""Entity Resolver for The Commander.
 
 Extracts company names from news articles using spaCy NER (Named Entity
 Recognition) and maps them to NSE ticker symbols using the TickerMapper
@@ -11,8 +10,7 @@ Requirements: 6.1, 6.2, 6.3, 6.4, 6.5
 import json
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Dict, List, Optional
+from datetime import UTC, datetime
 
 from src.commander.rss_poller import NewsArticle
 from src.ingestion.ticker_mapper import TickerMapper
@@ -35,8 +33,7 @@ except Exception:
 
 @dataclass
 class ResolvedEntity:
-    """
-    Result of entity resolution for a news article.
+    """Result of entity resolution for a news article.
 
     Attributes:
         article_id: UUID of the source article
@@ -44,18 +41,18 @@ class ResolvedEntity:
         entities_found: Raw company names extracted by NER
         unmapped_entities: Company names that could not be mapped
         timestamp: When the resolution was performed
+
     """
 
     article_id: str
-    tickers: List[str] = field(default_factory=list)
-    entities_found: List[str] = field(default_factory=list)
-    unmapped_entities: List[str] = field(default_factory=list)
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    tickers: list[str] = field(default_factory=list)
+    entities_found: list[str] = field(default_factory=list)
+    unmapped_entities: list[str] = field(default_factory=list)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 class EntityResolver:
-    """
-    Extracts company names from news and maps to NSE tickers.
+    """Extracts company names from news and maps to NSE tickers.
 
     Uses spaCy en_core_web_sm for Named Entity Recognition (ORG entities)
     and the TickerMapper for fuzzy matching of company names to ticker
@@ -67,17 +64,17 @@ class EntityResolver:
     def __init__(
         self,
         ticker_mapper: TickerMapper,
-        event_bus: Optional[EventBus] = None,
-        spacy_model: Optional[object] = None,
+        event_bus: EventBus | None = None,
+        spacy_model: object | None = None,
     ) -> None:
-        """
-        Initialize the entity resolver.
+        """Initialize the entity resolver.
 
         Args:
             ticker_mapper: TickerMapper instance with loaded mappings.
             event_bus: Optional EventBus for publishing resolved entities.
             spacy_model: Optional pre-loaded spaCy model. If None, loads
                          en_core_web_sm automatically.
+
         """
         self._ticker_mapper = ticker_mapper
         self._event_bus = event_bus
@@ -90,13 +87,12 @@ class EntityResolver:
             except OSError:
                 logger.warning(
                     "spaCy en_core_web_sm model not found. "
-                    "Run: python -m spacy download en_core_web_sm"
+                    "Run: python -m spacy download en_core_web_sm",
                 )
                 self._nlp = None
 
-    def extract_entities(self, text: str) -> List[str]:
-        """
-        Extract ORG entities from text using spaCy NER.
+    def extract_entities(self, text: str) -> list[str]:
+        """Extract ORG entities from text using spaCy NER.
 
         Args:
             text: News article text (title + content).
@@ -105,13 +101,14 @@ class EntityResolver:
             List of unique company/organization names found.
 
         Requirements: 6.1
+
         """
         if self._nlp is None:
             logger.warning("spaCy model not loaded, cannot extract entities")
             return []
 
         doc = self._nlp(text)
-        entities: List[str] = []
+        entities: list[str] = []
         seen: set = set()
 
         for ent in doc.ents:
@@ -126,8 +123,7 @@ class EntityResolver:
         return entities
 
     def resolve_entities(self, article: NewsArticle) -> ResolvedEntity:
-        """
-        Extract company names from a news article and map to tickers.
+        """Extract company names from a news article and map to tickers.
 
         Combines title and content for NER extraction, then maps each
         entity to an NSE ticker symbol. Unmapped entities are logged
@@ -140,13 +136,14 @@ class EntityResolver:
             ResolvedEntity with tickers, raw entities, and unmapped entities.
 
         Requirements: 6.1, 6.2, 6.3, 6.4, 6.5
+
         """
         # Combine title and content for better entity extraction
         text = f"{article.title} {article.content}"
         raw_entities = self.extract_entities(text)
 
-        tickers: List[str] = []
-        unmapped: List[str] = []
+        tickers: list[str] = []
+        unmapped: list[str] = []
         seen_tickers: set = set()
 
         for entity_name in raw_entities:
@@ -173,7 +170,7 @@ class EntityResolver:
             tickers=tickers,
             entities_found=raw_entities,
             unmapped_entities=unmapped,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
 
         logger.info(
@@ -189,8 +186,7 @@ class EntityResolver:
         return resolved
 
     def resolve_and_publish(self, article: NewsArticle) -> ResolvedEntity:
-        """
-        Resolve entities and publish to stream:entities.
+        """Resolve entities and publish to stream:entities.
 
         Args:
             article: News article to process.
@@ -199,6 +195,7 @@ class EntityResolver:
             ResolvedEntity with resolved tickers.
 
         Requirements: 6.1
+
         """
         resolved = self.resolve_entities(article)
 
@@ -208,8 +205,7 @@ class EntityResolver:
         return resolved
 
     def _publish_to_stream(self, resolved: ResolvedEntity) -> str:
-        """
-        Publish resolved entity to stream:entities.
+        """Publish resolved entity to stream:entities.
 
         Args:
             resolved: The resolved entity to publish.
@@ -218,6 +214,7 @@ class EntityResolver:
             Message ID from the stream.
 
         Requirements: 6.1
+
         """
         message = {
             "article_id": resolved.article_id,
@@ -226,7 +223,7 @@ class EntityResolver:
             "timestamp": resolved.timestamp.isoformat(),
         }
         msg_id = self._event_bus.publish(
-            ENTITIES_STREAM_NAME, message, maxlen=ENTITIES_STREAM_MAXLEN
+            ENTITIES_STREAM_NAME, message, maxlen=ENTITIES_STREAM_MAXLEN,
         )
         logger.debug(
             f"Published resolved entities to {ENTITIES_STREAM_NAME}: {msg_id}",

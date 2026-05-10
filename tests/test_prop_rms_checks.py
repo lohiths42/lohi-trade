@@ -1,5 +1,4 @@
-"""
-Property-based tests for RMS Pre-Order Check Execution.
+"""Property-based tests for RMS Pre-Order Check Execution.
 
 Verifies that for any signal submitted to the RMS, all 9 pre-order checks
 are executed and the result contains exactly 9 check names across
@@ -21,7 +20,7 @@ from unittest.mock import MagicMock
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from src.execution.rms import RiskManagementSystem, ValidationResult
+from src.execution.rms import RiskManagementSystem
 from src.soldier.indicator_engine import IndicatorSet
 from src.soldier.strategy_engine import Signal
 from src.utils.config import (
@@ -259,8 +258,7 @@ def _make_rms(
 
 
 class TestRMSPreOrderCheckExecution:
-    """
-    **Property 27: RMS Pre-Order Check Execution**
+    """**Property 27: RMS Pre-Order Check Execution**
     **Validates: Requirements 9.1**
 
     For any signal submitted to the RMS, all 9 pre-order checks SHALL be
@@ -281,8 +279,7 @@ class TestRMSPreOrderCheckExecution:
     def test_always_executes_all_9_checks(
         self, symbol, side, entry_price, quantity, strategy, kill_switch, bias,
     ):
-        """
-        For any valid signal and RMS configuration, validate_order always
+        """For any valid signal and RMS configuration, validate_order always
         returns a ValidationResult with exactly 9 checks total.
 
         **Validates: Requirements 9.1**
@@ -323,8 +320,7 @@ class TestRMSPreOrderCheckExecution:
         self, symbol, side, entry_price, quantity, strategy,
         daily_pnl, open_positions, orders_today,
     ):
-        """
-        For any combination of RMS state (daily P&L, open positions,
+        """For any combination of RMS state (daily P&L, open positions,
         order count), all 9 checks are still executed.
 
         **Validates: Requirements 9.1**
@@ -366,8 +362,7 @@ class TestRMSPreOrderCheckExecution:
         self, symbol, side, entry_price, quantity, strategy,
         capital, max_positions, max_orders,
     ):
-        """
-        For any RMS configuration (capital, position limits, order limits),
+        """For any RMS configuration (capital, position limits, order limits),
         the exact 9 check names always appear in the result.
 
         **Validates: Requirements 9.1**
@@ -401,8 +396,7 @@ class TestRMSPreOrderCheckExecution:
     def test_no_duplicate_check_names(
         self, symbol, side, entry_price, quantity, strategy,
     ):
-        """
-        No check name appears in both checks_passed and checks_failed.
+        """No check name appears in both checks_passed and checks_failed.
 
         **Validates: Requirements 9.1**
         """

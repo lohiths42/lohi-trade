@@ -1,5 +1,4 @@
-"""
-Position Sizer for LOHI-TRADE.
+"""Position Sizer for LOHI-TRADE.
 
 Calculates order quantity based on risk per trade, enforcing maximum risk
 and position size limits. Rejects orders when calculated quantity is below 1.
@@ -8,7 +7,6 @@ Requirements: 10.1, 10.2, 10.3, 10.4, 10.5, 10.7
 """
 
 from dataclasses import dataclass
-from typing import Optional
 
 from src.soldier.strategy_engine import Signal
 from src.utils.config import Config
@@ -27,11 +25,12 @@ class PositionSizeResult:
         rejection_reason: Reason for rejection, if any.
         risk_amount: Actual risk = quantity * (entry_price - stop_loss).
         position_value: Total position value = quantity * entry_price.
+
     """
 
     quantity: int
     is_valid: bool
-    rejection_reason: Optional[str]
+    rejection_reason: str | None
     risk_amount: float
     position_value: float
 
@@ -64,12 +63,13 @@ class PositionSizer:
 
         Returns:
             PositionSizeResult with calculated quantity and validity.
+
         """
         risk_per_share = abs(signal.entry_price - signal.stop_loss)
 
         if risk_per_share <= 0:
             logger.warning(
-                f"Zero risk per share for {signal.symbol}: entry={signal.entry_price:.2f} stop={signal.stop_loss:.2f}"
+                f"Zero risk per share for {signal.symbol}: entry={signal.entry_price:.2f} stop={signal.stop_loss:.2f}",
             )
             return PositionSizeResult(
                 quantity=0,
@@ -96,7 +96,7 @@ class PositionSizer:
         # Step 6: reject if < 1
         if quantity < 1:
             logger.info(
-                f"Position size too small for {signal.symbol}: calculated={capped_quantity:.2f}, rounded={quantity}"
+                f"Position size too small for {signal.symbol}: calculated={capped_quantity:.2f}, rounded={quantity}",
             )
             return PositionSizeResult(
                 quantity=0,
@@ -110,7 +110,7 @@ class PositionSizer:
         position_value = quantity * signal.entry_price
 
         logger.info(
-            f"Position sized for {signal.symbol}: qty={quantity}, risk={risk_amount:.2f}, value={position_value:.2f}"
+            f"Position sized for {signal.symbol}: qty={quantity}, risk={risk_amount:.2f}, value={position_value:.2f}",
         )
 
         return PositionSizeResult(

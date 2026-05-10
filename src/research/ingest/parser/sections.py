@@ -115,7 +115,7 @@ Callers can pass their own mapping to :func:`tag_sections`; passing
 
 # ATX headings: one to six ``#``, a space, a non-empty title.
 _ATX_RE: Final[re.Pattern[str]] = re.compile(
-    r"^(?P<hashes>#{1,6})[ \t]+(?P<title>\S.*?)[ \t]*#*[ \t]*$"
+    r"^(?P<hashes>#{1,6})[ \t]+(?P<title>\S.*?)[ \t]*#*[ \t]*$",
 )
 
 # Setext underline: three or more ``=`` or ``-`` characters on their own.
@@ -125,7 +125,7 @@ _SETEXT_UNDERLINE_RE: Final[re.Pattern[str]] = re.compile(r"^[ \t]*(=|-){3,}[ \t
 # optionally containing spaces / digits / basic punctuation. We keep this
 # deliberately tight to avoid flagging prose.
 _ALLCAPS_RE: Final[re.Pattern[str]] = re.compile(
-    r"^[ \t]*(?=.*[A-Z]{3,})[A-Z0-9 &'().,:\-/]+[ \t]*$"
+    r"^[ \t]*(?=.*[A-Z]{3,})[A-Z0-9 &'().,:\-/]+[ \t]*$",
 )
 
 # Punctuation we strip from a heading before matching aliases. We keep
@@ -148,7 +148,7 @@ def _normalise_heading(raw: str) -> str:
 
 
 def _match_section_name(
-    normalised: str, headings_config: dict[str, list[str]]
+    normalised: str, headings_config: dict[str, list[str]],
 ) -> str | None:
     """Return the first section name whose alias list matches *normalised*.
 
@@ -241,6 +241,7 @@ def tag_sections(
     * An empty input returns an empty list; an input with no
       recognisable headings also returns an empty list (a plain
       document is valid, it simply has no tagged sections).
+
     """
     if not canonical_text:
         return []
@@ -290,7 +291,7 @@ def tag_sections(
         else:
             end_offset = eof_offset
         spans.append(
-            SectionSpan(name=section_name, start=start_offset, end=end_offset)
+            SectionSpan(name=section_name, start=start_offset, end=end_offset),
         )
 
     # Sort by start offset. ``matches`` is already in source order, and

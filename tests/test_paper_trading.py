@@ -1,5 +1,4 @@
-"""
-Unit tests for the Paper Trading Engine.
+"""Unit tests for the Paper Trading Engine.
 
 Covers:
 - Paper trading enabled/disabled flag
@@ -19,12 +18,9 @@ Covers:
 Requirements: 16.1, 16.2, 16.3, 16.4, 16.5, 16.6
 """
 
-import logging
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
-import pytest
-
-from src.execution.paper_trading import PaperTradingEngine, DEFAULT_DB_PATH
+from src.execution.paper_trading import DEFAULT_DB_PATH, PaperTradingEngine
 from src.ingestion.broker_interface import (
     Order,
     OrderSide,
@@ -33,7 +29,6 @@ from src.ingestion.broker_interface import (
     ProductType,
 )
 from src.utils.config import PaperTradingConfig
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -95,13 +90,13 @@ class TestDatabasePath:
 
     def test_normal_db_path_when_disabled(self):
         engine = PaperTradingEngine(
-            _make_config(enabled=False), sqlite_path="data/lohi_trade.db"
+            _make_config(enabled=False), sqlite_path="data/lohi_trade.db",
         )
         assert engine.get_db_path() == "data/lohi_trade.db"
 
     def test_custom_db_path_overrides(self):
         engine = PaperTradingEngine(
-            _make_config(enabled=True), db_path="/tmp/custom.db"
+            _make_config(enabled=True), db_path="/tmp/custom.db",
         )
         assert engine.get_db_path() == "/tmp/custom.db"
 

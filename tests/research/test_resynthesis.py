@@ -26,8 +26,9 @@ Plus the guardrails around the loop:
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import Any, Iterable
+from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
@@ -40,7 +41,6 @@ from src.research.judge import (
 )
 from src.research.judge.resynthesis import _is_passing, _redact_unsupported_sections
 from src.research.validators.types import UnsupportedClaim
-
 
 # --------------------------------------------------------------------------- #
 # Helpers                                                                     #
@@ -79,7 +79,7 @@ def _failing_report(
         )
         for section in sections
     ]
-    scores = {section: 0.5 for section in sections}
+    scores = dict.fromkeys(sections, 0.5)
     # Include one healthy section so ``min_score`` has something to
     # compare — ``0.5 < 0.7`` still trips the gate.
     scores.setdefault("summary", 0.9)
@@ -104,7 +104,7 @@ class _JudgeRecorder:
         if not self.reports:
             raise AssertionError(
                 "Judge called more times than the test configured; "
-                f"no canned reports left. Received retry_count={retry_count}."
+                f"no canned reports left. Received retry_count={retry_count}.",
             )
         self.calls.append({"brief": brief, "retry_count": retry_count})
         return self.reports.pop(0)
@@ -129,7 +129,7 @@ class _SynthesizeRecorder:
                 "prior_brief": prior_brief,
                 "unsupported_claims": unsupported_claims,
                 "numeric_findings": numeric_findings,
-            }
+            },
         )
         return self.new_brief
 
@@ -254,7 +254,7 @@ class TestResynthesisRecovers:
                 start_offset=10,
                 end_offset=19,
                 reason="numeric_drift",
-            )
+            ),
         ]
         brief = {"summary": "old", "risks": "vague"}
 
@@ -427,7 +427,7 @@ class TestMinScoreGate:
                     start_offset=0,
                     end_offset=10,
                     reason="no_citation",
-                )
+                ),
             ],
             safe_to_display=True,
         )
@@ -635,7 +635,7 @@ class TestRedactUnsupportedSections:
                     start_offset=0,
                     end_offset=12,
                     reason="off_policy",
-                )
+                ),
             ],
         )
         brief = {"summary": "Healthy."}

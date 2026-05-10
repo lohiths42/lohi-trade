@@ -91,6 +91,7 @@ def log_judge_call(
     retry_count:
         Re-synthesis pass counter (0 on the first invocation; 1 on
         the re-synthesis pass). Design §11.2 caps this at 1.
+
     """
     fields = {
         "run_id": str(run_id),

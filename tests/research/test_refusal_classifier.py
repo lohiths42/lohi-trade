@@ -26,7 +26,6 @@ from src.research.validators.refusal_classifier import (
     classify_refusal,
 )
 
-
 # --------------------------------------------------------------------------- #
 # Positive matches — each category                                            #
 # --------------------------------------------------------------------------- #
@@ -244,7 +243,7 @@ class TestCategoryPrecedence:
         # "transfer funds and buy" could plausibly trip both buckets.
         # Fund transfer is more actionable and must win.
         result = classify_refusal(
-            "Transfer my funds and then buy RELIANCE for me."
+            "Transfer my funds and then buy RELIANCE for me.",
         )
         assert result.reason == "fund_transfer"
 
@@ -252,7 +251,7 @@ class TestCategoryPrecedence:
         # "what's the price target for this trade" hits both; the
         # more specific price-target bucket wins.
         result = classify_refusal(
-            "What's the price target for this trade on TCS?"
+            "What's the price target for this trade on TCS?",
         )
         assert result.reason == "price_target"
 

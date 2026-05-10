@@ -1,5 +1,4 @@
-"""
-Unit tests for CandlePublisher.
+"""Unit tests for CandlePublisher.
 
 Validates that completed candles are published to the correct Redis Stream
 with the expected message format and maxlen.
@@ -8,10 +7,10 @@ Requirements: 2.2
 """
 
 from datetime import datetime
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from src.soldier.candle_builder import Candle, CandleBuilder
-from src.soldier.candle_publisher import CandlePublisher, CANDLE_STREAM_MAXLEN
+from src.soldier.candle_publisher import CANDLE_STREAM_MAXLEN, CandlePublisher
 
 
 def _make_candle(**overrides) -> Candle:

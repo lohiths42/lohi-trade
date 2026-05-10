@@ -1,5 +1,4 @@
-"""
-Property-based tests for the CandleBuilder OHLCV calculation.
+"""Property-based tests for the CandleBuilder OHLCV calculation.
 
 Property 6: OHLCV Calculation Correctness
 For any sequence of ticks within a candle period, the calculated Open should equal
@@ -11,12 +10,12 @@ Validates: Requirements 2.3
 """
 
 from datetime import datetime
+
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from src.ingestion.broker_interface import Tick
 from src.soldier.candle_builder import CandleBuilder
-
 
 # Strategy: generate a list of (price, volume) pairs for ticks within a single 1-minute bucket
 tick_data_strategy = st.lists(
@@ -32,8 +31,7 @@ tick_data_strategy = st.lists(
 @given(tick_data=tick_data_strategy)
 @settings(max_examples=50, deadline=None)
 def test_property_ohlcv_calculation_correctness(tick_data):
-    """
-    Property 6: OHLCV Calculation Correctness
+    """Property 6: OHLCV Calculation Correctness
 
     For any sequence of ticks within a candle period, the calculated Open should
     equal the first tick price, High should equal the maximum tick price, Low should
@@ -100,8 +98,7 @@ price_strategy = st.floats(min_value=1.0, max_value=10000.0, allow_nan=False, al
 @given(last_price=price_strategy)
 @settings(max_examples=50, deadline=None)
 def test_property_market_gap_handling(last_price):
-    """
-    Property 7: Market Gap Handling
+    """Property 7: Market Gap Handling
 
     For any candle period with no ticks received, the candle should use the
     last known price from the previous period for all OHLCV values.
@@ -177,8 +174,7 @@ multi_timeframe_tick_strategy = st.lists(
 @given(tick_data=multi_timeframe_tick_strategy)
 @settings(max_examples=50, deadline=None)
 def test_property_multi_timeframe_candle_building(tick_data):
-    """
-    Property 5: Multi-Timeframe Candle Building
+    """Property 5: Multi-Timeframe Candle Building
 
     For any sequence of ticks, candles should be built and published for all
     configured timeframes (1m, 5m, 15m). When ticks span multiple 1-minute

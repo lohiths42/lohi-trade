@@ -35,7 +35,6 @@ from src.research.judge import invoke_rule_based as invoke_rule_based_exported
 from src.research.judge.rule_based import invoke_rule_based as invoke_rule_based_direct
 from src.research.validators.types import UnsupportedClaim
 
-
 # --------------------------------------------------------------------------- #
 # Helpers                                                                     #
 # --------------------------------------------------------------------------- #

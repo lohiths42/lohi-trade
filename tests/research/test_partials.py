@@ -31,7 +31,8 @@ Satisfies
 from __future__ import annotations
 
 import json
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
@@ -50,7 +51,6 @@ from src.research.agents.partials import (
 )
 from src.research.constants import RESEARCH_PARTIALS_STREAM
 from src.research.providers.base import ChunkHit, ChunkRecord
-
 
 # --------------------------------------------------------------------------- #
 # Test doubles                                                                #

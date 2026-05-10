@@ -16,11 +16,9 @@ Tests are pure/in-memory — no real database needed.
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
 from hypothesis import given, settings
 from hypothesis import strategies as st
-
 
 # ── RLS policy simulation ────────────────────────────────────────────────────
 
@@ -125,7 +123,8 @@ class TestRLSIsolationProperty:
     @settings(max_examples=50)
     def test_strict_rls_returns_only_own_rows(self, data):
         """For strict RLS tables, filtering with a user_id context must return
-        only rows where user_id matches exactly."""
+        only rows where user_id matches exactly.
+        """
         user_ids, rows, table = data
 
         for uid in user_ids:
@@ -140,7 +139,8 @@ class TestRLSIsolationProperty:
     @settings(max_examples=50)
     def test_strict_rls_no_cross_user_leakage(self, data):
         """For strict RLS tables, no row belonging to another user should
-        appear in the filtered result."""
+        appear in the filtered result.
+        """
         user_ids, rows, table = data
 
         for uid in user_ids:
@@ -156,7 +156,8 @@ class TestRLSIsolationProperty:
     @settings(max_examples=50)
     def test_strict_rls_completeness(self, data):
         """For strict RLS tables, all rows belonging to the querying user
-        must be returned (no rows dropped)."""
+        must be returned (no rows dropped).
+        """
         user_ids, rows, table = data
 
         for uid in user_ids:
@@ -171,7 +172,8 @@ class TestRLSIsolationProperty:
     @settings(max_examples=25)
     def test_strict_rls_partition_covers_all_rows(self, data):
         """The union of RLS-filtered results across all users must equal
-        the full dataset (every row is visible to exactly one user)."""
+        the full dataset (every row is visible to exactly one user).
+        """
         user_ids, rows, table = data
 
         total_filtered = 0
@@ -187,7 +189,8 @@ class TestRLSIsolationProperty:
     @settings(max_examples=50)
     def test_nullable_rls_prebuilt_visible_to_all(self, data):
         """For nullable RLS tables (watchlists, screener_presets), rows with
-        user_id=NULL (pre-built) must be visible to every user."""
+        user_id=NULL (pre-built) must be visible to every user.
+        """
         user_ids, rows, table = data
 
         prebuilt_rows = [r for r in rows if r["user_id"] is None]
@@ -206,7 +209,8 @@ class TestRLSIsolationProperty:
     @settings(max_examples=50)
     def test_nullable_rls_user_rows_isolated(self, data):
         """For nullable RLS tables, user-specific rows (non-NULL user_id)
-        must only be visible to their owner."""
+        must only be visible to their owner.
+        """
         user_ids, rows, table = data
 
         for uid in user_ids:
@@ -221,7 +225,8 @@ class TestRLSIsolationProperty:
     @settings(max_examples=50)
     def test_nullable_rls_no_cross_user_leakage(self, data):
         """For nullable RLS tables, no row belonging to another user should
-        appear in the filtered result (pre-built NULL rows are allowed)."""
+        appear in the filtered result (pre-built NULL rows are allowed).
+        """
         user_ids, rows, table = data
 
         for uid in user_ids:
@@ -242,7 +247,8 @@ class TestRLSIsolationProperty:
     @settings(max_examples=25)
     def test_nullable_rls_completeness(self, data):
         """For nullable RLS tables, all pre-built rows plus all rows belonging
-        to the querying user must be returned."""
+        to the querying user must be returned.
+        """
         user_ids, rows, table = data
 
         for uid in user_ids:
@@ -263,7 +269,8 @@ class TestRLSIsolationProperty:
     @settings(max_examples=25)
     def test_strict_rls_unknown_user_sees_nothing(self, unknown_uid, data):
         """A user_id not present in the dataset should see zero rows
-        through strict RLS."""
+        through strict RLS.
+        """
         user_ids, rows, table = data
 
         # Ensure the unknown user is truly not in the dataset
@@ -282,7 +289,8 @@ class TestRLSIsolationProperty:
     @settings(max_examples=25)
     def test_nullable_rls_unknown_user_sees_only_prebuilt(self, unknown_uid, data):
         """A user_id not present in the dataset should see only pre-built
-        (NULL user_id) rows through nullable RLS."""
+        (NULL user_id) rows through nullable RLS.
+        """
         user_ids, rows, table = data
 
         if unknown_uid in user_ids:

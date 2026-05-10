@@ -3,8 +3,6 @@
 import json
 from unittest.mock import Mock, patch
 
-import pytest
-
 from src.state.event_bus import EventBus
 from src.state.redis_client import RedisClient
 
@@ -60,11 +58,11 @@ class TestEventBus:
         )
 
         assert message_id == "1234567890-0"
-        
+
         # Verify serialization
         call_args = mock_redis_instance.xadd.call_args
         fields = call_args[1]["fields"]
-        
+
         assert fields["string"] == "value"
         assert fields["number"] == "123"
         assert fields["float"] == "123.45"
@@ -108,7 +106,7 @@ class TestEventBus:
                     ("1234567890-0", {"field1": "value1", "field2": "value2"}),
                     ("1234567891-0", {"field1": "value3", "field2": "value4"}),
                 ],
-            ]
+            ],
         ]
         mock_redis.return_value = mock_redis_instance
 
@@ -148,7 +146,7 @@ class TestEventBus:
                         },
                     ),
                 ],
-            ]
+            ],
         ]
         mock_redis.return_value = mock_redis_instance
 
@@ -204,7 +202,7 @@ class TestEventBus:
                     ("1234567890-0", {"field": "value1"}),
                     ("1234567891-0", {"field": "value2"}),
                 ],
-            ]
+            ],
         ]
         mock_redis_instance.xack.return_value = 2
         mock_redis.return_value = mock_redis_instance
@@ -244,7 +242,7 @@ class TestEventBus:
                     ("1234567890-0", {"field": "value1"}),
                     ("1234567891-0", {"field": "value2"}),
                 ],
-            ]
+            ],
         ]
         mock_redis_instance.xack.return_value = 1
         mock_redis.return_value = mock_redis_instance
@@ -287,7 +285,7 @@ class TestEventBus:
                 [
                     ("1234567890-0", {"field": "latest_value"}),
                 ],
-            ]
+            ],
         ]
         mock_redis.return_value = mock_redis_instance
 

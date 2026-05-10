@@ -51,7 +51,6 @@ from src.research.providers.base import (
 )
 from tests.research.fakes import FakeLLMProvider
 
-
 # --------------------------------------------------------------------------- #
 # Helpers                                                                     #
 # --------------------------------------------------------------------------- #
@@ -210,7 +209,7 @@ class TestHappyPath:
         agent = FilingsAgent(llm=llm)
 
         context = _build_context(
-            user_id=user_id, symbol="RELIANCE", retriever=retriever
+            user_id=user_id, symbol="RELIANCE", retriever=retriever,
         )
         result = await agent.invoke(context)
 
@@ -244,11 +243,11 @@ class TestHappyPath:
         retriever = _RecordingRetriever(canned=chunks)
         llm = FakeLLMProvider()
         agent = FilingsAgent(
-            llm=llm, config=AgentConfig(final_k=2)
+            llm=llm, config=AgentConfig(final_k=2),
         )
 
         context = _build_context(
-            user_id=user_id, symbol="RELIANCE", retriever=retriever
+            user_id=user_id, symbol="RELIANCE", retriever=retriever,
         )
         result = await agent.invoke(context)
         assert len(result.chunks) == 2
@@ -264,14 +263,14 @@ class TestHappyPath:
                     user_id=user_id,
                     symbol="X",
                     text="t",
-                )
-            ]
+                ),
+            ],
         )
         agent = FilingsAgent(
-            llm=FakeLLMProvider(), config=AgentConfig(retrieval_k=17)
+            llm=FakeLLMProvider(), config=AgentConfig(retrieval_k=17),
         )
         await agent.invoke(
-            _build_context(user_id=user_id, symbol="X", retriever=retriever)
+            _build_context(user_id=user_id, symbol="X", retriever=retriever),
         )
         assert retriever.calls[0]["k"] == 17
 
@@ -294,14 +293,14 @@ class TestRetrievalFilter:
                     user_id=user_id,
                     symbol="RELIANCE",
                     text="t",
-                )
-            ]
+                ),
+            ],
         )
         agent = FilingsAgent(llm=FakeLLMProvider())
         await agent.invoke(
             _build_context(
-                user_id=user_id, symbol="RELIANCE", retriever=retriever
-            )
+                user_id=user_id, symbol="RELIANCE", retriever=retriever,
+            ),
         )
         filter_used: RetrievalFilter = retriever.calls[0]["filter"]
         assert filter_used.user_id == user_id
@@ -327,8 +326,8 @@ class TestNoData:
 
         result = await agent.invoke(
             _build_context(
-                user_id=user_id, symbol="RELIANCE", retriever=retriever
-            )
+                user_id=user_id, symbol="RELIANCE", retriever=retriever,
+            ),
         )
         assert result.kind == "no_data"
         assert result.agent_name == "filings"
@@ -349,8 +348,8 @@ class TestNoData:
 
         result = await agent.invoke(
             _build_context(
-                user_id=user_id, symbol=None, retriever=retriever
-            )
+                user_id=user_id, symbol=None, retriever=retriever,
+            ),
         )
         assert result.kind == "no_data"
         assert "requires a symbol" in result.reason
@@ -377,15 +376,15 @@ class TestErrorPath:
                     user_id=user_id,
                     symbol="RELIANCE",
                     text="t",
-                )
-            ]
+                ),
+            ],
         )
         agent = FilingsAgent(llm=_RaisingLLM())
         with pytest.raises(RuntimeError, match="llm provider exploded"):
             await agent.invoke(
                 _build_context(
-                    user_id=user_id, symbol="RELIANCE", retriever=retriever
-                )
+                    user_id=user_id, symbol="RELIANCE", retriever=retriever,
+                ),
             )
 
     @pytest.mark.asyncio
@@ -399,15 +398,15 @@ class TestErrorPath:
                     user_id=user_id,
                     symbol="X",
                     text="t",
-                )
-            ]
+                ),
+            ],
         )
         agent = FilingsAgent(llm=None)
         with pytest.raises(ValueError, match="LLMProvider"):
             await agent.invoke(
                 _build_context(
-                    user_id=user_id, symbol="X", retriever=retriever
-                )
+                    user_id=user_id, symbol="X", retriever=retriever,
+                ),
             )
 
 
@@ -429,16 +428,16 @@ class TestPromptRendering:
                     user_id=user_id,
                     symbol="TCS",
                     text="TCS Q2 revenue grew 12 percent YoY.",
-                )
-            ]
+                ),
+            ],
         )
         llm = _RecordingLLM(canned_completion='{"findings":[]}')
         agent = FilingsAgent(llm=llm)
 
         await agent.invoke(
             _build_context(
-                user_id=user_id, symbol="TCS", retriever=retriever
-            )
+                user_id=user_id, symbol="TCS", retriever=retriever,
+            ),
         )
 
         assert len(llm.calls) == 1
@@ -469,8 +468,8 @@ class TestPromptRendering:
                     user_id=user_id,
                     symbol="TCS",
                     text="t",
-                )
-            ]
+                ),
+            ],
         )
         agent = FilingsAgent(llm=FakeLLMProvider())
         await agent.invoke(
@@ -479,6 +478,6 @@ class TestPromptRendering:
                 symbol="TCS",
                 retriever=retriever,
                 retrieval_plan={"filings": "board meeting outcomes"},
-            )
+            ),
         )
         assert retriever.calls[0]["query"] == "board meeting outcomes"

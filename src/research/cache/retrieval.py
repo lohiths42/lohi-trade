@@ -98,14 +98,14 @@ def compute_sorted_doc_hashes_sha256(sorted_doc_hashes: list[str]) -> str:
 
 
 def _build_key(
-    *, symbol: str, query_template_hash: str, sorted_doc_hashes: list[str]
+    *, symbol: str, query_template_hash: str, sorted_doc_hashes: list[str],
 ) -> str:
     """Assemble the ``research:ret:...`` cache key from caller inputs."""
     return RETRIEVAL_CACHE_KEY_TEMPLATE.format(
         symbol=symbol,
         query_template_hash=query_template_hash,
         sorted_doc_hashes_sha256=compute_sorted_doc_hashes_sha256(
-            sorted_doc_hashes
+            sorted_doc_hashes,
         ),
     )
 
@@ -152,7 +152,7 @@ async def cached_retrieve(
     query: str,
     filter: RetrievalFilter,
     *,
-    redis_client: "Redis | Any",
+    redis_client: Redis | Any,
     query_template_hash: str,
     sorted_doc_hashes: list[str],
     ttl_seconds: int = _DEFAULT_TTL_SECONDS,
@@ -212,6 +212,7 @@ async def cached_retrieve(
     -------
     list[ChunkHit]
         Hits as produced by :meth:`HybridRetriever.retrieve`.
+
     """
     if ttl_seconds <= 0:
         raise ValueError(f"ttl_seconds must be positive, got {ttl_seconds}")

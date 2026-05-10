@@ -1,5 +1,4 @@
-"""
-Tests for the Strategy Engine interface and Signal dataclass.
+"""Tests for the Strategy Engine interface and Signal dataclass.
 
 Validates:
 - Signal dataclass creation and field correctness
@@ -10,14 +9,12 @@ Validates:
 
 import uuid
 from datetime import datetime
-from typing import Optional
 
 import pandas as pd
 import pytest
 
 from src.soldier.indicator_engine import IndicatorSet
 from src.soldier.strategy_engine import Signal, Strategy, create_signal
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -61,8 +58,8 @@ class _DummyStrategy(Strategy):
         return self._enabled
 
     def generate_signal(
-        self, indicators: IndicatorSet, candles: pd.DataFrame
-    ) -> Optional[Signal]:
+        self, indicators: IndicatorSet, candles: pd.DataFrame,
+    ) -> Signal | None:
         # Always returns None — just proves the interface works
         return None
 

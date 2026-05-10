@@ -75,18 +75,17 @@ Design: §14
 from __future__ import annotations
 
 import hashlib
-import os
-from typing import AsyncIterator, Any
-from uuid import UUID, uuid4
-
 import importlib.util as _ilu
+import os
 import pathlib as _pl
+from collections.abc import AsyncIterator
+from typing import Any
+from uuid import UUID, uuid4
 
 import pytest
 import pytest_asyncio
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
-
 
 # --------------------------------------------------------------------------- #
 # RLS helper import shim                                                       #
@@ -159,7 +158,7 @@ def _database_url() -> str:
         pytest.skip(
             "DATABASE_URL not set; RLS tests require a live Postgres. "
             "Set DATABASE_URL to a reachable DSN (e.g. "
-            "postgresql://user:pw@host/db) to run this suite."
+            "postgresql://user:pw@host/db) to run this suite.",
         )
     return dsn
 
@@ -193,7 +192,7 @@ async def _pg_pool(_database_url: str) -> AsyncIterator[Any]:
     except Exception as exc:
         pytest.skip(
             f"Postgres not reachable at DATABASE_URL; RLS tests require a "
-            f"live DB. ({type(exc).__name__}: {exc})"
+            f"live DB. ({type(exc).__name__}: {exc})",
         )
 
     # ``create_pool`` succeeded but that alone doesn't prove the DB is
@@ -208,7 +207,7 @@ async def _pg_pool(_database_url: str) -> AsyncIterator[Any]:
         await pool.close()
         pytest.skip(
             f"Postgres connectivity probe failed; RLS tests require a "
-            f"live DB. ({type(exc).__name__}: {exc})"
+            f"live DB. ({type(exc).__name__}: {exc})",
         )
 
     try:
@@ -241,7 +240,7 @@ async def _migrations_applied(_pg_pool: Any) -> None:
             except Exception as exc:
                 pytest.skip(
                     f"research migration has not been applied "
-                    f"(missing table '{table}': {type(exc).__name__}: {exc})"
+                    f"(missing table '{table}': {type(exc).__name__}: {exc})",
                 )
 
         # Sanity: ``set_config('app.user_id', ..., true)`` must be
@@ -257,13 +256,13 @@ async def _migrations_applied(_pg_pool: Any) -> None:
                     str(uuid4()),
                 )
                 roundtrip = await conn.fetchval(
-                    "SELECT current_setting('app.user_id', true)"
+                    "SELECT current_setting('app.user_id', true)",
                 )
                 assert isinstance(roundtrip, str) and len(roundtrip) == 36
         except Exception as exc:
             pytest.skip(
                 f"Postgres rejected set_config('app.user_id', ...); "
-                f"RLS cannot engage. ({type(exc).__name__}: {exc})"
+                f"RLS cannot engage. ({type(exc).__name__}: {exc})",
             )
 
 

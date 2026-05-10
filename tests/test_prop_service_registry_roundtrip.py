@@ -1,5 +1,4 @@
-"""
-Property-based tests for Service Registry State Round-Trip.
+"""Property-based tests for Service Registry State Round-Trip.
 
 Verifies that the ServiceRegistry correctly persists state to JSON and
 restores it identically on reload. Any valid mapping of group_ids to
@@ -32,7 +31,7 @@ from hypothesis import strategies as st
 # ``app.services.service_registry`` resolves correctly.
 
 _backend_gateway_dir = str(
-    Path(__file__).resolve().parents[1] / "backend-gateway"
+    Path(__file__).resolve().parents[1] / "backend-gateway",
 )
 if _backend_gateway_dir not in sys.path:
     sys.path.insert(0, _backend_gateway_dir)
@@ -55,7 +54,7 @@ service_status_strategy = st.sampled_from(list(ServiceStatus))
 
 # Strategy: generate a full registry state mapping every group_id to a random status
 registry_state_strategy = st.fixed_dictionaries(
-    {group_id: service_status_strategy for group_id in VALID_GROUP_IDS}
+    dict.fromkeys(VALID_GROUP_IDS, service_status_strategy),
 )
 
 
@@ -70,7 +69,7 @@ class TestServiceRegistryRoundTrip:
     @given(state=registry_state_strategy)
     @settings(max_examples=100)
     def test_registry_state_survives_json_round_trip(
-        self, state: dict[str, ServiceStatus]
+        self, state: dict[str, ServiceStatus],
     ) -> None:
         """For any valid registry state, serialize to JSON and deserialize
         back SHALL produce an equivalent state with all group statuses preserved.
@@ -109,7 +108,7 @@ class TestServiceRegistryRoundTrip:
     @given(state=registry_state_strategy)
     @settings(max_examples=100)
     def test_get_all_statuses_returns_all_groups(
-        self, state: dict[str, ServiceStatus]
+        self, state: dict[str, ServiceStatus],
     ) -> None:
         """get_all_statuses() must return an entry for every registered
         credential group, regardless of what state was set.

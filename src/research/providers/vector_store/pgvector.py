@@ -166,14 +166,14 @@ class PgVectorVectorStore:
         # operator-supplied config.
         self._schema = schema
         self._table = f'"{schema}".{_TABLE_NAME}'
-        self._pool: "asyncpg.Pool | None" = None
+        self._pool: asyncpg.Pool | None = None
         self._pool_lock = asyncio.Lock()
 
     # ------------------------------------------------------------------ #
     # Pool + RLS helpers                                                 #
     # ------------------------------------------------------------------ #
 
-    async def _pool_or_create(self) -> "asyncpg.Pool":
+    async def _pool_or_create(self) -> asyncpg.Pool:
         """Return the cached pool, creating it on first use.
 
         The ``asyncio.Lock`` guards the double-checked-locking pattern
@@ -201,7 +201,7 @@ class PgVectorVectorStore:
             return self._pool
 
     @staticmethod
-    async def _set_user_id(conn: "asyncpg.Connection", user_id: UUID) -> None:
+    async def _set_user_id(conn: asyncpg.Connection, user_id: UUID) -> None:
         """Engage RLS for the current transaction by setting ``app.user_id``.
 
         Uses ``set_config(..., is_local := true)`` so the setting is
@@ -322,10 +322,9 @@ class PgVectorVectorStore:
         )
 
         pool = await self._pool_or_create()
-        async with pool.acquire() as conn:
-            async with conn.transaction():
-                await self._set_user_id(conn, filter.user_id)
-                rows = await conn.fetch(sql, *params)
+        async with pool.acquire() as conn, conn.transaction():
+            await self._set_user_id(conn, filter.user_id)
+            rows = await conn.fetch(sql, *params)
 
         hits: list[ChunkHit] = []
         for row in rows:
@@ -372,10 +371,9 @@ class PgVectorVectorStore:
         )
 
         pool = await self._pool_or_create()
-        async with pool.acquire() as conn:
-            async with conn.transaction():
-                await self._set_user_id(conn, filter.user_id)
-                rows = await conn.fetch(sql, *params)
+        async with pool.acquire() as conn, conn.transaction():
+            await self._set_user_id(conn, filter.user_id)
+            rows = await conn.fetch(sql, *params)
         return len(rows)
 
     async def count(self, filter: RetrievalFilter) -> int:
@@ -394,10 +392,9 @@ class PgVectorVectorStore:
         )
 
         pool = await self._pool_or_create()
-        async with pool.acquire() as conn:
-            async with conn.transaction():
-                await self._set_user_id(conn, filter.user_id)
-                row = await conn.fetchrow(sql, *params)
+        async with pool.acquire() as conn, conn.transaction():
+            await self._set_user_id(conn, filter.user_id)
+            row = await conn.fetchrow(sql, *params)
         return int(row["n"]) if row is not None else 0
 
 
@@ -441,7 +438,7 @@ def build(cfg: dict[str, Any]) -> VectorStore:
         raise KeyError(
             "pgvector adapter requires a DSN; checked "
             "cfg['dsn'], cfg['pgvector']['dsn'], and env DATABASE_URL "
-            "— none were set."
+            "— none were set.",
         )
 
     schema = sub.get("schema", _DEFAULT_SCHEMA)

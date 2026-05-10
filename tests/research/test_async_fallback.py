@@ -49,7 +49,6 @@ from src.research.judge import (
 )
 from src.research.judge.async_fallback import _run_and_publish
 
-
 # --------------------------------------------------------------------------- #
 # Helpers                                                                     #
 # --------------------------------------------------------------------------- #
@@ -155,7 +154,8 @@ class TestShouldRunAsync:
     def test_zero_values_are_allowed(self) -> None:
         """Zero on every axis is a legitimate caller state (no elapsed time,
         no expected Judge cost, zero budget) — treated as "0 <= 0" which
-        fits by the tie rule."""
+        fits by the tie rule.
+        """
         assert should_run_async(
             elapsed_ms=0,
             expected_judge_ms=0,
@@ -164,7 +164,8 @@ class TestShouldRunAsync:
 
     def test_offline_budget_applied(self) -> None:
         """Offline budget is 60 000 ms — what the Orchestrator substitutes
-        when ``LOHI_RESEARCH_OFFLINE=true`` (design §13.1)."""
+        when ``LOHI_RESEARCH_OFFLINE=true`` (design §13.1).
+        """
         assert should_run_async(
             elapsed_ms=30_000,
             expected_judge_ms=2_000,
@@ -263,7 +264,8 @@ class TestScheduleBackgroundJudge:
     async def test_payload_is_json_serialisable(self) -> None:
         """``model_dump(mode='json')`` output must round-trip through
         :func:`json.dumps` without raising — otherwise the default Redis
-        publisher would fail."""
+        publisher would fail.
+        """
         publisher = _RecordingPublisher()
 
         async def _judge() -> JudgeReport:
@@ -443,7 +445,8 @@ class TestOptimisticReturnFlow:
     @pytest.mark.asyncio
     async def test_synchronous_path_skips_scheduling(self) -> None:
         """When the budget fits, the Orchestrator calls the Judge inline —
-        the scheduler is never invoked. Sanity check of the decision."""
+        the scheduler is never invoked. Sanity check of the decision.
+        """
         should_async = should_run_async(
             elapsed_ms=5_000,
             expected_judge_ms=2_000,
@@ -487,7 +490,8 @@ class TestPublishJudgeReport:
     @pytest.mark.asyncio
     async def test_non_serialisable_payload_is_swallowed(self) -> None:
         """A payload containing a non-JSON-serialisable value never
-        reaches Redis; the helper logs + returns quietly."""
+        reaches Redis; the helper logs + returns quietly.
+        """
         redis = _FakeRedis()
         bad_payload: dict[str, Any] = {"thing": object()}
 

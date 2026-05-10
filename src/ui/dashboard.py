@@ -1,5 +1,4 @@
-"""
-LOHI-TRADE Streamlit Dashboard.
+"""LOHI-TRADE Streamlit Dashboard.
 
 Single-page dashboard with auto-refresh every 5 seconds.
 Displays P&L, positions, signals, trades, bias, and system health.
@@ -11,8 +10,8 @@ Requirements: 17.1, 17.2, 17.3, 17.4, 17.5, 17.6, 17.7, 13.4
 
 import sqlite3
 import time
-from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from datetime import datetime
+from typing import Any
 
 import pandas as pd
 import streamlit as st
@@ -31,7 +30,7 @@ MARKET_CLOSE = "15:30"
 
 
 @st.cache_resource
-def _get_sqlite_connection() -> Optional[sqlite3.Connection]:
+def _get_sqlite_connection() -> sqlite3.Connection | None:
     """Return a shared SQLite connection (WAL mode, Row factory)."""
     try:
         conn = sqlite3.connect("data/lohi_trade.db", check_same_thread=False, timeout=10)
@@ -49,7 +48,7 @@ def _get_redis():
         import redis
 
         client = redis.Redis(
-            host="localhost", port=6379, db=0, decode_responses=True, socket_timeout=2
+            host="localhost", port=6379, db=0, decode_responses=True, socket_timeout=2,
         )
         client.ping()
         return client
@@ -62,7 +61,7 @@ def _get_redis():
 # ---------------------------------------------------------------------------
 
 
-def _query_sqlite(query: str, params: tuple = ()) -> List[Dict[str, Any]]:
+def _query_sqlite(query: str, params: tuple = ()) -> list[dict[str, Any]]:
     """Run a read query against SQLite and return list of dicts."""
     conn = _get_sqlite_connection()
     if conn is None:
@@ -85,18 +84,18 @@ def _get_realized_pnl_today() -> float:
     return float(rows[0]["total"]) if rows else 0.0
 
 
-def _get_open_positions() -> List[Dict[str, Any]]:
+def _get_open_positions() -> list[dict[str, Any]]:
     return _query_sqlite("SELECT * FROM trades WHERE exit_time IS NULL ORDER BY entry_time DESC")
 
 
-def _get_recent_trades(limit: int = 50) -> List[Dict[str, Any]]:
+def _get_recent_trades(limit: int = 50) -> list[dict[str, Any]]:
     return _query_sqlite(
         "SELECT * FROM trades WHERE exit_time IS NOT NULL ORDER BY exit_time DESC LIMIT ?",
         (limit,),
     )
 
 
-def _get_unrealized_pnl(positions: List[Dict[str, Any]]) -> float:
+def _get_unrealized_pnl(positions: list[dict[str, Any]]) -> float:
     """Estimate unrealized P&L using current prices from Redis."""
     r = _get_redis()
     if r is None or not positions:
@@ -117,7 +116,7 @@ def _get_unrealized_pnl(positions: List[Dict[str, Any]]) -> float:
     return total
 
 
-def _get_recent_signals(count: int = 20) -> List[Dict[str, Any]]:
+def _get_recent_signals(count: int = 20) -> list[dict[str, Any]]:
     """Read last *count* signals from Redis stream:signals."""
     r = _get_redis()
     if r is None:
@@ -133,7 +132,7 @@ def _get_recent_signals(count: int = 20) -> List[Dict[str, Any]]:
         return []
 
 
-def _get_bias_for_symbols() -> List[Dict[str, Any]]:
+def _get_bias_for_symbols() -> list[dict[str, Any]]:
     """Read bias:{symbol} keys from Redis."""
     r = _get_redis()
     if r is None:
@@ -182,12 +181,12 @@ def _last_tick_time() -> str:
         return "—"
     try:
         val = r.get("last_tick_time")
-        return val if val else "—"
+        return val or "—"
     except Exception:
         return "—"
 
 
-def _kill_switch_status() -> Tuple[bool, Optional[str]]:
+def _kill_switch_status() -> tuple[bool, str | None]:
     """Return (is_active, reason)."""
     r = _get_redis()
     if r is None:
@@ -230,7 +229,7 @@ def _deactivate_kill_switch() -> None:
 def _pnl_color(value: float) -> str:
     if value > 0:
         return "green"
-    elif value < 0:
+    if value < 0:
         return "red"
     return "grey"
 
@@ -250,9 +249,8 @@ def render_header():
             if st.button("🔓 Deactivate Kill Switch"):
                 _deactivate_kill_switch()
                 st.rerun()
-        else:
-            if st.button("🛑 Activate Kill Switch"):
-                st.session_state["ks_confirm"] = True
+        elif st.button("🛑 Activate Kill Switch"):
+            st.session_state["ks_confirm"] = True
 
     # Confirmation dialog
     if st.session_state.get("ks_confirm"):
@@ -319,7 +317,7 @@ def render_positions_table():
                 "Stop Loss": f"₹{float(pos['stop_loss']):,.2f}",
                 "Target": f"₹{float(pos['target']):,.2f}",
                 "Entry Time": pos["entry_time"],
-            }
+            },
         )
     st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 
@@ -357,7 +355,7 @@ def render_trades_table():
                 "P&L": f"₹{pnl:,.2f}" if pnl is not None else "—",
                 "Exit Reason": t.get("exit_reason", "—"),
                 "Exit Time": t.get("exit_time", "—"),
-            }
+            },
         )
     st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 

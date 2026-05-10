@@ -57,7 +57,7 @@ _NUMERICAL_HEADER: Final[tuple[str, ...]] = (
 # reports ``concept.isTextBlock`` — but keep the reference here for
 # readability.
 _TEXT_BLOCK_HINTS: Final[frozenset[str]] = frozenset(
-    {"TextBlockItemType", "stringItemType"}
+    {"TextBlockItemType", "stringItemType"},
 )
 
 
@@ -86,6 +86,7 @@ def parse_xbrl(path: str | Path) -> tuple[str, list[dict[str, Any]]]:
         exact pip package to install so operators have no ambiguity.
     FileNotFoundError
         Propagated from the filesystem layer when *path* does not exist.
+
     """
     instance_path = Path(path)
     if not instance_path.exists():
@@ -97,7 +98,7 @@ def parse_xbrl(path: str | Path) -> tuple[str, list[dict[str, Any]]]:
         from arelle import Cntlr  # noqa: PLC0415 — lazy per module docstring
     except ImportError as exc:
         raise RuntimeError(
-            "XBRL parsing requires arelle; pip install arelle-release"
+            "XBRL parsing requires arelle; pip install arelle-release",
         ) from exc
 
     controller = Cntlr.Cntlr(logFileName=None)
@@ -110,7 +111,7 @@ def parse_xbrl(path: str | Path) -> tuple[str, list[dict[str, Any]]]:
             # worker wraps this in a structured parse-error record
             # (see :func:`canonical.parse_error`, Req 10.4).
             raise RuntimeError(
-                f"arelle could not load xbrl instance: {instance_path}"
+                f"arelle could not load xbrl instance: {instance_path}",
             )
 
         numerical_rows, text_facts = _partition_facts(model_xbrl)
@@ -122,8 +123,8 @@ def parse_xbrl(path: str | Path) -> tuple[str, list[dict[str, Any]]]:
         blocks.append("## Facts")
         blocks.append(
             _rows_to_markdown_table(
-                [list(_NUMERICAL_HEADER), *numerical_rows]
-            )
+                [list(_NUMERICAL_HEADER), *numerical_rows],
+            ),
         )
     if text_facts:
         blocks.append("## Narrative")
@@ -163,9 +164,8 @@ def _partition_facts(
 
         if _is_numeric_fact(fact):
             numerical_rows.append([concept_name, period, unit, value])
-        else:
-            if value:
-                text_facts.append((concept_name, value))
+        elif value:
+            text_facts.append((concept_name, value))
 
     return numerical_rows, text_facts
 
@@ -183,7 +183,7 @@ def _is_numeric_fact(fact: Any) -> bool:
     # ``decimal``/``int``/``long``/``short``/``byte``/``double``/``float``.
     base = getattr(concept, "baseXsdType", "") or ""
     return base.lower().startswith(
-        ("decimal", "int", "long", "short", "byte", "double", "float", "monetary")
+        ("decimal", "int", "long", "short", "byte", "double", "float", "monetary"),
     )
 
 

@@ -1,5 +1,4 @@
-"""
-Property-based tests for Bias Persistence.
+"""Property-based tests for Bias Persistence.
 
 Verifies that BiasScheduler.store_bias() correctly persists BiasResult
 data into the SQLite bias_log table with all fields preserved.
@@ -15,7 +14,7 @@ Properties tested:
 """
 
 import sqlite3
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import MagicMock
 
 from hypothesis import given, settings
@@ -23,7 +22,6 @@ from hypothesis import strategies as st
 
 from src.commander.bias_calculator import BiasResult
 from src.commander.bias_scheduler import BiasScheduler
-
 
 # ---------------------------------------------------------------------------
 # In-memory DB helper
@@ -89,8 +87,7 @@ _article_count = st.integers(min_value=0, max_value=100)
 
 
 class TestBiasPersistenceProperties:
-    """
-    **Property 74: Bias Persistence**
+    """**Property 74: Bias Persistence**
     **Validates: Requirements 8.6**
     """
 
@@ -103,17 +100,16 @@ class TestBiasPersistenceProperties:
     )
     @settings(max_examples=25)
     def test_store_bias_persists_all_fields(
-        self, ticker, bias, score, confidence, article_count
+        self, ticker, bias, score, confidence, article_count,
     ):
-        """
-        For any BiasResult, store_bias() persists all fields correctly
+        """For any BiasResult, store_bias() persists all fields correctly
         to the bias_log table.
 
         **Validates: Requirements 8.6**
         """
         db = InMemoryDBManager()
         scheduler = _make_scheduler(db)
-        ts = datetime(2025, 1, 15, 10, 0, 0, tzinfo=timezone.utc)
+        ts = datetime(2025, 1, 15, 10, 0, 0, tzinfo=UTC)
 
         result = BiasResult(
             ticker=ticker,
@@ -146,10 +142,9 @@ class TestBiasPersistenceProperties:
     )
     @settings(max_examples=25)
     def test_multiple_results_same_ticker_all_stored(
-        self, ticker, biases, scores
+        self, ticker, biases, scores,
     ):
-        """
-        Multiple bias results for the same ticker are all stored
+        """Multiple bias results for the same ticker are all stored
         (no overwrites). Each store_bias call appends a new row.
 
         **Validates: Requirements 8.6**
@@ -160,7 +155,7 @@ class TestBiasPersistenceProperties:
 
         db = InMemoryDBManager()
         scheduler = _make_scheduler(db)
-        ts = datetime(2025, 1, 15, 10, 0, 0, tzinfo=timezone.utc)
+        ts = datetime(2025, 1, 15, 10, 0, 0, tzinfo=UTC)
 
         for bias_val, score_val in zip(biases, scores):
             result = BiasResult(
@@ -190,15 +185,14 @@ class TestBiasPersistenceProperties:
     )
     @settings(max_examples=25)
     def test_score_and_confidence_precision_preserved(self, score, confidence):
-        """
-        Score and confidence values are preserved with sufficient
+        """Score and confidence values are preserved with sufficient
         precision (within 1e-6) after round-trip through SQLite.
 
         **Validates: Requirements 8.6**
         """
         db = InMemoryDBManager()
         scheduler = _make_scheduler(db)
-        ts = datetime(2025, 1, 15, 10, 0, 0, tzinfo=timezone.utc)
+        ts = datetime(2025, 1, 15, 10, 0, 0, tzinfo=UTC)
 
         result = BiasResult(
             ticker="RELIANCE",
@@ -228,17 +222,16 @@ class TestBiasPersistenceProperties:
     )
     @settings(max_examples=25)
     def test_stored_data_retrievable_and_matches(
-        self, ticker, bias, score, confidence, article_count
+        self, ticker, bias, score, confidence, article_count,
     ):
-        """
-        Stored data can be retrieved from the bias_log table and all
+        """Stored data can be retrieved from the bias_log table and all
         fields match the original BiasResult.
 
         **Validates: Requirements 8.6**
         """
         db = InMemoryDBManager()
         scheduler = _make_scheduler(db)
-        ts = datetime(2025, 1, 15, 10, 0, 0, tzinfo=timezone.utc)
+        ts = datetime(2025, 1, 15, 10, 0, 0, tzinfo=UTC)
 
         result = BiasResult(
             ticker=ticker,
@@ -253,7 +246,7 @@ class TestBiasPersistenceProperties:
         # Retrieve by ticker
         conn = db.connect_sqlite()
         row = conn.execute(
-            "SELECT * FROM bias_log WHERE ticker = ?", (ticker,)
+            "SELECT * FROM bias_log WHERE ticker = ?", (ticker,),
         ).fetchone()
 
         assert row is not None, f"No row found for ticker {ticker}"

@@ -124,7 +124,7 @@ class QdrantVectorStore:
     module docstring for the rationale.
     """
 
-    def __init__(self, *, client: "AsyncQdrantClient") -> None:
+    def __init__(self, *, client: AsyncQdrantClient) -> None:
         # Kept private so callers go through the ``VectorStore``
         # protocol methods; the underlying client is not part of the
         # public contract.
@@ -195,7 +195,7 @@ class QdrantVectorStore:
                 qmodels.FieldCondition(
                     key="symbol",
                     match=qmodels.MatchValue(value=filter.symbol),
-                )
+                ),
             )
         return qmodels.Filter(must=must)
 

@@ -65,7 +65,7 @@ from src.research.providers.base import (
     VectorStore,
 )
 
-__all__ = ["HybridRetriever", "BM25Index"]
+__all__ = ["BM25Index", "HybridRetriever"]
 
 
 # --------------------------------------------------------------------------- #
@@ -200,7 +200,7 @@ class BM25Index:
     # ------------------------------------------------------------------ #
 
     def _score_with_rank_bm25(
-        self, query_tokens: list[str]
+        self, query_tokens: list[str],
     ) -> list[float] | None:
         """Score the whole corpus with ``rank-bm25``, or ``None`` if unavailable.
 
@@ -423,7 +423,7 @@ class HybridRetriever:
                     score=score,
                     bm25_rank=bm25_rank,
                     dense_rank=dense_rank,
-                )
+                ),
             )
 
         # Stable ordering: primary by fused score desc, secondary by

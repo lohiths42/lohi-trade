@@ -50,7 +50,7 @@ _PROMPTS_ROOT: Final[Path] = Path(__file__).resolve().parent
 # Module-level cache keyed by (version, name). Populated lazily by
 # :func:`load_prompt` and never invalidated for the life of the
 # process — template files on disk are immutable by design §3.9.
-_CACHE: dict[tuple[str, str], "ImmutablePrompt"] = {}
+_CACHE: dict[tuple[str, str], ImmutablePrompt] = {}
 
 # Regex that locates ``{{KEY}}`` placeholders. ``KEY`` must be a
 # non-empty string of uppercase letters, digits, and underscores —
@@ -73,6 +73,7 @@ class ImmutablePrompt:
         Verbatim Markdown text as read from disk, including every
         ``{{KEY}}`` placeholder. Rendering is performed by
         :func:`render`; instances of this dataclass are never mutated.
+
     """
 
     version: str
@@ -105,6 +106,7 @@ def load_prompt(version: str, name: str) -> ImmutablePrompt:
         separators (guards against directory traversal).
     FileNotFoundError
         If the template file does not exist at the expected path.
+
     """
     if not version or "/" in version or ".." in version:
         raise ValueError(f"Invalid prompt version: {version!r}")
@@ -159,6 +161,7 @@ def render(prompt: ImmutablePrompt, *, substitutions: dict[str, str]) -> str:
         If the template contains a ``{{KEY}}`` placeholder that is
         not present in ``substitutions``. The error message includes
         the missing key to aid debugging.
+
     """
 
     def _replace(match: re.Match[str]) -> str:
@@ -166,7 +169,7 @@ def render(prompt: ImmutablePrompt, *, substitutions: dict[str, str]) -> str:
         if key not in substitutions:
             raise KeyError(
                 f"Missing substitution for placeholder {{{{{key}}}}} "
-                f"in prompt {prompt.version}/{prompt.name}"
+                f"in prompt {prompt.version}/{prompt.name}",
             )
         return substitutions[key]
 

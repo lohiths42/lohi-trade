@@ -1,5 +1,4 @@
-"""
-Property-based test for RMS order validation latency.
+"""Property-based test for RMS order validation latency.
 
 **Property 37: Order Validation Latency**
 For any order submitted to the RMS, the validation latency_ms SHALL be a
@@ -177,8 +176,7 @@ def _make_rms(
 
 
 class TestOrderValidationLatency:
-    """
-    **Property 37: Order Validation Latency**
+    """**Property 37: Order Validation Latency**
     **Validates: Requirements 9.10**
 
     For any signal submitted to the RMS, the validation latency_ms SHALL be
@@ -196,8 +194,7 @@ class TestOrderValidationLatency:
     )
     @settings(max_examples=25)
     def test_latency_is_non_negative_float(self, symbol, side, entry_price):
-        """
-        For any valid signal, validate_order returns a ValidationResult
+        """For any valid signal, validate_order returns a ValidationResult
         with latency_ms that is a non-negative float.
 
         **Validates: Requirements 9.10**
@@ -224,8 +221,7 @@ class TestOrderValidationLatency:
     )
     @settings(max_examples=25)
     def test_latency_under_50ms_normal_conditions(self, symbol, side, entry_price):
-        """
-        Under normal conditions (in-memory SQLite, no network), validation
+        """Under normal conditions (in-memory SQLite, no network), validation
         latency should be under 50ms.
 
         **Validates: Requirements 9.10**
@@ -245,8 +241,7 @@ class TestOrderValidationLatency:
     )
     @settings(max_examples=25)
     def test_latency_recorded_regardless_of_outcome(self, kill_switch, bias):
-        """
-        Whether the order is accepted or rejected, latency_ms SHALL always
+        """Whether the order is accepted or rejected, latency_ms SHALL always
         be recorded as a non-negative float in the ValidationResult.
 
         **Validates: Requirements 9.10**

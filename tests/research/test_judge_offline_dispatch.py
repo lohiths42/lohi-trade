@@ -19,8 +19,8 @@ Assertions:
 from __future__ import annotations
 
 import json
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
-from typing import AsyncIterator
 from uuid import uuid4
 
 import pytest
@@ -33,7 +33,6 @@ from src.research.providers.base import (
     LLMProvider,
     Message,
 )
-
 
 # --------------------------------------------------------------------------- #
 # Fakes                                                                       #
@@ -62,17 +61,17 @@ class _RaisingLLM(LLMProvider):
         self.stream_called = False
 
     async def complete(
-        self, messages: list[Message], params: LLMParams
+        self, messages: list[Message], params: LLMParams,
     ) -> Completion:  # pragma: no cover - should never fire in these tests
         self.complete_called = True
         raise AssertionError(
             "LLMProvider.complete() must not be called when "
             "LOHI_RESEARCH_OFFLINE=true — the offline dispatch rule "
-            "requires the rule-based judge instead (Req 16.22)."
+            "requires the rule-based judge instead (Req 16.22).",
         )
 
     async def stream(
-        self, messages: list[Message], params: LLMParams
+        self, messages: list[Message], params: LLMParams,
     ) -> AsyncIterator[CompletionChunk]:  # pragma: no cover - unused here
         self.stream_called = True
         if False:
@@ -94,7 +93,7 @@ class _CannedJSONLLM(LLMProvider):
         self.complete_called = False
 
     async def complete(
-        self, messages: list[Message], params: LLMParams
+        self, messages: list[Message], params: LLMParams,
     ) -> Completion:
         self.complete_called = True
         payload = {
@@ -114,7 +113,7 @@ class _CannedJSONLLM(LLMProvider):
         )
 
     async def stream(
-        self, messages: list[Message], params: LLMParams
+        self, messages: list[Message], params: LLMParams,
     ) -> AsyncIterator[CompletionChunk]:  # pragma: no cover - unused here
         if False:
             yield  # type: ignore[unreachable]

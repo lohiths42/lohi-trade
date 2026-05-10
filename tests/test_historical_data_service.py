@@ -1,5 +1,4 @@
-"""
-Tests for the Historical Data Service.
+"""Tests for the Historical Data Service.
 
 Covers: backfill_historical, S3 partitioned storage, retention policy,
 adjust_for_corporate_actions, revert_adjustments (round-trip), and
@@ -9,7 +8,7 @@ Requirements: 28.1, 28.2, 28.3, 28.4, 28.5, 28.6, 28.7
 """
 
 from datetime import date
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import pytest
 
@@ -18,12 +17,10 @@ from src.ingestion.corporate_actions_collector import (
     CorporateActionType,
 )
 from src.ingestion.historical_data_service import (
-    HistoricalDataService,
-    MarketCapCategory,
     OHLCV,
+    HistoricalDataService,
     Timeframe,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fakes
@@ -34,15 +31,15 @@ class FakeS3Client:
     """In-memory S3 client for testing."""
 
     def __init__(self):
-        self.store: Dict[str, bytes] = {}
+        self.store: dict[str, bytes] = {}
 
     def upload_bytes(self, bucket: str, key: str, data: bytes) -> None:
         self.store[f"{bucket}/{key}"] = data
 
-    def download_bytes(self, bucket: str, key: str) -> Optional[bytes]:
+    def download_bytes(self, bucket: str, key: str) -> bytes | None:
         return self.store.get(f"{bucket}/{key}")
 
-    def list_keys(self, bucket: str, prefix: str) -> List[str]:
+    def list_keys(self, bucket: str, prefix: str) -> list[str]:
         full_prefix = f"{bucket}/{prefix}"
         return [
             k[len(bucket) + 1 :]
@@ -57,13 +54,13 @@ class FakeS3Client:
 class FakeDataSource:
     """Configurable data source for testing."""
 
-    def __init__(self, bars: Optional[List[OHLCV]] = None):
+    def __init__(self, bars: list[OHLCV] | None = None):
         self.bars = bars or []
-        self.calls: List[tuple] = []
+        self.calls: list[tuple] = []
 
     def download_daily_ohlcv(
-        self, symbol: str, start_date: date, end_date: date
-    ) -> List[OHLCV]:
+        self, symbol: str, start_date: date, end_date: date,
+    ) -> list[OHLCV]:
         self.calls.append((symbol, start_date, end_date))
         return [b for b in self.bars if b.symbol == symbol and start_date <= b.date <= end_date]
 
@@ -72,8 +69,8 @@ class FailingDataSource:
     """Data source that always raises."""
 
     def download_daily_ohlcv(
-        self, symbol: str, start_date: date, end_date: date
-    ) -> List[OHLCV]:
+        self, symbol: str, start_date: date, end_date: date,
+    ) -> list[OHLCV]:
         raise ConnectionError("Source unavailable")
 
 
@@ -109,8 +106,8 @@ def _action(
 
 
 def _make_service(
-    bars: Optional[List[OHLCV]] = None,
-    metadata: Optional[Dict[str, Dict[str, Any]]] = None,
+    bars: list[OHLCV] | None = None,
+    metadata: dict[str, dict[str, Any]] | None = None,
 ) -> tuple:
     s3 = FakeS3Client()
     source = FakeDataSource(bars or [])
@@ -188,21 +185,21 @@ class TestRetentionPolicy:
     def test_large_cap_10_years(self):
         """Large-cap securities get 10 years retention. (Req 28.2)"""
         svc, _, _ = _make_service(
-            metadata={"RELIANCE": {"market_cap_category": "large-cap"}}
+            metadata={"RELIANCE": {"market_cap_category": "large-cap"}},
         )
         assert svc.get_retention_years("RELIANCE") == 10
 
     def test_mid_cap_5_years(self):
         """Mid-cap securities get 5 years retention. (Req 28.2)"""
         svc, _, _ = _make_service(
-            metadata={"MIDCAP": {"market_cap_category": "mid-cap"}}
+            metadata={"MIDCAP": {"market_cap_category": "mid-cap"}},
         )
         assert svc.get_retention_years("MIDCAP") == 5
 
     def test_small_cap_5_years(self):
         """Small-cap securities get 5 years retention. (Req 28.2)"""
         svc, _, _ = _make_service(
-            metadata={"SMALL": {"market_cap_category": "small-cap"}}
+            metadata={"SMALL": {"market_cap_category": "small-cap"}},
         )
         assert svc.get_retention_years("SMALL") == 5
 
@@ -653,7 +650,7 @@ class TestComputeAdjustmentFactor:
 
     def test_missing_ratio_returns_none(self):
         action = CorporateAction(
-            symbol="X", action_type=CorporateActionType.SPLIT, details={}
+            symbol="X", action_type=CorporateActionType.SPLIT, details={},
         )
         assert HistoricalDataService._compute_adjustment_factor(action) is None
 

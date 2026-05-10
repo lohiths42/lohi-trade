@@ -18,12 +18,11 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 from pydantic import ValidationError
 
-from .market_profile import Country, TaxProfile, TaxRule
+from .market_profile import Country, TaxProfile
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +70,7 @@ class TaxProfileGenerator:
             llm_provider: Any object with an async `chat(system, user)` method
                          that returns a string response. If None, generation
                          will fail gracefully with a helpful message.
+
         """
         self._llm = llm_provider
 
@@ -86,11 +86,12 @@ class TaxProfileGenerator:
 
         Raises:
             TaxGenerationError: If LLM is unavailable or output is invalid
+
         """
         if self._llm is None:
             raise TaxGenerationError(
                 "No LLM provider configured. Please configure NVIDIA NIM or Ollama "
-                "in the setup wizard to use AI tax profile generation."
+                "in the setup wizard to use AI tax profile generation.",
             )
 
         schema = TaxProfile.model_json_schema()
@@ -110,7 +111,7 @@ class TaxProfileGenerator:
         return self._parse_response(response, country)
 
     async def refresh(
-        self, existing: TaxProfile, country_name: str
+        self, existing: TaxProfile, country_name: str,
     ) -> TaxProfileDiff:
         """Refresh an existing tax profile and return the diff.
 
@@ -123,6 +124,7 @@ class TaxProfileGenerator:
 
         Returns:
             TaxProfileDiff with old/new comparison
+
         """
         new_profile = await self.generate(existing.country, country_name)
         return TaxProfileDiff(
@@ -132,7 +134,7 @@ class TaxProfileGenerator:
             changes=self._compute_changes(existing, new_profile),
         )
 
-    def generate_sync_fallback(self, country: Country) -> Optional[TaxProfile]:
+    def generate_sync_fallback(self, country: Country) -> TaxProfile | None:
         """Synchronous fallback that returns the built-in profile.
 
         Used when no LLM is available — returns None to signal that
@@ -156,20 +158,20 @@ class TaxProfileGenerator:
             data = json.loads(cleaned)
         except json.JSONDecodeError as e:
             raise TaxGenerationError(
-                f"LLM returned invalid JSON: {e}\nResponse: {cleaned[:200]}..."
+                f"LLM returned invalid JSON: {e}\nResponse: {cleaned[:200]}...",
             ) from e
 
         # Ensure required fields
         data.setdefault("country", country.value)
         data.setdefault("source", "ai_generated")
         data.setdefault("verified_by_user", False)
-        data.setdefault("last_updated", datetime.now(timezone.utc).strftime("%Y-%m-%d"))
+        data.setdefault("last_updated", datetime.now(UTC).strftime("%Y-%m-%d"))
 
         try:
             profile = TaxProfile.model_validate(data)
         except ValidationError as e:
             raise TaxGenerationError(
-                f"LLM output failed Pydantic validation: {e}"
+                f"LLM output failed Pydantic validation: {e}",
             ) from e
 
         return profile
@@ -180,22 +182,22 @@ class TaxProfileGenerator:
 
         if old.capital_gains_short_term_pct != new.capital_gains_short_term_pct:
             changes.append(
-                f"Short-term CGT: {old.capital_gains_short_term_pct}% → {new.capital_gains_short_term_pct}%"
+                f"Short-term CGT: {old.capital_gains_short_term_pct}% → {new.capital_gains_short_term_pct}%",
             )
 
         if old.capital_gains_long_term_pct != new.capital_gains_long_term_pct:
             changes.append(
-                f"Long-term CGT: {old.capital_gains_long_term_pct}% → {new.capital_gains_long_term_pct}%"
+                f"Long-term CGT: {old.capital_gains_long_term_pct}% → {new.capital_gains_long_term_pct}%",
             )
 
         if old.short_term_threshold_days != new.short_term_threshold_days:
             changes.append(
-                f"LT threshold: {old.short_term_threshold_days} days → {new.short_term_threshold_days} days"
+                f"LT threshold: {old.short_term_threshold_days} days → {new.short_term_threshold_days} days",
             )
 
         if old.wash_sale_rule != new.wash_sale_rule:
             changes.append(
-                f"Wash sale rule: {old.wash_sale_rule} → {new.wash_sale_rule}"
+                f"Wash sale rule: {old.wash_sale_rule} → {new.wash_sale_rule}",
             )
 
         # Compare transaction taxes
@@ -217,7 +219,7 @@ class TaxProfileGenerator:
         for name in old_names & new_names:
             if old_by_name[name].rate_pct != new_by_name[name].rate_pct:
                 changes.append(
-                    f"{name}: {old_by_name[name].rate_pct}% → {new_by_name[name].rate_pct}%"
+                    f"{name}: {old_by_name[name].rate_pct}% → {new_by_name[name].rate_pct}%",
                 )
 
         if not changes:
@@ -257,4 +259,4 @@ class TaxProfileDiff:
 
 class TaxGenerationError(Exception):
     """Raised when AI tax profile generation fails."""
-    pass
+

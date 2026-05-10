@@ -68,16 +68,17 @@ References
 * Req 15.4 — specifies the P95 reporting granularity.
 * design §7.1 — ``research.latency_budgets.*`` configuration defaults.
 * design §17.1 row 6 — the property entry itself.
+
 """
 
 from __future__ import annotations
 
-import asyncio
 import math
 import random
 import time
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Any, Sequence
+from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
@@ -92,7 +93,6 @@ from src.research.constants import RESEARCH_PARTIALS_STREAM
 from src.research.judge.judge import JudgeReport
 from src.research.providers.base import LLMParams, Message
 from tests.research.fakes import FakeLLMProvider
-
 
 # --------------------------------------------------------------------------- #
 # SLO constants (Req 5.1–5.3, design §7.1)                                    #
@@ -283,9 +283,7 @@ def _build_llm_driven_judge(
         )
         return JudgeReport(
             run_id=run_id,
-            groundedness_score={
-                section: 0.9 for section in _CANNED_BRIEF.keys()
-            },
+            groundedness_score=dict.fromkeys(_CANNED_BRIEF.keys(), 0.9),
             unsupported_claims=[],
             safe_to_display=True,
             retry_count=retry_count,
@@ -329,7 +327,7 @@ class _TimingPublisher:
     _first_agent_done_ms: int | None = field(default=None, init=False)
     _done_ms: int | None = field(default=None, init=False)
     calls: list[tuple[str, dict[str, Any]]] = field(
-        default_factory=list, init=False
+        default_factory=list, init=False,
     )
 
     async def __call__(
@@ -427,6 +425,7 @@ async def _simulate_one_run(rng: random.Random) -> _RunMetrics:
     _RunMetrics
         ``first_token_ms`` / ``first_agent_ms`` / ``full_brief_ms``
         in milliseconds since run start.
+
     """
     run_id = uuid4()
     user_id = uuid4()

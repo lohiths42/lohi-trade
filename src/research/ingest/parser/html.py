@@ -74,6 +74,7 @@ def parse_html(
         If *content* is empty or blank after stripping — an empty input
         is virtually always an ingestion-layer bug and we'd rather fail
         loudly than persist an empty ``CanonicalDoc``.
+
     """
     if not content or not content.strip():
         raise ValueError("html content is empty")
@@ -193,7 +194,7 @@ class _TagStripper(HTMLParser):
             "thead",
             "tr",
             "ul",
-        }
+        },
     )
     _SKIP_TAGS: Final[frozenset[str]] = frozenset({"script", "style", "noscript"})
 
@@ -203,7 +204,7 @@ class _TagStripper(HTMLParser):
         self._skip_depth: int = 0
 
     def handle_starttag(
-        self, tag: str, attrs: list[tuple[str, str | None]]
+        self, tag: str, attrs: list[tuple[str, str | None]],
     ) -> None:
         if tag in self._SKIP_TAGS:
             self._skip_depth += 1
@@ -264,7 +265,7 @@ class _TableCollector(HTMLParser):
     # -- tag handlers --------------------------------------------------------
 
     def handle_starttag(
-        self, tag: str, attrs: list[tuple[str, str | None]]
+        self, tag: str, attrs: list[tuple[str, str | None]],
     ) -> None:
         if tag == "table":
             # Start a fresh buffer. Nested tables replace the current

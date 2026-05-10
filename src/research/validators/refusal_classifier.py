@@ -85,9 +85,9 @@ from dataclasses import dataclass
 from typing import ClassVar, Final, Literal
 
 __all__ = [
+    "RefusalClassifier",
     "RefusalReason",
     "RefusalSignal",
-    "RefusalClassifier",
     "classify_refusal",
 ]
 
@@ -148,6 +148,7 @@ class RefusalSignal:
         exactly which words triggered the classification. Bounded to
         :data:`_MAX_MATCHED_TEXT_LEN` characters to keep log records
         small.
+
     """
 
     matched: bool
@@ -161,14 +162,14 @@ class RefusalSignal:
     #: Declared as :class:`ClassVar` so the dataclass machinery does
     #: not treat it as a field; the actual value is assigned below
     #: once the class object exists.
-    NO_MATCH: ClassVar["RefusalSignal"]
+    NO_MATCH: ClassVar[RefusalSignal]
 
 
 # Frozen sentinel for the no-match case. Assigned after the class
 # definition because a frozen dataclass cannot reference itself in a
 # class-body default.
 RefusalSignal.NO_MATCH = RefusalSignal(
-    matched=False, reason=None, matched_rule_id=None, matched_text=None
+    matched=False, reason=None, matched_rule_id=None, matched_text=None,
 )
 
 
@@ -332,7 +333,7 @@ def _compile_rules() -> tuple[_CompiledRule, ...]:
                 rule_id=rule_id,
                 reason=reason,
                 patterns=tuple(re.compile(p) for p in patterns),
-            )
+            ),
         )
     return tuple(compiled)
 
@@ -415,6 +416,7 @@ class RefusalClassifier:
           cannot trip a policy pattern and silently returning a
           no-match keeps the classifier's contract simple for
           upstream callers.
+
         """
         if not prompt:
             return RefusalSignal.NO_MATCH

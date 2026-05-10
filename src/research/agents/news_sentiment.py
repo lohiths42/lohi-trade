@@ -75,8 +75,9 @@ Satisfies
 from __future__ import annotations
 
 import time
+from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import Any, Final, Iterable
+from typing import Any, Final
 
 from src.research.agents._base import AgentConfig
 from src.research.agents._stream import (
@@ -175,7 +176,7 @@ class NewsSentimentAgent:
             temperature=_DEFAULT_TEMPERATURE,
             max_tokens=_DEFAULT_MAX_TOKENS,
             prompt_version=_PROMPT_VERSION,
-        )
+        ),
     )
 
     # Stream-name overrides. Keep each as its own field so operators
@@ -219,7 +220,7 @@ class NewsSentimentAgent:
             # AttributeError deep in the stream loop.
             raise ValueError(
                 f"{self.name} agent requires a RedisStreamReader; "
-                "construct with ``redis_reader=...``."
+                "construct with ``redis_reader=...``.",
             )
 
         # Step 2 — fetch + parse each stream. We gather events for
@@ -279,7 +280,7 @@ class NewsSentimentAgent:
         if self.llm is None:
             raise ValueError(
                 f"{self.name} agent requires an LLMProvider; "
-                "construct with ``llm=...``."
+                "construct with ``llm=...``.",
             )
         completion = await self.llm.complete(messages, self._llm_params())
 

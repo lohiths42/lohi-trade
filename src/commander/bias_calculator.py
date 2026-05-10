@@ -1,5 +1,4 @@
-"""
-Bias Calculator for The Commander.
+"""Bias Calculator for The Commander.
 
 Aggregates sentiment from the last 24 hours with exponential time decay
 (half-life 4 hours) to produce a trading bias for each ticker. The bias
@@ -12,8 +11,7 @@ Requirements: 8.1, 8.2, 8.3
 import logging
 import math
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional, Tuple
+from datetime import UTC, datetime, timedelta
 
 from src.state.database import DatabaseConnectionManager
 
@@ -37,8 +35,7 @@ FETCH_SENTIMENT_SQL = """
 
 @dataclass
 class BiasResult:
-    """
-    Result of bias calculation for a ticker.
+    """Result of bias calculation for a ticker.
 
     Attributes:
         ticker: NSE ticker symbol.
@@ -47,6 +44,7 @@ class BiasResult:
         confidence: Confidence based on article count and score consistency.
         article_count: Number of articles used in the calculation.
         timestamp: When the bias was calculated.
+
     """
 
     ticker: str = ""
@@ -54,12 +52,11 @@ class BiasResult:
     score: float = 0.0
     confidence: float = 0.0
     article_count: int = 0
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 class BiasCalculator:
-    """
-    Aggregates sentiment with exponential time decay to produce trading bias.
+    """Aggregates sentiment with exponential time decay to produce trading bias.
 
     The calculator:
     - Fetches sentiment scores from the last 24 hours (configurable)
@@ -74,14 +71,13 @@ class BiasCalculator:
 
     def __init__(
         self,
-        db_manager: Optional[DatabaseConnectionManager] = None,
+        db_manager: DatabaseConnectionManager | None = None,
         half_life_hours: float = DEFAULT_HALF_LIFE_HOURS,
         lookback_hours: int = DEFAULT_LOOKBACK_HOURS,
         bullish_threshold: float = DEFAULT_BULLISH_THRESHOLD,
         bearish_threshold: float = DEFAULT_BEARISH_THRESHOLD,
     ) -> None:
-        """
-        Initialize the bias calculator.
+        """Initialize the bias calculator.
 
         Args:
             db_manager: Database connection manager for querying sentiment_log.
@@ -89,6 +85,7 @@ class BiasCalculator:
             lookback_hours: How many hours of sentiment to aggregate.
             bullish_threshold: Score above which bias is BULLISH.
             bearish_threshold: Score below which bias is BEARISH.
+
         """
         self._db_manager = db_manager
         self._half_life_hours = half_life_hours
@@ -100,12 +97,12 @@ class BiasCalculator:
         self._decay_lambda = math.log(2) / self._half_life_hours
 
         # In-memory cache: ticker -> latest BiasResult
-        self._cache: Dict[str, BiasResult] = {}
+        self._cache: dict[str, BiasResult] = {}
 
         logger.info(
             f"BiasCalculator initialized: half_life={half_life_hours}h, "
             f"lookback={lookback_hours}h, λ={self._decay_lambda:.6f}, "
-            f"thresholds=[{bearish_threshold}, {bullish_threshold}]"
+            f"thresholds=[{bearish_threshold}, {bullish_threshold}]",
         )
 
     # ------------------------------------------------------------------
@@ -115,10 +112,9 @@ class BiasCalculator:
     def calculate_bias(
         self,
         ticker: str,
-        now: Optional[datetime] = None,
+        now: datetime | None = None,
     ) -> BiasResult:
-        """
-        Calculate bias for a ticker by aggregating recent sentiment.
+        """Calculate bias for a ticker by aggregating recent sentiment.
 
         Fetches all sentiment scores from the last ``lookback_hours``,
         applies exponential time decay, and computes a weighted average.
@@ -131,9 +127,10 @@ class BiasCalculator:
             BiasResult with score, classification, and metadata.
 
         Requirements: 8.1, 8.2
+
         """
         if now is None:
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
 
         # Fetch sentiment data
         sentiment_rows = self._fetch_sentiment(ticker, now)
@@ -150,7 +147,7 @@ class BiasCalculator:
             self._cache[ticker] = result
             logger.info(
                 f"Bias for {ticker}: NEUTRAL (no articles in last "
-                f"{self._lookback_hours}h)"
+                f"{self._lookback_hours}h)",
             )
             return result
 
@@ -173,16 +170,16 @@ class BiasCalculator:
 
         logger.info(
             f"Bias for {ticker}: {bias} (score={score:.4f}, "
-            f"confidence={confidence:.4f}, articles={len(sentiment_rows)})"
+            f"confidence={confidence:.4f}, articles={len(sentiment_rows)})",
         )
         return result
 
-    def get_current_bias(self, ticker: str) -> Optional[BiasResult]:
-        """
-        Retrieve the most recently cached bias for a ticker.
+    def get_current_bias(self, ticker: str) -> BiasResult | None:
+        """Retrieve the most recently cached bias for a ticker.
 
         Returns:
             The cached BiasResult, or None if no bias has been calculated.
+
         """
         return self._cache.get(ticker)
 
@@ -191,8 +188,7 @@ class BiasCalculator:
     # ------------------------------------------------------------------
 
     def compute_decay_weight(self, hours_ago: float) -> float:
-        """
-        Compute the exponential decay weight for a given age.
+        """Compute the exponential decay weight for a given age.
 
         Formula: weight = exp(-λ × hours_ago)
         where λ = ln(2) / half_life_hours
@@ -204,6 +200,7 @@ class BiasCalculator:
 
         Returns:
             Decay weight in (0, 1].
+
         """
         return math.exp(-self._decay_lambda * hours_ago)
 
@@ -215,9 +212,8 @@ class BiasCalculator:
         self,
         ticker: str,
         now: datetime,
-    ) -> List[Tuple[float, datetime]]:
-        """
-        Fetch sentiment scores from the last ``lookback_hours``.
+    ) -> list[tuple[float, datetime]]:
+        """Fetch sentiment scores from the last ``lookback_hours``.
 
         Returns list of (boosted_score, created_at) tuples.
 
@@ -235,31 +231,31 @@ class BiasCalculator:
             cursor = conn.execute(FETCH_SENTIMENT_SQL, (ticker, cutoff_str))
             rows = cursor.fetchall()
 
-            result: List[Tuple[float, datetime]] = []
+            result: list[tuple[float, datetime]] = []
             for row in rows:
                 score = float(row["boosted_score"])
                 created_str = row["created_at"]
                 # Parse the timestamp — SQLite stores as string
                 try:
                     created_at = datetime.strptime(
-                        created_str, "%Y-%m-%d %H:%M:%S"
-                    ).replace(tzinfo=timezone.utc)
+                        created_str, "%Y-%m-%d %H:%M:%S",
+                    ).replace(tzinfo=UTC)
                 except (ValueError, TypeError):
                     # Try ISO format as fallback
                     try:
                         created_at = datetime.fromisoformat(
-                            created_str
-                        ).replace(tzinfo=timezone.utc)
+                            created_str,
+                        ).replace(tzinfo=UTC)
                     except (ValueError, TypeError):
                         logger.warning(
-                            f"Skipping row with unparseable timestamp: {created_str}"
+                            f"Skipping row with unparseable timestamp: {created_str}",
                         )
                         continue
                 result.append((score, created_at))
 
             logger.debug(
                 f"Fetched {len(result)} sentiment rows for {ticker} "
-                f"(cutoff={cutoff_str})"
+                f"(cutoff={cutoff_str})",
             )
             return result
 
@@ -269,11 +265,10 @@ class BiasCalculator:
 
     def _compute_weighted_score(
         self,
-        sentiment_rows: List[Tuple[float, datetime]],
+        sentiment_rows: list[tuple[float, datetime]],
         now: datetime,
-    ) -> Tuple[float, float]:
-        """
-        Compute the weighted average score using exponential time decay.
+    ) -> tuple[float, float]:
+        """Compute the weighted average score using exponential time decay.
 
         bias_score = Σ(sentiment_score × weight) / Σ(weight)
 
@@ -289,6 +284,7 @@ class BiasCalculator:
             (weighted_score, confidence) tuple.
 
         Requirements: 8.2
+
         """
         weighted_sum = 0.0
         weight_total = 0.0
@@ -327,13 +323,12 @@ class BiasCalculator:
         return weighted_score, confidence
 
     def _classify(self, score: float) -> str:
-        """
-        Classify a bias score into BULLISH, BEARISH, or NEUTRAL.
+        """Classify a bias score into BULLISH, BEARISH, or NEUTRAL.
 
         Requirements: 8.3
         """
         if score > self._bullish_threshold:
             return "BULLISH"
-        elif score < self._bearish_threshold:
+        if score < self._bearish_threshold:
             return "BEARISH"
         return "NEUTRAL"

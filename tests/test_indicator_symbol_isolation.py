@@ -1,5 +1,4 @@
-"""
-Property-based test for Symbol Isolation in Indicator Calculation.
+"""Property-based test for Symbol Isolation in Indicator Calculation.
 
 Property 10: Symbol Isolation in Indicator Calculation
 For any two different symbols, indicator calculations for one symbol
@@ -17,7 +16,6 @@ from hypothesis import strategies as st
 from src.soldier.candle_builder import Candle
 from src.soldier.indicator_engine import IndicatorEngine, IndicatorSet
 
-
 # ---------------------------------------------------------------------------
 # Composite strategy: generate a candle series with configurable symbol and
 # base_price so we can create two distinct series at different price levels.
@@ -25,8 +23,7 @@ from src.soldier.indicator_engine import IndicatorEngine, IndicatorSet
 
 @st.composite
 def candle_series_for_symbol(draw, symbol: str, base_price: float):
-    """
-    Generate a series of 50 candles for a given symbol starting around
+    """Generate a series of 50 candles for a given symbol starting around
     *base_price* using a random walk.
 
     High >= max(open, close), Low <= min(open, close), volume > 0,
@@ -39,21 +36,21 @@ def candle_series_for_symbol(draw, symbol: str, base_price: float):
 
     for i in range(num_candles):
         step = draw(
-            st.floats(min_value=-3.0, max_value=3.0, allow_nan=False, allow_infinity=False)
+            st.floats(min_value=-3.0, max_value=3.0, allow_nan=False, allow_infinity=False),
         )
         price = max(1.0, price + step)
 
         open_delta = draw(
-            st.floats(min_value=-1.0, max_value=1.0, allow_nan=False, allow_infinity=False)
+            st.floats(min_value=-1.0, max_value=1.0, allow_nan=False, allow_infinity=False),
         )
         open_price = max(0.5, price + open_delta)
         close_price = max(0.5, price)
 
         high_extra = draw(
-            st.floats(min_value=0.0, max_value=5.0, allow_nan=False, allow_infinity=False)
+            st.floats(min_value=0.0, max_value=5.0, allow_nan=False, allow_infinity=False),
         )
         low_extra = draw(
-            st.floats(min_value=0.0, max_value=5.0, allow_nan=False, allow_infinity=False)
+            st.floats(min_value=0.0, max_value=5.0, allow_nan=False, allow_infinity=False),
         )
         high_price = max(open_price, close_price) + high_extra
         low_price = max(0.01, min(open_price, close_price) - low_extra)
@@ -71,15 +68,14 @@ def candle_series_for_symbol(draw, symbol: str, base_price: float):
                 volume=volume,
                 timestamp=base_time + timedelta(minutes=i),
                 is_complete=True,
-            )
+            ),
         )
 
     return candles
 
 
 def _indicators_match(a: IndicatorSet, b: IndicatorSet, tol: float = 1e-10) -> list[str]:
-    """
-    Compare all float fields of two IndicatorSets within *tol*.
+    """Compare all float fields of two IndicatorSets within *tol*.
 
     Returns a list of mismatch descriptions (empty means they match).
     """
@@ -101,7 +97,7 @@ def _indicators_match(a: IndicatorSet, b: IndicatorSet, tol: float = 1e-10) -> l
     # Integer field
     if a.supertrend_direction != b.supertrend_direction:
         mismatches.append(
-            f"supertrend_direction: a={a.supertrend_direction}, b={b.supertrend_direction}"
+            f"supertrend_direction: a={a.supertrend_direction}, b={b.supertrend_direction}",
         )
 
     return mismatches
@@ -109,8 +105,7 @@ def _indicators_match(a: IndicatorSet, b: IndicatorSet, tol: float = 1e-10) -> l
 
 @st.composite
 def two_symbol_candle_series(draw):
-    """
-    Generate two candle series for different symbols at different price levels.
+    """Generate two candle series for different symbols at different price levels.
 
     Symbol A trades around 500, symbol B trades around 3000 — far enough
     apart that any cross-contamination would be obvious.
@@ -123,8 +118,7 @@ def two_symbol_candle_series(draw):
 @given(data=two_symbol_candle_series())
 @settings(max_examples=25, deadline=None)
 def test_property_symbol_isolation_in_indicator_calculation(data):
-    """
-    Property 10: Symbol Isolation in Indicator Calculation
+    """Property 10: Symbol Isolation in Indicator Calculation
 
     For any two different symbols, indicator calculations for one symbol
     should not affect indicator values for the other symbol.
@@ -166,12 +160,12 @@ def test_property_symbol_isolation_in_indicator_calculation(data):
 
     mismatches_a = _indicators_match(shared_result_a, isolated_result_a)
     assert not mismatches_a, (
-        f"Symbol A indicators differ between shared and isolated engines:\n"
+        "Symbol A indicators differ between shared and isolated engines:\n"
         + "\n".join(mismatches_a)
     )
 
     mismatches_b = _indicators_match(shared_result_b, isolated_result_b)
     assert not mismatches_b, (
-        f"Symbol B indicators differ between shared and isolated engines:\n"
+        "Symbol B indicators differ between shared and isolated engines:\n"
         + "\n".join(mismatches_b)
     )

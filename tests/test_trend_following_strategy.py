@@ -1,5 +1,4 @@
-"""
-Tests for the TrendFollowingStrategy.
+"""Tests for the TrendFollowingStrategy.
 
 Validates:
 - Signal generation when all 6 entry conditions are met
@@ -19,9 +18,8 @@ import pandas as pd
 import pytest
 
 from src.soldier.indicator_engine import IndicatorSet
-from src.soldier.strategy_engine import TrendFollowingStrategy, Signal
+from src.soldier.strategy_engine import TrendFollowingStrategy
 from src.utils.config import TrendFollowingStrategy as TrendFollowingConfig
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -79,7 +77,7 @@ def _make_candles(close: float = 103.0, volume: float = 60000.0) -> pd.DataFrame
             "close": [close],
             "volume": [volume],
             "timestamp": [datetime(2024, 1, 15, 10, 0, 0)],
-        }
+        },
     )
 
 

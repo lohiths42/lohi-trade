@@ -112,8 +112,9 @@ Satisfies
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
-from typing import Any, Final, Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
+from dataclasses import dataclass
+from typing import Any, Final
 
 from src.research.agents.orchestrator import AgentResult
 from src.research.guardrails.refusal_policy import REFUSAL_POLICY_BLOCK
@@ -204,6 +205,7 @@ class Synthesizer:
     prompt_version:
         Directory under ``src/research/prompts/`` to load the
         synthesizer template from. Defaults to ``"v1"``.
+
     """
 
     llm: LLMProvider | None = None
@@ -219,7 +221,7 @@ class Synthesizer:
         agent_results: Sequence[AgentResult],
         symbol: str | None,
         user_prompt: str,
-        prior_brief: "Mapping[str, str] | object | None" = None,
+        prior_brief: Mapping[str, str] | object | None = None,
         unsupported_claims: Iterable[UnsupportedClaim] = (),
         numeric_findings: Iterable[UnsupportedClaim] = (),
     ) -> dict[str, str]:
@@ -238,6 +240,7 @@ class Synthesizer:
             :data:`_BRIEF_SECTIONS` plus ``"citations"``. Unset
             sections carry ``""`` so downstream consumers never see
             missing keys.
+
         """
         if self.llm is None:
             # Matches the guard in :class:`BaseRetrievalAgent` — a
@@ -247,7 +250,7 @@ class Synthesizer:
             # AttributeError on ``llm.complete``.
             raise ValueError(
                 "Synthesizer requires an LLMProvider; construct with "
-                "``llm=...``."
+                "``llm=...``.",
             )
 
         # 1) Render the prompt. Every slot present in the v1 template
@@ -296,7 +299,7 @@ class Synthesizer:
         agent_results: Sequence[AgentResult],
         user_prompt: str,
         symbol: str | None,
-        prior_brief: "Mapping[str, str] | object | None",
+        prior_brief: Mapping[str, str] | object | None,
         unsupported_claims: tuple[UnsupportedClaim, ...],
         numeric_findings: tuple[UnsupportedClaim, ...],
     ) -> str:
@@ -401,7 +404,7 @@ def _pack_user_prompt(
     *,
     user_prompt: str,
     symbol: str | None,
-    prior_brief: "Mapping[str, str] | object | None",
+    prior_brief: Mapping[str, str] | object | None,
     unsupported_claims: tuple[UnsupportedClaim, ...],
     numeric_findings: tuple[UnsupportedClaim, ...],
 ) -> str:
@@ -444,7 +447,7 @@ def _pack_user_prompt(
             indent=2,
         )
         parts.append(
-            f"<unsupported_claims>\n{claims_json}\n</unsupported_claims>"
+            f"<unsupported_claims>\n{claims_json}\n</unsupported_claims>",
         )
 
     if numeric_findings:
@@ -454,7 +457,7 @@ def _pack_user_prompt(
             indent=2,
         )
         parts.append(
-            f"<numeric_findings>\n{findings_json}\n</numeric_findings>"
+            f"<numeric_findings>\n{findings_json}\n</numeric_findings>",
         )
 
     parts.append(f"<caller_prompt>\n{user_prompt}\n</caller_prompt>")
@@ -471,7 +474,7 @@ def _format_brief_sections(sections: Mapping[str, str]) -> str:
 
 
 def _coerce_brief_sections(
-    brief: "Mapping[str, str] | object",
+    brief: Mapping[str, str] | object,
 ) -> dict[str, str]:
     """Normalise a brief into ``{section_name: content}``.
 

@@ -36,15 +36,16 @@ Design references
 
 from __future__ import annotations
 
-from typing import Any, Awaitable, Callable, Iterable, Literal, Mapping
+from collections.abc import Awaitable, Callable, Iterable, Mapping
+from typing import Any, Literal
 
 from src.research.judge.judge import JudgeReport
 from src.research.validators.types import UnsupportedClaim
 
 __all__ = [
+    "INSUFFICIENT_EVIDENCE",
     "Quality",
     "ResynthesisOutcome",
-    "INSUFFICIENT_EVIDENCE",
     "run_resynthesis_loop",
 ]
 
@@ -113,6 +114,7 @@ class ResynthesisOutcome:
         ``quality`` is ``"low"``. Exposed so the gateway can surface
         the list to the UI's "verifying…" / "insufficient evidence"
         banners (Req 16.19, design §3.12 endpoint surface).
+
     """
 
     __slots__ = ("brief", "judge_report", "quality", "unsupported_sections")
@@ -120,7 +122,7 @@ class ResynthesisOutcome:
     def __init__(
         self,
         *,
-        brief: "Mapping[str, str] | object",
+        brief: Mapping[str, str] | object,
         judge_report: JudgeReport,
         quality: Quality,
         unsupported_sections: frozenset[str] = frozenset(),
@@ -186,7 +188,7 @@ async def run_resynthesis_loop(
     *,
     synthesize_fn: SynthesizeFn,
     judge_fn: JudgeFn,
-    brief: "Mapping[str, str] | object",
+    brief: Mapping[str, str] | object,
     numeric_findings: Iterable[UnsupportedClaim] = (),
     min_score: float = 0.7,
     max_retries: int = 1,
@@ -248,10 +250,11 @@ async def run_resynthesis_loop(
     ValueError
         When ``max_retries`` is negative — negative retry budgets are
         always a caller bug.
+
     """
     if max_retries < 0:
         raise ValueError(
-            f"max_retries must be non-negative; got {max_retries}"
+            f"max_retries must be non-negative; got {max_retries}",
         )
 
     # -------------------------------------------------------------- #
@@ -273,7 +276,7 @@ async def run_resynthesis_loop(
     # does not need to special-case the "no retries allowed" branch.
     if max_retries < 1:
         redacted, unsupported_sections = _redact_unsupported_sections(
-            brief, first_report
+            brief, first_report,
         )
         return ResynthesisOutcome(
             brief=redacted,
@@ -325,7 +328,7 @@ async def run_resynthesis_loop(
     # on the *re-synthesised* brief (it is the most recent, best-effort
     # output) and return quality=low.
     redacted, unsupported_sections = _redact_unsupported_sections(
-        resynthesised_brief, second_report
+        resynthesised_brief, second_report,
     )
     return ResynthesisOutcome(
         brief=redacted,
@@ -368,7 +371,7 @@ def _is_passing(report: JudgeReport, *, min_score: float) -> bool:
 
 
 def _redact_unsupported_sections(
-    brief: "Mapping[str, str] | object",
+    brief: Mapping[str, str] | object,
     report: JudgeReport,
 ) -> tuple[Any, frozenset[str]]:
     """Replace every unsupported section's body with :data:`INSUFFICIENT_EVIDENCE`.

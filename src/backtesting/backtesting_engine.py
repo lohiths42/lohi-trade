@@ -1,5 +1,4 @@
-"""
-Backtesting engine for LOHI-TRADE system.
+"""Backtesting engine for LOHI-TRADE system.
 
 Provides vectorized backtesting for Mean Reversion, Trend Following,
 and Opening Range Breakout strategies with realistic Indian market
@@ -8,10 +7,8 @@ transaction costs, slippage, and performance metrics.
 Requirements: 15.1, 15.2, 15.3, 15.4, 15.5, 15.6, 15.7, 15.8
 """
 
-import logging
 from dataclasses import dataclass, field
-from datetime import date
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -44,6 +41,7 @@ TRADING_DAYS = 252
 @dataclass
 class TradeRecord:
     """Single trade entry/exit record."""
+
     symbol: str
     strategy: str
     side: str               # BUY or SELL
@@ -61,17 +59,17 @@ class TradeRecord:
 @dataclass
 class BacktestResult:
     """Container for a single strategy backtest output."""
+
     strategy_name: str
-    metrics: Dict[str, float] = field(default_factory=dict)
-    equity_curve: Optional[pd.Series] = None
-    trades: List[TradeRecord] = field(default_factory=list)
-    trade_log: Optional[pd.DataFrame] = None
+    metrics: dict[str, float] = field(default_factory=dict)
+    equity_curve: pd.Series | None = None
+    trades: list[TradeRecord] = field(default_factory=list)
+    trade_log: pd.DataFrame | None = None
     passed_thresholds: bool = False
 
 
 class BacktestingEngine:
-    """
-    Vectorized backtesting engine for LOHI-TRADE strategies.
+    """Vectorized backtesting engine for LOHI-TRADE strategies.
 
     Uses pandas/numpy for core calculations. If vectorbt is installed it
     can be leveraged, but the engine works without it.
@@ -80,10 +78,10 @@ class BacktestingEngine:
     STRATEGIES = ["mean_reversion", "trend_following", "orb"]
 
     def __init__(self, config: Any, data_manager: Any = None):
-        """
-        Args:
-            config: Application configuration object.
-            data_manager: Optional HistoricalDataManager for loading data.
+        """Args:
+        config: Application configuration object.
+        data_manager: Optional HistoricalDataManager for loading data.
+
         """
         self.config = config
         self.data_manager = data_manager
@@ -92,9 +90,8 @@ class BacktestingEngine:
     # Transaction costs
     # ------------------------------------------------------------------
 
-    def apply_transaction_costs(self, trades: List[TradeRecord]) -> List[TradeRecord]:
-        """
-        Apply realistic Indian market transaction costs to each trade.
+    def apply_transaction_costs(self, trades: list[TradeRecord]) -> list[TradeRecord]:
+        """Apply realistic Indian market transaction costs to each trade.
 
         Costs applied:
         - STT: 0.025% on sell-side turnover
@@ -105,6 +102,7 @@ class BacktestingEngine:
 
         Returns:
             The same list with transaction_costs and net_pnl updated.
+
         """
         for t in trades:
             buy_turnover = t.entry_price * t.quantity
@@ -129,8 +127,7 @@ class BacktestingEngine:
 
     @staticmethod
     def apply_slippage(price: float, side: str) -> float:
-        """
-        Apply 0.05% slippage to an execution price.
+        """Apply 0.05% slippage to an execution price.
 
         For BUY orders the price worsens (increases).
         For SELL orders the price worsens (decreases).
@@ -141,11 +138,11 @@ class BacktestingEngine:
 
         Returns:
             Adjusted price after slippage.
+
         """
         if side == "BUY":
             return price * (1 + SLIPPAGE_PCT)
-        else:
-            return price * (1 - SLIPPAGE_PCT)
+        return price * (1 - SLIPPAGE_PCT)
 
     # ------------------------------------------------------------------
     # Metrics
@@ -154,10 +151,9 @@ class BacktestingEngine:
     def calculate_metrics(
         self,
         equity_curve: pd.Series,
-        trades: List[TradeRecord],
-    ) -> Dict[str, float]:
-        """
-        Calculate performance metrics from an equity curve and trade list.
+        trades: list[TradeRecord],
+    ) -> dict[str, float]:
+        """Calculate performance metrics from an equity curve and trade list.
 
         Metrics:
         - sharpe_ratio: annualised (mean - Rf) / std * sqrt(252)
@@ -172,8 +168,9 @@ class BacktestingEngine:
 
         Returns:
             Dict with metric names as keys.
+
         """
-        metrics: Dict[str, float] = {}
+        metrics: dict[str, float] = {}
 
         # --- Returns ---
         if len(equity_curve) < 2:
@@ -224,9 +221,8 @@ class BacktestingEngine:
     # Trade log
     # ------------------------------------------------------------------
 
-    def generate_trade_log(self, trades: List[TradeRecord]) -> pd.DataFrame:
-        """
-        Convert trade records into a DataFrame log.
+    def generate_trade_log(self, trades: list[TradeRecord]) -> pd.DataFrame:
+        """Convert trade records into a DataFrame log.
 
         Columns: symbol, strategy, side, entry_price, exit_price, quantity,
                  entry_date, exit_date, gross_pnl, transaction_costs,
@@ -261,9 +257,8 @@ class BacktestingEngine:
     # Threshold validation
     # ------------------------------------------------------------------
 
-    def validate_thresholds(self, metrics: Dict[str, float]) -> Dict[str, Any]:
-        """
-        Check whether metrics meet minimum performance thresholds.
+    def validate_thresholds(self, metrics: dict[str, float]) -> dict[str, Any]:
+        """Check whether metrics meet minimum performance thresholds.
 
         Thresholds:
         - Sharpe Ratio > 1.5
@@ -273,6 +268,7 @@ class BacktestingEngine:
 
         Returns:
             Dict with 'passed' bool and per-check results.
+
         """
         checks = {
             "sharpe_ratio": metrics.get("sharpe_ratio", 0) > MIN_SHARPE,
@@ -319,8 +315,7 @@ class BacktestingEngine:
         initial_capital: float,
         strategy_name: str,
     ) -> BacktestResult:
-        """
-        Generic vectorized simulation using simple signal columns.
+        """Generic vectorized simulation using simple signal columns.
 
         Expects *data* to contain at least: close, and optionally
         'signal' column with 1 (buy) / -1 (sell) / 0 (hold).
@@ -338,7 +333,7 @@ class BacktestingEngine:
         if "signal" not in df.columns:
             df["signal"] = self._generate_signals(df, strategy_name)
 
-        trades: List[TradeRecord] = []
+        trades: list[TradeRecord] = []
         equity = [initial_capital]
         cash = initial_capital
         position = 0
@@ -366,8 +361,8 @@ class BacktestingEngine:
                 adj_price = self.apply_slippage(close, "SELL")
                 cash += position * adj_price
 
-                dt_entry = df.index[entry_idx] if hasattr(df.index, '__getitem__') else entry_idx
-                dt_exit = df.index[i] if hasattr(df.index, '__getitem__') else i
+                dt_entry = df.index[entry_idx] if hasattr(df.index, "__getitem__") else entry_idx
+                dt_exit = df.index[i] if hasattr(df.index, "__getitem__") else i
 
                 trade = TradeRecord(
                     symbol=symbol,
@@ -393,8 +388,8 @@ class BacktestingEngine:
             adj_price = self.apply_slippage(last_close, "SELL")
             cash += position * adj_price
 
-            dt_entry = df.index[entry_idx] if hasattr(df.index, '__getitem__') else entry_idx
-            dt_exit = df.index[-1] if hasattr(df.index, '__getitem__') else len(df) - 1
+            dt_entry = df.index[entry_idx] if hasattr(df.index, "__getitem__") else entry_idx
+            dt_exit = df.index[-1] if hasattr(df.index, "__getitem__") else len(df) - 1
 
             trade = TradeRecord(
                 symbol=symbol,
@@ -433,8 +428,7 @@ class BacktestingEngine:
         )
 
     def _generate_signals(self, df: pd.DataFrame, strategy: str) -> pd.Series:
-        """
-        Generate simple trading signals based on strategy type.
+        """Generate simple trading signals based on strategy type.
 
         Returns Series of 1 (buy), -1 (sell), 0 (hold).
         """
@@ -486,8 +480,7 @@ class BacktestingEngine:
         data: pd.DataFrame,
         initial_capital: float = 500_000.0,
     ) -> BacktestResult:
-        """
-        Run a single strategy backtest.
+        """Run a single strategy backtest.
 
         Args:
             strategy_name: One of 'mean_reversion', 'trend_following', 'orb'.
@@ -496,6 +489,7 @@ class BacktestingEngine:
 
         Returns:
             BacktestResult with metrics, equity curve, and trade log.
+
         """
         logger.info(f"Running backtest for {strategy_name}", extra={
             "initial_capital": initial_capital,
@@ -525,9 +519,8 @@ class BacktestingEngine:
         self,
         data: pd.DataFrame,
         initial_capital: float = 500_000.0,
-    ) -> Dict[str, BacktestResult]:
-        """
-        Run backtests for all three strategies and return combined results.
+    ) -> dict[str, BacktestResult]:
+        """Run backtests for all three strategies and return combined results.
 
         Args:
             data: OHLCV DataFrame.
@@ -535,8 +528,9 @@ class BacktestingEngine:
 
         Returns:
             Dict mapping strategy name → BacktestResult.
+
         """
-        results: Dict[str, BacktestResult] = {}
+        results: dict[str, BacktestResult] = {}
         for strategy in self.STRATEGIES:
             results[strategy] = self.run_backtest(strategy, data, initial_capital)
         return results

@@ -1,5 +1,4 @@
-"""
-Property-based test for Indicator Calculation Completeness.
+"""Property-based test for Indicator Calculation Completeness.
 
 Property 8: Indicator Calculation Completeness
 For any completed candle with sufficient historical data (100+ prior candles),
@@ -18,15 +17,13 @@ from hypothesis import strategies as st
 from src.soldier.candle_builder import Candle
 from src.soldier.indicator_engine import IndicatorEngine
 
-
 # ---------------------------------------------------------------------------
 # Composite strategy: generate a list of realistic candles via random walk
 # ---------------------------------------------------------------------------
 
 @st.composite
 def candle_series_strategy(draw):
-    """
-    Generate a series of 50+ candles with realistic OHLCV data.
+    """Generate a series of 50+ candles with realistic OHLCV data.
 
     Uses a random-walk approach: start from a base price and apply small
     incremental steps so that prices stay positive and vary realistically.
@@ -70,7 +67,7 @@ def candle_series_strategy(draw):
                 volume=volume,
                 timestamp=base_time + timedelta(minutes=i),
                 is_complete=True,
-            )
+            ),
         )
 
     return candles
@@ -79,8 +76,7 @@ def candle_series_strategy(draw):
 @given(candles=candle_series_strategy())
 @settings(max_examples=25, deadline=None)
 def test_property_indicator_calculation_completeness(candles):
-    """
-    Property 8: Indicator Calculation Completeness
+    """Property 8: Indicator Calculation Completeness
 
     For any completed candle with sufficient historical data (100+ prior candles),
     all configured indicators should be calculated and published.

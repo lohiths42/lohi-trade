@@ -75,15 +75,12 @@ from __future__ import annotations
 
 import asyncio
 import time
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
     Any,
-    Awaitable,
-    Callable,
     Final,
-    Mapping,
-    Sequence,
 )
 from uuid import UUID
 
@@ -114,8 +111,8 @@ __all__ = [
     "DEFAULT_DEBOUNCE_SEC",
     "InvalidationEvent",
     "OrchestratorFactory",
-    "SubAgentSelector",
     "SnapshotWorker",
+    "SubAgentSelector",
 ]
 
 
@@ -266,6 +263,7 @@ class SnapshotWorker:
         :func:`time.monotonic` so debounce arithmetic is not
         affected by wall-clock jumps. Tests can pin a monotonic
         counter to drive the debounce deterministically.
+
     """
 
     def __init__(
@@ -281,7 +279,7 @@ class SnapshotWorker:
         events_per_read: int = _DEFAULT_EVENTS_PER_READ,
         invalidation_stream: str = RESEARCH_SNAPSHOT_INVALIDATIONS_STREAM,
         hash_resolver: Callable[
-            [UUID, str], Awaitable[Sequence[str]]
+            [UUID, str], Awaitable[Sequence[str]],
         ]
         | None = None,
         clock: Callable[[], float] | None = None,
@@ -335,7 +333,7 @@ class SnapshotWorker:
         except asyncio.CancelledError:
             _log_info("snapshot worker cancelled; stopping")
             raise
-        except Exception as exc:  # noqa: BLE001 — supervisor log
+        except Exception as exc:
             _log_warning(
                 "snapshot worker stopped with error",
                 error_type=type(exc).__name__,
@@ -469,7 +467,7 @@ class SnapshotWorker:
                     user_id=user_id,
                     symbol=symbol,
                     prior_hashes=prior_hashes,
-                )
+                ),
             )
         except Exception as exc:  # noqa: BLE001 — best-effort
             _log_warning(

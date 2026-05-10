@@ -1,5 +1,4 @@
-"""
-Unit tests for NewsPublisher.
+"""Unit tests for NewsPublisher.
 
 Validates that unique news articles are published to stream:news
 and stored in the SQLite news_articles table.
@@ -7,8 +6,8 @@ and stored in the SQLite news_articles table.
 Requirements: 5.6, 5.7
 """
 
-from datetime import datetime, timezone
-from unittest.mock import MagicMock, call
+from datetime import UTC, datetime
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -27,8 +26,8 @@ def _make_article(**overrides) -> NewsArticle:
         title="Reliance Q3 results beat estimates",
         content="Reliance Industries reported strong quarterly results...",
         url="https://example.com/article/1",
-        published_at=datetime(2024, 1, 15, 10, 0, 0, tzinfo=timezone.utc),
-        fetched_at=datetime(2024, 1, 15, 10, 0, 5, tzinfo=timezone.utc),
+        published_at=datetime(2024, 1, 15, 10, 0, 0, tzinfo=UTC),
+        fetched_at=datetime(2024, 1, 15, 10, 0, 5, tzinfo=UTC),
         content_hash="abc123def456",
     )
     defaults.update(overrides)
@@ -66,8 +65,8 @@ class TestNewsPublisherStreamPublishing:
         db = MagicMock()
         publisher = NewsPublisher(event_bus, db)
 
-        ts_pub = datetime(2024, 1, 15, 10, 0, 0, tzinfo=timezone.utc)
-        ts_fetch = datetime(2024, 1, 15, 10, 0, 5, tzinfo=timezone.utc)
+        ts_pub = datetime(2024, 1, 15, 10, 0, 0, tzinfo=UTC)
+        ts_fetch = datetime(2024, 1, 15, 10, 0, 5, tzinfo=UTC)
         article = _make_article(
             article_id="id-42",
             source="EconomicTimes",
@@ -114,8 +113,8 @@ class TestNewsPublisherSQLiteStorage:
         db = MagicMock()
         publisher = NewsPublisher(event_bus, db)
 
-        ts_pub = datetime(2024, 2, 1, 9, 0, 0, tzinfo=timezone.utc)
-        ts_fetch = datetime(2024, 2, 1, 9, 0, 3, tzinfo=timezone.utc)
+        ts_pub = datetime(2024, 2, 1, 9, 0, 0, tzinfo=UTC)
+        ts_fetch = datetime(2024, 2, 1, 9, 0, 3, tzinfo=UTC)
         article = _make_article(
             article_id="param-check",
             source="LiveMint",

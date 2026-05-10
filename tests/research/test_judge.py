@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 
@@ -30,7 +30,6 @@ from src.research.judge import invoke as invoke_exported
 from src.research.judge.judge import JudgeReport, invoke
 from src.research.validators.types import UnsupportedClaim
 from tests.research.fakes import FakeLLMProvider
-
 
 # --------------------------------------------------------------------------- #
 # Helpers                                                                     #
@@ -79,7 +78,7 @@ def _unhealthy_payload() -> dict:
                 "start_offset": 0,
                 "end_offset": 42,
                 "reason": "no_citation",
-            }
+            },
         ],
         "safe_to_display": False,
         "contradiction_pairs": [],
@@ -277,7 +276,7 @@ class TestInvokeOverrideRules:
     async def test_contradiction_pairs_preserved(self) -> None:
         payload = _healthy_payload()
         payload["contradiction_pairs"] = [
-            ["Revenue grew 10%", "Revenue fell 5%"]
+            ["Revenue grew 10%", "Revenue fell 5%"],
         ]
         llm = FakeLLMProvider(canned_completion=json.dumps(payload))
         report = await invoke(
@@ -287,7 +286,7 @@ class TestInvokeOverrideRules:
             llm=llm,
         )
         assert report.contradiction_pairs == [
-            ("Revenue grew 10%", "Revenue fell 5%")
+            ("Revenue grew 10%", "Revenue fell 5%"),
         ]
 
 

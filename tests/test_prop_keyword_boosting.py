@@ -1,5 +1,4 @@
-"""
-Property-based tests for Indian Market Keyword Boosting.
+"""Property-based tests for Indian Market Keyword Boosting.
 
 Validates that keyword boosters correctly shift sentiment scores and
 that the boosted score remains clamped within [-1.0, 1.0].
@@ -15,16 +14,12 @@ Properties tested:
   5. Multiple keywords accumulate their boosts
 """
 
-import uuid
-from typing import Dict, List, Optional
-
-from hypothesis import given, settings, assume
-from hypothesis import strategies as st
-
-from src.commander.sentiment_analyzer import SentimentAnalyzer, SentimentResult
 
 import numpy as np
+from hypothesis import assume, given, settings
+from hypothesis import strategies as st
 
+from src.commander.sentiment_analyzer import SentimentAnalyzer
 
 # ---------------------------------------------------------------------------
 # Mocks (same pattern as classification tests)
@@ -53,7 +48,7 @@ class FakeOnnxSession:
         return ["CPUExecutionProvider"]
 
 
-def _build_analyzer(keywords: Dict[str, Dict[str, float]], logits=None) -> SentimentAnalyzer:
+def _build_analyzer(keywords: dict[str, dict[str, float]], logits=None) -> SentimentAnalyzer:
     analyzer = SentimentAnalyzer.__new__(SentimentAnalyzer)
     analyzer._tokenizer = FakeTokenizer()
     analyzer._session = FakeOnnxSession(logits)
@@ -93,8 +88,7 @@ def keyword_and_text(draw, polarity="positive"):
 
 
 class TestKeywordBoostingProperties:
-    """
-    **Property 23: Keyword Boosting**
+    """**Property 23: Keyword Boosting**
     **Validates: Requirements 7.5**
     """
 

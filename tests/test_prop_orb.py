@@ -1,5 +1,4 @@
-"""
-Property-based tests for OpeningRangeBreakoutStrategy.
+"""Property-based tests for OpeningRangeBreakoutStrategy.
 
 Uses hypothesis to verify that the ORB strategy behaves correctly
 across a wide range of randomly generated indicator values.
@@ -27,7 +26,6 @@ from src.soldier.indicator_engine import IndicatorSet
 from src.soldier.strategy_engine import OpeningRangeBreakoutStrategy
 from src.utils.config import OpeningRangeBreakoutStrategy as ORBConfig
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -53,11 +51,10 @@ def _default_config(
 
 @st.composite
 def valid_buy_breakout_inputs(draw):
-    """
-    Generate inputs where BUY breakout conditions are met:
-      - close > range_high
-      - volume > volume_multiplier × volume_avg_20
-      - candle timestamp within trade window (9:30-10:30 AM)
+    """Generate inputs where BUY breakout conditions are met:
+    - close > range_high
+    - volume > volume_multiplier × volume_avg_20
+    - candle timestamp within trade window (9:30-10:30 AM)
     """
     volume_multiplier = 2.0
 
@@ -120,11 +117,10 @@ def valid_buy_breakout_inputs(draw):
 
 @st.composite
 def valid_sell_breakout_inputs(draw):
-    """
-    Generate inputs where SELL breakout conditions are met:
-      - close < range_low
-      - volume > volume_multiplier × volume_avg_20
-      - candle timestamp within trade window (9:30-10:30 AM)
+    """Generate inputs where SELL breakout conditions are met:
+    - close < range_low
+    - volume > volume_multiplier × volume_avg_20
+    - candle timestamp within trade window (9:30-10:30 AM)
     """
     volume_multiplier = 2.0
 
@@ -187,8 +183,7 @@ def valid_sell_breakout_inputs(draw):
 
 @st.composite
 def price_within_range_inputs(draw):
-    """
-    Generate inputs where price is within the opening range:
+    """Generate inputs where price is within the opening range:
       - range_low <= close <= range_high
     Volume and time are valid so only the price condition prevents a signal.
     """
@@ -256,8 +251,7 @@ def price_within_range_inputs(draw):
 # ---------------------------------------------------------------------------
 
 class TestORBProperties:
-    """
-    **Validates: Requirements 4.4**
+    """**Validates: Requirements 4.4**
 
     Property 13: Opening Range Breakout Signal Conditions
     """
@@ -265,8 +259,7 @@ class TestORBProperties:
     @given(data=valid_buy_breakout_inputs())
     @settings(max_examples=25)
     def test_buy_breakout_generates_buy_signal(self, data):
-        """
-        Property: When close > range_high with sufficient volume within trade
+        """Property: When close > range_high with sufficient volume within trade
         window, a BUY signal is always generated.
 
         **Validates: Requirements 4.4**
@@ -284,8 +277,7 @@ class TestORBProperties:
     @given(data=valid_sell_breakout_inputs())
     @settings(max_examples=25)
     def test_sell_breakout_generates_sell_signal(self, data):
-        """
-        Property: When close < range_low with sufficient volume within trade
+        """Property: When close < range_low with sufficient volume within trade
         window, a SELL signal is always generated.
 
         **Validates: Requirements 4.4**
@@ -303,8 +295,7 @@ class TestORBProperties:
     @given(data=price_within_range_inputs())
     @settings(max_examples=25)
     def test_price_within_range_no_signal(self, data):
-        """
-        Property: When range_low <= close <= range_high, no signal is generated
+        """Property: When range_low <= close <= range_high, no signal is generated
         regardless of volume or time.
 
         **Validates: Requirements 4.4**
@@ -320,8 +311,7 @@ class TestORBProperties:
     @given(data=valid_buy_breakout_inputs())
     @settings(max_examples=25)
     def test_buy_stop_loss_equals_range_low(self, data):
-        """
-        Property: For any BUY signal, stop_loss == range_low.
+        """Property: For any BUY signal, stop_loss == range_low.
 
         **Validates: Requirements 4.4**
         """
@@ -339,8 +329,7 @@ class TestORBProperties:
     @given(data=valid_sell_breakout_inputs())
     @settings(max_examples=25)
     def test_sell_stop_loss_equals_range_high(self, data):
-        """
-        Property: For any SELL signal, stop_loss == range_high.
+        """Property: For any SELL signal, stop_loss == range_high.
 
         **Validates: Requirements 4.4**
         """
@@ -358,8 +347,7 @@ class TestORBProperties:
     @given(data=valid_buy_breakout_inputs())
     @settings(max_examples=25)
     def test_buy_target_formula(self, data):
-        """
-        Property: For any BUY signal,
+        """Property: For any BUY signal,
         target == entry_price + (target_multiplier × (range_high - range_low)).
 
         **Validates: Requirements 4.4**
@@ -382,8 +370,7 @@ class TestORBProperties:
     @given(data=valid_sell_breakout_inputs())
     @settings(max_examples=25)
     def test_sell_target_formula(self, data):
-        """
-        Property: For any SELL signal,
+        """Property: For any SELL signal,
         target == entry_price - (target_multiplier × (range_high - range_low)).
 
         **Validates: Requirements 4.4**

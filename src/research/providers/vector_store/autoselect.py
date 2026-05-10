@@ -123,6 +123,7 @@ async def probe_pgvector(
         the probe query, in seconds. The default (2.0 s) is tuned for
         the boot path; callers running this interactively (e.g. in
         tests) may want a shorter or longer value.
+
     """
     # Lazy import so this module stays importable on bare installs
     # (``asyncpg`` is an optional dep until the pgvector backend is
@@ -216,11 +217,11 @@ def probe_pgvector_sync(
     else:
         raise RuntimeError(
             "probe_pgvector_sync() cannot be called from a running "
-            "event loop; await probe_pgvector(...) directly instead."
+            "event loop; await probe_pgvector(...) directly instead.",
         )
 
     return asyncio.run(
-        probe_pgvector(database_url, timeout_seconds=timeout_seconds)
+        probe_pgvector(database_url, timeout_seconds=timeout_seconds),
     )
 
 

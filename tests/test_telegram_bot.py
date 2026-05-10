@@ -1,5 +1,4 @@
-"""
-Unit tests for the Telegram Bot module.
+"""Unit tests for the Telegram Bot module.
 
 Tests notification formatting, rate limiting, command handling,
 and graceful degradation when Telegram is not configured.
@@ -8,17 +7,14 @@ Requirements: 18.1, 18.2, 18.3, 18.4, 18.5, 18.6, 18.7
 """
 
 from datetime import datetime, timedelta
-from unittest.mock import MagicMock, patch, PropertyMock
-
-import pytest
+from unittest.mock import MagicMock, patch
 
 from src.ui.telegram_bot import (
-    TelegramNotifier,
-    TelegramCommandHandler,
     RATE_LIMIT_WINDOW_SECONDS,
+    TelegramCommandHandler,
+    TelegramNotifier,
 )
 from src.utils.config import Config, TelegramConfig
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -125,7 +121,7 @@ class TestTradeExitNotification:
         mock_post.return_value = MagicMock(status_code=200)
         n = _make_notifier()
         result = n.send_trade_exit(
-            "RELIANCE", "BUY", 40, 2500.0, 2550.0, 2000.0, "45m"
+            "RELIANCE", "BUY", 40, 2500.0, 2550.0, 2000.0, "45m",
         )
         assert result is True
         text = mock_post.call_args[1]["json"]["text"]
@@ -141,7 +137,7 @@ class TestTradeExitNotification:
         mock_post.return_value = MagicMock(status_code=200)
         n = _make_notifier()
         result = n.send_trade_exit(
-            "INFY", "BUY", 50, 1500.0, 1470.0, -1500.0, "30m"
+            "INFY", "BUY", 50, 1500.0, 1470.0, -1500.0, "30m",
         )
         assert result is True
         text = mock_post.call_args[1]["json"]["text"]
@@ -354,7 +350,7 @@ class TestCommandHandler:
         conn = MagicMock()
         row = MagicMock()
         row.__getitem__ = lambda self, key: {
-            "total": 5000.0, "trades": 8
+            "total": 5000.0, "trades": 8,
         }.get(key, 0)
         cursor = MagicMock()
         cursor.fetchone.return_value = row

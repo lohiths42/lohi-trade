@@ -46,7 +46,8 @@ Example::
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from src.research.providers import registry as _registry
 
@@ -55,10 +56,10 @@ from .llm import FakeLLMProvider
 from .vector_store import FakeVectorStore
 
 __all__ = [
-    "FakeLLMProvider",
-    "FakeEmbeddingsProvider",
-    "FakeVectorStore",
     "FAKE_FACTORIES",
+    "FakeEmbeddingsProvider",
+    "FakeLLMProvider",
+    "FakeVectorStore",
     "install_fakes",
 ]
 

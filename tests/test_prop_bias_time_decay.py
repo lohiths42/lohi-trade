@@ -1,5 +1,4 @@
-"""
-Property-based tests for Bias Time Decay.
+"""Property-based tests for Bias Time Decay.
 
 Verifies that the BiasCalculator applies exponential time decay with
 half-life of 4 hours to sentiment scores, weighting recent scores more
@@ -17,14 +16,12 @@ Properties tested:
 
 import math
 import sqlite3
-from datetime import datetime, timedelta, timezone
-from typing import Dict, List, Optional, Tuple
+from datetime import UTC, datetime, timedelta
 
-from hypothesis import given, settings, assume
+from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
-from src.commander.bias_calculator import BiasCalculator, BiasResult
-
+from src.commander.bias_calculator import BiasCalculator
 
 # ---------------------------------------------------------------------------
 # In-memory DB helper (same pattern as unit tests)
@@ -105,16 +102,14 @@ _sentiment_score = st.floats(min_value=-1.0, max_value=1.0, allow_nan=False, all
 
 
 class TestBiasTimeDecayProperties:
-    """
-    **Property 25: Bias Time Decay**
+    """**Property 25: Bias Time Decay**
     **Validates: Requirements 8.2**
     """
 
     @given(half_life=_half_life)
     @settings(max_examples=100)
     def test_decay_weight_at_half_life_is_half(self, half_life):
-        """
-        Property: For any half-life value, the decay weight at exactly
+        """Property: For any half-life value, the decay weight at exactly
         one half-life should be 0.5.
 
         **Validates: Requirements 8.2**
@@ -133,8 +128,7 @@ class TestBiasTimeDecayProperties:
     )
     @settings(max_examples=100)
     def test_decay_weight_monotonically_decreasing(self, half_life, t1, t2):
-        """
-        Property: For any two time offsets where t1 < t2, the decay weight
+        """Property: For any two time offsets where t1 < t2, the decay weight
         at t1 should be greater than or equal to the weight at t2.
 
         **Validates: Requirements 8.2**
@@ -154,8 +148,7 @@ class TestBiasTimeDecayProperties:
     )
     @settings(max_examples=100)
     def test_recent_articles_have_more_influence(self, score, recent_hours, old_hours):
-        """
-        Property: A recent article should have more influence on the bias
+        """Property: A recent article should have more influence on the bias
         score than an older article with the same sentiment score. When we
         have one recent positive and one old negative article (or vice versa),
         the bias should lean toward the recent article's direction.
@@ -165,7 +158,7 @@ class TestBiasTimeDecayProperties:
         assume(abs(score) > 0.1)  # Need a meaningful score to see the effect
 
         db = InMemoryDBManager()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Recent article with +score, old article with -score
         _insert_sentiment(db, "TEST", score, now - timedelta(hours=recent_hours))
@@ -201,8 +194,7 @@ class TestBiasTimeDecayProperties:
     )
     @settings(max_examples=100)
     def test_weighted_average_formula_correct(self, scores, hours_list):
-        """
-        Property: The bias score should equal the weighted average
+        """Property: The bias score should equal the weighted average
         Σ(score × weight) / Σ(weight) where weight = exp(-λ × hours_ago)
         and λ = ln(2) / 4.
 
@@ -215,7 +207,7 @@ class TestBiasTimeDecayProperties:
         hours_list = hours_list[:n]
 
         db = InMemoryDBManager()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         half_life = 4.0
         decay_lambda = math.log(2) / half_life
 

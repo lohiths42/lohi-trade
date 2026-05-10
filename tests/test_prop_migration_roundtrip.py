@@ -16,16 +16,13 @@ PostgreSQL database:
 from __future__ import annotations
 
 import copy
+import os
 import sqlite3
 import sys
 import tempfile
 import types
-import os
-from typing import Any, Dict, List
-from unittest import mock
 
-import pytest
-from hypothesis import given, settings, assume, HealthCheck
+from hypothesis import HealthCheck, assume, given, settings
 from hypothesis import strategies as st
 
 # The migration script imports psycopg2 which may not be installed in the
@@ -42,11 +39,7 @@ sys.modules.setdefault("psycopg2.extensions", _pg_ext)
 
 from scripts.migrate_sqlite_to_postgres import (
     SQLiteToPostgresMigrator,
-    USER_SCOPED_TABLES,
-    SHARED_TABLES,
-    ALL_TABLES,
 )
-
 
 # ── Strategies ───────────────────────────────────────────────────────────────
 
@@ -58,7 +51,7 @@ safe_text = st.text(
 )
 
 finite_float = st.floats(
-    min_value=-1e9, max_value=1e9, allow_nan=False, allow_infinity=False
+    min_value=-1e9, max_value=1e9, allow_nan=False, allow_infinity=False,
 )
 
 positive_int = st.integers(min_value=1, max_value=1_000_000)
@@ -161,7 +154,7 @@ def trades_rows(draw, min_rows=1, max_rows=8):
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 def _create_sqlite_with_rows(
-    db_path: str, table: str, columns: list[str], rows: list[dict]
+    db_path: str, table: str, columns: list[str], rows: list[dict],
 ) -> None:
     """Create a SQLite table and insert rows."""
     conn = sqlite3.connect(db_path)
@@ -218,7 +211,8 @@ class TestMigrationRoundTripProperty:
     @settings(max_examples=50)
     def test_checksum_order_independent(self, data):
         """_checksum_rows() produces the same hash regardless of input row order,
-        because it sorts rows internally by id."""
+        because it sorts rows internally by id.
+        """
         rows, cols = data
         import random
         shuffled = rows.copy()
@@ -231,7 +225,8 @@ class TestMigrationRoundTripProperty:
     @settings(max_examples=50)
     def test_add_user_id_preserves_original_columns_checksum(self, data):
         """Adding user_id via _add_user_id_column() must not change the checksum
-        computed over the original (non-user_id) columns."""
+        computed over the original (non-user_id) columns.
+        """
         rows, cols = data
         original_rows = copy.deepcopy(rows)
         hash_before = SQLiteToPostgresMigrator._checksum_rows(original_rows, cols)
@@ -264,7 +259,8 @@ class TestMigrationRoundTripProperty:
         must produce the same checksum as the original data.
 
         This validates the core round-trip property: SQLite export → read back
-        produces equivalent data."""
+        produces equivalent data.
+        """
         tmp_dir = tempfile.mkdtemp()
         db_path = os.path.join(tmp_dir, "test.db")
         table = "trades"
@@ -305,7 +301,8 @@ class TestMigrationRoundTripProperty:
         """Full round-trip simulation: write to SQLite → read back → add user_id →
         checksum on shared (SQLite) columns still matches the original data.
 
-        This simulates the migration path without needing PostgreSQL."""
+        This simulates the migration path without needing PostgreSQL.
+        """
         tmp_dir = tempfile.mkdtemp()
         db_path = os.path.join(tmp_dir, "test.db")
         table = "trades"
@@ -345,7 +342,8 @@ class TestMigrationRoundTripProperty:
     @settings(max_examples=25, suppress_health_check=[HealthCheck.large_base_example])
     def test_checksum_column_subset_stability(self, data):
         """Checksum computed on a subset of columns should be stable and
-        independent of extra columns in the row dicts."""
+        independent of extra columns in the row dicts.
+        """
         rows, cols = data
         assume(len(cols) >= 3)
 

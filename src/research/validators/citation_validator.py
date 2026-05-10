@@ -110,7 +110,8 @@ Design references
 
 from __future__ import annotations
 
-from typing import Iterable, Mapping, Protocol, runtime_checkable
+from collections.abc import Iterable, Mapping
+from typing import Protocol, runtime_checkable
 from uuid import UUID
 
 from src.research.providers.base import RetrievalFilter, VectorStore
@@ -146,7 +147,7 @@ class _CitationLike(Protocol):
 
 
 def _coerce_citations(
-    brief: "Iterable[_CitationLike] | Mapping[str, object] | object",
+    brief: Iterable[_CitationLike] | Mapping[str, object] | object,
 ) -> list[_CitationLike]:
     """Normalise accepted brief-shaped inputs into ``[citation, ...]``.
 
@@ -236,6 +237,7 @@ async def _known_chunk_ids(
     set[str]
         Every known ``chunk_id`` under the namespace. Empty when the
         namespace is empty.
+
     """
     namespace_filter = RetrievalFilter(user_id=user_id, symbol=symbol)
     namespace_size = await vector_store.count(namespace_filter)
@@ -325,6 +327,7 @@ class CitationValidator:
         the :class:`EmbeddingsProvider` reference and therefore knows
         ``dim``); leave it ``None`` in tests that build the store by
         hand.
+
     """
 
     def __init__(
@@ -339,7 +342,7 @@ class CitationValidator:
     async def validate(
         self,
         *,
-        brief: "Iterable[_CitationLike] | Mapping[str, object] | object",
+        brief: Iterable[_CitationLike] | Mapping[str, object] | object,
         user_id: UUID,
         symbol: str,
     ) -> list[UnsupportedClaim]:
@@ -377,6 +380,7 @@ class CitationValidator:
         * Empty / whitespace ``chunk_id`` strings are treated the same
           as missing citations and emit a violation — they cannot
           possibly resolve in the store.
+
         """
         citations = _coerce_citations(brief)
         if not citations:
@@ -407,7 +411,7 @@ class CitationValidator:
 async def validate_citations(
     *,
     vector_store: VectorStore,
-    brief: "Iterable[_CitationLike] | Mapping[str, object] | object",
+    brief: Iterable[_CitationLike] | Mapping[str, object] | object,
     user_id: UUID,
     symbol: str,
     embedding_dim: int | None = None,

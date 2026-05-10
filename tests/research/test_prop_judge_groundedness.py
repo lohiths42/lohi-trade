@@ -73,8 +73,8 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
-from typing import AsyncIterator
 from uuid import uuid4
 
 import pytest
@@ -89,7 +89,6 @@ from src.research.providers.base import (
     LLMProvider,
     Message,
 )
-
 
 # --------------------------------------------------------------------------- #
 # Rule-based mimic LLM                                                        #
@@ -107,7 +106,7 @@ _BRIEF_BLOCK_PATTERN = re.compile(r"<brief>\n(.*?)\n</brief>", re.DOTALL)
 # Cited chunks land between the fenced ``<|CONTEXT|>`` markers defined
 # in the judge template (``src/research/prompts/v1/judge.md``).
 _CHUNKS_BLOCK_PATTERN = re.compile(
-    r"<\|CONTEXT\|>\n(.*?)\n<\|END_CONTEXT\|>", re.DOTALL
+    r"<\|CONTEXT\|>\n(.*?)\n<\|END_CONTEXT\|>", re.DOTALL,
 )
 
 # Section headers inside the ``<brief>`` block follow the
@@ -156,7 +155,7 @@ _STOPWORDS: frozenset[str] = frozenset(
         "these",
         "those",
         "from",
-    }
+    },
 )
 
 # Word-token regex — alphabetic runs only, lowercased for comparison.
@@ -228,7 +227,7 @@ class RuleBasedMimicLLM(LLMProvider):
     _model: str = "rule-based-v1"
 
     async def complete(
-        self, messages: list[Message], params: LLMParams
+        self, messages: list[Message], params: LLMParams,
     ) -> Completion:
         """Inspect the system prompt, score the brief, emit JSON."""
         system_prompt = _system_prompt_from(messages)
@@ -273,7 +272,7 @@ class RuleBasedMimicLLM(LLMProvider):
                             "start_offset": start,
                             "end_offset": end,
                             "reason": "no_citation",
-                        }
+                        },
                     )
             scores[section] = cited_count / len(sentences)
 
@@ -298,7 +297,7 @@ class RuleBasedMimicLLM(LLMProvider):
         )
 
     async def stream(
-        self, messages: list[Message], params: LLMParams
+        self, messages: list[Message], params: LLMParams,
     ) -> AsyncIterator[CompletionChunk]:  # pragma: no cover
         """Streaming path — not exercised by ``judge.invoke``."""
         completion = await self.complete(messages, params)

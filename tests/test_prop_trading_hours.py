@@ -1,5 +1,4 @@
-"""
-Property-based tests for Trading Hours Signal Filter.
+"""Property-based tests for Trading Hours Signal Filter.
 
 Uses hypothesis to verify that the SignalPipeline correctly filters signals
 based on trading hours (9:30 AM - 3:10 PM IST).
@@ -27,7 +26,6 @@ from src.soldier.indicator_engine import IndicatorSet
 from src.soldier.signal_pipeline import SignalPipeline
 from src.soldier.strategy_engine import MeanReversionStrategy
 from src.utils.config import MeanReversionStrategy as MeanReversionConfig
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -78,8 +76,8 @@ def _make_candles() -> pd.DataFrame:
                 "close": 985.0,
                 "volume": 100000.0,
                 "timestamp": datetime(2024, 1, 15, 10, 0, 0),
-            }
-        ]
+            },
+        ],
     )
 
 
@@ -131,8 +129,7 @@ def after_trading_hours(draw):
 
 
 class TestTradingHoursFilterProperties:
-    """
-    **Validates: Requirements 4.7**
+    """**Validates: Requirements 4.7**
 
     Property 15: Trading Hours Signal Filter
     """
@@ -140,8 +137,7 @@ class TestTradingHoursFilterProperties:
     @given(ts=within_trading_hours())
     @settings(max_examples=25)
     def test_signals_within_trading_hours_are_allowed(self, ts: datetime):
-        """
-        Property: For any timestamp between 9:30 AM and 3:10 PM (inclusive),
+        """Property: For any timestamp between 9:30 AM and 3:10 PM (inclusive),
         a signal should be generated when MeanReversion conditions are met.
 
         **Validates: Requirements 4.7**
@@ -161,8 +157,7 @@ class TestTradingHoursFilterProperties:
     @given(ts=before_trading_hours())
     @settings(max_examples=25)
     def test_signals_before_trading_start_are_rejected(self, ts: datetime):
-        """
-        Property: For any timestamp before 9:30 AM, no signal should be
+        """Property: For any timestamp before 9:30 AM, no signal should be
         generated even with valid MeanReversion conditions.
 
         **Validates: Requirements 4.7**
@@ -180,8 +175,7 @@ class TestTradingHoursFilterProperties:
     @given(ts=after_trading_hours())
     @settings(max_examples=25)
     def test_signals_after_trading_end_are_rejected(self, ts: datetime):
-        """
-        Property: For any timestamp after 3:10 PM, no signal should be
+        """Property: For any timestamp after 3:10 PM, no signal should be
         generated even with valid MeanReversion conditions.
 
         **Validates: Requirements 4.7**
@@ -197,8 +191,7 @@ class TestTradingHoursFilterProperties:
         )
 
     def test_boundary_signal_at_exactly_0930_is_allowed(self):
-        """
-        Boundary: Signal at exactly 9:30 AM should be allowed.
+        """Boundary: Signal at exactly 9:30 AM should be allowed.
 
         **Validates: Requirements 4.7**
         """
@@ -212,8 +205,7 @@ class TestTradingHoursFilterProperties:
         assert signal.side == "BUY"
 
     def test_boundary_signal_at_exactly_1510_is_allowed(self):
-        """
-        Boundary: Signal at exactly 3:10 PM should be allowed.
+        """Boundary: Signal at exactly 3:10 PM should be allowed.
 
         **Validates: Requirements 4.7**
         """
@@ -227,8 +219,7 @@ class TestTradingHoursFilterProperties:
         assert signal.side == "BUY"
 
     def test_boundary_signal_at_0929_is_rejected(self):
-        """
-        Boundary: Signal at 9:29 AM should be rejected.
+        """Boundary: Signal at 9:29 AM should be rejected.
 
         **Validates: Requirements 4.7**
         """
@@ -241,8 +232,7 @@ class TestTradingHoursFilterProperties:
         assert signal is None, "Expected no signal at 09:29 (before trading start)"
 
     def test_boundary_signal_at_1511_is_rejected(self):
-        """
-        Boundary: Signal at 3:11 PM should be rejected.
+        """Boundary: Signal at 3:11 PM should be rejected.
 
         **Validates: Requirements 4.7**
         """

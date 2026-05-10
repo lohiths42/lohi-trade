@@ -1,5 +1,4 @@
-"""
-Property-based tests for RMS rejection logging.
+"""Property-based tests for RMS rejection logging.
 
 **Property 38: Rejection Logging**
 
@@ -12,17 +11,15 @@ SHALL NOT trigger rejection logging.
 
 import json
 import sqlite3
-from datetime import datetime, timedelta
-from unittest.mock import MagicMock, call
+from datetime import datetime
+from unittest.mock import MagicMock
 
-from hypothesis import given, settings, assume
+from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from src.execution.rms import (
     REJECTION_STREAM,
-    REJECTION_STREAM_MAXLEN,
     RiskManagementSystem,
-    ValidationResult,
 )
 from src.soldier.indicator_engine import IndicatorSet
 from src.soldier.strategy_engine import Signal
@@ -251,8 +248,7 @@ outside_trading_hours = st.one_of(
 
 
 class TestRejectionLoggingKillSwitch:
-    """
-    **Property 38: Rejection Logging**
+    """**Property 38: Rejection Logging**
     **Validates: Requirements 9.11**
 
     For any rejected order (kill switch active), the rejection SHALL be
@@ -266,8 +262,7 @@ class TestRejectionLoggingKillSwitch:
     )
     @settings(max_examples=100)
     def test_kill_switch_rejection_publishes_and_logs(self, symbol, side, entry_price):
-        """
-        When kill switch is active, validate_order rejects and log_rejection
+        """When kill switch is active, validate_order rejects and log_rejection
         publishes to stream:rejections and writes to audit_log.
 
         **Validates: Requirements 9.11**
@@ -305,8 +300,7 @@ class TestRejectionLoggingKillSwitch:
 
 
 class TestRejectionLoggingOutsideTradingHours:
-    """
-    **Property 38: Rejection Logging**
+    """**Property 38: Rejection Logging**
     **Validates: Requirements 9.11**
 
     For any rejected order (outside trading hours), the rejection SHALL be
@@ -319,8 +313,7 @@ class TestRejectionLoggingOutsideTradingHours:
     )
     @settings(max_examples=100)
     def test_trading_hours_rejection_publishes_and_logs(self, now, symbol):
-        """
-        When outside trading hours, validate_order rejects and log_rejection
+        """When outside trading hours, validate_order rejects and log_rejection
         publishes to stream:rejections and writes to audit_log.
 
         **Validates: Requirements 9.11**
@@ -348,8 +341,7 @@ class TestRejectionLoggingOutsideTradingHours:
 
 
 class TestRejectionLoggingMetadataCompleteness:
-    """
-    **Property 38: Rejection Logging**
+    """**Property 38: Rejection Logging**
     **Validates: Requirements 9.11**
 
     For any rejected order, the published rejection message and audit_log
@@ -363,8 +355,7 @@ class TestRejectionLoggingMetadataCompleteness:
     )
     @settings(max_examples=100)
     def test_rejection_metadata_contains_signal_details(self, symbol, side, entry_price):
-        """
-        The audit_log metadata for a rejection SHALL contain signal_id,
+        """The audit_log metadata for a rejection SHALL contain signal_id,
         symbol, side, strategy, entry_price, and check results.
 
         **Validates: Requirements 9.11**
@@ -390,8 +381,7 @@ class TestRejectionLoggingMetadataCompleteness:
 
 
 class TestValidOrdersDoNotTriggerRejectionLogging:
-    """
-    **Property 38: Rejection Logging**
+    """**Property 38: Rejection Logging**
     **Validates: Requirements 9.11**
 
     For any valid order, log_rejection SHALL NOT publish to
@@ -405,8 +395,7 @@ class TestValidOrdersDoNotTriggerRejectionLogging:
     )
     @settings(max_examples=100)
     def test_valid_orders_skip_rejection_logging(self, symbol, side, entry_price):
-        """
-        When an order passes all checks, calling log_rejection SHALL
+        """When an order passes all checks, calling log_rejection SHALL
         not publish or write anything.
 
         **Validates: Requirements 9.11**

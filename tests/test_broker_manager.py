@@ -1,5 +1,4 @@
-"""
-Tests for BrokerManager - primary/backup broker switching.
+"""Tests for BrokerManager - primary/backup broker switching.
 
 Validates:
 - Health monitoring and failure tracking
@@ -12,7 +11,7 @@ Validates:
 import threading
 import time
 from datetime import datetime
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -28,11 +27,9 @@ from src.ingestion.broker_interface import (
     Tick,
 )
 from src.ingestion.broker_manager import (
-    BrokerHealth,
     BrokerManager,
     BrokerState,
 )
-
 
 # ---- Fixtures ----
 
@@ -91,7 +88,7 @@ class TestBrokerManagerConnection:
         assert manager.health["primary"].state == BrokerState.CONNECTED
 
     def test_connect_primary_fails_switches_to_backup(
-        self, manager, primary_broker, backup_broker, primary_creds, backup_creds
+        self, manager, primary_broker, backup_broker, primary_creds, backup_creds,
     ):
         primary_broker.connect.return_value = False
         result = manager.connect(primary_creds, backup_creds)
@@ -101,7 +98,7 @@ class TestBrokerManagerConnection:
         assert manager.health["primary"].state == BrokerState.FAILED
 
     def test_connect_primary_raises_switches_to_backup(
-        self, manager, primary_broker, backup_broker, primary_creds, backup_creds
+        self, manager, primary_broker, backup_broker, primary_creds, backup_creds,
     ):
         primary_broker.connect.side_effect = Exception("connection refused")
         result = manager.connect(primary_creds, backup_creds)
@@ -109,7 +106,7 @@ class TestBrokerManagerConnection:
         assert manager.active_broker_name == "backup"
 
     def test_connect_both_fail(
-        self, manager, primary_broker, backup_broker, primary_creds, backup_creds
+        self, manager, primary_broker, backup_broker, primary_creds, backup_creds,
     ):
         primary_broker.connect.return_value = False
         backup_broker.connect.return_value = False
@@ -193,7 +190,7 @@ class TestHealthTracking:
 
 class TestBrokerFailover:
     def test_switches_after_threshold_failures(
-        self, connected_manager, primary_broker, backup_broker
+        self, connected_manager, primary_broker, backup_broker,
     ):
         primary_broker.get_positions.side_effect = Exception("timeout")
         primary_broker.is_connected.return_value = False
@@ -212,7 +209,7 @@ class TestBrokerFailover:
         assert connected_manager.active_broker_name == "backup"
 
     def test_both_brokers_fail_raises(
-        self, connected_manager, primary_broker, backup_broker
+        self, connected_manager, primary_broker, backup_broker,
     ):
         primary_broker.get_positions.side_effect = Exception("primary down")
         primary_broker.is_connected.return_value = False
@@ -230,7 +227,7 @@ class TestBrokerFailover:
             connected_manager.get_positions()
 
     def test_switch_callback_called(
-        self, connected_manager, primary_broker, backup_broker
+        self, connected_manager, primary_broker, backup_broker,
     ):
         callback = MagicMock()
         connected_manager.on_switch(callback)
@@ -252,7 +249,7 @@ class TestBrokerFailover:
         assert args[1] == "backup"
 
     def test_switch_callback_error_does_not_propagate(
-        self, connected_manager, primary_broker, backup_broker
+        self, connected_manager, primary_broker, backup_broker,
     ):
         bad_callback = MagicMock(side_effect=Exception("callback error"))
         connected_manager.on_switch(bad_callback)
@@ -329,7 +326,7 @@ class TestDelegatedOperations:
 
 class TestRecoveryMonitor:
     def test_recovery_switches_back_to_primary(
-        self, primary_broker, backup_broker, primary_creds, backup_creds
+        self, primary_broker, backup_broker, primary_creds, backup_creds,
     ):
         manager = BrokerManager(
             primary_broker=primary_broker,
@@ -360,7 +357,7 @@ class TestRecoveryMonitor:
         manager.disconnect()
 
     def test_recovery_monitor_stops_on_disconnect(
-        self, connected_manager, primary_broker, backup_broker
+        self, connected_manager, primary_broker, backup_broker,
     ):
         # Force switch to backup to start recovery monitor
         primary_broker.get_positions.side_effect = Exception("down")
@@ -428,7 +425,8 @@ class TestEdgeCases:
 
 # ---- Property-Based Tests ----
 
-from hypothesis import given, strategies as st, settings
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
 
 @given(
@@ -444,8 +442,7 @@ def test_property_broker_switch_data_continuity(
     num_symbols,
     failure_threshold,
 ):
-    """
-    Property 3: Broker Switch Data Continuity
+    """Property 3: Broker Switch Data Continuity
 
     For any broker API switch during operation, no duplicate ticks should
     appear in the Event Bus and no ticks should be lost.
@@ -478,7 +475,7 @@ def test_property_broker_switch_data_continuity(
                 volume=100 + i,
                 timestamp=datetime(2025, 1, 1, 9, 15, 0, i * 1000),
                 exchange="NSE",
-            )
+            ),
         )
 
     backup_ticks = []
@@ -491,10 +488,10 @@ def test_property_broker_switch_data_continuity(
                 ltp=200.0 + i * 0.1,
                 volume=200 + i,
                 timestamp=datetime(
-                    2025, 1, 1, 9, 16, 0, i * 1000
+                    2025, 1, 1, 9, 16, 0, i * 1000,
                 ),
                 exchange="NSE",
-            )
+            ),
         )
 
     # ---- Set up brokers ----

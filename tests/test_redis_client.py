@@ -1,7 +1,6 @@
 """Tests for Redis client wrapper."""
 
-import time
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 import redis
@@ -61,7 +60,7 @@ class TestRedisClientBasic:
         """Test connection failure after max retries."""
         mock_redis_instance = Mock()
         mock_redis_instance.ping.side_effect = redis.exceptions.ConnectionError(
-            "Connection failed"
+            "Connection failed",
         )
         mock_redis.return_value = mock_redis_instance
 
@@ -89,7 +88,7 @@ class TestRedisClientBasic:
         """Test ping failure."""
         mock_redis_instance = Mock()
         mock_redis_instance.ping.side_effect = redis.exceptions.ConnectionError(
-            "Connection lost"
+            "Connection lost",
         )
         mock_redis.return_value = mock_redis_instance
 
@@ -137,7 +136,7 @@ class TestRedisClientBasic:
         mock_redis_instance = Mock()
         mock_redis_instance.ping.return_value = True
         mock_redis_instance.xread.return_value = [
-            ["test_stream", [("1234567890-0", {"field": "value"})]]
+            ["test_stream", [("1234567890-0", {"field": "value"})]],
         ]
         mock_redis.return_value = mock_redis_instance
 
@@ -173,7 +172,7 @@ class TestRedisClientBasic:
         mock_redis_instance = Mock()
         mock_redis_instance.ping.return_value = True
         mock_redis_instance.xgroup_create.side_effect = redis.exceptions.ResponseError(
-            "BUSYGROUP Consumer Group name already exists"
+            "BUSYGROUP Consumer Group name already exists",
         )
         mock_redis.return_value = mock_redis_instance
 
@@ -196,10 +195,9 @@ class TestRedisClientPropertyBased:
     @patch("src.state.redis_client.redis.Redis")
     @patch("src.state.redis_client.redis.ConnectionPool")
     def test_property_reconnection_on_failure(
-        self, mock_pool, mock_redis, max_retries, retry_delay
+        self, mock_pool, mock_redis, max_retries, retry_delay,
     ):
-        """
-        Feature: lohi-trade, Property 79: WebSocket Reconnection on Failure
+        """Feature: lohi-trade, Property 79: WebSocket Reconnection on Failure
         
         For any Redis connection failure, reconnection should be attempted
         without crashing other components. The client should retry up to
@@ -208,7 +206,7 @@ class TestRedisClientPropertyBased:
         Validates: Requirements 25.2
         """
         mock_redis_instance = Mock()
-        
+
         # Simulate connection failures followed by success
         failure_count = min(max_retries - 1, 3)  # Fail a few times, then succeed
         # Create enough responses for connect() and subsequent ping() call
@@ -219,14 +217,14 @@ class TestRedisClientPropertyBased:
         mock_redis.return_value = mock_redis_instance
 
         client = RedisClient(max_retries=max_retries, retry_delay=retry_delay)
-        
+
         # Should successfully connect after retries
         client.connect()
-        
+
         # Verify connection was established
         assert client._client is not None
         assert mock_redis_instance.ping.call_count == failure_count + 1
-        
+
         # Verify client can perform operations after reconnection
         assert client.ping() is True
         assert mock_redis_instance.ping.call_count == failure_count + 2
@@ -239,16 +237,15 @@ class TestRedisClientPropertyBased:
     @patch("src.state.redis_client.redis.Redis")
     @patch("src.state.redis_client.redis.ConnectionPool")
     def test_property_stream_operations_after_reconnection(
-        self, mock_pool, mock_redis, stream_name, field_count
+        self, mock_pool, mock_redis, stream_name, field_count,
     ):
-        """
-        Property: Stream operations should work correctly after reconnection.
+        """Property: Stream operations should work correctly after reconnection.
         
         For any stream name and field count, after a connection failure and
         reconnection, the client should be able to publish messages to streams.
         """
         mock_redis_instance = Mock()
-        
+
         # First ping succeeds (initial connection)
         # Second ping fails (simulating connection loss)
         # Third ping succeeds (reconnection)
@@ -258,13 +255,13 @@ class TestRedisClientPropertyBased:
 
         client = RedisClient(max_retries=5, retry_delay=0.01)
         client.connect()
-        
+
         # Simulate connection loss and automatic reconnection
         # The _ensure_connected method should handle this
         fields = {f"field_{i}": f"value_{i}" for i in range(field_count)}
-        
+
         message_id = client.xadd(stream_name, fields)
-        
+
         # Verify message was published
         assert message_id == "1234567890-0"
         mock_redis_instance.xadd.assert_called_once()
@@ -276,25 +273,24 @@ class TestRedisClientPropertyBased:
     @patch("src.state.redis_client.redis.Redis")
     @patch("src.state.redis_client.redis.ConnectionPool")
     def test_property_connection_failure_raises_after_max_retries(
-        self, mock_pool, mock_redis, max_retries
+        self, mock_pool, mock_redis, max_retries,
     ):
-        """
-        Property: Connection should fail after max_retries attempts.
+        """Property: Connection should fail after max_retries attempts.
         
         For any max_retries value, if all connection attempts fail,
         a ConnectionError should be raised.
         """
         mock_redis_instance = Mock()
         mock_redis_instance.ping.side_effect = redis.exceptions.ConnectionError(
-            "Connection failed"
+            "Connection failed",
         )
         mock_redis.return_value = mock_redis_instance
 
         client = RedisClient(max_retries=max_retries, retry_delay=0.01)
-        
+
         with pytest.raises(redis.exceptions.ConnectionError):
             client.connect()
-        
+
         # Verify we attempted exactly max_retries times
         assert mock_redis_instance.ping.call_count == max_retries
 
@@ -306,8 +302,7 @@ class TestRedisClientPropertyBased:
     @patch("src.state.redis_client.redis.Redis")
     @patch("src.state.redis_client.redis.ConnectionPool")
     def test_property_get_set_operations(self, mock_pool, mock_redis, key, value):
-        """
-        Property: Get/Set operations should work correctly.
+        """Property: Get/Set operations should work correctly.
         
         For any key-value pair, after setting a value, getting the key
         should return the same value.
@@ -320,11 +315,11 @@ class TestRedisClientPropertyBased:
 
         client = RedisClient()
         client.connect()
-        
+
         # Set value
         result = client.set(key, value)
         assert result is True
-        
+
         # Get value
         retrieved_value = client.get(key)
         assert retrieved_value == value

@@ -105,13 +105,14 @@ class EmbeddingCache:
     ttl_seconds:
         Key expiry in seconds. Default 7 days per Req 5.6 / design §7.1.
         Must be positive.
+
     """
 
     def __init__(
         self,
         *,
         inner: EmbeddingsProvider,
-        redis_client: "Redis | Any",
+        redis_client: Redis | Any,
         ttl_seconds: int = _DEFAULT_TTL_SECONDS,
     ) -> None:
         if ttl_seconds <= 0:
@@ -161,6 +162,7 @@ class EmbeddingCache:
         list[list[float]]
             One vector per input, in input order. Length equals
             ``len(texts)``; every inner list has length ``self.dim``.
+
         """
         if not texts:
             return []
@@ -171,7 +173,7 @@ class EmbeddingCache:
         hashes = [_sha256_hex(t) for t in texts]
         keys = [
             EMBEDDING_CACHE_KEY_TEMPLATE.format(
-                embedding_model=model_id, text_sha256=h
+                embedding_model=model_id, text_sha256=h,
             )
             for h in hashes
         ]
@@ -230,14 +232,14 @@ class EmbeddingCache:
                 # than silently mis-caching.
                 raise RuntimeError(
                     "inner embeddings provider returned "
-                    f"{len(vectors)} vectors for {len(ordered_texts)} texts"
+                    f"{len(vectors)} vectors for {len(ordered_texts)} texts",
                 )
 
             # ---- Pass 3: write-back + fan-out to shared positions ----- #
             for h, vector in zip(ordered_hashes, vectors):
                 payload = json.dumps(vector)
                 key = EMBEDDING_CACHE_KEY_TEMPLATE.format(
-                    embedding_model=model_id, text_sha256=h
+                    embedding_model=model_id, text_sha256=h,
                 )
                 try:
                     await self._redis.set(key, payload, ex=self._ttl)
@@ -254,7 +256,7 @@ class EmbeddingCache:
         for idx, v in enumerate(out):
             if v is None:  # pragma: no cover - defensive
                 raise RuntimeError(
-                    f"embedding_cache: unfilled output slot at index {idx}"
+                    f"embedding_cache: unfilled output slot at index {idx}",
                 )
 
         # mypy: the None check above narrows the element type.

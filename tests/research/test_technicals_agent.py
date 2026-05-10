@@ -8,7 +8,8 @@ per-symbol stream-name resolution, and every failure mode.
 
 from __future__ import annotations
 
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
@@ -17,7 +18,6 @@ from src.research.agents.orchestrator import AgentContext, PlanOutput, SubAgent
 from src.research.agents.technicals import TechnicalsAgent
 from src.research.providers.base import LLMParams, Message
 from tests.research.fakes import FakeLLMProvider
-
 
 # --------------------------------------------------------------------------- #
 # Stubs                                                                       #
@@ -142,7 +142,7 @@ class TestHappyPath:
                         rsi="51.2",
                     ),
                 ],
-            }
+            },
         )
         llm = FakeLLMProvider(
             canned_completion='{"indicators":[{"name":"rsi","value":"51.2","window":"14d","chunk_id":"1700000060000-0"}],"observations":["RSI is neutral [cite:1700000060000-0]."]}',
@@ -152,7 +152,7 @@ class TestHappyPath:
         agent = TechnicalsAgent(llm=llm, redis_reader=reader)
 
         result = await agent.invoke(
-            _build_context(user_id=user_id, symbol="RELIANCE")
+            _build_context(user_id=user_id, symbol="RELIANCE"),
         )
 
         assert result.kind == "ok"
@@ -163,7 +163,7 @@ class TestHappyPath:
         assert result.chunks == []
         # The per-symbol stream was consulted exactly once.
         assert reader.calls == [
-            {"name": "indicators:RELIANCE", "count": agent.events_count}
+            {"name": "indicators:RELIANCE", "count": agent.events_count},
         ]
 
     @pytest.mark.asyncio
@@ -175,7 +175,7 @@ class TestHappyPath:
                 "stream:indicators:TCS": [
                     _indicator_entry(entry_id="1-0", symbol="TCS"),
                 ],
-            }
+            },
         )
         agent = TechnicalsAgent(
             llm=FakeLLMProvider(),
@@ -183,7 +183,7 @@ class TestHappyPath:
             stream_name_template="stream:indicators:{symbol}",
         )
         result = await agent.invoke(
-            _build_context(user_id=user_id, symbol="TCS")
+            _build_context(user_id=user_id, symbol="TCS"),
         )
         assert result.kind == "ok"
         assert reader.calls[0]["name"] == "stream:indicators:TCS"
@@ -197,13 +197,13 @@ class TestHappyPath:
                 "indicators:RELIANCE": [
                     _indicator_entry(entry_id="1-0", symbol=None, rsi="60.0"),
                 ],
-            }
+            },
         )
         llm = _RecordingLLM()
         agent = TechnicalsAgent(llm=llm, redis_reader=reader)
 
         result = await agent.invoke(
-            _build_context(user_id=user_id, symbol="RELIANCE")
+            _build_context(user_id=user_id, symbol="RELIANCE"),
         )
         assert result.kind == "ok"
         # Event was folded into the prompt.
@@ -225,7 +225,7 @@ class TestNoData:
         agent = TechnicalsAgent(llm=llm, redis_reader=reader)
 
         result = await agent.invoke(
-            _build_context(user_id=user_id, symbol=None)
+            _build_context(user_id=user_id, symbol=None),
         )
         assert result.kind == "no_data"
         assert "requires a symbol" in result.reason
@@ -236,13 +236,13 @@ class TestNoData:
     async def test_empty_stream_returns_no_data(self) -> None:
         user_id = uuid4()
         reader = _StubRedisReader(
-            per_stream={"indicators:RELIANCE": []}
+            per_stream={"indicators:RELIANCE": []},
         )
         llm = _RecordingLLM()
         agent = TechnicalsAgent(llm=llm, redis_reader=reader)
 
         result = await agent.invoke(
-            _build_context(user_id=user_id, symbol="RELIANCE")
+            _build_context(user_id=user_id, symbol="RELIANCE"),
         )
         assert result.kind == "no_data"
         assert "no recent indicators events" in result.reason
@@ -266,12 +266,12 @@ class TestErrorPath:
                 "indicators:RELIANCE": [
                     _indicator_entry(entry_id="1-0", symbol="RELIANCE"),
                 ],
-            }
+            },
         )
         agent = TechnicalsAgent(llm=_RaisingLLM(), redis_reader=reader)
         with pytest.raises(RuntimeError, match="technicals llm exploded"):
             await agent.invoke(
-                _build_context(user_id=user_id, symbol="RELIANCE")
+                _build_context(user_id=user_id, symbol="RELIANCE"),
             )
 
     @pytest.mark.asyncio
@@ -280,7 +280,7 @@ class TestErrorPath:
         agent = TechnicalsAgent(llm=FakeLLMProvider(), redis_reader=None)
         with pytest.raises(ValueError, match="RedisStreamReader"):
             await agent.invoke(
-                _build_context(user_id=user_id, symbol="RELIANCE")
+                _build_context(user_id=user_id, symbol="RELIANCE"),
             )
 
     @pytest.mark.asyncio
@@ -295,7 +295,7 @@ class TestErrorPath:
         )
         with pytest.raises(ValueError, match=r"\{symbol\}"):
             await agent.invoke(
-                _build_context(user_id=user_id, symbol="RELIANCE")
+                _build_context(user_id=user_id, symbol="RELIANCE"),
             )
 
 
@@ -317,7 +317,7 @@ class TestPromptRendering:
                         rsi="58.1",
                     ),
                 ],
-            }
+            },
         )
         llm = _RecordingLLM(canned_completion='{"indicators":[]}')
         agent = TechnicalsAgent(llm=llm, redis_reader=reader)
@@ -327,7 +327,7 @@ class TestPromptRendering:
                 user_id=user_id,
                 symbol="TCS",
                 user_prompt="What do the indicators say for TCS?",
-            )
+            ),
         )
 
         assert len(llm.calls) == 1

@@ -1,5 +1,4 @@
-"""
-News Deduplication for The Commander.
+"""News Deduplication for The Commander.
 
 Deduplicates news articles using content hash comparison via Redis.
 Each article's content_hash is stored as an individual Redis key with
@@ -10,11 +9,9 @@ Requirements: 5.4, 5.5
 """
 
 import logging
-from typing import List
 
 from src.commander.rss_poller import NewsArticle
 from src.state.redis_client import RedisClient
-
 
 logger = logging.getLogger(__name__)
 
@@ -26,8 +23,7 @@ HASH_TTL_SECONDS = 86400
 
 
 class NewsDeduplicator:
-    """
-    Deduplicates news articles using content hash stored in Redis.
+    """Deduplicates news articles using content hash stored in Redis.
 
     Each article's content_hash is checked against Redis. If the hash
     already exists, the article is a duplicate and is discarded. Otherwise,
@@ -39,11 +35,11 @@ class NewsDeduplicator:
     """
 
     def __init__(self, redis_client: RedisClient) -> None:
-        """
-        Initialize the deduplicator.
+        """Initialize the deduplicator.
 
         Args:
             redis_client: Redis client instance for hash storage.
+
         """
         self._redis = redis_client
 
@@ -52,32 +48,31 @@ class NewsDeduplicator:
         return f"{HASH_KEY_PREFIX}{content_hash}"
 
     def is_duplicate(self, article: NewsArticle) -> bool:
-        """
-        Check whether an article has already been seen.
+        """Check whether an article has already been seen.
 
         Args:
             article: The news article to check.
 
         Returns:
             True if the article's content_hash is already in Redis.
+
         """
         key = self._key_for(article.content_hash)
         existing = self._redis.get(key)
         return existing is not None
 
     def mark_seen(self, article: NewsArticle) -> None:
-        """
-        Record an article's content_hash in Redis with 24-hour TTL.
+        """Record an article's content_hash in Redis with 24-hour TTL.
 
         Args:
             article: The news article to mark as seen.
+
         """
         key = self._key_for(article.content_hash)
         self._redis.set(key, article.article_id, ex=HASH_TTL_SECONDS)
 
-    def deduplicate(self, articles: List[NewsArticle]) -> List[NewsArticle]:
-        """
-        Filter a list of articles, removing duplicates.
+    def deduplicate(self, articles: list[NewsArticle]) -> list[NewsArticle]:
+        """Filter a list of articles, removing duplicates.
 
         For each article, checks if its content_hash has been seen before.
         Unique articles are marked as seen and included in the result.
@@ -88,14 +83,15 @@ class NewsDeduplicator:
 
         Returns:
             List of unique (non-duplicate) articles.
+
         """
-        unique: List[NewsArticle] = []
+        unique: list[NewsArticle] = []
 
         for article in articles:
             if self.is_duplicate(article):
                 logger.debug(
                     f"Duplicate article discarded: '{article.title}' "
-                    f"(hash={article.content_hash[:12]}...)"
+                    f"(hash={article.content_hash[:12]}...)",
                 )
                 continue
 
@@ -105,7 +101,7 @@ class NewsDeduplicator:
         if len(articles) != len(unique):
             logger.info(
                 f"Deduplicated {len(articles)} articles -> {len(unique)} unique "
-                f"({len(articles) - len(unique)} duplicates removed)"
+                f"({len(articles) - len(unique)} duplicates removed)",
             )
 
         return unique

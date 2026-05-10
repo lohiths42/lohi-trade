@@ -28,7 +28,8 @@ Design references:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Awaitable, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from src.research.guardrails.pydantic_guard import GuardrailDecision
@@ -110,6 +111,7 @@ async def log_guardrail_decision(
     The function never raises. Postgres errors are logged at WARNING
     and swallowed; the primary audit trail is the structured log,
     and the database insert is a best-effort sidecar.
+
     """
     # Structured log — always emitted so operators have a trail even
     # when Postgres is unreachable.

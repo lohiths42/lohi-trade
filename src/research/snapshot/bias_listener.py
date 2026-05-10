@@ -82,15 +82,11 @@ Satisfies
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Awaitable, Callable, Iterable, Mapping
 from dataclasses import dataclass
 from typing import (
-    TYPE_CHECKING,
     Any,
-    Awaitable,
-    Callable,
     Final,
-    Iterable,
-    Mapping,
     Protocol,
     runtime_checkable,
 )
@@ -104,10 +100,6 @@ from src.research.agents._stream import (
 from src.research.constants import (
     RESEARCH_SNAPSHOT_INVALIDATIONS_STREAM,
 )
-
-if TYPE_CHECKING:  # pragma: no cover - typing only
-    from redis.asyncio import Redis
-
 
 # ``src.utils.logger`` provides the project-standard structured
 # logger; fall back to stdlib ``logging`` on trimmed installs. Same
@@ -123,8 +115,8 @@ except Exception:  # noqa: BLE001 - best-effort logger wiring
 
 
 __all__ = [
-    "WatchlistResolver",
     "BiasInvalidationListener",
+    "WatchlistResolver",
     "build_invalidation_fields",
 ]
 
@@ -248,6 +240,7 @@ class BiasInvalidationListener:
     thousand entries per day. A future enhancement (not required by
     Req 11.3) is to cap the set by bounded time / size, mirroring
     the BSE poller's :attr:`~BseFeedPoller._seen` pattern.
+
     """
 
     def __init__(
@@ -255,7 +248,7 @@ class BiasInvalidationListener:
         *,
         redis_reader: RedisStreamReader,
         invalidation_publisher: Callable[
-            [str, Mapping[str, Any]], Awaitable[Any]
+            [str, Mapping[str, Any]], Awaitable[Any],
         ],
         watchlist_resolver: WatchlistResolver,
         streams: Iterable[str] | None = None,
@@ -269,7 +262,7 @@ class BiasInvalidationListener:
             raise ValueError(
                 "BiasInvalidationListener requires either `streams` (an "
                 "explicit iterable) or `redis_scan` (for dynamic "
-                "discovery). Neither was provided."
+                "discovery). Neither was provided.",
             )
         self._reader = redis_reader
         self._publisher = invalidation_publisher

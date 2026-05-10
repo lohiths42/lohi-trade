@@ -1,5 +1,4 @@
-"""
-Market Trend Predictor for LOHI-TRADE.
+"""Market Trend Predictor for LOHI-TRADE.
 
 Uses historical indicator patterns to predict short-term market direction.
 Learns from past candle sequences to forecast whether the next N candles
@@ -14,9 +13,8 @@ Uses a RandomForestClassifier on rolling window features.
 """
 
 import logging
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Dict, List, Optional, Tuple
+from dataclasses import dataclass
+from datetime import UTC, datetime
 
 import numpy as np
 
@@ -37,19 +35,21 @@ MIN_PATTERN_SAMPLES = 50
 @dataclass
 class MarketRegime:
     """Current market regime prediction."""
+
     regime: str = REGIME_SIDEWAYS
     confidence: float = 0.0
-    predicted_at: Optional[datetime] = None
+    predicted_at: datetime | None = None
     features_used: int = 0
 
 
 @dataclass
 class PatternSample:
     """A historical pattern sample for training."""
+
     features: np.ndarray
     label: int  # 0=down, 1=sideways, 2=up
     symbol: str = ""
-    timestamp: Optional[datetime] = None
+    timestamp: datetime | None = None
 
 
 def extract_pattern_features(
@@ -57,9 +57,8 @@ def extract_pattern_features(
     highs: np.ndarray,
     lows: np.ndarray,
     volumes: np.ndarray,
-) -> Optional[np.ndarray]:
-    """
-    Extract pattern features from a window of candles.
+) -> np.ndarray | None:
+    """Extract pattern features from a window of candles.
 
     Features (12 total):
     - returns_mean, returns_std (momentum + volatility)
@@ -80,6 +79,7 @@ def extract_pattern_features(
 
     Returns:
         Feature array of shape (12,) or None if insufficient data.
+
     """
     n = len(closes)
     if n < LOOKBACK_CANDLES:
@@ -166,8 +166,7 @@ def compute_regime_label(
     current_close: float,
     threshold_pct: float = 0.3,
 ) -> int:
-    """
-    Compute regime label from future price movement.
+    """Compute regime label from future price movement.
 
     Args:
         future_closes: Next N close prices.
@@ -176,6 +175,7 @@ def compute_regime_label(
 
     Returns:
         0=down, 1=sideways, 2=up
+
     """
     if len(future_closes) == 0 or current_close <= 0:
         return 1  # sideways default
@@ -184,14 +184,13 @@ def compute_regime_label(
 
     if future_return > threshold_pct:
         return 2  # up
-    elif future_return < -threshold_pct:
+    if future_return < -threshold_pct:
         return 0  # down
     return 1  # sideways
 
 
 class MarketPredictor:
-    """
-    Predicts market regime using historical candle patterns.
+    """Predicts market regime using historical candle patterns.
 
     Trains a RandomForestClassifier on rolling window features
     extracted from historical candle data.
@@ -199,7 +198,7 @@ class MarketPredictor:
 
     def __init__(self, min_samples: int = MIN_PATTERN_SAMPLES) -> None:
         self._model = None
-        self._samples: List[PatternSample] = []
+        self._samples: list[PatternSample] = []
         self._min_samples = min_samples
         self._is_trained = False
 
@@ -223,13 +222,13 @@ class MarketPredictor:
         volumes: np.ndarray,
         symbol: str = "",
     ) -> int:
-        """
-        Build training samples from a full candle history and train.
+        """Build training samples from a full candle history and train.
 
         Slides a window across the data, extracting features and labels.
 
         Returns:
             Number of samples generated.
+
         """
         n = len(closes)
         required = LOOKBACK_CANDLES + FORECAST_CANDLES
@@ -240,7 +239,7 @@ class MarketPredictor:
         count = 0
         for i in range(LOOKBACK_CANDLES, n - FORECAST_CANDLES):
             features = extract_pattern_features(
-                closes[: i + 1], highs[: i + 1], lows[: i + 1], volumes[: i + 1]
+                closes[: i + 1], highs[: i + 1], lows[: i + 1], volumes[: i + 1],
             )
             if features is None:
                 continue
@@ -249,7 +248,7 @@ class MarketPredictor:
             label = compute_regime_label(future, closes[i])
 
             self._samples.append(
-                PatternSample(features=features, label=label, symbol=symbol)
+                PatternSample(features=features, label=label, symbol=symbol),
             )
             count += 1
 
@@ -259,8 +258,7 @@ class MarketPredictor:
         return count
 
     def train(self) -> bool:
-        """
-        Train the regime classifier.
+        """Train the regime classifier.
 
         Returns True if training succeeded.
         """
@@ -268,7 +266,7 @@ class MarketPredictor:
 
         if len(self._samples) < self._min_samples:
             logger.warning(
-                f"Not enough pattern samples: {len(self._samples)}/{self._min_samples}"
+                f"Not enough pattern samples: {len(self._samples)}/{self._min_samples}",
             )
             return False
 
@@ -294,7 +292,7 @@ class MarketPredictor:
 
         logger.info(
             f"MarketPredictor trained on {len(self._samples)} samples, "
-            f"classes={unique.tolist()}"
+            f"classes={unique.tolist()}",
         )
         return True
 
@@ -305,14 +303,14 @@ class MarketPredictor:
         lows: np.ndarray,
         volumes: np.ndarray,
     ) -> MarketRegime:
-        """
-        Predict current market regime.
+        """Predict current market regime.
 
         Args:
             closes, highs, lows, volumes: Recent candle arrays.
 
         Returns:
             MarketRegime with prediction and confidence.
+
         """
         if not self._is_trained or self._model is None:
             return MarketRegime()
@@ -330,6 +328,6 @@ class MarketPredictor:
         return MarketRegime(
             regime=regime_map.get(pred_class, REGIME_SIDEWAYS),
             confidence=float(np.max(proba)),
-            predicted_at=datetime.now(timezone.utc),
+            predicted_at=datetime.now(UTC),
             features_used=len(features),
         )

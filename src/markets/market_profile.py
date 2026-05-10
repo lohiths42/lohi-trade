@@ -12,10 +12,8 @@ from __future__ import annotations
 
 from datetime import time
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
-
 
 # ── Enums ───────────────────────────────────────────────────────────────────
 
@@ -102,21 +100,21 @@ class NumberFormat(str, Enum):
 class MarketSession(BaseModel):
     """Trading session time boundaries for an exchange."""
 
-    pre_market_start: Optional[time] = None
-    pre_market_end: Optional[time] = None
+    pre_market_start: time | None = None
+    pre_market_end: time | None = None
     market_open: time
     trading_start: time = Field(
-        description="Signal generation begins (after candle warmup)"
+        description="Signal generation begins (after candle warmup)",
     )
     trading_end: time = Field(
-        description="No new entries after this time"
+        description="No new entries after this time",
     )
     square_off_time: time = Field(
-        description="Force-close all intraday positions"
+        description="Force-close all intraday positions",
     )
     market_close: time
-    post_market_start: Optional[time] = None
-    post_market_end: Optional[time] = None
+    post_market_start: time | None = None
+    post_market_end: time | None = None
 
     @field_validator("trading_start")
     @classmethod
@@ -136,10 +134,10 @@ class TaxRule(BaseModel):
     name: str = Field(description="Human-readable tax name")
     rate_pct: float = Field(ge=0, le=100, description="Tax rate as percentage")
     applies_to: str = Field(
-        description="When this tax applies: buy, sell, both, intraday, delivery, brokerage"
+        description="When this tax applies: buy, sell, both, intraday, delivery, brokerage",
     )
     description: str = Field(description="Explanation of this tax")
-    threshold: Optional[float] = Field(
+    threshold: float | None = Field(
         default=None,
         description="Minimum trade value before this tax applies (in local currency)",
     )
@@ -147,7 +145,7 @@ class TaxRule(BaseModel):
         default=False,
         description="If True, rate_pct is ignored and threshold is the flat fee amount",
     )
-    flat_fee_amount: Optional[float] = Field(
+    flat_fee_amount: float | None = Field(
         default=None,
         description="Flat fee amount in local currency (used when is_flat_fee=True)",
     )
@@ -192,7 +190,7 @@ class TaxProfile(BaseModel):
     )
     last_updated: str = Field(description="ISO date of last update")
     source: str = Field(
-        description="How this profile was created: ai_generated, manual, official"
+        description="How this profile was created: ai_generated, manual, official",
     )
     verified_by_user: bool = Field(
         default=False,
@@ -261,13 +259,13 @@ class MarketProfile(BaseModel):
 
     # Benchmark index for volatility guard
     benchmark_index_name: str = Field(
-        description="Human-readable name (e.g., 'Nifty 50', 'S&P 500')"
+        description="Human-readable name (e.g., 'Nifty 50', 'S&P 500')",
     )
     benchmark_symbol: str = Field(
-        description="Symbol used in data feeds (e.g., '^NSEI', '^GSPC', '^FTSE')"
+        description="Symbol used in data feeds (e.g., '^NSEI', '^GSPC', '^FTSE')",
     )
     benchmark_redis_key: str = Field(
-        description="Redis key prefix for benchmark price (e.g., 'nifty', 'sp500')"
+        description="Redis key prefix for benchmark price (e.g., 'nifty', 'sp500')",
     )
 
     # Trading sessions

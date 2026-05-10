@@ -55,6 +55,7 @@ class CrossEncoderReranker:
         cheap ``hits[:top_k]`` and never touches ``sentence_transformers``
         or ``torch`` — critical for the offline configuration where
         the reranker weights are optional (design §7.1).
+
     """
 
     def __init__(
@@ -152,8 +153,8 @@ class CrossEncoderReranker:
                     update={
                         "score": ce_score,
                         "rerank_rank": rank,
-                    }
-                )
+                    },
+                ),
             )
         return reranked
 
@@ -197,7 +198,7 @@ class CrossEncoderReranker:
                     "'sentence-transformers' package (and its 'torch' "
                     "dependency). Install with "
                     "`pip install sentence-transformers torch` or set "
-                    "research.providers.reranker.enabled: false."
+                    "research.providers.reranker.enabled: false.",
                 ) from exc
 
             # Model construction itself is blocking I/O (HuggingFace

@@ -1,5 +1,4 @@
-"""
-Broker API abstraction layer for LOHI-TRADE.
+"""Broker API abstraction layer for LOHI-TRADE.
 
 This module defines the abstract interface for broker adapters and common data classes
 for ticks, orders, and order status. Concrete broker implementations (Shoonya, Angel One)
@@ -7,14 +6,15 @@ must implement this interface.
 """
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Callable, Optional, List
 
 
 class OrderType(Enum):
     """Order type enumeration."""
+
     MARKET = "MARKET"
     LIMIT = "LIMIT"
     SL = "SL"  # Stop Loss
@@ -23,12 +23,14 @@ class OrderType(Enum):
 
 class OrderSide(Enum):
     """Order side enumeration."""
+
     BUY = "BUY"
     SELL = "SELL"
 
 
 class OrderStatus(Enum):
     """Order status enumeration."""
+
     PENDING = "PENDING"
     PLACED = "PLACED"
     FILLED = "FILLED"
@@ -39,6 +41,7 @@ class OrderStatus(Enum):
 
 class ProductType(Enum):
     """Product type enumeration."""
+
     MIS = "MIS"  # Margin Intraday Square-off
     CNC = "CNC"  # Cash and Carry
     NRML = "NRML"  # Normal
@@ -46,8 +49,7 @@ class ProductType(Enum):
 
 @dataclass
 class Tick:
-    """
-    Represents a single price update from the exchange.
+    """Represents a single price update from the exchange.
     
     Attributes:
         symbol: Trading symbol (e.g., "RELIANCE")
@@ -62,25 +64,26 @@ class Tick:
         high: Day's high price (optional)
         low: Day's low price (optional)
         close: Previous day's closing price (optional)
+
     """
+
     symbol: str
     token: int
     ltp: float
     volume: int
     timestamp: datetime
     exchange: str
-    bid: Optional[float] = None
-    ask: Optional[float] = None
-    open: Optional[float] = None
-    high: Optional[float] = None
-    low: Optional[float] = None
-    close: Optional[float] = None
+    bid: float | None = None
+    ask: float | None = None
+    open: float | None = None
+    high: float | None = None
+    low: float | None = None
+    close: float | None = None
 
 
 @dataclass
 class Order:
-    """
-    Represents a trading order.
+    """Represents a trading order.
     
     Attributes:
         order_id: Internal UUID for the order
@@ -97,7 +100,9 @@ class Order:
         filled_price: Average fill price
         timestamp: Order creation timestamp
         rejection_reason: Reason for rejection (if rejected)
+
     """
+
     order_id: str
     symbol: str
     side: OrderSide
@@ -105,44 +110,43 @@ class Order:
     quantity: int
     product_type: ProductType
     status: OrderStatus
-    price: Optional[float] = None
-    trigger_price: Optional[float] = None
-    broker_order_id: Optional[str] = None
+    price: float | None = None
+    trigger_price: float | None = None
+    broker_order_id: str | None = None
     filled_qty: int = 0
-    filled_price: Optional[float] = None
-    timestamp: Optional[datetime] = None
-    rejection_reason: Optional[str] = None
+    filled_price: float | None = None
+    timestamp: datetime | None = None
+    rejection_reason: str | None = None
 
 
 @dataclass
 class BrokerCredentials:
-    """
-    Broker authentication credentials.
+    """Broker authentication credentials.
     
     Attributes:
         api_key: API key for broker
         client_id: Client ID or user ID
         password: Password or API secret
         totp_secret: TOTP secret for 2FA (optional)
+
     """
+
     api_key: str
     client_id: str
     password: str
-    totp_secret: Optional[str] = None
+    totp_secret: str | None = None
 
 
 class BrokerInterface(ABC):
-    """
-    Abstract base class for broker adapters.
+    """Abstract base class for broker adapters.
     
     All broker implementations (Shoonya, Angel One) must implement this interface
     to ensure consistent behavior across different brokers.
     """
-    
+
     @abstractmethod
     def connect(self, credentials: BrokerCredentials) -> bool:
-        """
-        Establish connection to broker API and authenticate.
+        """Establish connection to broker API and authenticate.
         
         Args:
             credentials: Broker authentication credentials
@@ -153,30 +157,26 @@ class BrokerInterface(ABC):
         Raises:
             ConnectionError: If connection fails
             AuthenticationError: If authentication fails
+
         """
-        pass
-    
+
     @abstractmethod
     def disconnect(self) -> None:
+        """Disconnect from broker API and clean up resources.
         """
-        Disconnect from broker API and clean up resources.
-        """
-        pass
-    
+
     @abstractmethod
     def is_connected(self) -> bool:
-        """
-        Check if broker connection is active.
+        """Check if broker connection is active.
         
         Returns:
             True if connected, False otherwise
+
         """
-        pass
-    
+
     @abstractmethod
-    def subscribe(self, symbols: List[str], on_tick: Callable[[Tick], None]) -> bool:
-        """
-        Subscribe to real-time tick data for given symbols.
+    def subscribe(self, symbols: list[str], on_tick: Callable[[Tick], None]) -> bool:
+        """Subscribe to real-time tick data for given symbols.
         
         Args:
             symbols: List of trading symbols to subscribe to
@@ -187,26 +187,24 @@ class BrokerInterface(ABC):
             
         Raises:
             ConnectionError: If not connected to broker
+
         """
-        pass
-    
+
     @abstractmethod
-    def unsubscribe(self, symbols: List[str]) -> bool:
-        """
-        Unsubscribe from real-time tick data for given symbols.
+    def unsubscribe(self, symbols: list[str]) -> bool:
+        """Unsubscribe from real-time tick data for given symbols.
         
         Args:
             symbols: List of trading symbols to unsubscribe from
             
         Returns:
             True if unsubscription successful, False otherwise
+
         """
-        pass
-    
+
     @abstractmethod
     def place_order(self, order: Order) -> str:
-        """
-        Place an order with the broker.
+        """Place an order with the broker.
         
         Args:
             order: Order object with all required details
@@ -217,13 +215,12 @@ class BrokerInterface(ABC):
         Raises:
             OrderRejectionError: If broker rejects the order
             ConnectionError: If not connected to broker
+
         """
-        pass
-    
+
     @abstractmethod
     def cancel_order(self, broker_order_id: str) -> bool:
-        """
-        Cancel a pending order.
+        """Cancel a pending order.
         
         Args:
             broker_order_id: Broker's order ID to cancel
@@ -233,13 +230,12 @@ class BrokerInterface(ABC):
             
         Raises:
             OrderNotFoundError: If order ID not found
+
         """
-        pass
-    
+
     @abstractmethod
     def get_order_status(self, broker_order_id: str) -> Order:
-        """
-        Get current status of an order.
+        """Get current status of an order.
         
         Args:
             broker_order_id: Broker's order ID to query
@@ -249,50 +245,48 @@ class BrokerInterface(ABC):
             
         Raises:
             OrderNotFoundError: If order ID not found
+
         """
-        pass
-    
+
     @abstractmethod
-    def get_positions(self) -> List[dict]:
-        """
-        Get all open positions.
+    def get_positions(self) -> list[dict]:
+        """Get all open positions.
         
         Returns:
             List of position dictionaries with symbol, quantity, avg_price, etc.
+
         """
-        pass
-    
+
     @abstractmethod
-    def get_instrument_master(self) -> List[dict]:
-        """
-        Download instrument master with symbol tokens and trading details.
+    def get_instrument_master(self) -> list[dict]:
+        """Download instrument master with symbol tokens and trading details.
         
         Returns:
             List of instrument dictionaries with symbol, token, lot_size, tick_size, etc.
+
         """
-        pass
 
 
 class BrokerError(Exception):
     """Base exception for broker-related errors."""
-    pass
+
 
 
 class ConnectionError(BrokerError):
     """Raised when broker connection fails."""
-    pass
+
 
 
 class AuthenticationError(BrokerError):
     """Raised when broker authentication fails."""
-    pass
+
 
 
 class OrderRejectionError(BrokerError):
     """Raised when broker rejects an order."""
-    pass
+
 
 
 class OrderNotFoundError(BrokerError):
     """Raised when order ID is not found."""
-    pass
+

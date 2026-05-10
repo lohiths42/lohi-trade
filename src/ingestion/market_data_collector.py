@@ -1,5 +1,4 @@
-"""
-NSE Market Data Collector for LOHI-TRADE.
+"""NSE Market Data Collector for LOHI-TRADE.
 
 Collects real-time market data from NSE official data feeds via WebSocket,
 publishes tick updates to Redis event bus within 50ms of receipt, and
@@ -12,12 +11,12 @@ Requirements: 25.1, 25.2, 25.4, 25.5, 25.6, 25.7
 
 import asyncio
 import json
-import time
 import threading
+import time
 from dataclasses import dataclass, field
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 from src.ingestion.broker_interface import BrokerInterface, Tick
 from src.state.event_bus import EventBus
@@ -31,6 +30,7 @@ IST = timezone(timedelta(hours=5, minutes=30))
 
 class FeedSource(Enum):
     """Active data feed source."""
+
     NSE = "NSE"
     BSE = "BSE"
     BROKER_FALLBACK = "BROKER_FALLBACK"
@@ -39,6 +39,7 @@ class FeedSource(Enum):
 
 class MarketSession(Enum):
     """Current market session type."""
+
     PRE_MARKET = "PRE_MARKET"       # 9:00 - 9:15 IST
     NORMAL = "NORMAL"               # 9:15 - 15:30 IST
     POST_MARKET = "POST_MARKET"     # 15:30 - 16:00 IST
@@ -47,12 +48,12 @@ class MarketSession(Enum):
 
 @dataclass
 class TickData:
-    """
-    Comprehensive tick data collected per security from NSE feed.
+    """Comprehensive tick data collected per security from NSE feed.
 
     Includes LTP, last traded qty, total volume, best bid/ask,
     OHLC, and previous close as required by 25.2.
     """
+
     symbol: str
     token: int
     ltp: float
@@ -74,29 +75,30 @@ class TickData:
 @dataclass
 class OrderBookLevel:
     """A single price level in the order book."""
+
     price: float
     quantity: int
 
 
 @dataclass
 class OrderBookDepth:
-    """
-    Top 5 bid/ask levels for a security.
+    """Top 5 bid/ask levels for a security.
 
     Requirement 25.3: full order book depth (top 5 bid/ask levels)
     for securities in the user's active watchlists.
     """
-    symbol: str
-    bids: List["OrderBookLevel"] = field(default_factory=list)
-    asks: List["OrderBookLevel"] = field(default_factory=list)
-    timestamp: Optional[datetime] = None
 
-    def to_redis_hash(self) -> Dict[str, str]:
+    symbol: str
+    bids: list["OrderBookLevel"] = field(default_factory=list)
+    asks: list["OrderBookLevel"] = field(default_factory=list)
+    timestamp: datetime | None = None
+
+    def to_redis_hash(self) -> dict[str, str]:
         """Convert to flat dict for Redis hash storage.
 
         Keys: bid_1..bid_5, ask_1..ask_5, bid_qty_1..bid_qty_5, ask_qty_1..ask_qty_5
         """
-        data: Dict[str, str] = {}
+        data: dict[str, str] = {}
         for i in range(5):
             idx = i + 1
             if i < len(self.bids):
@@ -117,7 +119,7 @@ class OrderBookDepth:
         return data
 
     @classmethod
-    def from_redis_hash(cls, data: Dict[str, str]) -> "OrderBookDepth":
+    def from_redis_hash(cls, data: dict[str, str]) -> "OrderBookDepth":
         """Reconstruct from a Redis hash dict."""
         symbol = data.get("symbol", "")
         bids = []
@@ -139,18 +141,19 @@ class OrderBookDepth:
 @dataclass
 class ConnectionStats:
     """Statistics for the NSE/BSE feed connections."""
-    connected_at: Optional[datetime] = None
-    disconnected_at: Optional[datetime] = None
+
+    connected_at: datetime | None = None
+    disconnected_at: datetime | None = None
     total_ticks_received: int = 0
     total_ticks_published: int = 0
     reconnection_attempts: int = 0
     fallback_activations: int = 0
-    last_tick_time: Optional[datetime] = None
+    last_tick_time: datetime | None = None
     total_publish_latency_ms: float = 0.0
     publish_count_for_latency: int = 0
     # BSE-specific stats
-    bse_connected_at: Optional[datetime] = None
-    bse_disconnected_at: Optional[datetime] = None
+    bse_connected_at: datetime | None = None
+    bse_disconnected_at: datetime | None = None
     bse_ticks_received: int = 0
     bse_ticks_published: int = 0
     bse_reconnection_attempts: int = 0
@@ -164,8 +167,7 @@ class ConnectionStats:
 
 
 class MarketDataCollector:
-    """
-    Collects real-time and session data from NSE official feeds.
+    """Collects real-time and session data from NSE official feeds.
 
     Connects via WebSocket to NSE data feed endpoint, publishes tick
     updates to Redis stream ``stream:ticks`` within 50 ms of receipt,
@@ -208,13 +210,12 @@ class MarketDataCollector:
         event_bus: EventBus,
         nse_feed_url: str = "wss://nse-feed.example.com/ws",
         bse_feed_url: str = "wss://bse-feed.example.com/ws",
-        fallback_broker: Optional[BrokerInterface] = None,
-        subscribed_symbols: Optional[List[str]] = None,
-        dual_listed_symbols: Optional[List[str]] = None,
-        bse_only_symbols: Optional[List[str]] = None,
+        fallback_broker: BrokerInterface | None = None,
+        subscribed_symbols: list[str] | None = None,
+        dual_listed_symbols: list[str] | None = None,
+        bse_only_symbols: list[str] | None = None,
     ):
-        """
-        Initialise the market data collector.
+        """Initialise the market data collector.
 
         Args:
             event_bus: EventBus instance for publishing ticks to Redis.
@@ -225,14 +226,15 @@ class MarketDataCollector:
             subscribed_symbols: Initial list of symbols to subscribe to.
             dual_listed_symbols: Symbols listed on both NSE and BSE.
             bse_only_symbols: Symbols listed only on BSE.
+
         """
         self.event_bus = event_bus
         self.nse_feed_url = nse_feed_url
         self.bse_feed_url = bse_feed_url
         self.fallback_broker = fallback_broker
-        self._subscribed_symbols: List[str] = subscribed_symbols or []
-        self._dual_listed_symbols: List[str] = dual_listed_symbols or []
-        self._bse_only_symbols: List[str] = bse_only_symbols or []
+        self._subscribed_symbols: list[str] = subscribed_symbols or []
+        self._dual_listed_symbols: list[str] = dual_listed_symbols or []
+        self._bse_only_symbols: list[str] = bse_only_symbols or []
 
         # NSE connection state
         self._feed_source = FeedSource.DISCONNECTED
@@ -251,7 +253,7 @@ class MarketDataCollector:
         self._fallback_active = False
 
         # Price discrepancy detection: symbol -> latest NSE price
-        self._nse_latest_prices: Dict[str, float] = {}
+        self._nse_latest_prices: dict[str, float] = {}
         # Price discrepancy threshold (0.5% as per requirement 26.5)
         self.PRICE_DISCREPANCY_THRESHOLD = 0.005
 
@@ -260,15 +262,14 @@ class MarketDataCollector:
 
         # Threading / async control
         self._stop_event = threading.Event()
-        self._monitor_thread: Optional[threading.Thread] = None
+        self._monitor_thread: threading.Thread | None = None
 
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
 
     async def connect_nse_feed(self) -> None:
-        """
-        Connect to NSE official data feed for all actively traded securities.
+        """Connect to NSE official data feed for all actively traded securities.
 
         Establishes a WebSocket connection to the NSE feed endpoint,
         subscribes to configured symbols, and begins publishing tick
@@ -315,8 +316,7 @@ class MarketDataCollector:
         logger.info("NSE/BSE feeds disconnected")
 
     async def connect_bse_feed(self) -> None:
-        """
-        Connect to BSE official data feed.
+        """Connect to BSE official data feed.
 
         Establishes a WebSocket connection to the BSE feed endpoint,
         subscribes to BSE-only and dual-listed symbols, and begins
@@ -354,24 +354,24 @@ class MarketDataCollector:
         self._stats.bse_disconnected_at = datetime.now(IST)
         logger.info("BSE feed disconnected")
 
-    def subscribe(self, symbols: List[str]) -> None:
-        """
-        Subscribe to tick data for the given symbols.
+    def subscribe(self, symbols: list[str]) -> None:
+        """Subscribe to tick data for the given symbols.
 
         Args:
             symbols: List of NSE trading symbols.
+
         """
         new_symbols = [s for s in symbols if s not in self._subscribed_symbols]
         if new_symbols:
             self._subscribed_symbols.extend(new_symbols)
             logger.info(f"Subscribed to {len(new_symbols)} new symbols")
 
-    def unsubscribe(self, symbols: List[str]) -> None:
-        """
-        Unsubscribe from tick data for the given symbols.
+    def unsubscribe(self, symbols: list[str]) -> None:
+        """Unsubscribe from tick data for the given symbols.
 
         Args:
             symbols: List of symbols to remove.
+
         """
         self._subscribed_symbols = [
             s for s in self._subscribed_symbols if s not in symbols
@@ -379,10 +379,9 @@ class MarketDataCollector:
         logger.info(f"Unsubscribed from {len(symbols)} symbols")
 
     def detect_price_discrepancy(
-        self, symbol: str, nse_price: float, bse_price: float
+        self, symbol: str, nse_price: float, bse_price: float,
     ) -> bool:
-        """
-        Detect and log price discrepancy between NSE and BSE for dual-listed securities.
+        """Detect and log price discrepancy between NSE and BSE for dual-listed securities.
 
         Logs when the price difference exceeds 0.5% (requirement 26.5).
 
@@ -395,6 +394,7 @@ class MarketDataCollector:
             True if a discrepancy >0.5% is detected, False otherwise.
 
         Requirements: 26.5
+
         """
         if nse_price <= 0 or bse_price <= 0:
             return False
@@ -426,10 +426,9 @@ class MarketDataCollector:
     # ------------------------------------------------------------------
 
     async def collect_order_book(
-        self, symbols: Optional[List[str]] = None
-    ) -> Dict[str, OrderBookDepth]:
-        """
-        Collect top 5 bid/ask levels for watchlist securities and store in Redis.
+        self, symbols: list[str] | None = None,
+    ) -> dict[str, OrderBookDepth]:
+        """Collect top 5 bid/ask levels for watchlist securities and store in Redis.
 
         For each symbol, fetches order book depth data and stores it as a
         Redis hash at ``depth:{symbol}`` with keys bid_1..bid_5, ask_1..ask_5,
@@ -443,13 +442,14 @@ class MarketDataCollector:
             Dict mapping symbol to OrderBookDepth.
 
         Requirements: 25.3
+
         """
         target_symbols = symbols if symbols is not None else list(self._subscribed_symbols)
         if not target_symbols:
             logger.debug("No symbols for order book depth collection")
             return {}
 
-        results: Dict[str, OrderBookDepth] = {}
+        results: dict[str, OrderBookDepth] = {}
         for symbol in target_symbols:
             try:
                 depth = await self._fetch_order_book_depth(symbol)
@@ -463,13 +463,12 @@ class MarketDataCollector:
                 )
 
         logger.info(
-            f"Collected order book depth for {len(results)}/{len(target_symbols)} symbols"
+            f"Collected order book depth for {len(results)}/{len(target_symbols)} symbols",
         )
         return results
 
-    async def _fetch_order_book_depth(self, symbol: str) -> Optional[OrderBookDepth]:
-        """
-        Fetch order book depth for a single symbol from the exchange feed.
+    async def _fetch_order_book_depth(self, symbol: str) -> OrderBookDepth | None:
+        """Fetch order book depth for a single symbol from the exchange feed.
 
         In production this would query the NSE/BSE WebSocket or REST API.
         Here we return None so callers can inject data via
@@ -480,17 +479,18 @@ class MarketDataCollector:
 
         Returns:
             OrderBookDepth or None if unavailable.
+
         """
         # Production implementation would fetch from exchange feed.
         # Returning None by default; tests and live code override/inject.
         return None
 
     def _store_order_book_depth(self, depth: OrderBookDepth) -> None:
-        """
-        Store order book depth in Redis as a hash at ``depth:{symbol}``.
+        """Store order book depth in Redis as a hash at ``depth:{symbol}``.
 
         Args:
             depth: OrderBookDepth to persist.
+
         """
         redis_key = f"depth:{depth.symbol}"
         hash_data = depth.to_redis_hash()
@@ -503,15 +503,15 @@ class MarketDataCollector:
                 exc_info=True,
             )
 
-    def get_order_book_depth(self, symbol: str) -> Optional[OrderBookDepth]:
-        """
-        Retrieve stored order book depth from Redis.
+    def get_order_book_depth(self, symbol: str) -> OrderBookDepth | None:
+        """Retrieve stored order book depth from Redis.
 
         Args:
             symbol: Trading symbol.
 
         Returns:
             OrderBookDepth or None if not found.
+
         """
         redis_key = f"depth:{symbol}"
         try:
@@ -537,7 +537,7 @@ class MarketDataCollector:
         return self._stats
 
     @property
-    def subscribed_symbols(self) -> List[str]:
+    def subscribed_symbols(self) -> list[str]:
         """Currently subscribed symbols."""
         return list(self._subscribed_symbols)
 
@@ -547,12 +547,12 @@ class MarketDataCollector:
         return self._bse_connected
 
     @property
-    def dual_listed_symbols(self) -> List[str]:
+    def dual_listed_symbols(self) -> list[str]:
         """Symbols listed on both NSE and BSE."""
         return list(self._dual_listed_symbols)
 
     @property
-    def bse_only_symbols(self) -> List[str]:
+    def bse_only_symbols(self) -> list[str]:
         """Symbols listed only on BSE."""
         return list(self._bse_only_symbols)
 
@@ -561,9 +561,8 @@ class MarketDataCollector:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def get_current_session(now: Optional[datetime] = None) -> MarketSession:
-        """
-        Determine the current market session based on IST time.
+    def get_current_session(now: datetime | None = None) -> MarketSession:
+        """Determine the current market session based on IST time.
 
         Args:
             now: Optional datetime for testing; defaults to current IST time.
@@ -572,15 +571,15 @@ class MarketDataCollector:
             The current MarketSession.
 
         Requirements: 25.6, 25.7
+
         """
         if now is None:
             now = datetime.now(IST)
+        # Ensure we work in IST
+        elif now.tzinfo is None:
+            now = now.replace(tzinfo=IST)
         else:
-            # Ensure we work in IST
-            if now.tzinfo is None:
-                now = now.replace(tzinfo=IST)
-            else:
-                now = now.astimezone(IST)
+            now = now.astimezone(IST)
 
         t = now.hour * 60 + now.minute
 
@@ -591,26 +590,25 @@ class MarketDataCollector:
 
         if pre_start <= t < pre_end:
             return MarketSession.PRE_MARKET
-        elif pre_end <= t < normal_end:
+        if pre_end <= t < normal_end:
             return MarketSession.NORMAL
-        elif normal_end <= t < post_end:
+        if normal_end <= t < post_end:
             return MarketSession.POST_MARKET
-        else:
-            return MarketSession.CLOSED
+        return MarketSession.CLOSED
 
     # ------------------------------------------------------------------
     # Tick processing & publishing (Requirement 25.4)
     # ------------------------------------------------------------------
 
     def _process_tick(self, tick_data: TickData) -> None:
-        """
-        Process a single tick and publish to Redis event bus.
+        """Process a single tick and publish to Redis event bus.
 
         Publishes within 50 ms of receipt (requirement 25.4).
         Tracks NSE prices for cross-exchange discrepancy detection.
 
         Args:
             tick_data: Parsed tick from the NSE feed.
+
         """
         receipt_time = time.monotonic()
 
@@ -652,7 +650,7 @@ class MarketDataCollector:
             )
 
     @staticmethod
-    def _tick_to_message(tick_data: TickData) -> Dict[str, Any]:
+    def _tick_to_message(tick_data: TickData) -> dict[str, Any]:
         """Convert TickData to a dict suitable for event bus publishing."""
         return {
             "symbol": tick_data.symbol,
@@ -679,8 +677,7 @@ class MarketDataCollector:
     # ------------------------------------------------------------------
 
     async def _establish_nse_connection(self) -> None:
-        """
-        Open a WebSocket connection to the NSE feed endpoint.
+        """Open a WebSocket connection to the NSE feed endpoint.
 
         In production this would use the ``websockets`` library.
         Here we set state so the rest of the class operates correctly.
@@ -711,8 +708,7 @@ class MarketDataCollector:
     # ------------------------------------------------------------------
 
     async def _establish_bse_connection(self) -> None:
-        """
-        Open a WebSocket connection to the BSE feed endpoint.
+        """Open a WebSocket connection to the BSE feed endpoint.
 
         In production this would use the ``websockets`` library.
         Here we set state so the rest of the class operates correctly.
@@ -740,8 +736,7 @@ class MarketDataCollector:
                 self._bse_ws_connection = None
 
     def _process_bse_tick(self, tick_data: TickData) -> None:
-        """
-        Process a BSE tick with dual-listing logic.
+        """Process a BSE tick with dual-listing logic.
 
         For dual-listed securities: NSE is primary, BSE is used for
         cross-validation / discrepancy detection (requirement 26.3, 26.5).
@@ -751,6 +746,7 @@ class MarketDataCollector:
             tick_data: Parsed tick from the BSE feed.
 
         Requirements: 26.2, 26.3, 26.4, 26.5
+
         """
         self._stats.bse_ticks_received += 1
 
@@ -763,7 +759,7 @@ class MarketDataCollector:
             nse_price = self._nse_latest_prices.get(tick_data.symbol)
             if nse_price is not None:
                 self.detect_price_discrepancy(
-                    tick_data.symbol, nse_price, tick_data.ltp
+                    tick_data.symbol, nse_price, tick_data.ltp,
                 )
             self._stats.bse_ticks_published += 1
         elif is_bse_only:
@@ -775,9 +771,8 @@ class MarketDataCollector:
             self._process_tick(tick_data)
             self._stats.bse_ticks_published += 1
 
-    def parse_bse_message(self, raw: str) -> Optional[TickData]:
-        """
-        Parse a raw JSON message from the BSE WebSocket feed.
+    def parse_bse_message(self, raw: str) -> TickData | None:
+        """Parse a raw JSON message from the BSE WebSocket feed.
 
         Collects the same data fields as NSE (requirement 26.2).
 
@@ -786,6 +781,7 @@ class MarketDataCollector:
 
         Returns:
             Parsed TickData or None if parsing fails.
+
         """
         try:
             data = json.loads(raw)
@@ -812,14 +808,13 @@ class MarketDataCollector:
             return None
 
     async def handle_bse_feed_disconnect(self) -> None:
-        """
-        Handle BSE feed disconnection.
+        """Handle BSE feed disconnection.
 
         Continues operating with NSE data only (requirement 26.6).
         Attempts reconnection in the background.
         """
         logger.warning(
-            "BSE feed disconnected. Continuing with NSE data only (requirement 26.6)."
+            "BSE feed disconnected. Continuing with NSE data only (requirement 26.6).",
         )
         self._bse_connected = False
         self._stats.bse_disconnected_at = datetime.now(IST)
@@ -831,11 +826,11 @@ class MarketDataCollector:
                 break
 
     async def _reconnect_bse(self) -> bool:
-        """
-        Attempt to reconnect to the BSE feed with exponential backoff.
+        """Attempt to reconnect to the BSE feed with exponential backoff.
 
         Returns:
             True if reconnection succeeded.
+
         """
         self._bse_reconnect_attempts += 1
         self._stats.bse_reconnection_attempts += 1
@@ -843,7 +838,7 @@ class MarketDataCollector:
         if self._bse_reconnect_attempts > self.MAX_RECONNECT_ATTEMPTS:
             logger.error(
                 f"Max BSE reconnection attempts ({self.MAX_RECONNECT_ATTEMPTS}) reached. "
-                "Continuing with NSE only."
+                "Continuing with NSE only.",
             )
             return False
 
@@ -853,7 +848,7 @@ class MarketDataCollector:
         )
         logger.info(
             f"Reconnecting to BSE feed in {delay:.1f}s "
-            f"(attempt {self._bse_reconnect_attempts}/{self.MAX_RECONNECT_ATTEMPTS})"
+            f"(attempt {self._bse_reconnect_attempts}/{self.MAX_RECONNECT_ATTEMPTS})",
         )
         await asyncio.sleep(delay)
 
@@ -870,20 +865,20 @@ class MarketDataCollector:
     # ------------------------------------------------------------------
 
     async def _reconnect(self) -> bool:
-        """
-        Attempt to reconnect to the NSE feed with exponential backoff.
+        """Attempt to reconnect to the NSE feed with exponential backoff.
 
         Max delay capped at 5 seconds (requirement 25.5).
 
         Returns:
             True if reconnection succeeded.
+
         """
         self._reconnect_attempts += 1
         self._stats.reconnection_attempts += 1
 
         if self._reconnect_attempts > self.MAX_RECONNECT_ATTEMPTS:
             logger.error(
-                f"Max reconnection attempts ({self.MAX_RECONNECT_ATTEMPTS}) reached"
+                f"Max reconnection attempts ({self.MAX_RECONNECT_ATTEMPTS}) reached",
             )
             return False
 
@@ -893,7 +888,7 @@ class MarketDataCollector:
         )
         logger.info(
             f"Reconnecting to NSE feed in {delay:.1f}s "
-            f"(attempt {self._reconnect_attempts}/{self.MAX_RECONNECT_ATTEMPTS})"
+            f"(attempt {self._reconnect_attempts}/{self.MAX_RECONNECT_ATTEMPTS})",
         )
         await asyncio.sleep(delay)
 
@@ -907,8 +902,7 @@ class MarketDataCollector:
             return False
 
     async def handle_feed_disconnect(self) -> None:
-        """
-        Handle NSE feed disconnection.
+        """Handle NSE feed disconnection.
 
         Activates broker fallback immediately, then attempts reconnection
         in the background (requirement 25.5).
@@ -930,8 +924,7 @@ class MarketDataCollector:
     # ------------------------------------------------------------------
 
     async def _activate_fallback(self) -> None:
-        """
-        Activate broker WebSocket as fallback data source.
+        """Activate broker WebSocket as fallback data source.
 
         Subscribes to the same symbols via the fallback broker and
         routes ticks through the same publish pipeline.
@@ -945,7 +938,7 @@ class MarketDataCollector:
 
         try:
             self.fallback_broker.subscribe(
-                self._subscribed_symbols, self._on_fallback_tick
+                self._subscribed_symbols, self._on_fallback_tick,
             )
             self._fallback_active = True
             self._feed_source = FeedSource.BROKER_FALLBACK
@@ -972,8 +965,7 @@ class MarketDataCollector:
         logger.info("Broker fallback deactivated")
 
     def _on_fallback_tick(self, tick: Tick) -> None:
-        """
-        Callback for ticks received from the fallback broker.
+        """Callback for ticks received from the fallback broker.
 
         Converts broker Tick to TickData and publishes via the
         standard pipeline.
@@ -1002,9 +994,8 @@ class MarketDataCollector:
     # NSE feed message parsing
     # ------------------------------------------------------------------
 
-    def parse_nse_message(self, raw: str) -> Optional[TickData]:
-        """
-        Parse a raw JSON message from the NSE WebSocket feed.
+    def parse_nse_message(self, raw: str) -> TickData | None:
+        """Parse a raw JSON message from the NSE WebSocket feed.
 
         Expected fields per requirement 25.2:
         symbol, token, ltp, last_traded_qty, total_volume,
@@ -1016,6 +1007,7 @@ class MarketDataCollector:
 
         Returns:
             Parsed TickData or None if parsing fails.
+
         """
         try:
             data = json.loads(raw)
@@ -1045,9 +1037,8 @@ class MarketDataCollector:
     # Pre-market & post-market session data (Requirements 25.6, 25.7)
     # ------------------------------------------------------------------
 
-    def collect_pre_market_data(self, tick_data: TickData) -> Dict[str, Any]:
-        """
-        Collect pre-market session data including indicative opening prices.
+    def collect_pre_market_data(self, tick_data: TickData) -> dict[str, Any]:
+        """Collect pre-market session data including indicative opening prices.
 
         Pre-market session runs 9:00 - 9:15 AM IST (requirement 25.6).
 
@@ -1056,6 +1047,7 @@ class MarketDataCollector:
 
         Returns:
             Dict with pre-market specific fields.
+
         """
         session = self.get_current_session(tick_data.timestamp)
         message = self._tick_to_message(tick_data)
@@ -1065,14 +1057,13 @@ class MarketDataCollector:
         if session == MarketSession.PRE_MARKET:
             self._process_tick(tick_data)
             logger.debug(
-                f"Pre-market tick: {tick_data.symbol} indicative open={tick_data.ltp}"
+                f"Pre-market tick: {tick_data.symbol} indicative open={tick_data.ltp}",
             )
 
         return message
 
-    def collect_post_market_data(self, tick_data: TickData) -> Dict[str, Any]:
-        """
-        Collect post-market session data including closing prices.
+    def collect_post_market_data(self, tick_data: TickData) -> dict[str, Any]:
+        """Collect post-market session data including closing prices.
 
         Post-market session runs 3:30 - 4:00 PM IST (requirement 25.7).
 
@@ -1081,6 +1072,7 @@ class MarketDataCollector:
 
         Returns:
             Dict with post-market specific fields.
+
         """
         session = self.get_current_session(tick_data.timestamp)
         message = self._tick_to_message(tick_data)
@@ -1090,7 +1082,7 @@ class MarketDataCollector:
         if session == MarketSession.POST_MARKET:
             self._process_tick(tick_data)
             logger.debug(
-                f"Post-market tick: {tick_data.symbol} closing={tick_data.ltp}"
+                f"Post-market tick: {tick_data.symbol} closing={tick_data.ltp}",
             )
 
         return message
@@ -1124,7 +1116,7 @@ class MarketDataCollector:
                     # Only alert during active sessions
                     if session != MarketSession.CLOSED and elapsed > 10:
                         logger.warning(
-                            f"No ticks received for {elapsed:.1f}s during {session.value}"
+                            f"No ticks received for {elapsed:.1f}s during {session.value}",
                         )
 
                 # Log periodic stats
@@ -1134,7 +1126,7 @@ class MarketDataCollector:
                     logger.info(
                         f"Feed stats: published={self._stats.total_ticks_published}, "
                         f"avg_latency={self._stats.avg_publish_latency_ms:.2f}ms, "
-                        f"source={self._feed_source.value}"
+                        f"source={self._feed_source.value}",
                     )
 
             except Exception as e:

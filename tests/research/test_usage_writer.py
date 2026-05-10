@@ -24,9 +24,10 @@ Covers
 
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from decimal import Decimal
-from typing import Any, AsyncIterator
+from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
@@ -36,7 +37,6 @@ from src.research.agents.usage_writer import (
     UsageWriter,
     UsageWriterProtocol,
 )
-
 
 # --------------------------------------------------------------------------- #
 # Helpers                                                                     #
@@ -176,7 +176,7 @@ class TestUsageWriterHappyPath:
             latency_ms=0,
         )
         _, args = conn.calls[0]
-        assert args[-1] == Decimal("0")
+        assert args[-1] == Decimal(0)
         assert isinstance(args[-1], Decimal)
 
     @pytest.mark.asyncio

@@ -1,5 +1,4 @@
-"""
-Feature Engineering for ML-based trading signals.
+"""Feature Engineering for ML-based trading signals.
 
 Extracts numerical feature vectors from IndicatorSet + sentiment data
 for use by the ML model. All features are normalized to prevent scale bias.
@@ -12,8 +11,7 @@ Features:
 
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import Dict, List, Optional, Tuple
+from datetime import datetime
 
 import numpy as np
 
@@ -22,7 +20,7 @@ from src.soldier.indicator_engine import IndicatorSet
 logger = logging.getLogger(__name__)
 
 # Feature names in fixed order for model input
-FEATURE_NAMES: List[str] = [
+FEATURE_NAMES: list[str] = [
     "rsi_14",
     "rsi_zone",           # -1=oversold, 0=neutral, 1=overbought
     "macd_hist",
@@ -61,6 +59,7 @@ NUM_FEATURES = len(FEATURE_NAMES)
 @dataclass
 class SentimentFeatures:
     """Sentiment data to merge with technical features."""
+
     score: float = 0.0          # -1.0 (bearish) to 1.0 (bullish)
     confidence: float = 0.0     # 0.0 to 1.0
     article_count: int = 0
@@ -69,13 +68,14 @@ class SentimentFeatures:
 @dataclass
 class FeatureVector:
     """Complete feature vector for ML model input."""
+
     symbol: str
     timestamp: datetime
     features: np.ndarray        # shape (NUM_FEATURES,)
-    feature_names: List[str] = field(default_factory=lambda: list(FEATURE_NAMES))
+    feature_names: list[str] = field(default_factory=lambda: list(FEATURE_NAMES))
     close_price: float = 0.0    # for reference, not a feature
 
-    def to_dict(self) -> Dict[str, float]:
+    def to_dict(self) -> dict[str, float]:
         """Return features as name→value dict."""
         return dict(zip(self.feature_names, self.features.tolist()))
 
@@ -92,7 +92,7 @@ def _rsi_zone(rsi: float) -> float:
     """Classify RSI into zones: -1=oversold(<30), 0=neutral, 1=overbought(>70)."""
     if rsi < 30:
         return -1.0
-    elif rsi > 70:
+    if rsi > 70:
         return 1.0
     return 0.0
 
@@ -109,7 +109,7 @@ def _stoch_zone(stoch_k: float) -> float:
     """Classify Stochastic %K: -1=oversold(<20), 0=neutral, 1=overbought(>80)."""
     if stoch_k < 20:
         return -1.0
-    elif stoch_k > 80:
+    if stoch_k > 80:
         return 1.0
     return 0.0
 
@@ -118,7 +118,7 @@ def _williams_r_zone(wr: float) -> float:
     """Classify Williams %R: -1=oversold(<-80), 0=neutral, 1=overbought(>-20)."""
     if wr < -80:
         return -1.0
-    elif wr > -20:
+    if wr > -20:
         return 1.0
     return 0.0
 
@@ -127,7 +127,7 @@ def _cci_zone(cci: float) -> float:
     """Classify CCI: -1=oversold(<-100), 0=neutral, 1=overbought(>100)."""
     if cci < -100:
         return -1.0
-    elif cci > 100:
+    if cci > 100:
         return 1.0
     return 0.0
 
@@ -136,7 +136,7 @@ def _mfi_zone(mfi: float) -> float:
     """Classify MFI: -1=oversold(<20), 0=neutral, 1=overbought(>80)."""
     if mfi < 20:
         return -1.0
-    elif mfi > 80:
+    if mfi > 80:
         return 1.0
     return 0.0
 
@@ -145,7 +145,7 @@ def _ema_trend_alignment(ema_9: float, ema_21: float, ema_50: float) -> float:
     """1 if ema9>ema21>ema50 (bullish stack), -1 if reversed, 0 otherwise."""
     if ema_9 > ema_21 > ema_50:
         return 1.0
-    elif ema_9 < ema_21 < ema_50:
+    if ema_9 < ema_21 < ema_50:
         return -1.0
     return 0.0
 
@@ -156,12 +156,12 @@ def _ichimoku_cloud_position(close: float, senkou_a: float, senkou_b: float) -> 
     cloud_bottom = min(senkou_a, senkou_b)
     if close > cloud_top:
         return 1.0
-    elif close < cloud_bottom:
+    if close < cloud_bottom:
         return -1.0
     return 0.0
 
 
-def _confluence_score(indicators: 'IndicatorSet', close: float) -> float:
+def _confluence_score(indicators: "IndicatorSet", close: float) -> float:
     """Count bullish indicators / total (0-1 range)."""
     bullish = 0
     total = 10
@@ -191,10 +191,9 @@ def _confluence_score(indicators: 'IndicatorSet', close: float) -> float:
 def extract_features(
     indicators: IndicatorSet,
     close_price: float,
-    sentiment: Optional[SentimentFeatures] = None,
+    sentiment: SentimentFeatures | None = None,
 ) -> FeatureVector:
-    """
-    Extract a feature vector from indicators and sentiment.
+    """Extract a feature vector from indicators and sentiment.
 
     Args:
         indicators: Technical indicators from IndicatorEngine.
@@ -203,6 +202,7 @@ def extract_features(
 
     Returns:
         FeatureVector with normalized features.
+
     """
     if sentiment is None:
         sentiment = SentimentFeatures()
@@ -211,15 +211,15 @@ def extract_features(
     bb_percent_b = _safe_div(close_price - indicators.bb_lower, bb_range, 0.5)
     bb_width = _safe_div(bb_range, indicators.bb_middle, 0.0)
     ema_cross = _safe_div(
-        indicators.ema_9 - indicators.ema_21, indicators.ema_21, 0.0
+        indicators.ema_9 - indicators.ema_21, indicators.ema_21, 0.0,
     )
     atr_ratio = _safe_div(indicators.atr_14, close_price, 0.0)
     volume_ratio = _safe_div(
-        indicators.volume_avg_20, indicators.volume_avg_20, 1.0
+        indicators.volume_avg_20, indicators.volume_avg_20, 1.0,
     )
     momentum = _safe_div(close_price - indicators.vwap, indicators.vwap, 0.0)
     trend_strength = _safe_div(
-        abs(indicators.ema_9 - indicators.ema_21), indicators.atr_14, 0.0
+        abs(indicators.ema_9 - indicators.ema_21), indicators.atr_14, 0.0,
     )
 
     features = np.array([
@@ -250,7 +250,7 @@ def extract_features(
         float(indicators.psar_direction),
         _ema_trend_alignment(indicators.ema_9, indicators.ema_21, indicators.ema_50),
         _ichimoku_cloud_position(
-            close_price, indicators.ichimoku_senkou_a, indicators.ichimoku_senkou_b
+            close_price, indicators.ichimoku_senkou_a, indicators.ichimoku_senkou_b,
         ),
         1.0 if indicators.ichimoku_tenkan > indicators.ichimoku_kijun else -1.0,
         _safe_div(close_price - indicators.pivot, indicators.atr_14, 0.0),
@@ -274,8 +274,7 @@ def extract_label(
     side: str,
     atr: float,
 ) -> float:
-    """
-    Compute a continuous label from trade outcome for training.
+    """Compute a continuous label from trade outcome for training.
 
     Returns a value in [-1, 1]:
       - Positive = profitable trade (scaled by ATR)
@@ -290,6 +289,7 @@ def extract_label(
 
     Returns:
         Normalized profit/loss label.
+
     """
     if side == "BUY":
         raw_pnl = exit_price - entry_price

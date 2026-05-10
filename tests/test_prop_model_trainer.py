@@ -1,5 +1,4 @@
-"""
-Property-based tests for the ML Model Trainer using Hypothesis.
+"""Property-based tests for the ML Model Trainer using Hypothesis.
 
 Tests invariants:
 - Predictions always in [0, 1] probability range
@@ -9,27 +8,25 @@ Tests invariants:
 - Training never crashes regardless of feature distributions
 """
 
-import numpy as np
-import pytest
 import tempfile
-import shutil
-from datetime import datetime, timezone
-from hypothesis import given, settings, HealthCheck
+from datetime import UTC, datetime
+
+import numpy as np
+from hypothesis import given, settings
 from hypothesis import strategies as st
 
+from src.ml.feature_engine import NUM_FEATURES
 from src.ml.model_trainer import (
+    ModelMetrics,
     ModelTrainer,
     TrainingSample,
-    ModelMetrics,
 )
-from src.ml.feature_engine import NUM_FEATURES
-
 
 finite_float = st.floats(
-    min_value=-1e4, max_value=1e4, allow_nan=False, allow_infinity=False
+    min_value=-1e4, max_value=1e4, allow_nan=False, allow_infinity=False,
 )
 label_float = st.floats(
-    min_value=-1.0, max_value=1.0, allow_nan=False, allow_infinity=False
+    min_value=-1.0, max_value=1.0, allow_nan=False, allow_infinity=False,
 )
 
 
@@ -37,7 +34,7 @@ label_float = st.floats(
 def feature_vectors(draw):
     """Generate random feature vectors of correct shape."""
     return np.array(
-        [draw(finite_float) for _ in range(NUM_FEATURES)], dtype=np.float64
+        [draw(finite_float) for _ in range(NUM_FEATURES)], dtype=np.float64,
     )
 
 
@@ -50,7 +47,7 @@ def training_samples(draw):
         features=features,
         label=label,
         symbol="TEST",
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
     )
 
 
@@ -71,7 +68,7 @@ def _make_balanced_samples(n: int) -> list:
             label = -0.5
         samples.append(TrainingSample(
             features=features, label=label, symbol="TEST",
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         ))
     return samples
 

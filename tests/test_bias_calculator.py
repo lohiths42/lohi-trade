@@ -1,5 +1,4 @@
-"""
-Unit tests for the BiasCalculator.
+"""Unit tests for the BiasCalculator.
 
 Tests core calculation logic:
 - Exponential time decay weights
@@ -11,20 +10,15 @@ Tests core calculation logic:
 Requirements: 8.1, 8.2, 8.3
 """
 
-import math
 import sqlite3
-from datetime import datetime, timedelta, timezone
-from typing import List, Tuple
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
 from src.commander.bias_calculator import (
     BiasCalculator,
-    BiasResult,
-    DEFAULT_HALF_LIFE_HOURS,
 )
 from src.state.database import DatabaseConnectionManager
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -184,7 +178,7 @@ class TestCalculateBias:
         db = InMemoryDBManager()
         db.connect_sqlite()
         calc = BiasCalculator(db_manager=db)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         result = calc.calculate_bias("RELIANCE", now=now)
 
@@ -196,7 +190,7 @@ class TestCalculateBias:
 
     def test_single_recent_positive_article(self):
         db = InMemoryDBManager()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         _insert_sentiment(db, "TCS", 0.8, now - timedelta(minutes=5))
 
         calc = BiasCalculator(db_manager=db)
@@ -208,7 +202,7 @@ class TestCalculateBias:
 
     def test_single_recent_negative_article(self):
         db = InMemoryDBManager()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         _insert_sentiment(db, "INFY", -0.7, now - timedelta(minutes=10))
 
         calc = BiasCalculator(db_manager=db)
@@ -221,7 +215,7 @@ class TestCalculateBias:
     def test_old_articles_have_less_weight(self):
         """A recent positive article should outweigh an old negative one."""
         db = InMemoryDBManager()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Old negative article (20 hours ago — heavily decayed)
         _insert_sentiment(db, "HDFC", -0.5, now - timedelta(hours=20))
@@ -237,7 +231,7 @@ class TestCalculateBias:
 
     def test_articles_outside_lookback_excluded(self):
         db = InMemoryDBManager()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Article 25 hours ago — outside 24h lookback
         _insert_sentiment(db, "SBIN", 0.9, now - timedelta(hours=25))
@@ -254,7 +248,7 @@ class TestCalculateBias:
     def test_equal_opposing_articles_same_time(self):
         """Two articles at the same time with opposite scores → near zero."""
         db = InMemoryDBManager()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         t = now - timedelta(hours=1)
 
         _insert_sentiment(db, "ITC", 0.5, t)
@@ -269,7 +263,7 @@ class TestCalculateBias:
     def test_ticker_isolation(self):
         """Sentiment for one ticker should not affect another."""
         db = InMemoryDBManager()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         _insert_sentiment(db, "RELIANCE", 0.9, now - timedelta(hours=1))
         _insert_sentiment(db, "TCS", -0.9, now - timedelta(hours=1))
@@ -285,7 +279,7 @@ class TestCalculateBias:
     def test_weighted_average_correctness(self):
         """Verify the weighted average formula manually."""
         db = InMemoryDBManager()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Article at t=0h ago (weight=1.0), score=0.6
         _insert_sentiment(db, "TEST", 0.6, now)
@@ -316,7 +310,7 @@ class TestGetCurrentBias:
         db = InMemoryDBManager()
         db.connect_sqlite()
         calc = BiasCalculator(db_manager=db)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         result = calc.calculate_bias("RELIANCE", now=now)
         cached = calc.get_current_bias("RELIANCE")
@@ -328,7 +322,7 @@ class TestGetCurrentBias:
 
     def test_cache_updates_on_recalculation(self):
         db = InMemoryDBManager()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         calc = BiasCalculator(db_manager=db)
 
@@ -367,7 +361,7 @@ class TestConfidence:
 
     def test_confidence_increases_with_article_count(self):
         db = InMemoryDBManager()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # 1 article
         _insert_sentiment(db, "A", 0.5, now - timedelta(minutes=10))
@@ -385,7 +379,7 @@ class TestConfidence:
 
     def test_confidence_bounded_0_to_1(self):
         db = InMemoryDBManager()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         for i in range(20):
             _insert_sentiment(db, "Z", 0.5, now - timedelta(minutes=i + 1))
 

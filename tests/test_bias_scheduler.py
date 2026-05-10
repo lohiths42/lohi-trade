@@ -1,5 +1,4 @@
-"""
-Tests for BiasScheduler.
+"""Tests for BiasScheduler.
 
 Covers:
 - Scheduler start/stop lifecycle
@@ -11,21 +10,17 @@ Requirements: 8.4, 8.5, 8.6
 """
 
 import sqlite3
-import time
-from datetime import datetime, time as dt_time, timedelta, timezone
-from unittest.mock import MagicMock, call
+from datetime import UTC, datetime
+from unittest.mock import MagicMock
 
 import pytest
 
-from src.commander.bias_calculator import BiasCalculator, BiasResult
+from src.commander.bias_calculator import BiasResult
 from src.commander.bias_scheduler import (
-    BiasScheduler,
     IST_OFFSET,
-    DEFAULT_MARKET_OPEN,
-    DEFAULT_MARKET_CLOSE,
+    BiasScheduler,
 )
 from src.state.database import DatabaseConnectionManager
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -80,13 +75,13 @@ def _make_result(ticker: str = "RELIANCE", bias: str = "BULLISH",
         score=score,
         confidence=confidence,
         article_count=article_count,
-        timestamp=ts or datetime(2025, 1, 15, 5, 0, 0, tzinfo=timezone.utc),
+        timestamp=ts or datetime(2025, 1, 15, 5, 0, 0, tzinfo=UTC),
     )
 
 
 def _utc_for_ist(hour: int, minute: int = 0) -> datetime:
     """Return a UTC datetime whose IST equivalent is hour:minute on a weekday."""
-    ist_dt = datetime(2025, 1, 15, hour, minute, 0, tzinfo=timezone.utc)
+    ist_dt = datetime(2025, 1, 15, hour, minute, 0, tzinfo=UTC)
     return ist_dt - IST_OFFSET
 
 

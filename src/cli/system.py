@@ -5,10 +5,8 @@ from __future__ import annotations
 import os
 import platform
 import shutil
-import socket
 import subprocess
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
@@ -18,8 +16,8 @@ class DependencyCheck:
     name: str
     required_version: str
     installed: bool
-    current_version: Optional[str] = None
-    install_hint: Optional[str] = None
+    current_version: str | None = None
+    install_hint: str | None = None
 
 
 @dataclass
@@ -29,8 +27,8 @@ class PortCheck:
     port: int
     service_name: str
     in_use: bool
-    pid: Optional[int] = None
-    process_name: Optional[str] = None
+    pid: int | None = None
+    process_name: str | None = None
 
 
 def detect_os() -> str:
@@ -84,11 +82,11 @@ def get_install_hint(dep_name: str, os_name: str) -> str:
     return hints.get(dep_name, {}).get(os_name, f"Please install {dep_name} manually")
 
 
-def _run_cmd(cmd: list[str], timeout: int = 10) -> Optional[str]:
+def _run_cmd(cmd: list[str], timeout: int = 10) -> str | None:
     """Run a command and return stdout, or None on failure."""
     try:
         result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=timeout
+            cmd, capture_output=True, text=True, timeout=timeout,
         )
         if result.returncode == 0:
             return result.stdout.strip()
@@ -133,7 +131,7 @@ def check_docker() -> DependencyCheck:
         )
 
     return DependencyCheck(
-        name="Docker", required_version="20.0+", installed=True, current_version=version
+        name="Docker", required_version="20.0+", installed=True, current_version=version,
     )
 
 
@@ -266,7 +264,7 @@ def check_port(port: int, service_name: str) -> PortCheck:
     return PortCheck(port=port, service_name=service_name, in_use=False)
 
 
-def _find_port_process(port: int) -> tuple[Optional[int], Optional[str]]:
+def _find_port_process(port: int) -> tuple[int | None, str | None]:
     """Find the PID and process name LISTENING on a port (not clients)."""
     # Use -sTCP:LISTEN to only find servers, not client connections
     output = _run_cmd(["lsof", "-ti", f":{port}", "-sTCP:LISTEN"])
@@ -291,7 +289,7 @@ def check_required_ports() -> list[PortCheck]:
     return [check_port(port, name) for port, name in ports]
 
 
-def find_project_root() -> Optional[str]:
+def find_project_root() -> str | None:
     """Find the LOHI-TRADE project root by looking for docker-compose.yml + backend-gateway/.
 
     Searches:

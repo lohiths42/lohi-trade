@@ -1,65 +1,62 @@
-"""
-Shoonya (Finvasia) broker adapter implementation.
+"""Shoonya (Finvasia) broker adapter implementation.
 
 This module implements the BrokerInterface for Shoonya broker API,
 providing WebSocket connectivity for live ticks and REST API for order management.
 """
 
-import json
 import hashlib
-import time
+import json
 import threading
+import time
+from collections.abc import Callable
 from datetime import datetime
-from typing import Callable, List, Optional, Dict
+
 import requests
 import websocket
 
 from src.ingestion.broker_interface import (
-    BrokerInterface,
+    AuthenticationError,
     BrokerCredentials,
-    Tick,
+    BrokerInterface,
+    ConnectionError,
     Order,
-    OrderStatus,
+    OrderNotFoundError,
+    OrderRejectionError,
     OrderSide,
+    OrderStatus,
     OrderType,
     ProductType,
-    ConnectionError,
-    AuthenticationError,
-    OrderRejectionError,
-    OrderNotFoundError,
+    Tick,
 )
 from src.utils.logger import get_logger
-
 
 logger = get_logger("ShoonyaBroker")
 
 
 class ShoonyaBroker(BrokerInterface):
-    """
-    Shoonya (Finvasia) broker adapter.
+    """Shoonya (Finvasia) broker adapter.
     
     Implements WebSocket connection for live ticks and REST API for order placement.
     """
-    
+
     # API endpoints
     BASE_URL = "https://api.shoonya.com/NorenWClientTP"
     WS_URL = "wss://api.shoonya.com/NorenWSTP/"
-    
+
     def __init__(self):
         """Initialize Shoonya broker adapter."""
-        self._session_token: Optional[str] = None
-        self._user_id: Optional[str] = None
-        self._ws: Optional[websocket.WebSocketApp] = None
-        self._ws_thread: Optional[threading.Thread] = None
+        self._session_token: str | None = None
+        self._user_id: str | None = None
+        self._ws: websocket.WebSocketApp | None = None
+        self._ws_thread: threading.Thread | None = None
         self._connected = False
-        self._subscribed_symbols: Dict[str, int] = {}  # symbol -> token mapping
-        self._tick_callback: Optional[Callable[[Tick], None]] = None
+        self._subscribed_symbols: dict[str, int] = {}  # symbol -> token mapping
+        self._tick_callback: Callable[[Tick], None] | None = None
         self._reconnect_attempts = 0
         self._max_reconnect_attempts = 5
-    
+
     def connect(self, credentials: BrokerCredentials) -> bool:
-        """
-        Connect to Shoonya API and authenticate.
+        """Connect to Shoonya API and authenticate.
         
         Args:
             credentials: Shoonya authentication credentials
@@ -70,13 +67,14 @@ class ShoonyaBroker(BrokerInterface):
         Raises:
             ConnectionError: If connection fails
             AuthenticationError: If authentication fails
+
         """
         try:
             logger.info("Connecting to Shoonya API...")
-            
+
             # Generate password hash
             pwd_hash = hashlib.sha256(credentials.password.encode()).hexdigest()
-            
+
             # Login request
             login_data = {
                 "source": "API",
@@ -86,75 +84,75 @@ class ShoonyaBroker(BrokerInterface):
                 "factor2": credentials.totp_secret or "",
                 "vc": credentials.client_id,
                 "appkey": hashlib.sha256(
-                    f"{credentials.client_id}|{credentials.api_key}".encode()
+                    f"{credentials.client_id}|{credentials.api_key}".encode(),
                 ).hexdigest(),
                 "imei": "abc1234",
             }
-            
+
             response = requests.post(
                 f"{self.BASE_URL}/QuickAuth",
                 data=f"jData={json.dumps(login_data)}",
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
                 timeout=10,
             )
-            
+
             if response.status_code != 200:
                 raise ConnectionError(f"Login request failed: {response.status_code}")
-            
+
             result = response.json()
-            
+
             if result.get("stat") != "Ok":
                 error_msg = result.get("emsg", "Unknown error")
                 raise AuthenticationError(f"Login failed: {error_msg}")
-            
+
             self._session_token = result.get("susertoken")
             self._user_id = credentials.client_id
             self._connected = True
-            
+
             logger.info(f"Successfully connected to Shoonya API (User: {self._user_id})")
-            
+
             # Initialize WebSocket connection
             self._init_websocket()
-            
+
             return True
-            
+
         except AuthenticationError:
             # Re-raise authentication errors as-is
             raise
         except requests.exceptions.RequestException as e:
-            raise ConnectionError(f"Network error during login: {str(e)}")
+            raise ConnectionError(f"Network error during login: {e!s}")
         except Exception as e:
-            raise ConnectionError(f"Unexpected error during login: {str(e)}")
-    
+            raise ConnectionError(f"Unexpected error during login: {e!s}")
+
     def disconnect(self) -> None:
         """Disconnect from Shoonya API and clean up resources."""
         logger.info("Disconnecting from Shoonya API...")
-        
+
         # Close WebSocket
         if self._ws:
             self._ws.close()
             self._ws = None
-        
+
         # Wait for WebSocket thread to finish
         if self._ws_thread and self._ws_thread.is_alive():
             self._ws_thread.join(timeout=5)
-        
+
         self._connected = False
         self._session_token = None
         self._user_id = None
         self._subscribed_symbols.clear()
-        
+
         logger.info("Disconnected from Shoonya API")
-    
+
     def is_connected(self) -> bool:
         """Check if broker connection is active."""
         return self._connected and self._session_token is not None
-    
+
     def _init_websocket(self) -> None:
         """Initialize WebSocket connection for live ticks."""
         if not self.is_connected():
             raise ConnectionError("Not connected to broker API")
-        
+
         def on_open(ws):
             logger.info("WebSocket connection opened")
             # Send connection message
@@ -166,21 +164,21 @@ class ShoonyaBroker(BrokerInterface):
                 "source": "API",
             }
             ws.send(json.dumps(connect_msg))
-        
+
         def on_message(ws, message):
             try:
                 data = json.loads(message)
                 self._handle_ws_message(data)
             except Exception as e:
                 logger.error(f"Error processing WebSocket message: {e}")
-        
+
         def on_error(ws, error):
             logger.error(f"WebSocket error: {error}")
-        
+
         def on_close(ws, close_status_code, close_msg):
             logger.warning(f"WebSocket closed: {close_status_code} - {close_msg}")
             self._handle_ws_disconnect()
-        
+
         self._ws = websocket.WebSocketApp(
             self.WS_URL,
             on_open=on_open,
@@ -188,50 +186,50 @@ class ShoonyaBroker(BrokerInterface):
             on_error=on_error,
             on_close=on_close,
         )
-        
+
         # Start WebSocket in separate thread
         self._ws_thread = threading.Thread(target=self._ws.run_forever, daemon=True)
         self._ws_thread.start()
-        
+
         # Wait for connection to establish
         time.sleep(2)
-    
+
     def _handle_ws_message(self, data: dict) -> None:
-        """
-        Handle incoming WebSocket messages.
+        """Handle incoming WebSocket messages.
         
         Args:
             data: Parsed JSON message from WebSocket
+
         """
         msg_type = data.get("t")
-        
+
         if msg_type == "ck":
             # Connection acknowledgment
             logger.info("WebSocket connection acknowledged")
-        
+
         elif msg_type == "tk" or msg_type == "tf":
             # Tick data (tk = touchline, tf = full)
             if self._tick_callback:
                 tick = self._parse_tick(data)
                 if tick:
                     self._tick_callback(tick)
-        
+
         elif msg_type == "dk":
             # Depth data (not used currently)
             pass
-        
+
         else:
             logger.debug(f"Unhandled WebSocket message type: {msg_type}")
-    
-    def _parse_tick(self, data: dict) -> Optional[Tick]:
-        """
-        Parse tick data from WebSocket message.
+
+    def _parse_tick(self, data: dict) -> Tick | None:
+        """Parse tick data from WebSocket message.
         
         Args:
             data: WebSocket message data
             
         Returns:
             Tick object or None if parsing fails
+
         """
         try:
             # Find symbol from token
@@ -241,10 +239,10 @@ class ShoonyaBroker(BrokerInterface):
                 if tok == token:
                     symbol = sym
                     break
-            
+
             if not symbol:
                 return None
-            
+
             return Tick(
                 symbol=symbol,
                 token=token,
@@ -262,7 +260,7 @@ class ShoonyaBroker(BrokerInterface):
         except Exception as e:
             logger.error(f"Error parsing tick data: {e}")
             return None
-    
+
     def _handle_ws_disconnect(self) -> None:
         """Handle WebSocket disconnection and attempt reconnection."""
         if self._reconnect_attempts < self._max_reconnect_attempts:
@@ -270,7 +268,7 @@ class ShoonyaBroker(BrokerInterface):
             backoff = min(2 ** self._reconnect_attempts, 30)  # Exponential backoff, max 30s
             logger.info(f"Attempting WebSocket reconnection in {backoff}s (attempt {self._reconnect_attempts})")
             time.sleep(backoff)
-            
+
             try:
                 self._init_websocket()
                 # Resubscribe to symbols
@@ -283,10 +281,9 @@ class ShoonyaBroker(BrokerInterface):
         else:
             logger.error("Max WebSocket reconnection attempts reached")
             self._connected = False
-    
-    def subscribe(self, symbols: List[str], on_tick: Callable[[Tick], None]) -> bool:
-        """
-        Subscribe to real-time tick data for given symbols.
+
+    def subscribe(self, symbols: list[str], on_tick: Callable[[Tick], None]) -> bool:
+        """Subscribe to real-time tick data for given symbols.
         
         Args:
             symbols: List of trading symbols to subscribe to
@@ -297,28 +294,29 @@ class ShoonyaBroker(BrokerInterface):
             
         Raises:
             ConnectionError: If not connected to broker
+
         """
         if not self.is_connected():
             raise ConnectionError("Not connected to broker API")
-        
+
         if not self._ws:
             raise ConnectionError("WebSocket not initialized")
-        
+
         self._tick_callback = on_tick
-        
+
         # Get instrument master to map symbols to tokens
         instruments = self.get_instrument_master()
         symbol_token_map = {inst["symbol"]: inst["token"] for inst in instruments}
-        
+
         # Subscribe to each symbol
         for symbol in symbols:
             token = symbol_token_map.get(symbol)
             if not token:
                 logger.warning(f"Symbol {symbol} not found in instrument master")
                 continue
-            
+
             self._subscribed_symbols[symbol] = token
-            
+
             # Send subscription message
             sub_msg = {
                 "t": "t",  # Subscribe to touchline
@@ -326,22 +324,22 @@ class ShoonyaBroker(BrokerInterface):
             }
             self._ws.send(json.dumps(sub_msg))
             logger.info(f"Subscribed to {symbol} (token: {token})")
-        
+
         return True
-    
-    def unsubscribe(self, symbols: List[str]) -> bool:
-        """
-        Unsubscribe from real-time tick data for given symbols.
+
+    def unsubscribe(self, symbols: list[str]) -> bool:
+        """Unsubscribe from real-time tick data for given symbols.
         
         Args:
             symbols: List of trading symbols to unsubscribe from
             
         Returns:
             True if unsubscription successful
+
         """
         if not self._ws:
             return False
-        
+
         for symbol in symbols:
             token = self._subscribed_symbols.get(symbol)
             if token:
@@ -353,12 +351,11 @@ class ShoonyaBroker(BrokerInterface):
                 self._ws.send(json.dumps(unsub_msg))
                 del self._subscribed_symbols[symbol]
                 logger.info(f"Unsubscribed from {symbol}")
-        
+
         return True
-    
+
     def place_order(self, order: Order) -> str:
-        """
-        Place an order with Shoonya broker.
+        """Place an order with Shoonya broker.
         
         Args:
             order: Order object with all required details
@@ -369,10 +366,11 @@ class ShoonyaBroker(BrokerInterface):
         Raises:
             OrderRejectionError: If broker rejects the order
             ConnectionError: If not connected to broker
+
         """
         if not self.is_connected():
             raise ConnectionError("Not connected to broker API")
-        
+
         try:
             # Prepare order data
             order_data = {
@@ -388,34 +386,33 @@ class ShoonyaBroker(BrokerInterface):
                 "prctyp": order.order_type.value,
                 "ret": "DAY",
             }
-            
+
             response = requests.post(
                 f"{self.BASE_URL}/PlaceOrder",
                 data=f"jData={json.dumps(order_data)}&jKey={self._session_token}",
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
                 timeout=10,
             )
-            
+
             if response.status_code != 200:
                 raise OrderRejectionError(f"Order placement failed: {response.status_code}")
-            
+
             result = response.json()
-            
+
             if result.get("stat") != "Ok":
                 error_msg = result.get("emsg", "Unknown error")
                 raise OrderRejectionError(f"Order rejected: {error_msg}")
-            
+
             broker_order_id = result.get("norenordno")
             logger.info(f"Order placed successfully: {broker_order_id}")
-            
+
             return broker_order_id
-            
+
         except requests.exceptions.RequestException as e:
-            raise ConnectionError(f"Network error during order placement: {str(e)}")
-    
+            raise ConnectionError(f"Network error during order placement: {e!s}")
+
     def cancel_order(self, broker_order_id: str) -> bool:
-        """
-        Cancel a pending order.
+        """Cancel a pending order.
         
         Args:
             broker_order_id: Broker's order ID to cancel
@@ -425,44 +422,44 @@ class ShoonyaBroker(BrokerInterface):
             
         Raises:
             OrderNotFoundError: If order ID not found
+
         """
         if not self.is_connected():
             raise ConnectionError("Not connected to broker API")
-        
+
         try:
             cancel_data = {
                 "uid": self._user_id,
                 "norenordno": broker_order_id,
             }
-            
+
             response = requests.post(
                 f"{self.BASE_URL}/CancelOrder",
                 data=f"jData={json.dumps(cancel_data)}&jKey={self._session_token}",
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
                 timeout=10,
             )
-            
+
             if response.status_code != 200:
                 return False
-            
+
             result = response.json()
-            
+
             if result.get("stat") != "Ok":
                 error_msg = result.get("emsg", "Unknown error")
                 if "not found" in error_msg.lower():
                     raise OrderNotFoundError(f"Order not found: {broker_order_id}")
                 return False
-            
+
             logger.info(f"Order cancelled successfully: {broker_order_id}")
             return True
-            
+
         except requests.exceptions.RequestException as e:
             logger.error(f"Network error during order cancellation: {e}")
             return False
-    
+
     def get_order_status(self, broker_order_id: str) -> Order:
-        """
-        Get current status of an order.
+        """Get current status of an order.
         
         Args:
             broker_order_id: Broker's order ID to query
@@ -472,31 +469,32 @@ class ShoonyaBroker(BrokerInterface):
             
         Raises:
             OrderNotFoundError: If order ID not found
+
         """
         if not self.is_connected():
             raise ConnectionError("Not connected to broker API")
-        
+
         try:
             order_data = {
                 "uid": self._user_id,
                 "norenordno": broker_order_id,
             }
-            
+
             response = requests.post(
                 f"{self.BASE_URL}/SingleOrdHist",
                 data=f"jData={json.dumps(order_data)}&jKey={self._session_token}",
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
                 timeout=10,
             )
-            
+
             if response.status_code != 200:
                 raise OrderNotFoundError(f"Order not found: {broker_order_id}")
-            
+
             result = response.json()
-            
+
             if result.get("stat") != "Ok":
                 raise OrderNotFoundError(f"Order not found: {broker_order_id}")
-            
+
             # Parse order status
             order_info = result
             status_map = {
@@ -506,9 +504,9 @@ class ShoonyaBroker(BrokerInterface):
                 "REJECTED": OrderStatus.REJECTED,
                 "CANCELED": OrderStatus.CANCELLED,
             }
-            
+
             status = status_map.get(order_info.get("status", "PENDING"), OrderStatus.PENDING)
-            
+
             return Order(
                 order_id="",  # Internal ID not available from broker
                 symbol=order_info.get("tsym", ""),
@@ -523,38 +521,38 @@ class ShoonyaBroker(BrokerInterface):
                 timestamp=datetime.now(),
                 rejection_reason=order_info.get("rejreason"),
             )
-            
+
         except requests.exceptions.RequestException as e:
-            raise ConnectionError(f"Network error during order status query: {str(e)}")
-    
-    def get_positions(self) -> List[dict]:
-        """
-        Get all open positions.
+            raise ConnectionError(f"Network error during order status query: {e!s}")
+
+    def get_positions(self) -> list[dict]:
+        """Get all open positions.
         
         Returns:
             List of position dictionaries
+
         """
         if not self.is_connected():
             raise ConnectionError("Not connected to broker API")
-        
+
         try:
             pos_data = {
                 "uid": self._user_id,
                 "actid": self._user_id,
             }
-            
+
             response = requests.post(
                 f"{self.BASE_URL}/PositionBook",
                 data=f"jData={json.dumps(pos_data)}&jKey={self._session_token}",
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
                 timeout=10,
             )
-            
+
             if response.status_code != 200:
                 return []
-            
+
             result = response.json()
-            
+
             # Handle both dict and list responses
             if isinstance(result, dict):
                 if result.get("stat") != "Ok":
@@ -565,7 +563,7 @@ class ShoonyaBroker(BrokerInterface):
             else:
                 # It's already a list
                 positions_data = result
-            
+
             # Parse positions
             positions = []
             if isinstance(positions_data, list):
@@ -577,47 +575,47 @@ class ShoonyaBroker(BrokerInterface):
                         "ltp": float(pos.get("lp", 0)),
                         "pnl": float(pos.get("rpnl", 0)),
                     })
-            
+
             return positions
-            
+
         except requests.exceptions.RequestException as e:
             logger.error(f"Network error during positions query: {e}")
             return []
-    
-    def get_instrument_master(self) -> List[dict]:
-        """
-        Download instrument master with symbol tokens and trading details.
+
+    def get_instrument_master(self) -> list[dict]:
+        """Download instrument master with symbol tokens and trading details.
         
         Returns:
             List of instrument dictionaries with symbol, token, exchange, lot_size, tick_size, trading_symbol
             
         Requirements: 23.1, 23.2
+
         """
         logger.info("Fetching instrument master from Shoonya...")
-        
+
         try:
             # Shoonya provides instrument master as downloadable CSV files
             # Download NSE instruments
             url = "https://api.shoonya.com/NSE_symbols.txt.zip"
-            
+
+            import csv
             import io
             import zipfile
-            import csv
-            
+
             response = requests.get(url, timeout=30)
             if response.status_code != 200:
                 logger.error(f"Failed to download instrument master: {response.status_code}")
                 return []
-            
+
             # Extract CSV from zip
             with zipfile.ZipFile(io.BytesIO(response.content)) as z:
                 # Get the first file in the zip
                 filename = z.namelist()[0]
                 with z.open(filename) as f:
                     # Read CSV
-                    content = f.read().decode('utf-8')
+                    content = f.read().decode("utf-8")
                     reader = csv.DictReader(io.StringIO(content))
-                    
+
                     instruments = []
                     for row in reader:
                         # Parse instrument data
@@ -635,10 +633,10 @@ class ShoonyaBroker(BrokerInterface):
                         except (ValueError, KeyError) as e:
                             logger.debug(f"Skipping invalid instrument row: {e}")
                             continue
-                    
+
                     logger.info(f"Downloaded {len(instruments)} instruments from Shoonya")
                     return instruments
-                    
+
         except Exception as e:
             logger.error(f"Error downloading instrument master: {e}", exc_info=True)
             # Return empty list on error

@@ -1,5 +1,4 @@
-"""
-Tests for market data wiring module.
+"""Tests for market data wiring module.
 
 Verifies task 28.2:
 - MarketDataCollector ticks are forwarded to unified stream:ticks
@@ -9,31 +8,26 @@ Verifies task 28.2:
 Requirements: 25.4, 27.3
 """
 
-import json
-from datetime import datetime, timezone, timedelta
-from unittest.mock import MagicMock, call
+from datetime import datetime
+from unittest.mock import MagicMock
 
 import pytest
 
+from src.ingestion.corporate_actions_collector import (
+    CorporateAction,
+    CorporateActionsCollector,
+    CorporateActionType,
+)
 from src.ingestion.market_data_collector import (
+    IST,
     MarketDataCollector,
     TickData,
-    MarketSession,
-    IST,
-)
-from src.ingestion.corporate_actions_collector import (
-    CorporateActionsCollector,
-    CorporateAction,
-    CorporateActionType,
-    ExchangeAnnouncement,
-    AnnouncementType,
 )
 from src.ingestion.market_data_wiring import (
-    MarketDataWiring,
     UNIFIED_TICK_STREAM,
     UNIFIED_TICK_STREAM_MAXLEN,
+    MarketDataWiring,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -396,7 +390,7 @@ class TestEndToEndCorporateActionWiring:
             details={"amount": 10.0},
         )
 
-        from unittest.mock import patch, AsyncMock
+        from unittest.mock import AsyncMock, patch
 
         with patch.object(cac, "_fetch_from_nse", new_callable=AsyncMock, return_value=[action]):
             with patch.object(cac, "_fetch_from_bse", new_callable=AsyncMock, return_value=[]):
@@ -414,8 +408,7 @@ class TestEndToEndCorporateActionWiring:
 
 class TestSeamlessConsumption:
     def test_unified_stream_message_format_compatible_with_existing_pipeline(self):
-        """
-        Messages on unified stream:ticks have the same format as the
+        """Messages on unified stream:ticks have the same format as the
         existing websocket_client publishes, ensuring Soldier/Commander/
         RMS/OMS consume them seamlessly.
         """

@@ -61,7 +61,8 @@ Satisfies
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, Final, Mapping
+from collections.abc import Awaitable, Callable, Mapping
+from typing import TYPE_CHECKING, Any, Final
 from uuid import UUID
 
 from src.research.constants import RESEARCH_PARTIALS_STREAM
@@ -161,7 +162,7 @@ PartialsPublisher = Callable[[str, Mapping[str, Any]], Awaitable[Any]]
 
 def format_agent_partial(
     run_id: UUID,
-    result: "AgentResult",
+    result: AgentResult,
 ) -> dict[str, str]:
     """Serialise an :class:`AgentResult` into a ``research:partials`` entry.
 
@@ -189,6 +190,7 @@ def format_agent_partial(
     dict[str, str]
         ``{run_id, event, payload}`` with ``event`` pinned to
         :data:`EVENT_AGENT_DONE`.
+
     """
     return {
         "run_id": str(run_id),
@@ -215,6 +217,7 @@ def format_done(run_id: UUID, *, quality: str) -> dict[str, str]:
     dict[str, str]
         ``{run_id, event, quality}`` with ``event`` pinned to
         :data:`EVENT_DONE`.
+
     """
     return {
         "run_id": str(run_id),
@@ -282,11 +285,12 @@ class RedisPartialsPublisher:
     Or as a plain callable::
 
         await publisher(RESEARCH_PARTIALS_STREAM, {"run_id": "...", ...})
+
     """
 
     def __init__(
         self,
-        redis_client: "Redis | Any",
+        redis_client: Redis | Any,
         *,
         stream: str = RESEARCH_PARTIALS_STREAM,
         maxlen: int | None = None,
@@ -354,6 +358,7 @@ class NoopPartialsPublisher:
     >>> orchestrator = ResearchOrchestrator(..., partials_publisher=publisher)
     >>> # ... run ...
     >>> assert any(c.fields.get("event") == "done" for c in publisher.calls)
+
     """
 
     def __init__(self) -> None:
@@ -384,7 +389,7 @@ class _RecordedCall:
     buys us nothing here.
     """
 
-    __slots__ = ("stream", "fields")
+    __slots__ = ("fields", "stream")
 
     def __init__(self, *, stream: str, fields: dict[str, Any]) -> None:
         self.stream = stream
@@ -400,7 +405,7 @@ class _RecordedCall:
 
 
 def make_redis_partials_publisher(
-    redis_client: "Redis | Any",
+    redis_client: Redis | Any,
     *,
     stream: str = RESEARCH_PARTIALS_STREAM,
     maxlen: int | None = None,

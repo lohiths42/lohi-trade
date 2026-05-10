@@ -41,7 +41,7 @@ class _RaisingLLM(FakeLLMProvider):
 
 
 def _build_hit(
-    *, chunk_id: str, user_id: UUID, symbol: str, text: str
+    *, chunk_id: str, user_id: UUID, symbol: str, text: str,
 ) -> ChunkHit:
     return ChunkHit(
         chunk=ChunkRecord(
@@ -130,8 +130,8 @@ class TestHappyPath:
 
         result = await agent.invoke(
             _build_context(
-                user_id=user_id, symbol="RELIANCE", retriever=retriever
-            )
+                user_id=user_id, symbol="RELIANCE", retriever=retriever,
+            ),
         )
         assert result.kind == "ok"
         assert result.section_name == "macro_context"
@@ -154,14 +154,14 @@ class TestRetrievalShape:
                     user_id=user_id,
                     symbol="RELIANCE",
                     text="t",
-                )
-            ]
+                ),
+            ],
         )
         agent = MacroAgent(llm=FakeLLMProvider())
         await agent.invoke(
             _build_context(
-                user_id=user_id, symbol="RELIANCE", retriever=retriever
-            )
+                user_id=user_id, symbol="RELIANCE", retriever=retriever,
+            ),
         )
         filter_used: RetrievalFilter = retriever.calls[0]["filter"]
         assert filter_used.document_type is None
@@ -176,8 +176,8 @@ class TestRetrievalShape:
                     user_id=user_id,
                     symbol="RELIANCE",
                     text="t",
-                )
-            ]
+                ),
+            ],
         )
         agent = MacroAgent(llm=FakeLLMProvider())
         await agent.invoke(
@@ -186,7 +186,7 @@ class TestRetrievalShape:
                 symbol="RELIANCE",
                 retriever=retriever,
                 user_prompt="Macro outlook?",
-            )
+            ),
         )
         query = retriever.calls[0]["query"]
         assert "Macro outlook?" in query
@@ -203,8 +203,8 @@ class TestRetrievalShape:
                     user_id=user_id,
                     symbol="RELIANCE",
                     text="t",
-                )
-            ]
+                ),
+            ],
         )
         agent = MacroAgent(llm=FakeLLMProvider())
         await agent.invoke(
@@ -213,7 +213,7 @@ class TestRetrievalShape:
                 symbol="RELIANCE",
                 retriever=retriever,
                 retrieval_plan={"macro": "crude price trajectory"},
-            )
+            ),
         )
         assert retriever.calls[0]["query"] == "crude price trajectory"
 
@@ -231,8 +231,8 @@ class TestFailureModes:
         agent = MacroAgent(llm=FakeLLMProvider())
         result = await agent.invoke(
             _build_context(
-                user_id=user_id, symbol="RELIANCE", retriever=retriever
-            )
+                user_id=user_id, symbol="RELIANCE", retriever=retriever,
+            ),
         )
         assert result.kind == "no_data"
         assert "no macro chunks" in result.reason
@@ -243,7 +243,7 @@ class TestFailureModes:
         retriever = _RecordingRetriever(canned=[])
         agent = MacroAgent(llm=FakeLLMProvider())
         result = await agent.invoke(
-            _build_context(user_id=user_id, symbol=None, retriever=retriever)
+            _build_context(user_id=user_id, symbol=None, retriever=retriever),
         )
         assert result.kind == "no_data"
 
@@ -257,13 +257,13 @@ class TestFailureModes:
                     user_id=user_id,
                     symbol="RELIANCE",
                     text="t",
-                )
-            ]
+                ),
+            ],
         )
         agent = MacroAgent(llm=_RaisingLLM())
         with pytest.raises(RuntimeError, match="macro llm exploded"):
             await agent.invoke(
                 _build_context(
-                    user_id=user_id, symbol="RELIANCE", retriever=retriever
-                )
+                    user_id=user_id, symbol="RELIANCE", retriever=retriever,
+                ),
             )

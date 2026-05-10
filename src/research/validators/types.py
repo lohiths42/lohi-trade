@@ -83,6 +83,7 @@ class UnsupportedClaim(BaseModel):
         ``"citation_mismatch"`` / ``"no_citation"`` by the citation
         validator (Task 11.2); ``"contradiction"`` and
         ``"off_policy"`` by the Judge_LLM (Task 12.1).
+
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -118,5 +119,5 @@ class UnsupportedClaim(BaseModel):
             raise ValueError(
                 "UnsupportedClaim.end_offset must be strictly greater than "
                 f"start_offset (got start={self.start_offset}, "
-                f"end={self.end_offset})"
+                f"end={self.end_offset})",
             )

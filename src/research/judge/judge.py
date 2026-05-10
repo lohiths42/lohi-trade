@@ -55,7 +55,8 @@ from __future__ import annotations
 import json
 import os
 import time
-from typing import Any, Iterable, Mapping, Protocol, runtime_checkable
+from collections.abc import Iterable, Mapping
+from typing import Any, Protocol, runtime_checkable
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
@@ -194,6 +195,7 @@ class JudgeReport(BaseModel):
         ``provider/model`` string identifying the Judge's LLM for
         the provenance row. Defaults to ``""`` for the same reason
         as ``elapsed_ms``.
+
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -261,7 +263,7 @@ class JudgeReport(BaseModel):
 async def invoke(
     *,
     run_id: UUID,
-    brief: "Mapping[str, str] | object",
+    brief: Mapping[str, str] | object,
     chunks: Iterable[_ChunkLike],
     numeric_findings: Iterable[UnsupportedClaim] = (),
     llm_config: Mapping[str, Any] | None = None,
@@ -350,12 +352,13 @@ async def invoke(
     ValueError
         When neither ``llm`` nor ``llm_config`` is supplied — there
         is no way to build the Judge from an empty contract.
+
     """
     if llm is None and llm_config is None:
         raise ValueError(
             "judge.invoke() requires either an LLMProvider instance "
             "(`llm=`) or an LLM config block (`llm_config=`); both "
-            "were None."
+            "were None.",
         )
 
     # --------------------------------------------------------------- #
@@ -488,7 +491,7 @@ async def invoke(
 
 def _render_judge_prompt(
     *,
-    brief: "Mapping[str, str] | object",
+    brief: Mapping[str, str] | object,
     chunks: Iterable[_ChunkLike],
     numeric_findings: Iterable[UnsupportedClaim],
     min_score: float,
@@ -558,7 +561,7 @@ def _format_chunks(chunks: Iterable[_ChunkLike]) -> str:
 
 def _pack_user_prompt(
     *,
-    brief: "Mapping[str, str] | object",
+    brief: Mapping[str, str] | object,
     numeric_findings: Iterable[UnsupportedClaim],
     min_score: float,
     user_prompt: str,
@@ -602,7 +605,7 @@ def _format_brief_sections(sections: Mapping[str, str]) -> str:
 
 
 def _coerce_brief_sections(
-    brief: "Mapping[str, str] | object",
+    brief: Mapping[str, str] | object,
 ) -> dict[str, str]:
     """Normalise accepted brief inputs into ``{section_name: content}``.
 
@@ -754,7 +757,7 @@ def _report_from_parsed(
     raw_scores = parsed.get("groundedness_score") or {}
     if not isinstance(raw_scores, Mapping):
         raise TypeError(
-            f"groundedness_score must be an object, got {type(raw_scores).__name__}"
+            f"groundedness_score must be an object, got {type(raw_scores).__name__}",
         )
     scores: dict[str, float] = {
         str(section): float(value) for section, value in raw_scores.items()
@@ -766,7 +769,7 @@ def _report_from_parsed(
     raw_claims = parsed.get("unsupported_claims") or []
     if not isinstance(raw_claims, list):
         raise TypeError(
-            f"unsupported_claims must be a list, got {type(raw_claims).__name__}"
+            f"unsupported_claims must be a list, got {type(raw_claims).__name__}",
         )
     judge_claims = [UnsupportedClaim.model_validate(item) for item in raw_claims]
 
@@ -790,13 +793,13 @@ def _report_from_parsed(
     raw_pairs = parsed.get("contradiction_pairs") or []
     if not isinstance(raw_pairs, list):
         raise TypeError(
-            f"contradiction_pairs must be a list, got {type(raw_pairs).__name__}"
+            f"contradiction_pairs must be a list, got {type(raw_pairs).__name__}",
         )
     contradiction_pairs: list[tuple[str, str]] = []
     for pair in raw_pairs:
         if not isinstance(pair, (list, tuple)) or len(pair) != 2:
             raise ValueError(
-                f"Each contradiction_pair must be a 2-element list/tuple; got {pair!r}"
+                f"Each contradiction_pair must be a 2-element list/tuple; got {pair!r}",
             )
         contradiction_pairs.append((str(pair[0]), str(pair[1])))
 
@@ -804,7 +807,7 @@ def _report_from_parsed(
     raw_findings = parsed.get("off_policy_findings") or []
     if not isinstance(raw_findings, list):
         raise TypeError(
-            f"off_policy_findings must be a list, got {type(raw_findings).__name__}"
+            f"off_policy_findings must be a list, got {type(raw_findings).__name__}",
         )
     off_policy = [str(f) for f in raw_findings]
 
@@ -879,7 +882,7 @@ def _fallback_report(
                 start_offset=0,
                 end_offset=max(len(reason or "judge_invocation_failed"), 1),
                 reason="off_policy",
-            )
+            ),
         ],
         safe_to_display=False,
         contradiction_pairs=[],

@@ -1,5 +1,4 @@
-"""
-Property-based tests for Bias Classification Thresholds.
+"""Property-based tests for Bias Classification Thresholds.
 
 Verifies that the BiasCalculator classifies aggregated bias as
 BULLISH (score > 0.2), BEARISH (score < -0.2), or NEUTRAL
@@ -20,7 +19,6 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from src.commander.bias_calculator import BiasCalculator
-
 
 VALID_BIASES = {"BULLISH", "BEARISH", "NEUTRAL"}
 
@@ -46,16 +44,14 @@ _any_score = st.floats(
 
 
 class TestBiasClassificationProperties:
-    """
-    **Property 26: Bias Classification Thresholds**
+    """**Property 26: Bias Classification Thresholds**
     **Validates: Requirements 8.3**
     """
 
     @given(score=_bullish_score)
     @settings(max_examples=25)
     def test_score_above_threshold_is_bullish(self, score):
-        """
-        Any score > 0.2 is classified as BULLISH.
+        """Any score > 0.2 is classified as BULLISH.
 
         **Validates: Requirements 8.3**
         """
@@ -68,8 +64,7 @@ class TestBiasClassificationProperties:
     @given(score=_bearish_score)
     @settings(max_examples=25)
     def test_score_below_threshold_is_bearish(self, score):
-        """
-        Any score < -0.2 is classified as BEARISH.
+        """Any score < -0.2 is classified as BEARISH.
 
         **Validates: Requirements 8.3**
         """
@@ -82,8 +77,7 @@ class TestBiasClassificationProperties:
     @given(score=_neutral_score)
     @settings(max_examples=25)
     def test_score_in_neutral_range_is_neutral(self, score):
-        """
-        Any score in [-0.2, 0.2] is classified as NEUTRAL.
+        """Any score in [-0.2, 0.2] is classified as NEUTRAL.
 
         **Validates: Requirements 8.3**
         """
@@ -96,8 +90,7 @@ class TestBiasClassificationProperties:
     @given(score=_any_score)
     @settings(max_examples=25)
     def test_classification_is_exhaustive(self, score):
-        """
-        Every score in [-1.0, 1.0] maps to exactly one of BULLISH,
+        """Every score in [-1.0, 1.0] maps to exactly one of BULLISH,
         BEARISH, or NEUTRAL.
 
         **Validates: Requirements 8.3**
@@ -109,8 +102,7 @@ class TestBiasClassificationProperties:
         )
 
     def test_boundary_upper_is_neutral(self):
-        """
-        Boundary: score == 0.2 is classified as NEUTRAL.
+        """Boundary: score == 0.2 is classified as NEUTRAL.
 
         **Validates: Requirements 8.3**
         """
@@ -120,8 +112,7 @@ class TestBiasClassificationProperties:
         )
 
     def test_boundary_lower_is_neutral(self):
-        """
-        Boundary: score == -0.2 is classified as NEUTRAL.
+        """Boundary: score == -0.2 is classified as NEUTRAL.
 
         **Validates: Requirements 8.3**
         """

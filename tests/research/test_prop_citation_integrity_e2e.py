@@ -71,7 +71,6 @@ from src.research.validators.citation_validator import validate_citations
 from src.research.validators.types import UnsupportedClaim
 from tests.research.fakes import FakeVectorStore
 
-
 # --------------------------------------------------------------------------- #
 # Fixed universes                                                             #
 # --------------------------------------------------------------------------- #
@@ -261,7 +260,7 @@ def _citation_mix(
         user_id = _OTHER_USER_ID if axis in ("user", "both") else _RUN_USER_ID
         symbol = _OTHER_SYMBOL if axis in ("symbol", "both") else _RUN_SYMBOL
         cross_chunks.append(
-            _build_chunk(chunk_id=candidate, user_id=user_id, symbol=symbol)
+            _build_chunk(chunk_id=candidate, user_id=user_id, symbol=symbol),
         )
         cross_ids.append(candidate)
 
@@ -277,7 +276,7 @@ def _citation_mix(
                 st.sampled_from(real_ids),
                 min_size=k_real,
                 max_size=k_real,
-            )
+            ),
         )
         if k_real > 0
         else []
@@ -438,7 +437,7 @@ def test_all_real_citations_produce_no_violations() -> None:
     async def _body() -> None:
         store = FakeVectorStore()
         await store.upsert(
-            [_build_chunk(chunk_id=f"real-{i}") for i in range(5)]
+            [_build_chunk(chunk_id=f"real-{i}") for i in range(5)],
         )
         brief = [_FakeCitation(chunk_id=f"real-{i}") for i in range(5)]
         violations = await validate_citations(
@@ -499,7 +498,7 @@ def test_cross_user_real_chunk_is_flagged() -> None:
         # The run's filter pins ``_RUN_USER_ID`` so the id must not
         # resolve even though it physically exists in the store.
         await store.upsert(
-            [_build_chunk(chunk_id="shared-id", user_id=_OTHER_USER_ID)]
+            [_build_chunk(chunk_id="shared-id", user_id=_OTHER_USER_ID)],
         )
         violations = await validate_citations(
             vector_store=store,
@@ -525,7 +524,7 @@ def test_cross_symbol_real_chunk_is_flagged() -> None:
     async def _body() -> None:
         store = FakeVectorStore()
         await store.upsert(
-            [_build_chunk(chunk_id="other-symbol-chunk", symbol=_OTHER_SYMBOL)]
+            [_build_chunk(chunk_id="other-symbol-chunk", symbol=_OTHER_SYMBOL)],
         )
         violations = await validate_citations(
             vector_store=store,

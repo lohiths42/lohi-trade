@@ -160,6 +160,7 @@ class TokenBudget:
     ...     await budget.add(30_000, 200)
     ...     assert await budget.is_exhausted()  # over the input limit
     >>> asyncio.run(demo())
+
     """
 
     def __init__(
@@ -170,11 +171,11 @@ class TokenBudget:
     ) -> None:
         if input_limit <= 0:
             raise ValueError(
-                f"input_limit must be positive; got {input_limit}"
+                f"input_limit must be positive; got {input_limit}",
             )
         if output_limit <= 0:
             raise ValueError(
-                f"output_limit must be positive; got {output_limit}"
+                f"output_limit must be positive; got {output_limit}",
             )
 
         self._input_limit = input_limit
@@ -231,11 +232,11 @@ class TokenBudget:
         """
         if input_tokens < 0:
             raise ValueError(
-                f"input_tokens must be non-negative; got {input_tokens}"
+                f"input_tokens must be non-negative; got {input_tokens}",
             )
         if output_tokens < 0:
             raise ValueError(
-                f"output_tokens must be non-negative; got {output_tokens}"
+                f"output_tokens must be non-negative; got {output_tokens}",
             )
 
         async with self._async_lock:
@@ -287,21 +288,22 @@ class TokenBudget:
         real overrun.
 
         Requirements: 12.4.
+
         """
         if next_input_estimate < 0:
             raise ValueError(
                 "next_input_estimate must be non-negative; got "
-                f"{next_input_estimate}"
+                f"{next_input_estimate}",
             )
         if next_output_estimate < 0:
             raise ValueError(
                 "next_output_estimate must be non-negative; got "
-                f"{next_output_estimate}"
+                f"{next_output_estimate}",
             )
 
         async with self._async_lock:
             return self._is_exhausted_locked(
-                next_input_estimate, next_output_estimate
+                next_input_estimate, next_output_estimate,
             )
 
     def is_exhausted_sync(
@@ -319,16 +321,16 @@ class TokenBudget:
         if next_input_estimate < 0:
             raise ValueError(
                 "next_input_estimate must be non-negative; got "
-                f"{next_input_estimate}"
+                f"{next_input_estimate}",
             )
         if next_output_estimate < 0:
             raise ValueError(
                 "next_output_estimate must be non-negative; got "
-                f"{next_output_estimate}"
+                f"{next_output_estimate}",
             )
         with self._sync_lock:
             return self._is_exhausted_locked(
-                next_input_estimate, next_output_estimate
+                next_input_estimate, next_output_estimate,
             )
 
     def totals(self) -> BudgetTotals:

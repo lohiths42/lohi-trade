@@ -36,7 +36,6 @@ import pytest
 from src.research.providers.errors import CloudProviderForbiddenError
 from src.research.providers.registry import get_embeddings, get_llm
 
-
 # --------------------------------------------------------------------------- #
 # LLM role — online                                                           #
 # --------------------------------------------------------------------------- #
@@ -57,7 +56,7 @@ def test_cloud_llm_allowed_when_online(monkeypatch: pytest.MonkeyPatch) -> None:
         get_llm({"provider": "nvidia_nim", "model": "meta/llama-3.1-70b-instruct"})
     except CloudProviderForbiddenError:
         pytest.fail(
-            "CloudProviderForbiddenError must not fire when offline mode is off."
+            "CloudProviderForbiddenError must not fire when offline mode is off.",
         )
     except Exception:
         # Any other error is acceptable — the adapter may still fail
@@ -103,7 +102,7 @@ def test_cloud_llm_forbidden_when_offline(
     # Message format is part of the contract (design §14 log grep).
     assert "LOHI_RESEARCH_OFFLINE=true" in str(excinfo.value)
     assert f"'{provider}'" in str(excinfo.value) or repr(provider) in str(
-        excinfo.value
+        excinfo.value,
     )
 
 
@@ -134,7 +133,7 @@ def test_ollama_llm_allowed_when_offline(monkeypatch: pytest.MonkeyPatch) -> Non
         get_llm({"provider": "ollama", "model": "llama3"})
     except CloudProviderForbiddenError:
         pytest.fail(
-            "ollama is a non-cloud LLM provider; the offline guard must not fire."
+            "ollama is a non-cloud LLM provider; the offline guard must not fire.",
         )
     except Exception:
         # Any other adapter-level failure is fine for this test.
@@ -156,7 +155,7 @@ def test_cloud_embeddings_allowed_when_online(
         get_embeddings({"provider": "openai", "model": "text-embedding-3-small"})
     except CloudProviderForbiddenError:
         pytest.fail(
-            "CloudProviderForbiddenError must not fire when offline mode is off."
+            "CloudProviderForbiddenError must not fire when offline mode is off.",
         )
     except Exception:
         pass
@@ -197,12 +196,12 @@ def test_sentence_transformers_embeddings_allowed_when_offline(
             {
                 "provider": "sentence_transformers",
                 "model": "BAAI/bge-small-en-v1.5",
-            }
+            },
         )
     except CloudProviderForbiddenError:
         pytest.fail(
             "sentence_transformers is a local embeddings provider; "
-            "the offline guard must not fire."
+            "the offline guard must not fire.",
         )
     except Exception:
         # Missing optional dependency is fine — not our concern here.
@@ -220,7 +219,7 @@ def test_ollama_embeddings_allowed_when_offline(
     except CloudProviderForbiddenError:
         pytest.fail(
             "ollama is a non-cloud embeddings provider; "
-            "the offline guard must not fire."
+            "the offline guard must not fire.",
         )
     except Exception:
         pass
@@ -243,7 +242,7 @@ def test_offline_disabled_for_falsy_env_values(
         get_llm({"provider": "openai"})
     except CloudProviderForbiddenError:
         pytest.fail(
-            f"Falsy env value {value!r} must not activate the offline guard."
+            f"Falsy env value {value!r} must not activate the offline guard.",
         )
     except Exception:
         pass

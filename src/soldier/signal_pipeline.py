@@ -1,5 +1,4 @@
-"""
-Signal Generation Pipeline for LOHI-TRADE.
+"""Signal Generation Pipeline for LOHI-TRADE.
 
 Consumes indicators, runs enabled strategies, checks for duplicate positions,
 and publishes valid signals to the Event Bus. Optionally filters signals
@@ -9,7 +8,6 @@ Requirements: 4.5, 4.6, 4.7, 4.8
 """
 
 from dataclasses import asdict
-from typing import List, Optional, Set
 
 import pandas as pd
 
@@ -25,8 +23,7 @@ SIGNAL_STREAM_MAXLEN = 1000
 
 
 class SignalPipeline:
-    """
-    Orchestrates signal generation from indicators through strategies.
+    """Orchestrates signal generation from indicators through strategies.
 
     Runs all enabled strategies against incoming indicators, checks trading
     hours and duplicate positions, optionally filters through ML model,
@@ -38,7 +35,7 @@ class SignalPipeline:
     def __init__(
         self,
         event_bus: EventBus,
-        strategies: List[Strategy],
+        strategies: list[Strategy],
         trading_start: str,
         trading_end: str,
         ml_strategy=None,
@@ -46,7 +43,7 @@ class SignalPipeline:
         self._event_bus = event_bus
         self._strategies = strategies
         self._ml_strategy = ml_strategy
-        self._open_positions: Set[str] = set()
+        self._open_positions: set[str] = set()
 
         # Parse trading hours into hour/minute integers
         start_parts = trading_start.split(":")
@@ -59,7 +56,7 @@ class SignalPipeline:
 
         logger.info(
             f"SignalPipeline initialized with {len(strategies)} strategies, "
-            f"trading hours {trading_start}-{trading_end}"
+            f"trading hours {trading_start}-{trading_end}",
         )
 
     def _is_within_trading_hours(self, timestamp) -> bool:
@@ -70,10 +67,9 @@ class SignalPipeline:
         return start_minutes <= current_minutes <= end_minutes
 
     def process_indicators(
-        self, indicators: IndicatorSet, candles: pd.DataFrame
-    ) -> Optional[Signal]:
-        """
-        Process indicators through all enabled strategies and publish valid signals.
+        self, indicators: IndicatorSet, candles: pd.DataFrame,
+    ) -> Signal | None:
+        """Process indicators through all enabled strategies and publish valid signals.
 
         Checks trading hours, runs strategies (or ML-enhanced strategy),
         prevents duplicate positions, and publishes the first valid signal
@@ -87,12 +83,13 @@ class SignalPipeline:
             The first valid Signal if one is generated, otherwise None.
 
         Requirements: 4.5, 4.6, 4.7, 4.8
+
         """
         # Check trading hours using indicator timestamp
         if not self._is_within_trading_hours(indicators.timestamp):
             logger.debug(
                 f"Signal rejected for {indicators.symbol}: outside trading hours "
-                f"(timestamp={indicators.timestamp})"
+                f"(timestamp={indicators.timestamp})",
             )
             return None
 
@@ -103,19 +100,19 @@ class SignalPipeline:
                 if signal.symbol in self._open_positions:
                     logger.info(
                         f"Signal rejected for {signal.symbol}: duplicate position exists "
-                        f"(strategy={signal.strategy})"
+                        f"(strategy={signal.strategy})",
                     )
                     return None
 
                 message = self._serialize_signal(signal)
                 self._event_bus.publish(
-                    SIGNAL_STREAM, message, maxlen=SIGNAL_STREAM_MAXLEN
+                    SIGNAL_STREAM, message, maxlen=SIGNAL_STREAM_MAXLEN,
                 )
                 self._open_positions.add(signal.symbol)
                 logger.info(
                     f"ML-filtered signal published: symbol={signal.symbol} "
                     f"strategy={signal.strategy} side={signal.side} "
-                    f"entry={signal.entry_price:.2f}"
+                    f"entry={signal.entry_price:.2f}",
                 )
                 return signal
             return None
@@ -132,14 +129,14 @@ class SignalPipeline:
             if signal.symbol in self._open_positions:
                 logger.info(
                     f"Signal rejected for {signal.symbol}: duplicate position exists "
-                    f"(strategy={signal.strategy})"
+                    f"(strategy={signal.strategy})",
                 )
                 continue
 
             # Publish to Event Bus
             message = self._serialize_signal(signal)
             self._event_bus.publish(
-                SIGNAL_STREAM, message, maxlen=SIGNAL_STREAM_MAXLEN
+                SIGNAL_STREAM, message, maxlen=SIGNAL_STREAM_MAXLEN,
             )
 
             # Track open position
@@ -147,7 +144,7 @@ class SignalPipeline:
 
             logger.info(
                 f"Signal published: symbol={signal.symbol} strategy={signal.strategy} "
-                f"side={signal.side} entry={signal.entry_price:.2f}"
+                f"side={signal.side} entry={signal.entry_price:.2f}",
             )
 
             return signal
@@ -166,7 +163,7 @@ class SignalPipeline:
         """Clear all open positions (daily reset)."""
         self._open_positions.clear()
 
-    def get_open_positions(self) -> Set[str]:
+    def get_open_positions(self) -> set[str]:
         """Return the current set of open positions."""
         return set(self._open_positions)
 
@@ -178,8 +175,7 @@ class SignalPipeline:
         side: str,
         atr: float,
     ) -> bool:
-        """
-        Record a completed trade outcome for ML model training.
+        """Record a completed trade outcome for ML model training.
 
         Delegates to the ML strategy's feedback loop if available.
 
@@ -187,20 +183,20 @@ class SignalPipeline:
         """
         if self._ml_strategy is not None:
             return self._ml_strategy.record_outcome(
-                signal_id, entry_price, exit_price, side, atr
+                signal_id, entry_price, exit_price, side, atr,
             )
         return False
 
     @staticmethod
     def _serialize_signal(signal: Signal) -> dict:
-        """
-        Convert a Signal to a dict suitable for Redis Stream publishing.
+        """Convert a Signal to a dict suitable for Redis Stream publishing.
 
         Args:
             signal: The Signal to serialize.
 
         Returns:
             Dictionary with all signal fields, timestamp and indicators serialized.
+
         """
         data = asdict(signal)
         data["timestamp"] = signal.timestamp.isoformat()

@@ -1,5 +1,4 @@
-"""
-Unit tests for the SignalPipeline.
+"""Unit tests for the SignalPipeline.
 
 Tests signal generation, trading hours filtering, duplicate position
 prevention, strategy execution, event bus publishing, open position
@@ -9,7 +8,7 @@ Requirements: 4.5, 4.6, 4.7, 4.8
 """
 
 from datetime import datetime
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock
 
 import pandas as pd
 import pytest
@@ -18,15 +17,14 @@ from src.soldier.indicator_engine import IndicatorSet
 from src.soldier.signal_pipeline import SIGNAL_STREAM, SIGNAL_STREAM_MAXLEN, SignalPipeline
 from src.soldier.strategy_engine import (
     MeanReversionStrategy,
-    Signal,
-    TrendFollowingStrategy,
     create_signal,
 )
 from src.utils.config import (
     MeanReversionStrategy as MeanReversionConfig,
+)
+from src.utils.config import (
     TrendFollowingStrategy as TrendFollowingConfig,
 )
-
 
 # --- Fixtures ---
 
@@ -81,8 +79,8 @@ def _make_candles(close: float = 985.0, volume: float = 100000.0) -> pd.DataFram
                 "close": close,
                 "volume": volume,
                 "timestamp": datetime(2024, 1, 15, 10, 30, 0),
-            }
-        ]
+            },
+        ],
     )
 
 

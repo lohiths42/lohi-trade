@@ -1,5 +1,4 @@
-"""
-Property-based tests for HistoricalDataManager.
+"""Property-based tests for HistoricalDataManager.
 
 Property 75: Historical Data Storage
   For any downloaded data, it should be queryable from DuckDB with correct OHLCV values.
@@ -8,19 +7,15 @@ Property 76: Historical Data Backfill
   For any missing date range, the backfill should download and store data for all missing dates.
 """
 
-import tempfile
-from datetime import date, datetime, timedelta
-from pathlib import Path
+from datetime import date, timedelta
 from unittest.mock import MagicMock, patch
 
 import duckdb
 import pandas as pd
-import pytest
-from hypothesis import given, settings, assume
+from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
 from src.data.historical_data import HistoricalDataManager
-
 
 # ---------------------------------------------------------------------------
 # Strategies
@@ -89,8 +84,7 @@ def _make_config(symbols=None):
 # ---------------------------------------------------------------------------
 
 class TestProperty75HistoricalDataStorage:
-    """
-    Property 75: For any downloaded data stored in DuckDB, querying it back
+    """Property 75: For any downloaded data stored in DuckDB, querying it back
     must return the exact same OHLCV values.
     """
 
@@ -143,8 +137,7 @@ class TestProperty75HistoricalDataStorage:
 # ---------------------------------------------------------------------------
 
 class TestProperty76HistoricalDataBackfill:
-    """
-    Property 76: For any missing date range, the backfill should download
+    """Property 76: For any missing date range, the backfill should download
     and store data for all missing dates.
     """
 

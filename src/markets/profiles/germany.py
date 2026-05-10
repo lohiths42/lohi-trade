@@ -12,7 +12,6 @@ from ..market_profile import (
     NumberFormat,
     SettlementCycle,
     TaxProfile,
-    TaxRule,
 )
 
 GERMANY_PROFILE = MarketProfile(

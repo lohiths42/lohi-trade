@@ -1,5 +1,4 @@
-"""
-Unit tests for the Position Sizer.
+"""Unit tests for the Position Sizer.
 
 Tests position size calculation, max risk/position capping, rounding,
 and rejection when quantity < 1.
@@ -10,13 +9,10 @@ Requirements: 10.1, 10.2, 10.3, 10.4, 10.5, 10.7
 from datetime import datetime
 from unittest.mock import MagicMock
 
-import pytest
-
-from src.execution.position_sizer import PositionSizeResult, PositionSizer
+from src.execution.position_sizer import PositionSizer, PositionSizeResult
 from src.soldier.indicator_engine import IndicatorSet
 from src.soldier.strategy_engine import Signal
 from src.utils.config import CapitalConfig, Config
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -288,7 +284,7 @@ class TestEdgeCases:
         sizer = PositionSizer(config)
         # SELL: entry 1000, stop 1020 → risk/share = |1000-1020| = 20
         signal = _make_signal(
-            side="SELL", entry_price=1000.0, stop_loss=1020.0
+            side="SELL", entry_price=1000.0, stop_loss=1020.0,
         )
 
         result = sizer.calculate_quantity(signal)

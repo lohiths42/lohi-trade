@@ -1,5 +1,4 @@
-"""
-Property-based tests for Duplicate Position Prevention.
+"""Property-based tests for Duplicate Position Prevention.
 
 Uses hypothesis to verify that the SignalPipeline correctly prevents
 duplicate signals for symbols that already have open positions.
@@ -26,7 +25,6 @@ from src.soldier.indicator_engine import IndicatorSet
 from src.soldier.signal_pipeline import SignalPipeline
 from src.soldier.strategy_engine import MeanReversionStrategy
 from src.utils.config import MeanReversionStrategy as MeanReversionConfig
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -83,8 +81,8 @@ def _make_candles() -> pd.DataFrame:
                 "close": 985.0,
                 "volume": 100000.0,
                 "timestamp": datetime(2024, 1, 15, 10, 0, 0),
-            }
-        ]
+            },
+        ],
     )
 
 
@@ -104,8 +102,7 @@ def _make_pipeline() -> SignalPipeline:
 
 
 class TestDuplicatePositionPreventionProperties:
-    """
-    **Validates: Requirements 4.8**
+    """**Validates: Requirements 4.8**
 
     Property 16: Duplicate Position Prevention
     """
@@ -113,8 +110,7 @@ class TestDuplicatePositionPreventionProperties:
     @given(symbol=_symbols)
     @settings(max_examples=25)
     def test_first_signal_for_symbol_is_always_accepted(self, symbol: str):
-        """
-        Property: For any random symbol with valid conditions, the first
+        """Property: For any random symbol with valid conditions, the first
         signal should always be generated.
 
         **Validates: Requirements 4.8**
@@ -133,8 +129,7 @@ class TestDuplicatePositionPreventionProperties:
     @given(symbol=_symbols)
     @settings(max_examples=25)
     def test_second_signal_for_same_symbol_is_always_rejected(self, symbol: str):
-        """
-        Property: After a signal is generated for a symbol, any subsequent
+        """Property: After a signal is generated for a symbol, any subsequent
         signal for the same symbol should be rejected.
 
         **Validates: Requirements 4.8**
@@ -159,10 +154,9 @@ class TestDuplicatePositionPreventionProperties:
     )
     @settings(max_examples=25)
     def test_signals_for_different_symbols_are_independent(
-        self, symbol_a: str, symbol_b: str
+        self, symbol_a: str, symbol_b: str,
     ):
-        """
-        Property: Generating a signal for symbol A should not prevent
+        """Property: Generating a signal for symbol A should not prevent
         generating a signal for symbol B.
 
         **Validates: Requirements 4.8**
@@ -176,13 +170,13 @@ class TestDuplicatePositionPreventionProperties:
 
         # Generate signal for symbol A
         signal_a = pipeline.process_indicators(
-            _make_indicators(symbol_a), candles
+            _make_indicators(symbol_a), candles,
         )
         assert signal_a is not None
 
         # Signal for symbol B should still be accepted
         signal_b = pipeline.process_indicators(
-            _make_indicators(symbol_b), candles
+            _make_indicators(symbol_b), candles,
         )
         assert signal_b is not None, (
             f"Signal for '{symbol_b}' should not be blocked by open position in '{symbol_a}'"
@@ -192,8 +186,7 @@ class TestDuplicatePositionPreventionProperties:
     @given(symbol=_symbols)
     @settings(max_examples=25)
     def test_pre_added_open_position_blocks_signal(self, symbol: str):
-        """
-        Property: If a symbol is added to open positions before processing,
+        """Property: If a symbol is added to open positions before processing,
         no signal should be generated for that symbol.
 
         **Validates: Requirements 4.8**
@@ -212,8 +205,7 @@ class TestDuplicatePositionPreventionProperties:
     @given(symbol=_symbols)
     @settings(max_examples=25)
     def test_removing_open_position_allows_new_signal(self, symbol: str):
-        """
-        Property: After removing a symbol from open positions, a new signal
+        """Property: After removing a symbol from open positions, a new signal
         for that symbol should be accepted.
 
         **Validates: Requirements 4.8**
@@ -238,15 +230,14 @@ class TestDuplicatePositionPreventionProperties:
     @given(data=st.data())
     @settings(max_examples=25)
     def test_clear_open_positions_allows_all_symbols(self, data):
-        """
-        Property: After clearing all open positions, signals for any
+        """Property: After clearing all open positions, signals for any
         previously blocked symbol should be accepted.
 
         **Validates: Requirements 4.8**
         """
         # Generate 2-5 distinct symbols
         symbols = data.draw(
-            st.lists(_symbols, min_size=2, max_size=5, unique=True)
+            st.lists(_symbols, min_size=2, max_size=5, unique=True),
         )
 
         pipeline = _make_pipeline()
@@ -255,14 +246,14 @@ class TestDuplicatePositionPreventionProperties:
         # Generate signals for all symbols (adds them to open positions)
         for sym in symbols:
             signal = pipeline.process_indicators(
-                _make_indicators(sym), candles
+                _make_indicators(sym), candles,
             )
             assert signal is not None
 
         # Verify all are now blocked
         for sym in symbols:
             signal = pipeline.process_indicators(
-                _make_indicators(sym), candles
+                _make_indicators(sym), candles,
             )
             assert signal is None
 
@@ -272,7 +263,7 @@ class TestDuplicatePositionPreventionProperties:
         # All symbols should now be accepted again
         for sym in symbols:
             signal = pipeline.process_indicators(
-                _make_indicators(sym), candles
+                _make_indicators(sym), candles,
             )
             assert signal is not None, (
                 f"Expected signal for '{sym}' to be accepted after clearing open positions"

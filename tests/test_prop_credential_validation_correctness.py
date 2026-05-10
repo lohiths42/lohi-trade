@@ -1,5 +1,4 @@
-"""
-Property-based tests for Credential Validation Correctness.
+"""Property-based tests for Credential Validation Correctness.
 
 Verifies that the CredentialStore.validate_credentials method correctly
 validates credential values against their associated regex patterns. For
@@ -22,7 +21,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from hypothesis import given, settings, assume
+from hypothesis import given, settings
 from hypothesis import strategies as st
 
 # ---------------------------------------------------------------------------
@@ -30,7 +29,7 @@ from hypothesis import strategies as st
 # ---------------------------------------------------------------------------
 
 _backend_gateway_dir = str(
-    Path(__file__).resolve().parents[1] / "backend-gateway"
+    Path(__file__).resolve().parents[1] / "backend-gateway",
 )
 if _backend_gateway_dir not in sys.path:
     sys.path.insert(0, _backend_gateway_dir)
@@ -82,7 +81,7 @@ def valid_nvidia_nim_key() -> st.SearchStrategy[str]:
     """Generate strings matching ^nvapi-[A-Za-z0-9_-]{20,}$"""
     suffix = st.text(
         alphabet=st.sampled_from(
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-"
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-",
         ),
         min_size=20,
         max_size=60,
@@ -112,7 +111,7 @@ def valid_nubra_totp() -> st.SearchStrategy[str]:
     """Generate strings matching ^[A-Za-z0-9+/=]{16,}$"""
     return st.text(
         alphabet=st.sampled_from(
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
         ),
         min_size=16,
         max_size=40,
@@ -161,7 +160,7 @@ def valid_telegram_bot_token() -> st.SearchStrategy[str]:
     )
     suffix = st.text(
         alphabet=st.sampled_from(
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-"
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-",
         ),
         min_size=35,
         max_size=50,
@@ -223,7 +222,7 @@ class TestCredentialValidationCorrectness:
     )
     @settings(max_examples=200)
     def test_validator_returns_error_iff_value_does_not_match_pattern(
-        self, entry: tuple[str, str, str], value: str
+        self, entry: tuple[str, str, str], value: str,
     ) -> None:
         """For any credential value and its associated validation pattern,
         the validator SHALL return a validation error if and only if the
@@ -307,7 +306,7 @@ class TestCredentialValidationCorrectness:
     @given(entry=validation_entry_strategy)
     @settings(max_examples=100)
     def test_empty_string_always_rejected(
-        self, entry: tuple[str, str, str]
+        self, entry: tuple[str, str, str],
     ) -> None:
         """For any credential key with a validation pattern, an empty
         string SHALL always produce a validation error (required field).

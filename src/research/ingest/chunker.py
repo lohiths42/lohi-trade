@@ -120,7 +120,7 @@ def _approx_token_count(text: str) -> int:
 
 
 def _derive_chunk_id(
-    *, document_sha256: str, chunker_version: str, position: int
+    *, document_sha256: str, chunker_version: str, position: int,
 ) -> str:
     """Compute the stable chunk id (design §3.3, Req 3.12).
 
@@ -212,7 +212,7 @@ def _split_recursive(
                     chunk_size_chars=chunk_size_chars,
                     chunk_overlap_chars=chunk_overlap_chars,
                     separators=remaining or ("",),
-                )
+                ),
             )
 
     # Greedy packing: join consecutive small pieces so we approach the
@@ -315,20 +315,21 @@ def chunk_document(
       configuration mistake. We raise :class:`ValueError` for that
       case so misconfiguration fails loudly at startup rather than
       silently producing a degenerate chunk stream.
+
     """
     if chunk_size_tokens <= 0:
         raise ValueError(
-            f"chunk_size_tokens must be > 0, got {chunk_size_tokens}"
+            f"chunk_size_tokens must be > 0, got {chunk_size_tokens}",
         )
     if chunk_overlap_tokens < 0:
         raise ValueError(
-            f"chunk_overlap_tokens must be >= 0, got {chunk_overlap_tokens}"
+            f"chunk_overlap_tokens must be >= 0, got {chunk_overlap_tokens}",
         )
     if chunk_overlap_tokens >= chunk_size_tokens:
         raise ValueError(
             "chunk_overlap_tokens must be strictly less than "
             f"chunk_size_tokens (got overlap={chunk_overlap_tokens}, "
-            f"size={chunk_size_tokens})"
+            f"size={chunk_size_tokens})",
         )
 
     # Empty doc → empty chunk list. Deliberately not an error: the
@@ -376,7 +377,7 @@ def chunk_document(
                 embedding=[],
                 embedding_model=embedding_model,
                 embedding_dim=effective_dim,
-            )
+            ),
         )
     return records
 

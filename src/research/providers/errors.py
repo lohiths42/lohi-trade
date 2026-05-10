@@ -106,7 +106,7 @@ class UnknownProviderError(ProviderError):
         self.registered = registered
         known = ", ".join(registered) if registered else "<none registered>"
         super().__init__(
-            f"Unknown {kind} provider {name!r}; registered: {known}."
+            f"Unknown {kind} provider {name!r}; registered: {known}.",
         )
 
 
@@ -137,13 +137,13 @@ class CloudProviderForbiddenError(ProviderError):
         self.role = role
         super().__init__(
             f"Cloud provider {provider!r} is forbidden when "
-            f"LOHI_RESEARCH_OFFLINE=true (role={role})."
+            f"LOHI_RESEARCH_OFFLINE=true (role={role}).",
         )
 
 
 __all__ = [
-    "ProviderError",
-    "ProviderAuthError",
-    "UnknownProviderError",
     "CloudProviderForbiddenError",
+    "ProviderAuthError",
+    "ProviderError",
+    "UnknownProviderError",
 ]

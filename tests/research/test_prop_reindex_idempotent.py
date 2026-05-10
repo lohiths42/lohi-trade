@@ -53,7 +53,7 @@ from __future__ import annotations
 
 import hashlib
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from hypothesis import HealthCheck, given, settings
@@ -61,7 +61,6 @@ from hypothesis import strategies as st
 
 from src.research.ingest.chunker import chunk_document
 from src.research.ingest.parser.canonical import CanonicalDoc
-
 
 # --------------------------------------------------------------------------- #
 # Fixed universes (kept in sync with test_prop_parser_roundtrip.py)           #
@@ -133,7 +132,7 @@ def doc_strategy(draw: st.DrawFn) -> CanonicalDoc:
         document_type=draw(st.sampled_from(_DOCUMENT_TYPES)),
         source_url=None,
         sha256=_hex_sha256_from(canonical_text),
-        published_at=datetime(2024, 1, 1, tzinfo=timezone.utc),
+        published_at=datetime(2024, 1, 1, tzinfo=UTC),
         canonical_text=canonical_text,
         sections=[],
         metadata={},

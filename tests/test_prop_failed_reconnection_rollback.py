@@ -1,5 +1,4 @@
-"""
-Property-based tests for Failed Reconnection Rollback.
+"""Property-based tests for Failed Reconnection Rollback.
 
 Verifies that when a credential update is followed by a connection test
 failure, the SetupService rolls back to the previous credential values.
@@ -21,7 +20,7 @@ import asyncio
 import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 
 from hypothesis import given, settings
 from hypothesis import strategies as st
@@ -31,7 +30,7 @@ from hypothesis import strategies as st
 # ---------------------------------------------------------------------------
 
 _backend_gateway_dir = str(
-    Path(__file__).resolve().parents[1] / "backend-gateway"
+    Path(__file__).resolve().parents[1] / "backend-gateway",
 )
 if _backend_gateway_dir not in sys.path:
     sys.path.insert(0, _backend_gateway_dir)
@@ -93,7 +92,7 @@ class TestFailedReconnectionRollback:
     )
     @settings(max_examples=100)
     def test_failed_connection_retains_original_credentials(
-        self, initial_creds: dict[str, str], new_creds: dict[str, str]
+        self, initial_creds: dict[str, str], new_creds: dict[str, str],
     ) -> None:
         """For any credential update where the subsequent connection test
         fails, the credential store SHALL retain the previous credential
@@ -141,7 +140,7 @@ class TestFailedReconnectionRollback:
 
             # Call submit_and_test with new credentials — should fail and rollback
             result = asyncio.run(
-                setup_service.submit_and_test("broker_shoonya", new_creds)
+                setup_service.submit_and_test("broker_shoonya", new_creds),
             )
 
             # Verify the connection test reported failure

@@ -60,7 +60,7 @@ the larger generated corpora.
 from __future__ import annotations
 
 import asyncio
-from uuid import UUID, uuid4
+from uuid import UUID
 
 import pytest
 from hypothesis import HealthCheck, given, settings
@@ -69,7 +69,6 @@ from hypothesis import strategies as st
 from src.research.index.retriever import HybridRetriever
 from src.research.providers.base import ChunkRecord, RetrievalFilter
 from tests.research.fakes import FakeEmbeddingsProvider, FakeVectorStore
-
 
 # --------------------------------------------------------------------------- #
 # Fixed universes                                                             #

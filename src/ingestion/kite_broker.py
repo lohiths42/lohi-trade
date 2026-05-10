@@ -1,5 +1,4 @@
-"""
-Zerodha Kite Connect API v3 broker adapter implementation.
+"""Zerodha Kite Connect API v3 broker adapter implementation.
 
 This module implements the BrokerInterface for Zerodha Kite Connect,
 providing OAuth2 authentication, order management, WebSocket market data,
@@ -9,30 +8,29 @@ Requirements: 15.1, 15.2, 15.3, 15.4, 15.5, 15.6, 15.7, 15.8
 """
 
 import json
-import time
 import threading
-from datetime import datetime, time as dt_time
-from typing import Callable, List, Optional, Dict
+import time
+from collections.abc import Callable
+from datetime import datetime
 
 import requests
 import websocket
 
 from src.ingestion.broker_interface import (
-    BrokerInterface,
+    AuthenticationError,
     BrokerCredentials,
-    Tick,
+    BrokerInterface,
+    ConnectionError,
     Order,
-    OrderStatus,
+    OrderNotFoundError,
+    OrderRejectionError,
     OrderSide,
+    OrderStatus,
     OrderType,
     ProductType,
-    ConnectionError,
-    AuthenticationError,
-    OrderRejectionError,
-    OrderNotFoundError,
+    Tick,
 )
 from src.utils.logger import get_logger
-
 
 logger = get_logger("KiteBroker")
 
@@ -44,7 +42,7 @@ _MAX_RETRIES = 2
 _TERMINAL_STATES = {"COMPLETE", "CANCELLED", "REJECTED"}
 
 # Kite order‑type mapping from internal enum to Kite API string
-_ORDER_TYPE_MAP: Dict[OrderType, str] = {
+_ORDER_TYPE_MAP: dict[OrderType, str] = {
     OrderType.MARKET: "MARKET",
     OrderType.LIMIT: "LIMIT",
     OrderType.SL: "SL",
@@ -52,14 +50,14 @@ _ORDER_TYPE_MAP: Dict[OrderType, str] = {
 }
 
 # Kite product‑type mapping
-_PRODUCT_TYPE_MAP: Dict[ProductType, str] = {
+_PRODUCT_TYPE_MAP: dict[ProductType, str] = {
     ProductType.MIS: "MIS",
     ProductType.CNC: "CNC",
     ProductType.NRML: "NRML",
 }
 
 # Kite order‑status → internal OrderStatus mapping
-_STATUS_MAP: Dict[str, OrderStatus] = {
+_STATUS_MAP: dict[str, OrderStatus] = {
     "OPEN": OrderStatus.PLACED,
     "PENDING": OrderStatus.PENDING,
     "COMPLETE": OrderStatus.FILLED,
@@ -72,8 +70,7 @@ _STATUS_MAP: Dict[str, OrderStatus] = {
 
 
 class KiteBroker(BrokerInterface):
-    """
-    Zerodha Kite Connect API v3 broker adapter.
+    """Zerodha Kite Connect API v3 broker adapter.
 
     Implements OAuth2 login, order placement with Kite parameter mapping,
     order status polling, daily token refresh at 8:30 AM IST, KiteTicker
@@ -88,29 +85,28 @@ class KiteBroker(BrokerInterface):
     WS_URL = "wss://ws.kite.trade"
 
     def __init__(self) -> None:
-        self._api_key: Optional[str] = None
-        self._api_secret: Optional[str] = None
-        self._access_token: Optional[str] = None
-        self._user_id: Optional[str] = None
+        self._api_key: str | None = None
+        self._api_secret: str | None = None
+        self._access_token: str | None = None
+        self._user_id: str | None = None
 
-        self._ws: Optional[websocket.WebSocketApp] = None
-        self._ws_thread: Optional[threading.Thread] = None
+        self._ws: websocket.WebSocketApp | None = None
+        self._ws_thread: threading.Thread | None = None
         self._connected: bool = False
 
-        self._subscribed_symbols: Dict[str, int] = {}  # symbol → instrument token
-        self._tick_callback: Optional[Callable[[Tick], None]] = None
+        self._subscribed_symbols: dict[str, int] = {}  # symbol → instrument token
+        self._tick_callback: Callable[[Tick], None] | None = None
 
         self._reconnect_attempts: int = 0
         self._max_reconnect_attempts: int = 5
 
-        self._token_refresh_thread: Optional[threading.Thread] = None
+        self._token_refresh_thread: threading.Thread | None = None
         self._token_refresh_stop: threading.Event = threading.Event()
 
     # ── authentication ────────────────────────────────────────────
 
     def connect(self, credentials: BrokerCredentials) -> bool:
-        """
-        Authenticate via Kite Connect OAuth2 flow.
+        """Authenticate via Kite Connect OAuth2 flow.
 
         ``credentials.api_key``   → Kite API key
         ``credentials.password``  → Kite API secret
@@ -131,7 +127,7 @@ class KiteBroker(BrokerInterface):
 
             if not request_token:
                 raise AuthenticationError(
-                    "request_token is required (pass via credentials.totp_secret)"
+                    "request_token is required (pass via credentials.totp_secret)",
                 )
 
             # Exchange request_token for access_token
@@ -188,7 +184,7 @@ class KiteBroker(BrokerInterface):
         import hashlib
 
         checksum = hashlib.sha256(
-            f"{self._api_key}{request_token}{self._api_secret}".encode()
+            f"{self._api_key}{request_token}{self._api_secret}".encode(),
         ).hexdigest()
 
         payload = {
@@ -200,7 +196,7 @@ class KiteBroker(BrokerInterface):
         resp = self._kite_post("/session/token", payload, auth=False)
         return resp
 
-    def _auth_headers(self) -> Dict[str, str]:
+    def _auth_headers(self) -> dict[str, str]:
         return {
             "X-Kite-Version": "3",
             "Authorization": f"token {self._api_key}:{self._access_token}",
@@ -210,7 +206,7 @@ class KiteBroker(BrokerInterface):
     # ── HTTP helpers with retry ───────────────────────────────────
 
     def _kite_post(
-        self, path: str, data: dict, auth: bool = True
+        self, path: str, data: dict, auth: bool = True,
     ) -> dict:
         """POST to Kite API with transient-error retry (Req 15.8)."""
         url = f"{self.BASE_URL}{path}"
@@ -219,14 +215,14 @@ class KiteBroker(BrokerInterface):
             "Content-Type": "application/x-www-form-urlencoded",
         }
 
-        last_exc: Optional[Exception] = None
+        last_exc: Exception | None = None
         for attempt in range(_MAX_RETRIES + 1):
             try:
                 resp = requests.post(url, data=data, headers=headers, timeout=10)
                 if resp.status_code in _TRANSIENT_HTTP_CODES and attempt < _MAX_RETRIES:
                     logger.warning(
                         f"Transient error {resp.status_code} on POST {path}, "
-                        f"retry {attempt + 1}/{_MAX_RETRIES}"
+                        f"retry {attempt + 1}/{_MAX_RETRIES}",
                     )
                     time.sleep(0.5 * (attempt + 1))
                     continue
@@ -241,7 +237,7 @@ class KiteBroker(BrokerInterface):
                 last_exc = exc
                 if attempt < _MAX_RETRIES:
                     logger.warning(
-                        f"Network error on POST {path}, retry {attempt + 1}/{_MAX_RETRIES}: {exc}"
+                        f"Network error on POST {path}, retry {attempt + 1}/{_MAX_RETRIES}: {exc}",
                     )
                     time.sleep(0.5 * (attempt + 1))
                     continue
@@ -254,14 +250,14 @@ class KiteBroker(BrokerInterface):
         url = f"{self.BASE_URL}{path}"
         headers = self._auth_headers()
 
-        last_exc: Optional[Exception] = None
+        last_exc: Exception | None = None
         for attempt in range(_MAX_RETRIES + 1):
             try:
                 resp = requests.get(url, headers=headers, timeout=10)
                 if resp.status_code in _TRANSIENT_HTTP_CODES and attempt < _MAX_RETRIES:
                     logger.warning(
                         f"Transient error {resp.status_code} on GET {path}, "
-                        f"retry {attempt + 1}/{_MAX_RETRIES}"
+                        f"retry {attempt + 1}/{_MAX_RETRIES}",
                     )
                     time.sleep(0.5 * (attempt + 1))
                     continue
@@ -276,7 +272,7 @@ class KiteBroker(BrokerInterface):
                 last_exc = exc
                 if attempt < _MAX_RETRIES:
                     logger.warning(
-                        f"Network error on GET {path}, retry {attempt + 1}/{_MAX_RETRIES}: {exc}"
+                        f"Network error on GET {path}, retry {attempt + 1}/{_MAX_RETRIES}: {exc}",
                     )
                     time.sleep(0.5 * (attempt + 1))
                     continue
@@ -289,7 +285,7 @@ class KiteBroker(BrokerInterface):
         url = f"{self.BASE_URL}{path}"
         headers = self._auth_headers()
 
-        last_exc: Optional[Exception] = None
+        last_exc: Exception | None = None
         for attempt in range(_MAX_RETRIES + 1):
             try:
                 resp = requests.delete(url, headers=headers, timeout=10)
@@ -314,8 +310,7 @@ class KiteBroker(BrokerInterface):
     # ── order management ──────────────────────────────────────────
 
     def place_order(self, order: Order) -> str:
-        """
-        Place an order via Kite Connect.
+        """Place an order via Kite Connect.
 
         Maps internal Order to Kite params: exchange, tradingsymbol,
         transaction_type, quantity, price, trigger_price, order_type, product.
@@ -328,7 +323,7 @@ class KiteBroker(BrokerInterface):
         kite_order_type = _ORDER_TYPE_MAP.get(order.order_type, "MARKET")
         kite_product = _PRODUCT_TYPE_MAP.get(order.product_type, "MIS")
 
-        params: Dict[str, str] = {
+        params: dict[str, str] = {
             "exchange": "NSE",
             "tradingsymbol": order.symbol,
             "transaction_type": order.side.value,  # BUY / SELL
@@ -370,8 +365,7 @@ class KiteBroker(BrokerInterface):
             return False
 
     def get_order_status(self, broker_order_id: str) -> Order:
-        """
-        Get current status of an order from Kite.
+        """Get current status of an order from Kite.
 
         Raises OrderNotFoundError if the order does not exist.
         """
@@ -412,10 +406,9 @@ class KiteBroker(BrokerInterface):
         )
 
     def poll_order_status(
-        self, broker_order_id: str, interval: float = 1.0, max_polls: int = 300
+        self, broker_order_id: str, interval: float = 1.0, max_polls: int = 300,
     ) -> Order:
-        """
-        Poll order status every *interval* seconds until a terminal state.
+        """Poll order status every *interval* seconds until a terminal state.
 
         Terminal states: COMPLETE, CANCELLED, REJECTED.
 
@@ -436,7 +429,7 @@ class KiteBroker(BrokerInterface):
 
     # ── positions ─────────────────────────────────────────────────
 
-    def get_positions(self) -> List[dict]:
+    def get_positions(self) -> list[dict]:
         """Get all open positions from Kite."""
         if not self.is_connected():
             raise ConnectionError("Not connected to Kite API")
@@ -459,7 +452,7 @@ class KiteBroker(BrokerInterface):
             logger.error(f"Error fetching positions: {exc}")
             return []
 
-    def get_holdings(self) -> List[dict]:
+    def get_holdings(self) -> list[dict]:
         """Get portfolio holdings from Kite for reconciliation."""
         if not self.is_connected():
             raise ConnectionError("Not connected to Kite API")
@@ -484,9 +477,8 @@ class KiteBroker(BrokerInterface):
 
     # ── instrument master ─────────────────────────────────────────
 
-    def get_instrument_master(self) -> List[dict]:
-        """
-        Download instrument master from Kite Connect.
+    def get_instrument_master(self) -> list[dict]:
+        """Download instrument master from Kite Connect.
 
         Returns list of dicts with symbol, token, exchange, lot_size, tick_size, etc.
         """
@@ -503,7 +495,7 @@ class KiteBroker(BrokerInterface):
             import io
 
             reader = csv.DictReader(io.StringIO(resp.text))
-            instruments: List[dict] = []
+            instruments: list[dict] = []
             for row in reader:
                 try:
                     instruments.append({
@@ -527,9 +519,8 @@ class KiteBroker(BrokerInterface):
 
     # ── WebSocket (KiteTicker) ────────────────────────────────────
 
-    def subscribe(self, symbols: List[str], on_tick: Callable[[Tick], None]) -> bool:
-        """
-        Subscribe to real-time market data via KiteTicker WebSocket.
+    def subscribe(self, symbols: list[str], on_tick: Callable[[Tick], None]) -> bool:
+        """Subscribe to real-time market data via KiteTicker WebSocket.
 
         Requirement: 15.7
         """
@@ -542,7 +533,7 @@ class KiteBroker(BrokerInterface):
         instruments = self.get_instrument_master()
         sym_map = {inst["symbol"]: inst["token"] for inst in instruments}
 
-        tokens_to_sub: List[int] = []
+        tokens_to_sub: list[int] = []
         for sym in symbols:
             token = sym_map.get(sym)
             if token is None:
@@ -570,12 +561,12 @@ class KiteBroker(BrokerInterface):
         logger.info(f"Subscribed to {len(tokens_to_sub)} symbols on KiteTicker")
         return True
 
-    def unsubscribe(self, symbols: List[str]) -> bool:
+    def unsubscribe(self, symbols: list[str]) -> bool:
         """Unsubscribe from KiteTicker for given symbols."""
         if not self._ws:
             return False
 
-        tokens_to_unsub: List[int] = []
+        tokens_to_unsub: list[int] = []
         for sym in symbols:
             token = self._subscribed_symbols.pop(sym, None)
             if token is not None:
@@ -666,7 +657,7 @@ class KiteBroker(BrokerInterface):
         """Handle JSON messages from KiteTicker (e.g. order updates)."""
         logger.debug(f"KiteTicker JSON message: {data}")
 
-    def _token_to_symbol(self, token: int) -> Optional[str]:
+    def _token_to_symbol(self, token: int) -> str | None:
         for sym, tok in self._subscribed_symbols.items():
             if tok == token:
                 return sym
@@ -678,7 +669,7 @@ class KiteBroker(BrokerInterface):
             self._reconnect_attempts += 1
             backoff = min(2 ** self._reconnect_attempts, 30)
             logger.info(
-                f"KiteTicker reconnect in {backoff}s (attempt {self._reconnect_attempts})"
+                f"KiteTicker reconnect in {backoff}s (attempt {self._reconnect_attempts})",
             )
             time.sleep(backoff)
             try:
@@ -695,8 +686,7 @@ class KiteBroker(BrokerInterface):
     # ── daily token refresh ───────────────────────────────────────
 
     def _start_token_refresh_scheduler(self) -> None:
-        """
-        Start a background thread that refreshes the Kite access token
+        """Start a background thread that refreshes the Kite access token
         daily at 8:30 AM IST.
 
         Requirement: 15.3
@@ -732,8 +722,7 @@ class KiteBroker(BrokerInterface):
         self._token_refresh_thread.start()
 
     def _refresh_token_daily(self) -> None:
-        """
-        Attempt to invalidate the old session and log a reminder.
+        """Attempt to invalidate the old session and log a reminder.
 
         Kite tokens cannot be refreshed programmatically — the user must
         re-authenticate via the OAuth2 redirect flow each day. This method
@@ -752,7 +741,7 @@ class KiteBroker(BrokerInterface):
         self._access_token = None
         self._connected = False
         logger.warning(
-            "Kite session invalidated. Re-authentication required via OAuth2 flow."
+            "Kite session invalidated. Re-authentication required via OAuth2 flow.",
         )
 
 
@@ -770,7 +759,7 @@ def _kite_error(error_type: str, message: str) -> Exception:
     return ConnectionError(message)
 
 
-def _safe_float(value) -> Optional[float]:
+def _safe_float(value) -> float | None:
     if value is None:
         return None
     try:

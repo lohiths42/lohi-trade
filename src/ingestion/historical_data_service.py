@@ -1,5 +1,4 @@
-"""
-Historical Data Service for LOHI-TRADE.
+"""Historical Data Service for LOHI-TRADE.
 
 Downloads, stores, and queries historical OHLCV data for all NSE/BSE
 securities. Stores as Parquet on S3 partitioned by symbol and year.
@@ -9,11 +8,10 @@ Provides corporate action adjustment and revert for price continuity.
 Requirements: 28.1, 28.2, 28.3, 28.4, 28.5, 28.6, 28.7
 """
 
-import io
-from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta, timezone
+from dataclasses import dataclass
+from datetime import date, timedelta, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional, Protocol
+from typing import Any, Protocol
 
 from src.ingestion.corporate_actions_collector import (
     CorporateAction,
@@ -28,6 +26,7 @@ IST = timezone(timedelta(hours=5, minutes=30))
 
 class Timeframe(Enum):
     """Supported query timeframes (Req 28.4)."""
+
     DAILY = "daily"
     WEEKLY = "weekly"
     MONTHLY = "monthly"
@@ -35,6 +34,7 @@ class Timeframe(Enum):
 
 class MarketCapCategory(Enum):
     """Market cap categories for retention policy (Req 28.2)."""
+
     LARGE_CAP = "large-cap"
     MID_CAP = "mid-cap"
     SMALL_CAP = "small-cap"
@@ -43,6 +43,7 @@ class MarketCapCategory(Enum):
 @dataclass
 class OHLCV:
     """A single OHLCV bar."""
+
     symbol: str
     date: date
     open: float
@@ -51,7 +52,7 @@ class OHLCV:
     close: float
     volume: int
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "symbol": self.symbol,
             "date": self.date.isoformat(),
@@ -63,7 +64,7 @@ class OHLCV:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "OHLCV":
+    def from_dict(cls, data: dict[str, Any]) -> "OHLCV":
         d = data["date"]
         if isinstance(d, str):
             d = date.fromisoformat(d)
@@ -82,8 +83,8 @@ class S3Client(Protocol):
     """Protocol for S3 operations (allows injection for testing)."""
 
     def upload_bytes(self, bucket: str, key: str, data: bytes) -> None: ...
-    def download_bytes(self, bucket: str, key: str) -> Optional[bytes]: ...
-    def list_keys(self, bucket: str, prefix: str) -> List[str]: ...
+    def download_bytes(self, bucket: str, key: str) -> bytes | None: ...
+    def list_keys(self, bucket: str, prefix: str) -> list[str]: ...
     def delete_key(self, bucket: str, key: str) -> None: ...
 
 
@@ -91,13 +92,12 @@ class DataSource(Protocol):
     """Protocol for historical data download sources."""
 
     def download_daily_ohlcv(
-        self, symbol: str, start_date: date, end_date: date
-    ) -> List[OHLCV]: ...
+        self, symbol: str, start_date: date, end_date: date,
+    ) -> list[OHLCV]: ...
 
 
 class HistoricalDataService:
-    """
-    Service for downloading, storing, and querying historical OHLCV data.
+    """Service for downloading, storing, and querying historical OHLCV data.
 
     - Downloads daily OHLCV from NSE/BSE archives or Yahoo Finance (Req 28.1, 28.5)
     - Stores as Parquet on S3, partitioned by symbol and year (Req 28.3)
@@ -118,17 +118,17 @@ class HistoricalDataService:
         self,
         s3_client: S3Client,
         data_source: DataSource,
-        security_metadata: Optional[Dict[str, Dict[str, Any]]] = None,
+        security_metadata: dict[str, dict[str, Any]] | None = None,
     ):
-        """
-        Args:
-            s3_client: S3 client for Parquet storage.
-            data_source: Source for downloading OHLCV data.
-            security_metadata: symbol -> {"market_cap_category": "large-cap"|"mid-cap"|"small-cap", ...}
+        """Args:
+        s3_client: S3 client for Parquet storage.
+        data_source: Source for downloading OHLCV data.
+        security_metadata: symbol -> {"market_cap_category": "large-cap"|"mid-cap"|"small-cap", ...}
+
         """
         self.s3_client = s3_client
         self.data_source = data_source
-        self._security_metadata: Dict[str, Dict[str, Any]] = security_metadata or {}
+        self._security_metadata: dict[str, dict[str, Any]] = security_metadata or {}
 
         # Stats
         self._total_bars_downloaded: int = 0
@@ -148,7 +148,7 @@ class HistoricalDataService:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _serialize_bars(bars: List[OHLCV]) -> bytes:
+    def _serialize_bars(bars: list[OHLCV]) -> bytes:
         """Serialize OHLCV bars to a simple CSV-based Parquet-like format.
 
         In production this would use pyarrow/pandas to write real Parquet.
@@ -160,12 +160,12 @@ class HistoricalDataService:
         for b in bars:
             lines.append(
                 f"{b.symbol},{b.date.isoformat()},{b.open},{b.high},"
-                f"{b.low},{b.close},{b.volume}"
+                f"{b.low},{b.close},{b.volume}",
             )
         return "\n".join(lines).encode("utf-8")
 
     @staticmethod
-    def _deserialize_bars(data: bytes) -> List[OHLCV]:
+    def _deserialize_bars(data: bytes) -> list[OHLCV]:
         """Deserialize bars from CSV bytes."""
         if not data:
             return []
@@ -175,7 +175,7 @@ class HistoricalDataService:
         lines = text.split("\n")
         if len(lines) <= 1:
             return []
-        bars: List[OHLCV] = []
+        bars: list[OHLCV] = []
         for line in lines[1:]:
             parts = line.split(",")
             if len(parts) < 7:
@@ -217,8 +217,7 @@ class HistoricalDataService:
         start_date: date,
         end_date: date,
     ) -> int:
-        """
-        Download daily OHLCV and store as Parquet on S3.
+        """Download daily OHLCV and store as Parquet on S3.
 
         Downloads from the configured data source (NSE/BSE archives or
         Yahoo Finance) and stores partitioned by symbol and year.
@@ -232,9 +231,10 @@ class HistoricalDataService:
             Number of bars stored.
 
         Requirements: 28.1, 28.3, 28.5
+
         """
         logger.info(
-            f"Backfilling {symbol} from {start_date} to {end_date}"
+            f"Backfilling {symbol} from {start_date} to {end_date}",
         )
         try:
             bars = self.data_source.download_daily_ohlcv(symbol, start_date, end_date)
@@ -245,7 +245,7 @@ class HistoricalDataService:
             self._total_bars_downloaded += len(bars)
 
             # Group by year for partitioned storage (Req 28.3)
-            by_year: Dict[int, List[OHLCV]] = {}
+            by_year: dict[int, list[OHLCV]] = {}
             for bar in bars:
                 by_year.setdefault(bar.date.year, []).append(bar)
 
@@ -270,7 +270,7 @@ class HistoricalDataService:
             logger.error(f"Backfill failed for {symbol}: {e}", exc_info=True)
             return 0
 
-    def _load_year(self, symbol: str, year: int) -> List[OHLCV]:
+    def _load_year(self, symbol: str, year: int) -> list[OHLCV]:
         """Load existing bars for a symbol/year from S3."""
         key = self._s3_key(symbol, year)
         data = self.s3_client.download_bytes(self.S3_BUCKET, key)
@@ -279,9 +279,9 @@ class HistoricalDataService:
         return self._deserialize_bars(data)
 
     @staticmethod
-    def _merge_bars(existing: List[OHLCV], new: List[OHLCV]) -> List[OHLCV]:
+    def _merge_bars(existing: list[OHLCV], new: list[OHLCV]) -> list[OHLCV]:
         """Merge new bars into existing, deduplicating by date."""
-        date_map: Dict[date, OHLCV] = {}
+        date_map: dict[date, OHLCV] = {}
         for bar in existing:
             date_map[bar.date] = bar
         for bar in new:
@@ -294,11 +294,10 @@ class HistoricalDataService:
 
     @staticmethod
     def adjust_for_corporate_actions(
-        raw_data: List[OHLCV],
-        actions: List[CorporateAction],
-    ) -> List[OHLCV]:
-        """
-        Apply split/bonus adjustments to historical prices for continuity.
+        raw_data: list[OHLCV],
+        actions: list[CorporateAction],
+    ) -> list[OHLCV]:
+        """Apply split/bonus adjustments to historical prices for continuity.
 
         Adjustments are applied chronologically: for each action with an
         ex_date, all bars *before* the ex_date are adjusted.
@@ -315,6 +314,7 @@ class HistoricalDataService:
             New list of adjusted OHLCV bars.
 
         Requirements: 28.6
+
         """
         if not raw_data or not actions:
             return [OHLCV(
@@ -356,11 +356,10 @@ class HistoricalDataService:
 
     @staticmethod
     def revert_adjustments(
-        adjusted_data: List[OHLCV],
-        actions: List[CorporateAction],
-    ) -> List[OHLCV]:
-        """
-        Revert corporate action adjustments to recover original raw data.
+        adjusted_data: list[OHLCV],
+        actions: list[CorporateAction],
+    ) -> list[OHLCV]:
+        """Revert corporate action adjustments to recover original raw data.
 
         This is the inverse of adjust_for_corporate_actions. Applying
         adjust then revert produces the original raw data (round-trip
@@ -374,6 +373,7 @@ class HistoricalDataService:
             New list of reverted OHLCV bars matching original raw data.
 
         Requirements: 28.7
+
         """
         if not adjusted_data or not actions:
             return [OHLCV(
@@ -414,7 +414,7 @@ class HistoricalDataService:
         return reverted
 
     @staticmethod
-    def _compute_adjustment_factor(action: CorporateAction) -> Optional[float]:
+    def _compute_adjustment_factor(action: CorporateAction) -> float | None:
         """Compute the price multiplication factor for an action.
 
         SPLIT "new:old" → factor = old/new  (prices go down)
@@ -434,7 +434,7 @@ class HistoricalDataService:
             if left == 0:
                 return None
             return right / left
-        elif action.action_type == CorporateActionType.BONUS:
+        if action.action_type == CorporateActionType.BONUS:
             total = left + right
             if total == 0:
                 return None
@@ -451,9 +451,8 @@ class HistoricalDataService:
         start_date: date,
         end_date: date,
         timeframe: Timeframe = Timeframe.DAILY,
-    ) -> List[OHLCV]:
-        """
-        Query historical data by symbol, date range, and timeframe.
+    ) -> list[OHLCV]:
+        """Query historical data by symbol, date range, and timeframe.
 
         Args:
             symbol: Trading symbol.
@@ -465,12 +464,13 @@ class HistoricalDataService:
             List of OHLCV bars for the requested range and timeframe.
 
         Requirements: 28.4
+
         """
         # Determine which years to load
         start_year = start_date.year
         end_year = end_date.year
 
-        all_bars: List[OHLCV] = []
+        all_bars: list[OHLCV] = []
         for year in range(start_year, end_year + 1):
             year_bars = self._load_year(symbol, year)
             all_bars.extend(year_bars)
@@ -484,20 +484,20 @@ class HistoricalDataService:
 
         if timeframe == Timeframe.DAILY:
             return filtered
-        elif timeframe == Timeframe.WEEKLY:
+        if timeframe == Timeframe.WEEKLY:
             return self._resample_weekly(filtered)
-        elif timeframe == Timeframe.MONTHLY:
+        if timeframe == Timeframe.MONTHLY:
             return self._resample_monthly(filtered)
         return filtered
 
     @staticmethod
-    def _resample_weekly(bars: List[OHLCV]) -> List[OHLCV]:
+    def _resample_weekly(bars: list[OHLCV]) -> list[OHLCV]:
         """Resample daily bars to weekly OHLCV."""
         if not bars:
             return []
-        result: List[OHLCV] = []
-        current_week: Optional[List[OHLCV]] = None
-        current_iso_week: Optional[tuple] = None
+        result: list[OHLCV] = []
+        current_week: list[OHLCV] | None = None
+        current_iso_week: tuple | None = None
 
         for bar in bars:
             iso = bar.date.isocalendar()
@@ -515,13 +515,13 @@ class HistoricalDataService:
         return result
 
     @staticmethod
-    def _resample_monthly(bars: List[OHLCV]) -> List[OHLCV]:
+    def _resample_monthly(bars: list[OHLCV]) -> list[OHLCV]:
         """Resample daily bars to monthly OHLCV."""
         if not bars:
             return []
-        result: List[OHLCV] = []
-        current_month: Optional[List[OHLCV]] = None
-        current_key: Optional[tuple] = None
+        result: list[OHLCV] = []
+        current_month: list[OHLCV] | None = None
+        current_key: tuple | None = None
 
         for bar in bars:
             month_key = (bar.date.year, bar.date.month)
@@ -538,7 +538,7 @@ class HistoricalDataService:
         return result
 
     @staticmethod
-    def _aggregate_bars(bars: List[OHLCV]) -> OHLCV:
+    def _aggregate_bars(bars: list[OHLCV]) -> OHLCV:
         """Aggregate multiple daily bars into a single OHLCV bar."""
         return OHLCV(
             symbol=bars[0].symbol,
@@ -567,11 +567,11 @@ class HistoricalDataService:
         return self._backfill_errors
 
     @property
-    def security_metadata(self) -> Dict[str, Dict[str, Any]]:
+    def security_metadata(self) -> dict[str, dict[str, Any]]:
         return dict(self._security_metadata)
 
     def update_security_metadata(
-        self, metadata: Dict[str, Dict[str, Any]]
+        self, metadata: dict[str, dict[str, Any]],
     ) -> None:
         """Update security metadata (market cap categories etc.)."""
         self._security_metadata.update(metadata)

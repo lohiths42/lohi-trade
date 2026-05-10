@@ -1,5 +1,4 @@
-"""
-Property-based tests for the Order Management System (OMS).
+"""Property-based tests for the Order Management System (OMS).
 
 Uses hypothesis to verify OMS properties across randomly generated orders.
 
@@ -18,10 +17,10 @@ import time
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock
 
-from hypothesis import given, settings, assume
+from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from src.execution.oms import OrderManagementSystem, OrderResult, TokenBucketRateLimiter
+from src.execution.oms import OrderManagementSystem, TokenBucketRateLimiter
 from src.ingestion.broker_interface import (
     Order,
     OrderRejectionError,
@@ -30,7 +29,6 @@ from src.ingestion.broker_interface import (
     OrderType,
     ProductType,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers (mirrors patterns from tests/test_oms.py)
@@ -92,7 +90,7 @@ def _make_oms(
 def _get_order_row(db_manager: MagicMock, order_id: str) -> sqlite3.Row:
     conn = db_manager.connect_sqlite()
     return conn.execute(
-        "SELECT * FROM orders WHERE order_id=?", (order_id,)
+        "SELECT * FROM orders WHERE order_id=?", (order_id,),
     ).fetchone()
 
 
@@ -141,8 +139,7 @@ def orders(draw):
 # ---------------------------------------------------------------------------
 
 class TestProperty45OrderPlacementLatency:
-    """
-    For any order placed, the placement should complete within 100ms
+    """For any order placed, the placement should complete within 100ms
     (excluding network time, measured as local processing overhead).
 
     **Validates: Requirements 11.1**
@@ -172,8 +169,7 @@ class TestProperty45OrderPlacementLatency:
 # ---------------------------------------------------------------------------
 
 class TestProperty46MISProductType:
-    """
-    For any order placed by OMS, the product type SHALL be MIS regardless
+    """For any order placed by OMS, the product type SHALL be MIS regardless
     of the incoming product_type value.
 
     **Validates: Requirements 11.2**
@@ -201,8 +197,7 @@ class TestProperty46MISProductType:
 # ---------------------------------------------------------------------------
 
 class TestProperty48OrderPersistence:
-    """
-    For any order placed, it SHALL be stored in SQLite with all required
+    """For any order placed, it SHALL be stored in SQLite with all required
     fields: order_id, symbol, side, quantity, price, status, timestamp.
 
     **Validates: Requirements 11.4**
@@ -235,8 +230,7 @@ class TestProperty48OrderPersistence:
 # ---------------------------------------------------------------------------
 
 class TestProperty47RateLimiting:
-    """
-    Token bucket rate limiter limits to 8 requests/second.  When tokens
+    """Token bucket rate limiter limits to 8 requests/second.  When tokens
     are exhausted, acquire() returns a positive wait time.
 
     **Validates: Requirements 11.3**
@@ -297,8 +291,7 @@ class TestProperty47RateLimiting:
 # ---------------------------------------------------------------------------
 
 class TestProperty49BrokerRejectionRetry:
-    """
-    On broker rejection, retry up to 2 times with delay between retries.
+    """On broker rejection, retry up to 2 times with delay between retries.
     Total attempts = 1 initial + 2 retries = 3.
 
     **Validates: Requirements 11.5**
@@ -345,8 +338,7 @@ class TestProperty49BrokerRejectionRetry:
 # ---------------------------------------------------------------------------
 
 class TestProperty50FillEventHandling:
-    """
-    When an order is filled, a fill event SHALL be published to the
+    """When an order is filled, a fill event SHALL be published to the
     Event Bus and the order status updated to FILLED.
 
     **Validates: Requirements 11.6**
@@ -413,8 +405,7 @@ class TestProperty50FillEventHandling:
 # ---------------------------------------------------------------------------
 
 class TestProperty51OrderTimeoutCancellation:
-    """
-    Orders unfilled after 60 seconds SHALL be cancelled and status
+    """Orders unfilled after 60 seconds SHALL be cancelled and status
     updated to CANCELLED.
 
     **Validates: Requirements 11.8**

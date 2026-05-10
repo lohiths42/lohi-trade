@@ -55,9 +55,9 @@ except Exception:  # noqa: BLE001 - best-effort logger wiring
 
 
 __all__ = [
-    "log_sub_agent_invocation",
-    "log_retrieval_call",
     "log_orchestrator_event",
+    "log_retrieval_call",
+    "log_sub_agent_invocation",
 ]
 
 

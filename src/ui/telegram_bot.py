@@ -1,5 +1,4 @@
-"""
-Telegram Bot for LOHI-TRADE notifications and commands.
+"""Telegram Bot for LOHI-TRADE notifications and commands.
 
 Provides:
 - Trade entry/exit notifications with formatted messages
@@ -12,10 +11,9 @@ Provides:
 Requirements: 18.1, 18.2, 18.3, 18.4, 18.5, 18.6, 18.7
 """
 
-import time
 from collections import deque
+from collections.abc import Callable
 from datetime import datetime
-from typing import Callable, Optional
 
 import requests
 
@@ -42,7 +40,7 @@ class TelegramNotifier:
         redis_client=None,
         kill_switch=None,
         *,
-        now_fn: Optional[Callable[[], datetime]] = None,
+        now_fn: Callable[[], datetime] | None = None,
     ) -> None:
         self._config = config
         self._db = db_manager
@@ -52,10 +50,10 @@ class TelegramNotifier:
 
         # Telegram config
         try:
-            self._bot_token: Optional[str] = config.telegram.bot_token
-            self._chat_id: Optional[str] = config.telegram.chat_id
+            self._bot_token: str | None = config.telegram.bot_token
+            self._chat_id: str | None = config.telegram.chat_id
             self._rate_limit: int = getattr(
-                config.telegram, "rate_limit_messages_per_hour", DEFAULT_RATE_LIMIT
+                config.telegram, "rate_limit_messages_per_hour", DEFAULT_RATE_LIMIT,
             )
         except AttributeError:
             logger.warning("Telegram configuration not available – notifications disabled")
@@ -70,7 +68,7 @@ class TelegramNotifier:
             f"TelegramNotifier initialised: "
             f"token={'set' if self._bot_token else 'missing'}, "
             f"chat_id={'set' if self._chat_id else 'missing'}, "
-            f"rate_limit={self._rate_limit}/hr"
+            f"rate_limit={self._rate_limit}/hr",
         )
 
     # ------------------------------------------------------------------
@@ -211,7 +209,7 @@ class TelegramNotifier:
 
         if self._is_rate_limited():
             logger.warning(
-                f"Rate limit reached ({self._rate_limit}/hr) – dropping message: {text[:80]}"
+                f"Rate limit reached ({self._rate_limit}/hr) – dropping message: {text[:80]}",
             )
             return False
 
@@ -228,11 +226,10 @@ class TelegramNotifier:
                 self._record_sent()
                 logger.info(f"Telegram message sent: {text[:80]}")
                 return True
-            else:
-                logger.error(
-                    f"Telegram API error {resp.status_code}: {resp.text[:200]}"
-                )
-                return False
+            logger.error(
+                f"Telegram API error {resp.status_code}: {resp.text[:200]}",
+            )
+            return False
         except requests.RequestException as exc:
             logger.error(f"Telegram send failed: {exc}")
             return False
@@ -279,7 +276,7 @@ class TelegramCommandHandler:
                 conn = self._db.connect_sqlite()
                 cur = conn.execute(
                     "SELECT symbol, side, quantity, entry_price "
-                    "FROM trades WHERE exit_time IS NULL"
+                    "FROM trades WHERE exit_time IS NULL",
                 )
                 rows = cur.fetchall()
                 if rows:
@@ -287,7 +284,7 @@ class TelegramCommandHandler:
                     for r in rows:
                         lines.append(
                             f"  {r['symbol']} {r['side']} "
-                            f"x{r['quantity']} @ ₹{float(r['entry_price']):,.2f}"
+                            f"x{r['quantity']} @ ₹{float(r['entry_price']):,.2f}",
                         )
                 else:
                     lines.append("\nNo open positions")

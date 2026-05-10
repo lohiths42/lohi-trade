@@ -1,5 +1,4 @@
-"""
-RSS Feed Poller for The Commander - News Ingestion.
+"""RSS Feed Poller for The Commander - News Ingestion.
 
 Polls financial news RSS feeds from MoneyControl, Economic Times, and LiveMint
 every 60 seconds, extracting article data for sentiment analysis.
@@ -11,13 +10,12 @@ import hashlib
 import logging
 import threading
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from time import mktime
-from typing import Callable, Dict, List, Optional
 
 import feedparser
-
 
 logger = logging.getLogger(__name__)
 
@@ -32,8 +30,7 @@ class RSSSource:
 
 @dataclass
 class NewsArticle:
-    """
-    Represents a news article fetched from an RSS feed.
+    """Represents a news article fetched from an RSS feed.
 
     Attributes:
         article_id: Unique identifier (UUID)
@@ -44,6 +41,7 @@ class NewsArticle:
         published_at: When the article was published
         fetched_at: When the article was fetched by the poller
         content_hash: SHA256 hash of title + first 200 chars of content
+
     """
 
     article_id: str = field(default_factory=lambda: str(uuid.uuid4()))
@@ -51,8 +49,8 @@ class NewsArticle:
     title: str = ""
     content: str = ""
     url: str = ""
-    published_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    fetched_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    published_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    fetched_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     content_hash: str = ""
 
 
@@ -65,8 +63,7 @@ DEFAULT_RSS_SOURCES = [
 
 
 def compute_content_hash(title: str, content: str) -> str:
-    """
-    Compute SHA256 hash for deduplication.
+    """Compute SHA256 hash for deduplication.
 
     Uses title + first 200 characters of content.
 
@@ -76,14 +73,14 @@ def compute_content_hash(title: str, content: str) -> str:
 
     Returns:
         Hex-encoded SHA256 hash string
+
     """
     raw = title + content[:200]
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
-def parse_entry(entry: Dict, source_name: str) -> NewsArticle:
-    """
-    Parse a single feedparser entry into a NewsArticle.
+def parse_entry(entry: dict, source_name: str) -> NewsArticle:
+    """Parse a single feedparser entry into a NewsArticle.
 
     Args:
         entry: A feedparser entry dict
@@ -91,6 +88,7 @@ def parse_entry(entry: Dict, source_name: str) -> NewsArticle:
 
     Returns:
         NewsArticle with extracted fields
+
     """
     title = entry.get("title", "").strip()
 
@@ -104,18 +102,18 @@ def parse_entry(entry: Dict, source_name: str) -> NewsArticle:
     url = entry.get("link", "").strip()
 
     # Parse published date
-    published_at = datetime.now(timezone.utc)
-    if "published_parsed" in entry and entry["published_parsed"]:
+    published_at = datetime.now(UTC)
+    if entry.get("published_parsed"):
         try:
             published_at = datetime.fromtimestamp(
-                mktime(entry["published_parsed"]), tz=timezone.utc
+                mktime(entry["published_parsed"]), tz=UTC,
             )
         except (ValueError, OverflowError, OSError):
             pass
-    elif "updated_parsed" in entry and entry["updated_parsed"]:
+    elif entry.get("updated_parsed"):
         try:
             published_at = datetime.fromtimestamp(
-                mktime(entry["updated_parsed"]), tz=timezone.utc
+                mktime(entry["updated_parsed"]), tz=UTC,
             )
         except (ValueError, OverflowError, OSError):
             pass
@@ -129,29 +127,29 @@ def parse_entry(entry: Dict, source_name: str) -> NewsArticle:
         content=content,
         url=url,
         published_at=published_at,
-        fetched_at=datetime.now(timezone.utc),
+        fetched_at=datetime.now(UTC),
         content_hash=content_hash,
     )
 
 
-def fetch_feed(source: RSSSource) -> List[NewsArticle]:
-    """
-    Fetch and parse articles from a single RSS feed source.
+def fetch_feed(source: RSSSource) -> list[NewsArticle]:
+    """Fetch and parse articles from a single RSS feed source.
 
     Args:
         source: RSS source configuration
 
     Returns:
         List of parsed NewsArticle objects
+
     """
-    articles: List[NewsArticle] = []
+    articles: list[NewsArticle] = []
 
     try:
         feed = feedparser.parse(source.url)
 
         if feed.bozo and not feed.entries:
             logger.warning(
-                f"RSS feed parse error for {source.name}: {feed.bozo_exception}"
+                f"RSS feed parse error for {source.name}: {feed.bozo_exception}",
             )
             return articles
 
@@ -174,8 +172,7 @@ def fetch_feed(source: RSSSource) -> List[NewsArticle]:
 
 
 class RSSPoller:
-    """
-    RSS Feed Poller for financial news sources.
+    """RSS Feed Poller for financial news sources.
 
     Polls MoneyControl, Economic Times, and LiveMint RSS feeds at a
     configurable interval (default 60 seconds). Extracts title, content,
@@ -184,41 +181,41 @@ class RSSPoller:
     Requirements: 5.1, 5.3
     """
 
-    def __init__(self, sources: Optional[List[RSSSource]] = None):
-        """
-        Initialize RSS Poller with feed sources.
+    def __init__(self, sources: list[RSSSource] | None = None):
+        """Initialize RSS Poller with feed sources.
 
         Args:
             sources: List of RSS feed sources. Uses defaults if None.
+
         """
         self.sources = sources if sources is not None else DEFAULT_RSS_SOURCES
-        self._timer: Optional[threading.Timer] = None
+        self._timer: threading.Timer | None = None
         self._running = False
         self._lock = threading.Lock()
-        self._on_articles: Optional[Callable[[List[NewsArticle]], None]] = None
+        self._on_articles: Callable[[list[NewsArticle]], None] | None = None
 
     @property
     def is_running(self) -> bool:
         """Whether the poller is currently running."""
         return self._running
 
-    def on_articles(self, callback: Callable[[List[NewsArticle]], None]) -> None:
-        """
-        Register a callback for when new articles are fetched.
+    def on_articles(self, callback: Callable[[list[NewsArticle]], None]) -> None:
+        """Register a callback for when new articles are fetched.
 
         Args:
             callback: Function called with list of fetched articles
+
         """
         self._on_articles = callback
 
-    def poll_once(self) -> List[NewsArticle]:
-        """
-        Perform a single poll of all configured RSS sources.
+    def poll_once(self) -> list[NewsArticle]:
+        """Perform a single poll of all configured RSS sources.
 
         Returns:
             List of all fetched NewsArticle objects from all sources
+
         """
-        all_articles: List[NewsArticle] = []
+        all_articles: list[NewsArticle] = []
 
         for source in self.sources:
             articles = fetch_feed(source)
@@ -226,7 +223,7 @@ class RSSPoller:
 
         logger.info(
             f"Poll complete: {len(all_articles)} total articles "
-            f"from {len(self.sources)} sources"
+            f"from {len(self.sources)} sources",
         )
 
         if self._on_articles and all_articles:
@@ -238,11 +235,11 @@ class RSSPoller:
         return all_articles
 
     def start_polling(self, interval_seconds: int = 60) -> None:
-        """
-        Start periodic polling of RSS feeds.
+        """Start periodic polling of RSS feeds.
 
         Args:
             interval_seconds: Seconds between polls (default 60)
+
         """
         with self._lock:
             if self._running:
@@ -252,7 +249,7 @@ class RSSPoller:
             self._running = True
             logger.info(
                 f"Starting RSS poller with {interval_seconds}s interval "
-                f"for {len(self.sources)} sources"
+                f"for {len(self.sources)} sources",
             )
             self._schedule_poll(interval_seconds)
 

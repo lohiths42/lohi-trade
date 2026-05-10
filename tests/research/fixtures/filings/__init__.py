@@ -19,8 +19,8 @@ Exports
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Sequence
 from uuid import UUID, uuid4
 
 from src.research.providers.base import ChunkRecord
@@ -105,7 +105,7 @@ FILINGS: list[FixtureDocument] = [
 def build_chunk_records(
     *,
     user_id: UUID,
-    embeddings: "object",
+    embeddings: object,
 ) -> list[ChunkRecord]:
     """Materialise :class:`ChunkRecord`\\s from :data:`FILINGS`.
 
@@ -120,6 +120,7 @@ def build_chunk_records(
         (typically :class:`FakeEmbeddingsProvider`) whose ``embed`` is
         awaited to produce deterministic vectors. The caller is
         responsible for running this function inside an event loop.
+
     """
     # ``embeddings.embed`` is async; the caller wraps this helper in
     # ``asyncio.run(...)`` / ``await``. We keep this function sync so
@@ -127,7 +128,7 @@ def build_chunk_records(
     # returned by :func:`_build_chunk_records_async`.
     raise RuntimeError(
         "build_chunk_records must not be called directly; "
-        "use _build_chunk_records_async from the smoke-test helper."
+        "use _build_chunk_records_async from the smoke-test helper.",
     )
 
 
@@ -168,7 +169,7 @@ async def _build_chunk_records_async(
                     embedding=list(vec),
                     embedding_model=embeddings.model_id,  # type: ignore[attr-defined]
                     embedding_dim=embeddings.dim,  # type: ignore[attr-defined]
-                )
+                ),
             )
     return records
 

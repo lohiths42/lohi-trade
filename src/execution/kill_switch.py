@@ -1,5 +1,4 @@
-"""
-Kill Switch module for LOHI-TRADE.
+"""Kill Switch module for LOHI-TRADE.
 
 Manages the emergency kill switch that halts all trading activity.
 Supports manual activation/deactivation and automatic triggers based on
@@ -17,8 +16,8 @@ Requirements: 13.1, 13.2, 13.3, 13.4, 13.5, 13.6, 13.7, 13.8, 13.9
 """
 
 import json
+from collections.abc import Callable
 from datetime import datetime
-from typing import Callable, Optional
 
 from src.execution.oms import OrderManagementSystem
 from src.state.database import DatabaseConnectionManager
@@ -55,7 +54,7 @@ class KillSwitch:
         db_manager: DatabaseConnectionManager,
         event_bus: EventBus,
         *,
-        now_fn: Optional[Callable[[], datetime]] = None,
+        now_fn: Callable[[], datetime] | None = None,
     ) -> None:
         """Initialise the kill switch.
 
@@ -66,6 +65,7 @@ class KillSwitch:
             db_manager: Database manager for audit logging.
             event_bus: Event bus for publishing notifications.
             now_fn: Optional callable returning current datetime (for testing).
+
         """
         self._config = config
         self._redis = redis_client
@@ -83,7 +83,7 @@ class KillSwitch:
         logger.info(
             f"KillSwitch initialised: capital={self._total_capital}, "
             f"max_loss={self._max_daily_loss_pct}%, "
-            f"volatility_threshold={self._volatility_threshold_pct}%"
+            f"volatility_threshold={self._volatility_threshold_pct}%",
         )
 
     # ------------------------------------------------------------------
@@ -98,6 +98,7 @@ class KillSwitch:
 
         Args:
             reason: Human-readable reason for activation.
+
         """
         self._redis.set(self.KILL_SWITCH_KEY, "true")
         self._redis.set(self.KILL_SWITCH_REASON_KEY, reason)
@@ -126,7 +127,7 @@ class KillSwitch:
         value = self._redis.get(self.KILL_SWITCH_KEY)
         return value == "true"
 
-    def get_reason(self) -> Optional[str]:
+    def get_reason(self) -> str | None:
         """Return the activation reason, or ``None`` if inactive."""
         return self._redis.get(self.KILL_SWITCH_REASON_KEY)
 
@@ -142,6 +143,7 @@ class KillSwitch:
 
         Returns:
             ``True`` if the kill switch was activated by this check.
+
         """
         try:
             current_str = self._redis.get("nifty:current_price")
@@ -179,6 +181,7 @@ class KillSwitch:
 
         Returns:
             ``True`` if the kill switch was activated by this check.
+
         """
         try:
             daily_pnl = self._get_daily_pnl()
@@ -203,6 +206,7 @@ class KillSwitch:
 
         Returns:
             ``True`` if the kill switch was activated by any check.
+
         """
         if self.is_active():
             return False  # Already active, nothing to do
@@ -224,6 +228,7 @@ class KillSwitch:
 
         Returns:
             Number of orders cancelled.
+
         """
         cancelled = 0
         for order_id in list(self._oms._pending_orders.keys()):

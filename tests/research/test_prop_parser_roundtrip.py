@@ -65,9 +65,9 @@ alarm firing (the bound is a deliberate choice, not noise).
 from __future__ import annotations
 
 import hashlib
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
@@ -79,7 +79,6 @@ from src.research.ingest.parser.canonical import (
     parse_canonical,
     pretty_print,
 )
-
 
 # --------------------------------------------------------------------------- #
 # Fixed universes                                                             #
@@ -172,7 +171,7 @@ def _hex_sha256_from(seed: str) -> str:
 
 @st.composite
 def sections_strategy(
-    draw: st.DrawFn, canonical_text: str
+    draw: st.DrawFn, canonical_text: str,
 ) -> list[SectionSpan]:
     """Draw 0–3 non-overlapping sections with distinct names.
 
@@ -211,7 +210,7 @@ def sections_strategy(
             min_size=2 * n,
             max_size=2 * n,
             unique=True,
-        )
+        ),
     )
     boundaries.sort()
 
@@ -224,7 +223,7 @@ def sections_strategy(
             min_size=n,
             max_size=n,
             unique=True,
-        )
+        ),
     )
 
     spans: list[SectionSpan] = []
@@ -258,7 +257,7 @@ def metadata_strategy(draw: st.DrawFn) -> dict[str, Any]:
                 alphabet="abcdefghijklmnopqrstuvwxyz_",
                 min_size=1,
                 max_size=12,
-            )
+            ),
         )
         value = draw(
             st.one_of(
@@ -266,7 +265,7 @@ def metadata_strategy(draw: st.DrawFn) -> dict[str, Any]:
                 st.booleans(),
                 st.text(alphabet=_TEXT_ALPHABET, min_size=0, max_size=30),
                 st.none(),
-            )
+            ),
         )
         result[key] = value
     return result
@@ -304,15 +303,15 @@ def doc_strategy(draw: st.DrawFn) -> CanonicalDoc:
                     min_size=10,
                     max_size=80,
                 ),
-            )
+            ),
         ),
         sha256=_hex_sha256_from(canonical_text),
         published_at=draw(
             st.datetimes(
                 min_value=datetime(2000, 1, 1),
                 max_value=datetime(2050, 12, 31),
-                timezones=st.just(timezone.utc),
-            )
+                timezones=st.just(UTC),
+            ),
         ),
         canonical_text=canonical_text,
         sections=draw(sections_strategy(canonical_text)),
@@ -366,11 +365,11 @@ def test_canonical_doc_roundtrip(doc: CanonicalDoc) -> None:
     # compared as their serialised form, matching what actually flows
     # through the meta block.
     assert parsed.model_dump(
-        exclude={"canonical_text"}, mode="json"
+        exclude={"canonical_text"}, mode="json",
     ) == doc.model_dump(exclude={"canonical_text"}, mode="json")
 
     # Leg 2: canonical_text round-trips under the documented
     # whitespace normaliser.
     assert _normalise_for_equality(parsed.canonical_text) == _normalise_for_equality(
-        doc.canonical_text
+        doc.canonical_text,
     )

@@ -1,5 +1,4 @@
-"""
-Property-based tests for each individual RMS pre-order check.
+"""Property-based tests for each individual RMS pre-order check.
 
 Tests Properties 28-36 from the design document, verifying that each
 of the 9 RMS checks correctly rejects orders when their specific
@@ -12,10 +11,10 @@ import sqlite3
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock
 
-from hypothesis import given, settings, assume
+from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
-from src.execution.rms import RiskManagementSystem, ValidationResult
+from src.execution.rms import RiskManagementSystem
 from src.soldier.indicator_engine import IndicatorSet
 from src.soldier.strategy_engine import Signal
 from src.utils.config import (
@@ -222,8 +221,7 @@ def _make_rms(
 
 
 class TestDailyLossLimitEnforcement:
-    """
-    **Property 28: Daily Loss Limit Enforcement**
+    """**Property 28: Daily Loss Limit Enforcement**
     **Validates: Requirements 9.2**
 
     For any daily P&L that exceeds -2% of capital, the daily_loss_limit
@@ -236,8 +234,7 @@ class TestDailyLossLimitEnforcement:
     )
     @settings(max_examples=25)
     def test_rejects_when_daily_loss_exceeds_limit(self, loss_pct, capital):
-        """
-        For any daily P&L worse than -2% of capital, the daily_loss_limit
+        """For any daily P&L worse than -2% of capital, the daily_loss_limit
         check must appear in checks_failed.
 
         **Validates: Requirements 9.2**
@@ -260,8 +257,7 @@ class TestDailyLossLimitEnforcement:
 
 
 class TestPositionCountLimitEnforcement:
-    """
-    **Property 29: Position Count Limit Enforcement**
+    """**Property 29: Position Count Limit Enforcement**
     **Validates: Requirements 9.3**
 
     For any open position count >= 5, the position_limit check SHALL fail.
@@ -272,8 +268,7 @@ class TestPositionCountLimitEnforcement:
     )
     @settings(max_examples=25)
     def test_rejects_when_position_count_at_or_above_limit(self, open_positions):
-        """
-        For any open position count >= 5, position_limit must fail.
+        """For any open position count >= 5, position_limit must fail.
 
         **Validates: Requirements 9.3**
         """
@@ -292,8 +287,7 @@ class TestPositionCountLimitEnforcement:
 
 
 class TestPositionSizeLimitEnforcement:
-    """
-    **Property 30: Position Size Limit Enforcement**
+    """**Property 30: Position Size Limit Enforcement**
     **Validates: Requirements 9.4**
 
     For any order value > 20% of capital, the position_size_limit check
@@ -306,8 +300,7 @@ class TestPositionSizeLimitEnforcement:
     )
     @settings(max_examples=25)
     def test_rejects_when_order_value_exceeds_limit(self, entry_price, quantity):
-        """
-        For any order where entry_price * quantity > 20% of capital,
+        """For any order where entry_price * quantity > 20% of capital,
         position_size_limit must fail.
 
         **Validates: Requirements 9.4**
@@ -332,8 +325,7 @@ class TestPositionSizeLimitEnforcement:
 
 
 class TestOrderCountLimitEnforcement:
-    """
-    **Property 31: Order Count Limit Enforcement**
+    """**Property 31: Order Count Limit Enforcement**
     **Validates: Requirements 9.5**
 
     For any order count >= 20, the order_count_limit check SHALL fail.
@@ -344,8 +336,7 @@ class TestOrderCountLimitEnforcement:
     )
     @settings(max_examples=25)
     def test_rejects_when_order_count_at_or_above_limit(self, orders_today):
-        """
-        For any order count >= 20, order_count_limit must fail.
+        """For any order count >= 20, order_count_limit must fail.
 
         **Validates: Requirements 9.5**
         """
@@ -364,8 +355,7 @@ class TestOrderCountLimitEnforcement:
 
 
 class TestCooldownPeriodEnforcement:
-    """
-    **Property 32: Cooldown Period Enforcement**
+    """**Property 32: Cooldown Period Enforcement**
     **Validates: Requirements 9.6**
 
     For any losing trade exited < 5 minutes ago, the cooldown check
@@ -378,8 +368,7 @@ class TestCooldownPeriodEnforcement:
     )
     @settings(max_examples=25)
     def test_rejects_during_cooldown_after_loss(self, seconds_ago, loss_amount):
-        """
-        For any losing trade exited less than 5 minutes (300s) ago,
+        """For any losing trade exited less than 5 minutes (300s) ago,
         cooldown must fail.
 
         **Validates: Requirements 9.6**
@@ -410,8 +399,7 @@ class TestCooldownPeriodEnforcement:
 
 
 class TestKillSwitchEnforcement:
-    """
-    **Property 33: Kill Switch Enforcement**
+    """**Property 33: Kill Switch Enforcement**
     **Validates: Requirements 9.7**
 
     When kill switch is active, the kill_switch check SHALL always fail.
@@ -424,8 +412,7 @@ class TestKillSwitchEnforcement:
     )
     @settings(max_examples=25)
     def test_always_rejects_when_kill_switch_active(self, side, entry_price, quantity):
-        """
-        For any signal, when kill switch is active, kill_switch must fail.
+        """For any signal, when kill switch is active, kill_switch must fail.
 
         **Validates: Requirements 9.7**
         """
@@ -447,8 +434,7 @@ class TestKillSwitchEnforcement:
 
 
 class TestVolatilityGuardEnforcement:
-    """
-    **Property 34: Volatility Guard Enforcement**
+    """**Property 34: Volatility Guard Enforcement**
     **Validates: Requirements 9.8**
 
     For any Nifty drop > 2% in 10 minutes, the volatility_guard check
@@ -461,8 +447,7 @@ class TestVolatilityGuardEnforcement:
     )
     @settings(max_examples=25)
     def test_rejects_when_nifty_drops_over_threshold(self, drop_pct, window_start_price):
-        """
-        For any Nifty drop > 2%, volatility_guard must fail.
+        """For any Nifty drop > 2%, volatility_guard must fail.
 
         **Validates: Requirements 9.8**
         """
@@ -487,8 +472,7 @@ class TestVolatilityGuardEnforcement:
 
 
 class TestTradingHoursEnforcement:
-    """
-    **Property 35: Trading Hours Enforcement**
+    """**Property 35: Trading Hours Enforcement**
     **Validates: Requirements 9.9**
 
     For any time outside 9:30 AM - 3:10 PM, the trading_hours check
@@ -501,8 +485,7 @@ class TestTradingHoursEnforcement:
     )
     @settings(max_examples=25)
     def test_rejects_before_trading_start(self, hour, minute):
-        """
-        For any time before 9:30 AM, trading_hours must fail.
+        """For any time before 9:30 AM, trading_hours must fail.
 
         **Validates: Requirements 9.9**
         """
@@ -525,8 +508,7 @@ class TestTradingHoursEnforcement:
     )
     @settings(max_examples=25)
     def test_rejects_after_trading_end(self, hour, minute):
-        """
-        For any time after 3:10 PM, trading_hours must fail.
+        """For any time after 3:10 PM, trading_hours must fail.
 
         **Validates: Requirements 9.9**
         """
@@ -549,8 +531,7 @@ class TestTradingHoursEnforcement:
 
 
 class TestBiasFilterBuySignals:
-    """
-    **Property 36: Bias Filter for BUY Signals**
+    """**Property 36: Bias Filter for BUY Signals**
     **Validates: Requirements 9.9**
 
     For any BUY signal with BEARISH bias, the bias_filter check SHALL fail.
@@ -562,8 +543,7 @@ class TestBiasFilterBuySignals:
     )
     @settings(max_examples=25)
     def test_rejects_buy_when_bearish(self, symbol, entry_price):
-        """
-        For any BUY signal with BEARISH bias, bias_filter must fail.
+        """For any BUY signal with BEARISH bias, bias_filter must fail.
 
         **Validates: Requirements 9.9**
         """

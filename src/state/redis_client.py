@@ -2,18 +2,16 @@
 
 import logging
 import time
-from typing import Any, Dict, Optional
+from typing import Any
 
 import redis
 from redis.exceptions import ConnectionError, RedisError, TimeoutError
-
 
 logger = logging.getLogger(__name__)
 
 
 class RedisClient:
-    """
-    Redis client wrapper with connection management and automatic reconnection.
+    """Redis client wrapper with connection management and automatic reconnection.
     
     Provides methods for:
     - Connection management with automatic reconnection
@@ -31,8 +29,7 @@ class RedisClient:
         socket_timeout: float = 5.0,
         socket_connect_timeout: float = 5.0,
     ):
-        """
-        Initialize Redis client with connection parameters.
+        """Initialize Redis client with connection parameters.
         
         Args:
             host: Redis server host
@@ -42,6 +39,7 @@ class RedisClient:
             retry_delay: Initial delay between retries (exponential backoff)
             socket_timeout: Socket timeout in seconds
             socket_connect_timeout: Socket connection timeout in seconds
+
         """
         self.host = host
         self.port = port
@@ -50,20 +48,20 @@ class RedisClient:
         self.retry_delay = retry_delay
         self.socket_timeout = socket_timeout
         self.socket_connect_timeout = socket_connect_timeout
-        
-        self._client: Optional[redis.Redis] = None
-        self._connection_pool: Optional[redis.ConnectionPool] = None
-        
+
+        self._client: redis.Redis | None = None
+        self._connection_pool: redis.ConnectionPool | None = None
+
     def connect(self) -> None:
-        """
-        Establish connection to Redis server with automatic retry.
+        """Establish connection to Redis server with automatic retry.
         
         Raises:
             ConnectionError: If connection fails after all retry attempts
+
         """
         retry_count = 0
         current_delay = self.retry_delay
-        
+
         while retry_count < self.max_retries:
             try:
                 # Create connection pool
@@ -76,35 +74,35 @@ class RedisClient:
                     decode_responses=True,
                     max_connections=50,
                 )
-                
+
                 # Create Redis client
                 self._client = redis.Redis(connection_pool=self._connection_pool)
-                
+
                 # Test connection
                 self._client.ping()
-                
+
                 logger.info(
-                    f"Successfully connected to Redis at {self.host}:{self.port} (db={self.db})"
+                    f"Successfully connected to Redis at {self.host}:{self.port} (db={self.db})",
                 )
                 return
-                
+
             except (ConnectionError, TimeoutError) as e:
                 retry_count += 1
                 if retry_count >= self.max_retries:
                     logger.error(
-                        f"Failed to connect to Redis after {self.max_retries} attempts: {e}"
+                        f"Failed to connect to Redis after {self.max_retries} attempts: {e}",
                     )
                     raise ConnectionError(
-                        f"Could not connect to Redis at {self.host}:{self.port}"
+                        f"Could not connect to Redis at {self.host}:{self.port}",
                     ) from e
-                
+
                 logger.warning(
                     f"Redis connection attempt {retry_count}/{self.max_retries} failed. "
-                    f"Retrying in {current_delay}s..."
+                    f"Retrying in {current_delay}s...",
                 )
                 time.sleep(current_delay)
                 current_delay *= 2  # Exponential backoff
-                
+
     def disconnect(self) -> None:
         """Close Redis connection and cleanup resources."""
         if self._client:
@@ -115,7 +113,7 @@ class RedisClient:
                 logger.error(f"Error closing Redis connection: {e}")
             finally:
                 self._client = None
-                
+
         if self._connection_pool:
             try:
                 self._connection_pool.disconnect()
@@ -123,43 +121,42 @@ class RedisClient:
                 logger.error(f"Error disconnecting connection pool: {e}")
             finally:
                 self._connection_pool = None
-                
+
     def ping(self) -> bool:
-        """
-        Health check - ping Redis server.
+        """Health check - ping Redis server.
         
         Returns:
             True if Redis is reachable, False otherwise
+
         """
         if not self._client:
             return False
-            
+
         try:
             return self._client.ping()
         except (ConnectionError, TimeoutError, RedisError) as e:
             logger.warning(f"Redis ping failed: {e}")
             return False
-            
+
     def _ensure_connected(self) -> None:
-        """
-        Ensure Redis connection is active, reconnect if necessary.
+        """Ensure Redis connection is active, reconnect if necessary.
         
         Raises:
             ConnectionError: If reconnection fails
+
         """
         if not self._client or not self.ping():
             logger.warning("Redis connection lost, attempting to reconnect...")
             self.connect()
-            
+
     def xadd(
         self,
         stream_name: str,
-        fields: Dict[str, Any],
-        maxlen: Optional[int] = None,
+        fields: dict[str, Any],
+        maxlen: int | None = None,
         approximate: bool = True,
     ) -> str:
-        """
-        Add message to Redis Stream.
+        """Add message to Redis Stream.
         
         Args:
             stream_name: Name of the stream
@@ -172,9 +169,10 @@ class RedisClient:
             
         Raises:
             RedisError: If operation fails
+
         """
         self._ensure_connected()
-        
+
         try:
             message_id = self._client.xadd(
                 name=stream_name,
@@ -186,15 +184,14 @@ class RedisClient:
         except RedisError as e:
             logger.error(f"Failed to add message to stream {stream_name}: {e}")
             raise
-            
+
     def xread(
         self,
-        streams: Dict[str, str],
-        count: Optional[int] = None,
-        block: Optional[int] = None,
+        streams: dict[str, str],
+        count: int | None = None,
+        block: int | None = None,
     ) -> list:
-        """
-        Read messages from Redis Streams.
+        """Read messages from Redis Streams.
         
         Args:
             streams: Dictionary mapping stream names to message IDs (use '>' for new messages)
@@ -206,15 +203,16 @@ class RedisClient:
             
         Raises:
             RedisError: If operation fails
+
         """
         self._ensure_connected()
-        
+
         try:
             return self._client.xread(streams=streams, count=count, block=block)
         except RedisError as e:
             logger.error(f"Failed to read from streams: {e}")
             raise
-            
+
     def xgroup_create(
         self,
         stream_name: str,
@@ -222,8 +220,7 @@ class RedisClient:
         id: str = "0",
         mkstream: bool = True,
     ) -> bool:
-        """
-        Create consumer group for a stream.
+        """Create consumer group for a stream.
         
         Args:
             stream_name: Name of the stream
@@ -236,9 +233,10 @@ class RedisClient:
             
         Raises:
             RedisError: If operation fails (except BUSYGROUP error)
+
         """
         self._ensure_connected()
-        
+
         try:
             self._client.xgroup_create(
                 name=stream_name,
@@ -258,17 +256,16 @@ class RedisClient:
         except RedisError as e:
             logger.error(f"Failed to create consumer group: {e}")
             raise
-            
+
     def xreadgroup(
         self,
         group_name: str,
         consumer_name: str,
-        streams: Dict[str, str],
-        count: Optional[int] = None,
-        block: Optional[int] = None,
+        streams: dict[str, str],
+        count: int | None = None,
+        block: int | None = None,
     ) -> list:
-        """
-        Read messages from streams as part of a consumer group.
+        """Read messages from streams as part of a consumer group.
         
         Args:
             group_name: Name of the consumer group
@@ -282,9 +279,10 @@ class RedisClient:
             
         Raises:
             RedisError: If operation fails
+
         """
         self._ensure_connected()
-        
+
         try:
             return self._client.xreadgroup(
                 groupname=group_name,
@@ -296,10 +294,9 @@ class RedisClient:
         except RedisError as e:
             logger.error(f"Failed to read from consumer group: {e}")
             raise
-            
+
     def xack(self, stream_name: str, group_name: str, *message_ids: str) -> int:
-        """
-        Acknowledge messages in a consumer group.
+        """Acknowledge messages in a consumer group.
         
         Args:
             stream_name: Name of the stream
@@ -311,44 +308,44 @@ class RedisClient:
             
         Raises:
             RedisError: If operation fails
+
         """
         self._ensure_connected()
-        
+
         try:
             return self._client.xack(stream_name, group_name, *message_ids)
         except RedisError as e:
             logger.error(f"Failed to acknowledge messages: {e}")
             raise
-            
-    def get(self, key: str) -> Optional[str]:
-        """
-        Get value for a key.
+
+    def get(self, key: str) -> str | None:
+        """Get value for a key.
         
         Args:
             key: Redis key
             
         Returns:
             Value or None if key doesn't exist
+
         """
         self._ensure_connected()
-        
+
         try:
             return self._client.get(key)
         except RedisError as e:
             logger.error(f"Failed to get key {key}: {e}")
             raise
-            
+
     def set(
         self,
         key: str,
         value: Any,
-        ex: Optional[int] = None,
-        px: Optional[int] = None,
+        ex: int | None = None,
+        px: int | None = None,
         nx: bool = False,
         xx: bool = False,
     ) -> bool:
-        """
-        Set key to value with optional expiration.
+        """Set key to value with optional expiration.
         
         Args:
             key: Redis key
@@ -360,36 +357,36 @@ class RedisClient:
             
         Returns:
             True if set successfully
+
         """
         self._ensure_connected()
-        
+
         try:
             return self._client.set(key, value, ex=ex, px=px, nx=nx, xx=xx)
         except RedisError as e:
             logger.error(f"Failed to set key {key}: {e}")
             raise
-            
+
     def delete(self, *keys: str) -> int:
-        """
-        Delete one or more keys.
+        """Delete one or more keys.
         
         Args:
             keys: Keys to delete
             
         Returns:
             Number of keys deleted
+
         """
         self._ensure_connected()
-        
+
         try:
             return self._client.delete(*keys)
         except RedisError as e:
             logger.error(f"Failed to delete keys: {e}")
             raise
-            
+
     def sadd(self, key: str, *values: Any) -> int:
-        """
-        Add members to a set.
+        """Add members to a set.
         
         Args:
             key: Set key
@@ -397,18 +394,18 @@ class RedisClient:
             
         Returns:
             Number of elements added
+
         """
         self._ensure_connected()
-        
+
         try:
             return self._client.sadd(key, *values)
         except RedisError as e:
             logger.error(f"Failed to add to set {key}: {e}")
             raise
-            
+
     def sismember(self, key: str, value: Any) -> bool:
-        """
-        Check if value is member of set.
+        """Check if value is member of set.
         
         Args:
             key: Set key
@@ -416,18 +413,18 @@ class RedisClient:
             
         Returns:
             True if value is in set
+
         """
         self._ensure_connected()
-        
+
         try:
             return self._client.sismember(key, value)
         except RedisError as e:
             logger.error(f"Failed to check set membership: {e}")
             raise
-            
+
     def expire(self, key: str, seconds: int) -> bool:
-        """
-        Set expiration on a key.
+        """Set expiration on a key.
         
         Args:
             key: Redis key
@@ -435,18 +432,18 @@ class RedisClient:
             
         Returns:
             True if expiration was set
+
         """
         self._ensure_connected()
-        
+
         try:
             return self._client.expire(key, seconds)
         except RedisError as e:
             logger.error(f"Failed to set expiration on key {key}: {e}")
             raise
 
-    def hset(self, key: str, mapping: Dict[str, Any]) -> int:
-        """
-        Set multiple fields in a hash.
+    def hset(self, key: str, mapping: dict[str, Any]) -> int:
+        """Set multiple fields in a hash.
 
         Args:
             key: Hash key
@@ -454,6 +451,7 @@ class RedisClient:
 
         Returns:
             Number of fields added (not updated)
+
         """
         self._ensure_connected()
 
@@ -463,15 +461,15 @@ class RedisClient:
             logger.error(f"Failed to hset key {key}: {e}")
             raise
 
-    def hgetall(self, key: str) -> Dict[str, str]:
-        """
-        Get all fields and values of a hash.
+    def hgetall(self, key: str) -> dict[str, str]:
+        """Get all fields and values of a hash.
 
         Args:
             key: Hash key
 
         Returns:
             Dictionary of field-value pairs (empty dict if key doesn't exist)
+
         """
         self._ensure_connected()
 

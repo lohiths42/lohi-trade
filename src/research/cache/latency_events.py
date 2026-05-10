@@ -57,7 +57,7 @@ __all__ = ["emit_latency_budget_exceeded"]
 
 async def emit_latency_budget_exceeded(
     *,
-    redis_client: "Redis | Any",
+    redis_client: Redis | Any,
     phase: str,
     observed_ms: int,
     budget_ms: int,
@@ -90,6 +90,7 @@ async def emit_latency_budget_exceeded(
     logged at ``WARNING`` and swallowed. Exposing a publish failure
     to the orchestrator would turn an observability miss into a hard
     failure, which is the opposite of what Req 5.9 intends.
+
     """
     exceeded_by_ms = observed_ms - budget_ms
 

@@ -1,5 +1,4 @@
-"""
-Property-based tests for corporate action adjustments.
+"""Property-based tests for corporate action adjustments.
 
 **Property 17: Corporate action round-trip** — applying adjustments then
 reverting produces original raw data for all securities with corporate actions.
@@ -12,10 +11,10 @@ property: adjust → revert recovers the original data within floating-point
 tolerance.
 """
 
-from datetime import date, timedelta
+from datetime import date
 
 import pytest
-from hypothesis import given, settings, assume
+from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
 from src.ingestion.corporate_actions_collector import (
@@ -23,10 +22,9 @@ from src.ingestion.corporate_actions_collector import (
     CorporateActionType,
 )
 from src.ingestion.historical_data_service import (
-    HistoricalDataService,
     OHLCV,
+    HistoricalDataService,
 )
-
 
 # ── Strategies ────────────────────────────────────────────────────
 
@@ -104,8 +102,7 @@ def _deduplicate_bars_by_date(bars):
 # ── Property 17: Corporate action round-trip ──────────────────────
 
 class TestCorporateActionRoundTrip:
-    """
-    **Property 17: Corporate action round-trip**
+    """**Property 17: Corporate action round-trip**
 
     Applying adjustments then reverting produces original raw data for all
     securities with corporate actions.
@@ -123,8 +120,7 @@ class TestCorporateActionRoundTrip:
     )
     @settings(max_examples=25, deadline=None)
     def test_adjust_then_revert_is_identity(self, bars, actions):
-        """
-        For any set of OHLCV bars and corporate actions, applying
+        """For any set of OHLCV bars and corporate actions, applying
         adjust_for_corporate_actions then revert_adjustments recovers
         the original prices within floating-point tolerance.
 
@@ -160,8 +156,7 @@ class TestCorporateActionRoundTrip:
     )
     @settings(max_examples=25, deadline=None)
     def test_round_trip_various_symbols(self, symbol, bars_data, actions):
-        """
-        Round-trip holds for any symbol, including when actions list is empty
+        """Round-trip holds for any symbol, including when actions list is empty
         (which should return a copy of the original data).
 
         **Validates: Requirements 28.7**
@@ -201,8 +196,7 @@ class TestCorporateActionRoundTrip:
     )
     @settings(max_examples=25, deadline=None)
     def test_empty_actions_returns_copy(self, bars):
-        """
-        With no corporate actions, adjust and revert both return exact copies.
+        """With no corporate actions, adjust and revert both return exact copies.
 
         **Validates: Requirements 28.7**
         """

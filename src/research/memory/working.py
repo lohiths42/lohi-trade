@@ -64,7 +64,8 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Final
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Final
 from uuid import UUID
 
 from src.research.constants import WORKING_MEMORY_KEY_TEMPLATE
@@ -167,12 +168,13 @@ class WorkingMemory:
 
     Requirements: 4.1, 4.2, 4.8
     Design: §3.4, §4.3
+
     """
 
     def __init__(
         self,
         *,
-        redis_client: "Redis | Any",
+        redis_client: Redis | Any,
         window_turns: int = _DEFAULT_WINDOW_TURNS,
         max_tokens: int = _DEFAULT_MAX_TOKENS,
         summariser: Callable[[list[dict]], str] | None = None,
@@ -198,7 +200,7 @@ class WorkingMemory:
         so no other module needs to know the on-the-wire shape.
         """
         return WORKING_MEMORY_KEY_TEMPLATE.format(
-            user_id=str(user_id), conv_id=str(conv_id)
+            user_id=str(user_id), conv_id=str(conv_id),
         )
 
     @staticmethod
@@ -209,7 +211,7 @@ class WorkingMemory:
         :meth:`forget` when no specific ``conv_id`` is supplied.
         """
         return WORKING_MEMORY_KEY_TEMPLATE.format(
-            user_id=str(user_id), conv_id="*"
+            user_id=str(user_id), conv_id="*",
         )
 
     # ------------------------------------------------------------------ #
@@ -217,7 +219,7 @@ class WorkingMemory:
     # ------------------------------------------------------------------ #
 
     async def append_turn(
-        self, user_id: UUID, conv_id: UUID, turn: dict
+        self, user_id: UUID, conv_id: UUID, turn: dict,
     ) -> None:
         """Append a single turn to ``(user_id, conv_id)``.
 
@@ -284,7 +286,7 @@ class WorkingMemory:
     # ------------------------------------------------------------------ #
 
     async def summarise_if_needed(
-        self, user_id: UUID, conv_id: UUID
+        self, user_id: UUID, conv_id: UUID,
     ) -> None:
         """Collapse the oldest half of turns into a summary if over budget.
 
@@ -369,7 +371,7 @@ class WorkingMemory:
         new_entries = [summary_turn] + newer
         for entry in new_entries:
             await self._redis.rpush(
-                key, json.dumps(entry, ensure_ascii=False, sort_keys=True)
+                key, json.dumps(entry, ensure_ascii=False, sort_keys=True),
             )
 
         logger.info(
@@ -387,7 +389,7 @@ class WorkingMemory:
     # ------------------------------------------------------------------ #
 
     async def forget(
-        self, user_id: UUID, conv_id: UUID | None = None
+        self, user_id: UUID, conv_id: UUID | None = None,
     ) -> int:
         """Delete one conversation or every conversation for ``user_id``.
 

@@ -55,7 +55,8 @@ Design: §3.4, §14
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Awaitable, Callable, Final
+from collections.abc import Awaitable, Callable
+from typing import TYPE_CHECKING, Final
 from uuid import UUID
 
 if TYPE_CHECKING:  # pragma: no cover - typing only
@@ -75,7 +76,7 @@ logger = logging.getLogger(__name__)
 # frozen makes the ``ValueError`` message stable and lets static
 # analyzers catch typos in caller code.
 _FIXED_SCOPES: Final[frozenset[str]] = frozenset(
-    {"all", "working", "semantic", "episodic"}
+    {"all", "working", "semantic", "episodic"},
 )
 
 _SYMBOL_PREFIX: Final[str] = "symbol:"
@@ -94,9 +95,9 @@ async def forget_memory(
     user_id: UUID,
     scope: str,
     *,
-    working: "WorkingMemory",
-    semantic: "SemanticMemory",
-    episodic: "EpisodicMemory",
+    working: WorkingMemory,
+    semantic: SemanticMemory,
+    episodic: EpisodicMemory,
     audit_log_writer: Callable[[UUID, str, dict], Awaitable[None]] | None = None,
 ) -> dict:
     """Delete memory entries for ``user_id`` at the given ``scope``.
@@ -165,6 +166,7 @@ async def forget_memory(
 
     Requirements: 4.8, 4.9
     Design: §3.4, §14
+
     """
     working_deleted = 0
     semantic_deleted = 0
@@ -204,7 +206,7 @@ async def forget_memory(
         raise ValueError(
             f"unknown memory.forget scope: {scope!r}; "
             f"valid scopes are: 'all', 'working', 'semantic', "
-            f"'episodic', or 'symbol:<SYMBOL>'"
+            f"'episodic', or 'symbol:<SYMBOL>'",
         )
 
     result = {
@@ -257,6 +259,6 @@ def _parse_symbol_scope(scope: str) -> str:
     symbol = scope[len(_SYMBOL_PREFIX):].strip()
     if not symbol:
         raise ValueError(
-            "memory.forget scope 'symbol:' requires a non-empty symbol"
+            "memory.forget scope 'symbol:' requires a non-empty symbol",
         )
     return symbol

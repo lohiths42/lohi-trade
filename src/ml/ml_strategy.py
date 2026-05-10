@@ -1,5 +1,4 @@
-"""
-ML-Enhanced Trading Strategy for LOHI-TRADE.
+"""ML-Enhanced Trading Strategy for LOHI-TRADE.
 
 Wraps the existing rule-based strategies with an ML quality filter.
 When the ML model is trained, it scores each candidate signal and
@@ -14,23 +13,18 @@ Integrates with:
 - ModelTrainer (prediction + feedback)
 """
 
-import logging
 from dataclasses import dataclass
-from datetime import datetime
-from typing import List, Optional
 
-import numpy as np
 import pandas as pd
 
 from src.ml.feature_engine import (
     SentimentFeatures,
     extract_features,
     extract_label,
-    FeatureVector,
 )
 from src.ml.model_trainer import ModelTrainer, TrainingSample
 from src.soldier.indicator_engine import IndicatorSet
-from src.soldier.strategy_engine import Signal, Strategy, create_signal
+from src.soldier.strategy_engine import Signal, Strategy
 from src.utils.logger import get_logger
 
 logger = get_logger("MLStrategy")
@@ -41,6 +35,7 @@ DEFAULT_CONFIDENCE_THRESHOLD = 0.55
 @dataclass
 class MLStrategyConfig:
     """Configuration for the ML strategy."""
+
     enabled: bool = True
     confidence_threshold: float = DEFAULT_CONFIDENCE_THRESHOLD
     min_training_samples: int = 30
@@ -48,8 +43,7 @@ class MLStrategyConfig:
 
 
 class MLStrategy(Strategy):
-    """
-    ML-enhanced strategy that filters signals from base strategies.
+    """ML-enhanced strategy that filters signals from base strategies.
 
     In trained mode: only passes signals where ML model predicts
     probability of profit > confidence_threshold.
@@ -60,9 +54,9 @@ class MLStrategy(Strategy):
 
     def __init__(
         self,
-        base_strategies: List[Strategy],
+        base_strategies: list[Strategy],
         model_trainer: ModelTrainer,
-        config: Optional[MLStrategyConfig] = None,
+        config: MLStrategyConfig | None = None,
     ) -> None:
         self._base_strategies = base_strategies
         self._trainer = model_trainer
@@ -73,7 +67,7 @@ class MLStrategy(Strategy):
         logger.info(
             f"MLStrategy initialized with {len(base_strategies)} base strategies, "
             f"threshold={self._config.confidence_threshold}, "
-            f"trained={self._trainer.is_trained}"
+            f"trained={self._trainer.is_trained}",
         )
 
     @property
@@ -89,10 +83,9 @@ class MLStrategy(Strategy):
         self._sentiment_cache[symbol] = sentiment
 
     def generate_signal(
-        self, indicators: IndicatorSet, candles: pd.DataFrame
-    ) -> Optional[Signal]:
-        """
-        Run base strategies and filter through ML model.
+        self, indicators: IndicatorSet, candles: pd.DataFrame,
+    ) -> Signal | None:
+        """Run base strategies and filter through ML model.
 
         1. Run each enabled base strategy
         2. For the first signal found, extract features
@@ -108,7 +101,7 @@ class MLStrategy(Strategy):
         close_price = float(candles.iloc[-1]["close"])
 
         # Run base strategies
-        candidate_signal: Optional[Signal] = None
+        candidate_signal: Signal | None = None
         for strategy in self._base_strategies:
             if not strategy.enabled:
                 continue
@@ -122,7 +115,7 @@ class MLStrategy(Strategy):
 
         # Extract features
         sentiment = self._sentiment_cache.get(
-            indicators.symbol, SentimentFeatures()
+            indicators.symbol, SentimentFeatures(),
         )
         fv = extract_features(indicators, close_price, sentiment)
 
@@ -134,13 +127,13 @@ class MLStrategy(Strategy):
                 logger.info(
                     f"ML filter rejected signal: {candidate_signal.symbol} "
                     f"{candidate_signal.strategy} prob={prob:.3f} "
-                    f"< threshold={self._config.confidence_threshold}"
+                    f"< threshold={self._config.confidence_threshold}",
                 )
                 return None
 
             logger.info(
                 f"ML filter approved signal: {candidate_signal.symbol} "
-                f"{candidate_signal.strategy} prob={prob:.3f}"
+                f"{candidate_signal.strategy} prob={prob:.3f}",
             )
         elif not self._config.passthrough_when_untrained:
             logger.debug("ML model not trained and passthrough disabled")
@@ -159,8 +152,7 @@ class MLStrategy(Strategy):
         side: str,
         atr: float,
     ) -> bool:
-        """
-        Record a completed trade outcome for model training.
+        """Record a completed trade outcome for model training.
 
         Called when a trade exits. Pairs the stored feature vector
         with the outcome label and feeds it to the trainer.
@@ -185,6 +177,6 @@ class MLStrategy(Strategy):
 
         logger.info(
             f"Recorded outcome: signal={signal_id[:8]}… "
-            f"label={label:.3f} retrained={retrained}"
+            f"label={label:.3f} retrained={retrained}",
         )
         return retrained

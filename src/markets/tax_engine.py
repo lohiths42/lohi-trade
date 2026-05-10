@@ -11,9 +11,8 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Optional
 
-from .market_profile import MarketProfile, TaxProfile, TaxRule
+from .market_profile import MarketProfile, TaxRule
 
 logger = logging.getLogger(__name__)
 
@@ -88,6 +87,7 @@ class TaxEngine:
 
         Returns:
             TaxEstimate with itemized charges
+
         """
         charges: list[ChargeItem] = []
         total = 0.0
@@ -137,6 +137,7 @@ class TaxEngine:
 
         Returns:
             CapitalGainsEstimate with tax calculation
+
         """
         gain = sell_value - buy_value
 

@@ -87,15 +87,16 @@ Design references
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
-from typing import Final, Iterable, Literal, Mapping, Protocol, runtime_checkable
+from typing import Final, Literal, Protocol, runtime_checkable
 
 from src.research.validators.types import UnsupportedClaim
 
 __all__ = [
-    "NumericUnit",
     "NumericToken",
+    "NumericUnit",
     "NumericValidator",
     "validate_numeric_fidelity",
 ]
@@ -131,8 +132,8 @@ NumericUnit = Literal[
 
 
 # Multipliers for the lakh / crore suffixes.
-_LAKH_MULT: Final[Decimal] = Decimal("100000")     # 1 lakh = 1e5
-_CRORE_MULT: Final[Decimal] = Decimal("10000000")  # 1 crore = 1e7
+_LAKH_MULT: Final[Decimal] = Decimal(100000)     # 1 lakh = 1e5
+_CRORE_MULT: Final[Decimal] = Decimal(10000000)  # 1 crore = 1e7
 
 # Two-digit fiscal-year window. ``FY24`` → ``2024``, ``FY99`` → ``1999``.
 # Pivot is 50: ``FY49`` → ``2049``, ``FY50`` → ``1950``. Matches
@@ -172,6 +173,7 @@ class NumericToken:
         string (section body).
     end_offset:
         Exclusive character offset — ``text[start:end] == original_text``.
+
     """
 
     value: Decimal
@@ -334,7 +336,7 @@ def _parse_fiscal_quarter(raw: str) -> Decimal:
 
 
 def _parse_currency_or_mult(
-    raw: str, kind: Literal["inr", "usd", "mult_only"]
+    raw: str, kind: Literal["inr", "usd", "mult_only"],
 ) -> tuple[Decimal, NumericUnit]:
     """Parse ``₹1,234.56 Cr`` / ``$1,234.56`` / ``1.2 Cr`` etc.
 
@@ -423,7 +425,7 @@ def extract_numeric_tokens(text: str) -> list[NumericToken]:
                 original_text=raw,
                 start_offset=start,
                 end_offset=end,
-            )
+            ),
         )
     return tokens
 
@@ -549,6 +551,7 @@ class NumericValidator:
     be shared across concurrent runs. Construction is cheap — no
     regex compilation happens per-instance because
     :data:`_MASTER_PATTERN` is module-level.
+
     """
 
     def __init__(self, *, epsilon: float = DEFAULT_EPSILON) -> None:
@@ -564,7 +567,7 @@ class NumericValidator:
     def validate(
         self,
         *,
-        brief: "Mapping[str, str] | object",
+        brief: Mapping[str, str] | object,
         cited_chunks: Iterable[_ChunkLike],
     ) -> list[UnsupportedClaim]:
         """Validate ``brief`` against ``cited_chunks``; return violations.
@@ -595,6 +598,7 @@ class NumericValidator:
             matched within ``epsilon`` in any cited chunk. The list
             is empty when every token resolves, which is the common
             case for well-synthesised briefs.
+
         """
         sections = _coerce_brief_sections(brief)
 
@@ -626,14 +630,14 @@ class NumericValidator:
                         start_offset=token.start_offset,
                         end_offset=token.end_offset,
                         reason="numeric_drift",
-                    )
+                    ),
                 )
         return violations
 
 
 def validate_numeric_fidelity(
     *,
-    brief: "Mapping[str, str] | object",
+    brief: Mapping[str, str] | object,
     cited_chunks: Iterable[_ChunkLike],
     epsilon: float = DEFAULT_EPSILON,
 ) -> list[UnsupportedClaim]:
@@ -649,7 +653,7 @@ def validate_numeric_fidelity(
         )
     """
     return NumericValidator(epsilon=epsilon).validate(
-        brief=brief, cited_chunks=cited_chunks
+        brief=brief, cited_chunks=cited_chunks,
     )
 
 
@@ -675,7 +679,7 @@ _BRIEF_SECTION_NAMES: Final[tuple[str, ...]] = (
 
 
 def _coerce_brief_sections(
-    brief: "Mapping[str, str] | object",
+    brief: Mapping[str, str] | object,
 ) -> dict[str, str]:
     """Normalise accepted brief inputs into ``{section_name: content}``.
 

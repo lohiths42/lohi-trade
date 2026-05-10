@@ -1,5 +1,4 @@
-"""
-Property-based tests for broker routing: failover and order format mapping.
+"""Property-based tests for broker routing: failover and order format mapping.
 
 **Property 15: Broker failover** — when primary broker is unavailable,
 orders route to backup broker.
@@ -31,22 +30,33 @@ from src.ingestion.broker_interface import (
 )
 from src.ingestion.broker_router import BrokerRouter
 
-# Kite mapping helpers
-from src.ingestion.kite_broker import (
-    _ORDER_TYPE_MAP as KITE_ORDER_TYPE_MAP,
-    _PRODUCT_TYPE_MAP as KITE_PRODUCT_TYPE_MAP,
-    _reverse_order_type as kite_reverse_order_type,
-    _reverse_product_type as kite_reverse_product_type,
-)
-
 # Groww mapping helpers
 from src.ingestion.groww_broker import (
     _ORDER_TYPE_MAP as GROWW_ORDER_TYPE_MAP,
+)
+from src.ingestion.groww_broker import (
     _PRODUCT_TYPE_MAP as GROWW_PRODUCT_TYPE_MAP,
+)
+from src.ingestion.groww_broker import (
     _reverse_order_type as groww_reverse_order_type,
+)
+from src.ingestion.groww_broker import (
     _reverse_product_type as groww_reverse_product_type,
 )
 
+# Kite mapping helpers
+from src.ingestion.kite_broker import (
+    _ORDER_TYPE_MAP as KITE_ORDER_TYPE_MAP,
+)
+from src.ingestion.kite_broker import (
+    _PRODUCT_TYPE_MAP as KITE_PRODUCT_TYPE_MAP,
+)
+from src.ingestion.kite_broker import (
+    _reverse_order_type as kite_reverse_order_type,
+)
+from src.ingestion.kite_broker import (
+    _reverse_product_type as kite_reverse_product_type,
+)
 
 # ── Strategies ────────────────────────────────────────────────────
 
@@ -84,8 +94,7 @@ def _mock_broker(connected: bool = True) -> MagicMock:
 
 
 class TestBrokerFailoverProperty:
-    """
-    **Property 15: Broker failover**
+    """**Property 15: Broker failover**
 
     For any valid order, when the primary broker raises an exception,
     the BrokerRouter routes the order to the backup broker and returns
@@ -153,8 +162,7 @@ class TestBrokerFailoverProperty:
 
 
 class TestOrderFormatMappingProperty:
-    """
-    **Property 16: Order format mapping**
+    """**Property 16: Order format mapping**
 
     For every internal OrderType and ProductType, mapping to a broker's
     API format and then reversing the mapping back to internal format
@@ -182,8 +190,7 @@ class TestOrderFormatMappingProperty:
     @given(order_type=st.sampled_from([OrderType.MARKET, OrderType.LIMIT, OrderType.SL]))
     @settings(max_examples=5, deadline=None)
     def test_groww_order_type_round_trip(self, order_type: OrderType):
-        """
-        Internal OrderType → Groww format → internal preserves value.
+        """Internal OrderType → Groww format → internal preserves value.
 
         Note: Groww maps both SL and SL_M to "SL", so SL_M cannot
         round-trip. We test only the types that have a unique mapping.
@@ -195,8 +202,7 @@ class TestOrderFormatMappingProperty:
     @given(product_type=st.sampled_from([ProductType.MIS]))
     @settings(max_examples=5, deadline=None)
     def test_groww_product_type_mis_round_trip(self, product_type: ProductType):
-        """
-        Internal ProductType MIS → Groww INTRADAY → internal MIS.
+        """Internal ProductType MIS → Groww INTRADAY → internal MIS.
 
         Groww maps both CNC and NRML to "DELIVERY", so only MIS
         has a unique round-trip.
@@ -206,8 +212,7 @@ class TestOrderFormatMappingProperty:
         assert restored == product_type
 
     def test_groww_non_unique_order_type_mapping(self):
-        """
-        SL_M maps to "SL" in Groww (same as SL). Reverse of "SL"
+        """SL_M maps to "SL" in Groww (same as SL). Reverse of "SL"
         returns OrderType.SL — this is expected lossy behaviour.
         """
         groww_format = GROWW_ORDER_TYPE_MAP[OrderType.SL_M]
@@ -216,8 +221,7 @@ class TestOrderFormatMappingProperty:
         assert restored == OrderType.SL  # lossy: SL_M → SL
 
     def test_groww_non_unique_product_type_mapping(self):
-        """
-        CNC and NRML both map to "DELIVERY" in Groww. Reverse of
+        """CNC and NRML both map to "DELIVERY" in Groww. Reverse of
         "DELIVERY" returns ProductType.CNC — this is expected lossy
         behaviour.
         """

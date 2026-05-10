@@ -1,5 +1,4 @@
-"""
-Extended Technical Analysis Strategies for LOHI-TRADE.
+"""Extended Technical Analysis Strategies for LOHI-TRADE.
 
 Implements 10 additional strategies derived from classical TA workbook patterns:
 1. VWAP Bounce — Institutional support/resistance at VWAP
@@ -17,23 +16,40 @@ All strategies follow the Strategy ABC interface and produce Signal objects
 compatible with the existing SignalPipeline and ML filter.
 """
 
-from typing import Optional
 
 import pandas as pd
 
 from src.soldier.indicator_engine import IndicatorSet
-from src.soldier.strategy_engine import Strategy, Signal, create_signal
+from src.soldier.strategy_engine import Signal, Strategy, create_signal
+from src.utils.config import (
+    ADXTrendStrategy as ADXTrendConfig,
+)
+from src.utils.config import (
+    BollingerSqueezeStrategy as BollingerSqueezeConfig,
+)
+from src.utils.config import (
+    IchimokuCloudStrategy as IchimokuCloudConfig,
+)
+from src.utils.config import (
+    MACDDivergenceStrategy as MACDDivergenceConfig,
+)
+from src.utils.config import (
+    MultiTimeframeMomentumStrategy as MTFMomentumConfig,
+)
+from src.utils.config import (
+    ParabolicSARTrendStrategy as ParabolicSARConfig,
+)
+from src.utils.config import (
+    PivotPointStrategy as PivotPointConfig,
+)
+from src.utils.config import (
+    StochasticRSIStrategy as StochRSIConfig,
+)
+from src.utils.config import (
+    VolumeBreakoutStrategy as VolumeBreakoutConfig,
+)
 from src.utils.config import (
     VWAPBounceStrategy as VWAPBounceConfig,
-    StochasticRSIStrategy as StochRSIConfig,
-    ADXTrendStrategy as ADXTrendConfig,
-    BollingerSqueezeStrategy as BollingerSqueezeConfig,
-    PivotPointStrategy as PivotPointConfig,
-    IchimokuCloudStrategy as IchimokuCloudConfig,
-    MACDDivergenceStrategy as MACDDivergenceConfig,
-    ParabolicSARTrendStrategy as ParabolicSARConfig,
-    VolumeBreakoutStrategy as VolumeBreakoutConfig,
-    MultiTimeframeMomentumStrategy as MTFMomentumConfig,
 )
 from src.utils.logger import get_logger
 
@@ -44,8 +60,7 @@ logger = get_logger("TAStrategies")
 # 1. VWAP Bounce Strategy
 # ---------------------------------------------------------------------------
 class VWAPBounceStrategyImpl(Strategy):
-    """
-    VWAP Bounce: enters when price pulls back to VWAP and bounces with
+    """VWAP Bounce: enters when price pulls back to VWAP and bounces with
     volume confirmation. VWAP acts as dynamic institutional support/resistance.
 
     BUY: price within vwap_proximity_pct of VWAP, RSI neutral (40-60),
@@ -65,8 +80,8 @@ class VWAPBounceStrategyImpl(Strategy):
         return self._config.enabled
 
     def generate_signal(
-        self, indicators: IndicatorSet, candles: pd.DataFrame
-    ) -> Optional[Signal]:
+        self, indicators: IndicatorSet, candles: pd.DataFrame,
+    ) -> Signal | None:
         if not self._config.enabled or candles.empty:
             return None
 
@@ -102,7 +117,7 @@ class VWAPBounceStrategyImpl(Strategy):
 
         logger.info(
             f"VWAPBounce signal: {indicators.symbol} {side} "
-            f"entry={close:.2f} vwap={indicators.vwap:.2f}"
+            f"entry={close:.2f} vwap={indicators.vwap:.2f}",
         )
         return create_signal(
             symbol=indicators.symbol, strategy=self.name, side=side,
@@ -115,8 +130,7 @@ class VWAPBounceStrategyImpl(Strategy):
 # 2. Stochastic + RSI Combo Strategy
 # ---------------------------------------------------------------------------
 class StochasticRSIStrategyImpl(Strategy):
-    """
-    Dual oscillator strategy: enters when both Stochastic and RSI agree
+    """Dual oscillator strategy: enters when both Stochastic and RSI agree
     on oversold (BUY) or overbought (SELL) conditions.
 
     BUY: Stoch %K < oversold AND RSI < oversold AND %K crosses above %D.
@@ -135,8 +149,8 @@ class StochasticRSIStrategyImpl(Strategy):
         return self._config.enabled
 
     def generate_signal(
-        self, indicators: IndicatorSet, candles: pd.DataFrame
-    ) -> Optional[Signal]:
+        self, indicators: IndicatorSet, candles: pd.DataFrame,
+    ) -> Signal | None:
         if not self._config.enabled or candles.empty:
             return None
 
@@ -167,7 +181,7 @@ class StochasticRSIStrategyImpl(Strategy):
 
         logger.info(
             f"StochasticRSI signal: {indicators.symbol} {side} "
-            f"StochK={stoch_k:.1f} RSI={rsi:.1f}"
+            f"StochK={stoch_k:.1f} RSI={rsi:.1f}",
         )
         return create_signal(
             symbol=indicators.symbol, strategy=self.name, side=side,
@@ -180,8 +194,7 @@ class StochasticRSIStrategyImpl(Strategy):
 # 3. ADX Trend Strength Strategy
 # ---------------------------------------------------------------------------
 class ADXTrendStrategyImpl(Strategy):
-    """
-    ADX-based trend entry: only trades when ADX confirms a strong trend
+    """ADX-based trend entry: only trades when ADX confirms a strong trend
     (ADX > threshold) and +DI/-DI crossover indicates direction.
 
     BUY: ADX > threshold AND +DI > -DI AND price > VWAP.
@@ -200,8 +213,8 @@ class ADXTrendStrategyImpl(Strategy):
         return self._config.enabled
 
     def generate_signal(
-        self, indicators: IndicatorSet, candles: pd.DataFrame
-    ) -> Optional[Signal]:
+        self, indicators: IndicatorSet, candles: pd.DataFrame,
+    ) -> Signal | None:
         if not self._config.enabled or candles.empty:
             return None
 
@@ -234,7 +247,7 @@ class ADXTrendStrategyImpl(Strategy):
 
         logger.info(
             f"ADXTrend signal: {indicators.symbol} {side} "
-            f"ADX={indicators.adx:.1f} +DI={indicators.plus_di:.1f} -DI={indicators.minus_di:.1f}"
+            f"ADX={indicators.adx:.1f} +DI={indicators.plus_di:.1f} -DI={indicators.minus_di:.1f}",
         )
         return create_signal(
             symbol=indicators.symbol, strategy=self.name, side=side,
@@ -247,8 +260,7 @@ class ADXTrendStrategyImpl(Strategy):
 # 4. Bollinger Band Squeeze Strategy
 # ---------------------------------------------------------------------------
 class BollingerSqueezeStrategyImpl(Strategy):
-    """
-    Bollinger Squeeze: detects low-volatility compression (narrow bands)
+    """Bollinger Squeeze: detects low-volatility compression (narrow bands)
     and enters on the breakout direction with volume confirmation.
 
     The squeeze is identified when BB width falls below a threshold.
@@ -270,8 +282,8 @@ class BollingerSqueezeStrategyImpl(Strategy):
         return self._config.enabled
 
     def generate_signal(
-        self, indicators: IndicatorSet, candles: pd.DataFrame
-    ) -> Optional[Signal]:
+        self, indicators: IndicatorSet, candles: pd.DataFrame,
+    ) -> Signal | None:
         if not self._config.enabled or candles.empty:
             return None
 
@@ -308,7 +320,7 @@ class BollingerSqueezeStrategyImpl(Strategy):
 
         logger.info(
             f"BollingerSqueeze signal: {indicators.symbol} {side} "
-            f"bb_width={bb_width:.4f} close={close:.2f}"
+            f"bb_width={bb_width:.4f} close={close:.2f}",
         )
         return create_signal(
             symbol=indicators.symbol, strategy=self.name, side=side,
@@ -321,8 +333,7 @@ class BollingerSqueezeStrategyImpl(Strategy):
 # 5. Pivot Point Strategy
 # ---------------------------------------------------------------------------
 class PivotPointStrategyImpl(Strategy):
-    """
-    Classic Pivot Point strategy: trades bounces off pivot support/resistance.
+    """Classic Pivot Point strategy: trades bounces off pivot support/resistance.
 
     BUY: price near S1 (within proximity_pct) AND RSI < 40 AND bouncing up.
     SELL: price near R1 (within proximity_pct) AND RSI > 60 AND rejecting down.
@@ -340,8 +351,8 @@ class PivotPointStrategyImpl(Strategy):
         return self._config.enabled
 
     def generate_signal(
-        self, indicators: IndicatorSet, candles: pd.DataFrame
-    ) -> Optional[Signal]:
+        self, indicators: IndicatorSet, candles: pd.DataFrame,
+    ) -> Signal | None:
         if not self._config.enabled or candles.empty:
             return None
 
@@ -377,7 +388,7 @@ class PivotPointStrategyImpl(Strategy):
 
         logger.info(
             f"PivotPoint signal: {indicators.symbol} {side} "
-            f"pivot={indicators.pivot:.2f} S1={indicators.pivot_s1:.2f} R1={indicators.pivot_r1:.2f}"
+            f"pivot={indicators.pivot:.2f} S1={indicators.pivot_s1:.2f} R1={indicators.pivot_r1:.2f}",
         )
         return create_signal(
             symbol=indicators.symbol, strategy=self.name, side=side,
@@ -390,8 +401,7 @@ class PivotPointStrategyImpl(Strategy):
 # 6. Ichimoku Cloud Strategy
 # ---------------------------------------------------------------------------
 class IchimokuCloudStrategyImpl(Strategy):
-    """
-    Ichimoku Cloud: full cloud-based trend system.
+    """Ichimoku Cloud: full cloud-based trend system.
 
     BUY: price > Senkou Span A AND price > Senkou Span B (above cloud)
          AND Tenkan > Kijun (TK cross bullish)
@@ -412,8 +422,8 @@ class IchimokuCloudStrategyImpl(Strategy):
         return self._config.enabled
 
     def generate_signal(
-        self, indicators: IndicatorSet, candles: pd.DataFrame
-    ) -> Optional[Signal]:
+        self, indicators: IndicatorSet, candles: pd.DataFrame,
+    ) -> Signal | None:
         if not self._config.enabled or candles.empty:
             return None
 
@@ -443,7 +453,7 @@ class IchimokuCloudStrategyImpl(Strategy):
 
         logger.info(
             f"IchimokuCloud signal: {indicators.symbol} {side} "
-            f"tenkan={indicators.ichimoku_tenkan:.2f} kijun={indicators.ichimoku_kijun:.2f}"
+            f"tenkan={indicators.ichimoku_tenkan:.2f} kijun={indicators.ichimoku_kijun:.2f}",
         )
         return create_signal(
             symbol=indicators.symbol, strategy=self.name, side=side,
@@ -456,8 +466,7 @@ class IchimokuCloudStrategyImpl(Strategy):
 # 7. MACD Divergence Strategy
 # ---------------------------------------------------------------------------
 class MACDDivergenceStrategyImpl(Strategy):
-    """
-    MACD Divergence: detects bullish/bearish divergence between price
+    """MACD Divergence: detects bullish/bearish divergence between price
     and MACD histogram over a lookback window.
 
     Bullish divergence: price makes lower low but MACD hist makes higher low → BUY.
@@ -476,8 +485,8 @@ class MACDDivergenceStrategyImpl(Strategy):
         return self._config.enabled
 
     def generate_signal(
-        self, indicators: IndicatorSet, candles: pd.DataFrame
-    ) -> Optional[Signal]:
+        self, indicators: IndicatorSet, candles: pd.DataFrame,
+    ) -> Signal | None:
         if not self._config.enabled or candles.empty:
             return None
 
@@ -533,7 +542,7 @@ class MACDDivergenceStrategyImpl(Strategy):
 
         logger.info(
             f"MACDDivergence signal: {indicators.symbol} {side} "
-            f"MACD_hist={macd_hist:.4f}"
+            f"MACD_hist={macd_hist:.4f}",
         )
         return create_signal(
             symbol=indicators.symbol, strategy=self.name, side=side,
@@ -546,8 +555,7 @@ class MACDDivergenceStrategyImpl(Strategy):
 # 8. Parabolic SAR Trend Strategy
 # ---------------------------------------------------------------------------
 class ParabolicSARTrendStrategyImpl(Strategy):
-    """
-    Parabolic SAR + EMA alignment for trend continuation.
+    """Parabolic SAR + EMA alignment for trend continuation.
 
     BUY: SAR direction bullish (price above SAR) AND EMA9 > EMA21 > EMA50
          AND volume above average.
@@ -566,8 +574,8 @@ class ParabolicSARTrendStrategyImpl(Strategy):
         return self._config.enabled
 
     def generate_signal(
-        self, indicators: IndicatorSet, candles: pd.DataFrame
-    ) -> Optional[Signal]:
+        self, indicators: IndicatorSet, candles: pd.DataFrame,
+    ) -> Signal | None:
         if not self._config.enabled or candles.empty:
             return None
 
@@ -603,7 +611,7 @@ class ParabolicSARTrendStrategyImpl(Strategy):
 
         logger.info(
             f"ParabolicSARTrend signal: {indicators.symbol} {side} "
-            f"SAR={indicators.psar:.2f} dir={indicators.psar_direction}"
+            f"SAR={indicators.psar:.2f} dir={indicators.psar_direction}",
         )
         return create_signal(
             symbol=indicators.symbol, strategy=self.name, side=side,
@@ -616,8 +624,7 @@ class ParabolicSARTrendStrategyImpl(Strategy):
 # 9. Volume Breakout Strategy
 # ---------------------------------------------------------------------------
 class VolumeBreakoutStrategyImpl(Strategy):
-    """
-    Volume-confirmed breakout: enters when price breaks above/below
+    """Volume-confirmed breakout: enters when price breaks above/below
     a recent range with an extreme volume spike.
 
     BUY: close > highest high of lookback AND volume > spike_multiplier × avg
@@ -638,8 +645,8 @@ class VolumeBreakoutStrategyImpl(Strategy):
         return self._config.enabled
 
     def generate_signal(
-        self, indicators: IndicatorSet, candles: pd.DataFrame
-    ) -> Optional[Signal]:
+        self, indicators: IndicatorSet, candles: pd.DataFrame,
+    ) -> Signal | None:
         if not self._config.enabled or candles.empty:
             return None
 
@@ -678,7 +685,7 @@ class VolumeBreakoutStrategyImpl(Strategy):
         logger.info(
             f"VolumeBreakout signal: {indicators.symbol} {side} "
             f"vol_ratio={volume / indicators.volume_avg_20:.1f}x "
-            f"range=({range_low:.2f}-{range_high:.2f})"
+            f"range=({range_low:.2f}-{range_high:.2f})",
         )
         return create_signal(
             symbol=indicators.symbol, strategy=self.name, side=side,
@@ -691,8 +698,7 @@ class VolumeBreakoutStrategyImpl(Strategy):
 # 10. Multi-Timeframe Momentum Confluence Strategy
 # ---------------------------------------------------------------------------
 class MultiTimeframeMomentumStrategyImpl(Strategy):
-    """
-    Confluence strategy: counts how many indicators agree on direction
+    """Confluence strategy: counts how many indicators agree on direction
     and only enters when a minimum threshold of alignment is met.
 
     Bullish signals counted:
@@ -715,8 +721,8 @@ class MultiTimeframeMomentumStrategyImpl(Strategy):
         return self._config.enabled
 
     def generate_signal(
-        self, indicators: IndicatorSet, candles: pd.DataFrame
-    ) -> Optional[Signal]:
+        self, indicators: IndicatorSet, candles: pd.DataFrame,
+    ) -> Signal | None:
         if not self._config.enabled or candles.empty:
             return None
 
@@ -806,7 +812,7 @@ class MultiTimeframeMomentumStrategyImpl(Strategy):
         score = bullish if side == "BUY" else bearish
         logger.info(
             f"MultiMomentum signal: {indicators.symbol} {side} "
-            f"confluence={score}/10"
+            f"confluence={score}/10",
         )
         return create_signal(
             symbol=indicators.symbol, strategy=self.name, side=side,

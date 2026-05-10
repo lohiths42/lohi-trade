@@ -1,5 +1,4 @@
-"""
-Property-based tests for News Article Completeness.
+"""Property-based tests for News Article Completeness.
 
 Uses hypothesis to verify that parsed RSS entries always produce
 NewsArticle objects with all required fields populated: non-empty
@@ -18,13 +17,12 @@ Properties tested:
 
 import re
 import time
-from datetime import datetime, timezone
+from datetime import datetime
 
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from src.commander.rss_poller import NewsArticle, parse_entry
-
 
 # ---------------------------------------------------------------------------
 # Hypothesis Strategies
@@ -59,8 +57,7 @@ _time_struct = st.builds(
 
 @st.composite
 def rss_entry_strategy(draw):
-    """
-    Generate a feedparser-style entry dict with valid fields.
+    """Generate a feedparser-style entry dict with valid fields.
 
     Randomly chooses between summary and description for content,
     and between published_parsed and updated_parsed for timestamp.
@@ -96,7 +93,7 @@ def rss_entry_strategy(draw):
 
 SHA256_HEX_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 UUID_PATTERN = re.compile(
-    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
 )
 
 
@@ -106,8 +103,7 @@ UUID_PATTERN = re.compile(
 
 
 class TestNewsArticleCompletenessProperties:
-    """
-    **Validates: Requirements 5.3**
+    """**Validates: Requirements 5.3**
 
     Property 17: News Article Completeness
     """
@@ -115,8 +111,7 @@ class TestNewsArticleCompletenessProperties:
     @given(entry=rss_entry_strategy(), source_name=_source_name)
     @settings(max_examples=25)
     def test_parsed_article_has_non_empty_required_fields(self, entry, source_name):
-        """
-        Property: For any valid RSS entry with title, content, link, and
+        """Property: For any valid RSS entry with title, content, link, and
         timestamp, the parsed NewsArticle has non-empty title, content,
         url, and source.
 
@@ -133,8 +128,7 @@ class TestNewsArticleCompletenessProperties:
     @given(entry=rss_entry_strategy(), source_name=_source_name)
     @settings(max_examples=25)
     def test_content_hash_is_valid_sha256(self, entry, source_name):
-        """
-        Property: The content_hash is always a valid 64-character hex
+        """Property: The content_hash is always a valid 64-character hex
         string (SHA256 digest).
 
         **Validates: Requirements 5.3**
@@ -148,8 +142,7 @@ class TestNewsArticleCompletenessProperties:
     @given(entry=rss_entry_strategy(), source_name=_source_name)
     @settings(max_examples=25)
     def test_article_id_is_valid_uuid(self, entry, source_name):
-        """
-        Property: The article_id is always a non-empty string in UUID format.
+        """Property: The article_id is always a non-empty string in UUID format.
 
         **Validates: Requirements 5.3**
         """
@@ -163,8 +156,7 @@ class TestNewsArticleCompletenessProperties:
     @given(entry=rss_entry_strategy(), source_name=_source_name)
     @settings(max_examples=25)
     def test_timestamps_are_valid_datetimes(self, entry, source_name):
-        """
-        Property: published_at and fetched_at are always valid datetime
+        """Property: published_at and fetched_at are always valid datetime
         objects with timezone info.
 
         **Validates: Requirements 5.3**
@@ -187,8 +179,7 @@ class TestNewsArticleCompletenessProperties:
     @given(entry=rss_entry_strategy(), source_name=_source_name)
     @settings(max_examples=25)
     def test_source_matches_source_name(self, entry, source_name):
-        """
-        Property: The source field always matches the source_name
+        """Property: The source field always matches the source_name
         passed to parse_entry.
 
         **Validates: Requirements 5.3**

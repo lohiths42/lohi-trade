@@ -1,5 +1,4 @@
-"""
-Order Management System (OMS) for LOHI-TRADE.
+"""Order Management System (OMS) for LOHI-TRADE.
 
 Handles order placement via broker API, fill monitoring, and order lifecycle
 management. All orders use MIS (Margin Intraday Square-off) product type
@@ -10,9 +9,9 @@ Requirements: 11.1, 11.2, 11.4, 11.5, 11.6, 11.7, 11.8
 
 import time
 import uuid
-from dataclasses import dataclass, field
+from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Callable, Dict, List, Optional
 
 
 class TokenBucketRateLimiter:
@@ -37,6 +36,7 @@ class TokenBucketRateLimiter:
             Wait time in seconds.  ``0.0`` if a token was available
             immediately, otherwise the time the caller should wait
             before retrying.
+
         """
         now = time.monotonic()
         elapsed = now - self._last_refill
@@ -75,12 +75,13 @@ class OrderResult:
         order_id: Internal UUID for the order.
         broker_order_id: Broker-assigned order ID (None on failure).
         error_message: Error description (None on success).
+
     """
 
     success: bool
     order_id: str
-    broker_order_id: Optional[str] = None
-    error_message: Optional[str] = None
+    broker_order_id: str | None = None
+    error_message: str | None = None
 
 
 class OrderManagementSystem:
@@ -109,7 +110,7 @@ class OrderManagementSystem:
         event_bus: EventBus,
         redis_client: RedisClient,
         *,
-        now_fn: Optional[Callable[[], datetime]] = None,
+        now_fn: Callable[[], datetime] | None = None,
     ) -> None:
         self._config = config
         self._broker = broker
@@ -122,7 +123,7 @@ class OrderManagementSystem:
         self._rate_limiter = TokenBucketRateLimiter()
 
         # In-memory index of pending orders for monitoring
-        self._pending_orders: Dict[str, Order] = {}
+        self._pending_orders: dict[str, Order] = {}
 
         logger.info("OrderManagementSystem initialised")
 
@@ -144,6 +145,7 @@ class OrderManagementSystem:
 
         Returns:
             OrderResult indicating success/failure.
+
         """
         # Enforce MIS product type
         order.product_type = ProductType.MIS
@@ -167,7 +169,7 @@ class OrderManagementSystem:
             time.sleep(wait)
 
         # Attempt placement with retries
-        last_error: Optional[str] = None
+        last_error: str | None = None
         for attempt in range(1 + self.MAX_RETRIES):
             try:
                 broker_order_id = self._broker.place_order(order)
@@ -178,7 +180,7 @@ class OrderManagementSystem:
 
                 logger.info(
                     f"Order placed: {order.order_id} broker_id={broker_order_id} "
-                    f"symbol={order.symbol} side={order.side.value} qty={order.quantity}"
+                    f"symbol={order.symbol} side={order.side.value} qty={order.quantity}",
                 )
 
                 return OrderResult(
@@ -191,7 +193,7 @@ class OrderManagementSystem:
                 last_error = str(exc)
                 logger.warning(
                     f"Order placement attempt {attempt + 1} failed for "
-                    f"{order.order_id}: {last_error}"
+                    f"{order.order_id}: {last_error}",
                 )
                 if attempt < self.MAX_RETRIES:
                     time.sleep(self.RETRY_DELAY_S)
@@ -203,7 +205,7 @@ class OrderManagementSystem:
 
         logger.error(
             f"Order rejected after {1 + self.MAX_RETRIES} attempts: "
-            f"{order.order_id} reason={last_error}"
+            f"{order.order_id} reason={last_error}",
         )
 
         return OrderResult(
@@ -224,6 +226,7 @@ class OrderManagementSystem:
 
         Returns:
             True if cancellation succeeded, False otherwise.
+
         """
         order = self._pending_orders.get(order_id)
         if order is None:
@@ -248,9 +251,8 @@ class OrderManagementSystem:
                 self._pending_orders.pop(order_id, None)
                 logger.info(f"Order cancelled: {order_id}")
                 return True
-            else:
-                logger.warning(f"Broker returned False for cancel of {order_id}")
-                return False
+            logger.warning(f"Broker returned False for cancel of {order_id}")
+            return False
         except Exception as exc:
             logger.error(f"Failed to cancel order {order_id}: {exc}")
             return False
@@ -259,7 +261,7 @@ class OrderManagementSystem:
     # Order status
     # ------------------------------------------------------------------
 
-    def get_order_status(self, order_id: str) -> Optional[OrderStatus]:
+    def get_order_status(self, order_id: str) -> OrderStatus | None:
         """Get the current status of an order from the broker.
 
         Args:
@@ -267,6 +269,7 @@ class OrderManagementSystem:
 
         Returns:
             Current OrderStatus, or None if the order is unknown.
+
         """
         order = self._pending_orders.get(order_id)
         if order is None:
@@ -290,7 +293,7 @@ class OrderManagementSystem:
     # Fill monitoring
     # ------------------------------------------------------------------
 
-    def monitor_fills(self) -> List[Order]:
+    def monitor_fills(self) -> list[Order]:
         """Poll pending orders for fills and publish fill events.
 
         Iterates over all tracked pending orders, queries the broker for
@@ -301,8 +304,9 @@ class OrderManagementSystem:
 
         Returns:
             List of orders whose status changed during this poll cycle.
+
         """
-        changed: List[Order] = []
+        changed: list[Order] = []
         now = self._now_fn()
 
         for order_id in list(self._pending_orders.keys()):
@@ -340,7 +344,7 @@ class OrderManagementSystem:
                 self._pending_orders.pop(order_id, None)
                 logger.info(
                     f"Order filled: {order_id} price={order.filled_price} "
-                    f"qty={order.filled_qty}"
+                    f"qty={order.filled_qty}",
                 )
             elif broker_order.status in (
                 OrderStatus.REJECTED,
@@ -355,7 +359,7 @@ class OrderManagementSystem:
     # Square-off
     # ------------------------------------------------------------------
 
-    def square_off_all_positions(self) -> List[OrderResult]:
+    def square_off_all_positions(self) -> list[OrderResult]:
         """Close all open positions at market price.
 
         Queries the broker for open positions and places opposing market
@@ -363,8 +367,9 @@ class OrderManagementSystem:
 
         Returns:
             List of OrderResult for each square-off order placed.
+
         """
-        results: List[OrderResult] = []
+        results: list[OrderResult] = []
 
         try:
             positions = self._broker.get_positions()
@@ -398,7 +403,7 @@ class OrderManagementSystem:
             results.append(result)
             logger.info(
                 f"Square-off order for {symbol}: side={close_side.value} "
-                f"qty={qty} success={result.success}"
+                f"qty={qty} success={result.success}",
             )
 
         return results
@@ -459,15 +464,15 @@ class OrderManagementSystem:
             conn.commit()
         except Exception as exc:
             logger.error(
-                f"Failed to update order {order.order_id}: {exc}", exc_info=True
+                f"Failed to update order {order.order_id}: {exc}", exc_info=True,
             )
 
-    def _load_order(self, order_id: str) -> Optional[Order]:
+    def _load_order(self, order_id: str) -> Order | None:
         """Load an order from SQLite by its internal order_id."""
         conn = self._db.connect_sqlite()
         try:
             row = conn.execute(
-                "SELECT * FROM orders WHERE order_id=?", (order_id,)
+                "SELECT * FROM orders WHERE order_id=?", (order_id,),
             ).fetchone()
             if row is None:
                 return None
@@ -523,7 +528,7 @@ class OrderManagementSystem:
     def _timeout_order(self, order: Order) -> None:
         """Cancel an order that has exceeded the timeout threshold."""
         logger.warning(
-            f"Order {order.order_id} timed out after {self.ORDER_TIMEOUT_S}s, cancelling"
+            f"Order {order.order_id} timed out after {self.ORDER_TIMEOUT_S}s, cancelling",
         )
         if order.broker_order_id:
             try:

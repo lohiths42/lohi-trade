@@ -61,8 +61,9 @@ Design references
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from decimal import Decimal
-from typing import TYPE_CHECKING, Any, Callable, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 from uuid import UUID
 
 if TYPE_CHECKING:  # pragma: no cover - typing only
@@ -87,9 +88,9 @@ except Exception:  # noqa: BLE001 - best-effort logger wiring
 
 
 __all__ = [
-    "UsageWriterProtocol",
-    "UsageWriter",
     "NoopUsageWriter",
+    "UsageWriter",
+    "UsageWriterProtocol",
 ]
 
 
@@ -182,6 +183,7 @@ class UsageWriter:
     ``created_at`` falls back to the server-side ``DEFAULT now()`` in
     the migration (design §4.1) — keeping the writer insulated from
     the gateway's clock.
+
     """
 
     # ``INSERT ... ON CONFLICT DO NOTHING`` is not required — the
@@ -200,7 +202,7 @@ class UsageWriter:
         self,
         *,
         connection_factory: Callable[
-            [UUID], "AbstractAsyncContextManager[asyncpg.Connection]"
+            [UUID], AbstractAsyncContextManager[asyncpg.Connection],
         ],
     ) -> None:
         self._conn_factory = connection_factory
@@ -235,11 +237,11 @@ class UsageWriter:
         """
         if input_tokens < 0:
             raise ValueError(
-                f"input_tokens must be non-negative; got {input_tokens}"
+                f"input_tokens must be non-negative; got {input_tokens}",
             )
         if output_tokens < 0:
             raise ValueError(
-                f"output_tokens must be non-negative; got {output_tokens}"
+                f"output_tokens must be non-negative; got {output_tokens}",
             )
 
         # Normalise the cost to a ``Decimal`` once at the boundary so
@@ -248,7 +250,7 @@ class UsageWriter:
         # would round-trip through ``float8`` and lose precision.
         cost: Decimal
         if cost_estimate_usd is None:
-            cost = Decimal("0")
+            cost = Decimal(0)
         elif isinstance(cost_estimate_usd, Decimal):
             cost = cost_estimate_usd
         else:

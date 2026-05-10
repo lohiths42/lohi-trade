@@ -1,5 +1,4 @@
-"""
-Integration tests for the full Easy Setup Wizard flow.
+"""Integration tests for the full Easy Setup Wizard flow.
 
 Tests end-to-end scenarios through the API:
 1. Full wizard flow: POST credentials → POST test → POST complete → GET status
@@ -21,13 +20,10 @@ import pytest
 # ---------------------------------------------------------------------------
 
 _backend_gateway_dir = str(
-    Path(__file__).resolve().parents[1] / "backend-gateway"
+    Path(__file__).resolve().parents[1] / "backend-gateway",
 )
 if _backend_gateway_dir not in sys.path:
     sys.path.insert(0, _backend_gateway_dir)
-
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
 
 from app.routers.setup import (
     get_setup_service,
@@ -39,10 +35,10 @@ from app.services.credential_store import CredentialStore
 from app.services.service_registry import (
     CREDENTIAL_GROUPS,
     ServiceRegistry,
-    ServiceStatus,
 )
 from app.services.setup_service import SetupService
-
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -91,7 +87,7 @@ class TestFullWizardFlow:
 
     @patch("app.routers.setup.reload_registry")
     def test_full_flow_credentials_test_complete(
-        self, mock_reload, app_client: TestClient, setup_service: SetupService
+        self, mock_reload, app_client: TestClient, setup_service: SetupService,
     ):
         """Full wizard flow: submit credentials → test connection → complete setup → verify status.
 
@@ -109,7 +105,7 @@ class TestFullWizardFlow:
                     "SHOONYA_API_KEY": "abcdefgh12345678",
                     "SHOONYA_CLIENT_ID": "ABC123",
                     "SHOONYA_PASSWORD": "mypassword",
-                }
+                },
             },
         )
         assert response.status_code == 200
@@ -148,7 +144,7 @@ class TestFullWizardFlow:
 
     @patch("app.routers.setup.reload_registry")
     def test_full_flow_multiple_groups(
-        self, mock_reload, app_client: TestClient, setup_service: SetupService
+        self, mock_reload, app_client: TestClient, setup_service: SetupService,
     ):
         """Full wizard flow with multiple credential groups configured.
 
@@ -160,7 +156,7 @@ class TestFullWizardFlow:
             json={
                 "credentials": {
                     "NVIDIA_NIM_API_KEY": "nvapi-abcdefghijklmnopqrst",
-                }
+                },
             },
         )
         assert response.status_code == 200
@@ -172,7 +168,7 @@ class TestFullWizardFlow:
                 "credentials": {
                     "TELEGRAM_BOT_TOKEN": "123456789:ABCdefGHIjklMNOpqrsTUVwxyz012345678",
                     "TELEGRAM_CHAT_ID": "-1001234567890",
-                }
+                },
             },
         )
         assert response.status_code == 200
@@ -227,7 +223,7 @@ class TestUpdateCredentialFlow:
 
     @patch("app.routers.setup.reload_registry")
     def test_update_credential_triggers_reload(
-        self, mock_reload, app_client: TestClient, setup_service: SetupService
+        self, mock_reload, app_client: TestClient, setup_service: SetupService,
     ):
         """Update credential: submit initial → submit updated → verify registry updated.
 
@@ -242,7 +238,7 @@ class TestUpdateCredentialFlow:
                     "SHOONYA_API_KEY": "initial_key_12345",
                     "SHOONYA_CLIENT_ID": "ABC123",
                     "SHOONYA_PASSWORD": "initial_pass",
-                }
+                },
             },
         )
         assert response.status_code == 200
@@ -264,7 +260,7 @@ class TestUpdateCredentialFlow:
                     "SHOONYA_API_KEY": "updated_key_67890",
                     "SHOONYA_CLIENT_ID": "XYZ789",
                     "SHOONYA_PASSWORD": "updated_pass",
-                }
+                },
             },
         )
         assert response.status_code == 200
@@ -281,7 +277,7 @@ class TestUpdateCredentialFlow:
 
     @patch("app.routers.setup.reload_registry")
     def test_update_credential_persists_new_values(
-        self, mock_reload, app_client: TestClient, setup_service: SetupService
+        self, mock_reload, app_client: TestClient, setup_service: SetupService,
     ):
         """Updated credentials are persisted and readable from the store.
 
@@ -294,7 +290,7 @@ class TestUpdateCredentialFlow:
             json={
                 "credentials": {
                     "NVIDIA_NIM_API_KEY": "nvapi-initial_key_abcdefgh",
-                }
+                },
             },
         )
 
@@ -308,7 +304,7 @@ class TestUpdateCredentialFlow:
             json={
                 "credentials": {
                     "NVIDIA_NIM_API_KEY": "nvapi-updated_key_ijklmnop",
-                }
+                },
             },
         )
 
@@ -326,7 +322,7 @@ class TestDegradedMode:
     """Test skip-all-optional flow and degraded mode behavior."""
 
     def test_skip_all_optional_groups_degraded_mode(
-        self, app_client: TestClient, setup_service: SetupService
+        self, app_client: TestClient, setup_service: SetupService,
     ):
         """Skip all optional groups → verify degraded mode works correctly.
 
@@ -373,7 +369,7 @@ class TestDegradedMode:
             )
 
     def test_skip_all_optional_features_unavailable(
-        self, app_client: TestClient, setup_service: SetupService
+        self, app_client: TestClient, setup_service: SetupService,
     ):
         """Skipped services correctly mark their dependent features as unavailable.
 
@@ -397,7 +393,7 @@ class TestDegradedMode:
         assert features.get("live_trading") is False
 
     def test_partial_config_mixed_status(
-        self, app_client: TestClient, setup_service: SetupService
+        self, app_client: TestClient, setup_service: SetupService,
     ):
         """Configure some groups, skip others → verify mixed status in health endpoint.
 
@@ -413,7 +409,7 @@ class TestDegradedMode:
                         "SHOONYA_API_KEY": "abcdefgh12345678",
                         "SHOONYA_CLIENT_ID": "ABC123",
                         "SHOONYA_PASSWORD": "mypassword",
-                    }
+                    },
                 },
             )
             assert response.status_code == 200
@@ -448,7 +444,7 @@ class TestDegradedMode:
 
     @patch("app.routers.setup.reload_registry")
     def test_health_services_returns_all_groups(
-        self, mock_reload, app_client: TestClient
+        self, mock_reload, app_client: TestClient,
     ):
         """GET /health/services returns entries for every registered credential group.
 

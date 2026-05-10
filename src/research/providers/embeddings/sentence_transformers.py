@@ -81,7 +81,7 @@ class SentenceTransformersEmbeddings:
     def __init__(
         self,
         *,
-        model: "SentenceTransformer",
+        model: SentenceTransformer,
         model_id: str,
         normalize_embeddings: bool = True,
     ) -> None:

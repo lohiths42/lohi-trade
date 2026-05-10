@@ -1,5 +1,4 @@
-"""
-Property-based tests for price discrepancy detection between NSE and BSE.
+"""Property-based tests for price discrepancy detection between NSE and BSE.
 
 **Property 18: Price discrepancy detection** — dual-listed securities with
 >0.5% price difference between NSE and BSE are always flagged.
@@ -14,11 +13,10 @@ Uses Hypothesis to generate random price pairs and verify:
 
 from unittest.mock import MagicMock
 
-from hypothesis import given, settings, assume
+from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
 from src.ingestion.market_data_collector import MarketDataCollector
-
 
 # ── Helpers ───────────────────────────────────────────────────────
 

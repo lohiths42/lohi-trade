@@ -1,5 +1,4 @@
-"""
-Unit tests for the Position Manager.
+"""Unit tests for the Position Manager.
 
 Covers:
 - Stop-loss order placement after fill (BUY and SELL)
@@ -18,18 +17,17 @@ Requirements: 12.1, 12.2, 12.3, 12.4, 12.5, 12.6, 12.7
 
 import sqlite3
 from datetime import datetime
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock
 
 import pytest
 
-from src.execution.position_manager import PositionManager, Position
 from src.execution.oms import OrderResult
+from src.execution.position_manager import PositionManager
 from src.ingestion.broker_interface import (
     OrderSide,
     OrderType,
     ProductType,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -69,7 +67,7 @@ def _make_oms() -> MagicMock:
     """Create a mock OMS that returns successful order results."""
     oms = MagicMock()
     oms.place_order.return_value = OrderResult(
-        success=True, order_id="mock-order", broker_order_id="BROKER-1"
+        success=True, order_id="mock-order", broker_order_id="BROKER-1",
     )
     oms.cancel_order.return_value = True
     return oms
@@ -100,7 +98,7 @@ def _make_pm(
 def _get_trade_row(db: MagicMock, trade_id: str) -> sqlite3.Row:
     conn = db.connect_sqlite()
     return conn.execute(
-        "SELECT * FROM trades WHERE trade_id=?", (trade_id,)
+        "SELECT * FROM trades WHERE trade_id=?", (trade_id,),
     ).fetchone()
 
 

@@ -1,5 +1,4 @@
-"""
-Property-based tests for the ML Feature Engine using Hypothesis.
+"""Property-based tests for the ML Feature Engine using Hypothesis.
 
 Tests invariants that must hold for ALL possible inputs:
 - Feature vectors always have correct shape
@@ -9,32 +8,31 @@ Tests invariants that must hold for ALL possible inputs:
 - Feature dict keys match FEATURE_NAMES
 """
 
-import numpy as np
-import pytest
 from datetime import datetime
-from hypothesis import given, settings, assume
+
+import numpy as np
+from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from src.ml.feature_engine import (
+    FEATURE_NAMES,
+    NUM_FEATURES,
+    SentimentFeatures,
+    _macd_crossover,
+    _rsi_zone,
+    _safe_div,
     extract_features,
     extract_label,
-    SentimentFeatures,
-    NUM_FEATURES,
-    FEATURE_NAMES,
-    _safe_div,
-    _rsi_zone,
-    _macd_crossover,
 )
 from src.soldier.indicator_engine import IndicatorSet
-
 
 # --- Custom Hypothesis strategies ---
 
 finite_float = st.floats(
-    min_value=-1e6, max_value=1e6, allow_nan=False, allow_infinity=False
+    min_value=-1e6, max_value=1e6, allow_nan=False, allow_infinity=False,
 )
 positive_float = st.floats(
-    min_value=0.01, max_value=1e6, allow_nan=False, allow_infinity=False
+    min_value=0.01, max_value=1e6, allow_nan=False, allow_infinity=False,
 )
 rsi_float = st.floats(min_value=0.0, max_value=100.0, allow_nan=False, allow_infinity=False)
 price_float = st.floats(min_value=0.01, max_value=1e5, allow_nan=False, allow_infinity=False)

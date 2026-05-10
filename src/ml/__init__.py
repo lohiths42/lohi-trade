@@ -1,5 +1,4 @@
-"""
-ML module for LOHI-TRADE.
+"""ML module for LOHI-TRADE.
 
 Provides adaptive machine learning capabilities:
 - Feature engineering from technical indicators + sentiment

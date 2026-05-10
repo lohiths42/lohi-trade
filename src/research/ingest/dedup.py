@@ -117,6 +117,7 @@ def compute_document_sha256(canonical_text: str, metadata: dict[str, Any]) -> st
       sources. Given the same inputs it returns the same hex string on
       every call, on every Python version, on every platform. Req 3.5
       and Req 3.12 both depend on this.
+
     """
     # json.dumps with sort_keys=True gives a canonical ordering; the
     # default=str fallback handles datetimes, UUIDs, and enum values
@@ -139,7 +140,7 @@ def compute_document_sha256(canonical_text: str, metadata: dict[str, Any]) -> st
 
 
 async def is_duplicate(
-    conn: "asyncpg.Connection",
+    conn: asyncpg.Connection,
     user_id: UUID,
     sha256: str,
 ) -> bool:
@@ -186,6 +187,7 @@ async def is_duplicate(
     * We use ``SELECT 1 … LIMIT 1`` rather than ``COUNT(*)`` so the
       planner can short-circuit on the first matching row — important
       once the table accumulates many documents for the same symbol.
+
     """
     row = await conn.fetchrow(
         """

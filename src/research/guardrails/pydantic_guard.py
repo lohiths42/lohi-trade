@@ -64,8 +64,8 @@ from pydantic import BaseModel, Field
 from src.research.constants import GUARDRAIL_RATE_LIMIT_KEY_TEMPLATE
 
 __all__ = [
-    "GuardrailDecision",
     "Guardrail",
+    "GuardrailDecision",
     "PydanticGuardrail",
 ]
 
@@ -118,11 +118,11 @@ class Guardrail(Protocol):
     """
 
     async def check_input(
-        self, user_id: UUID, prompt: str
+        self, user_id: UUID, prompt: str,
     ) -> tuple[str, list[GuardrailDecision]]: ...
 
     async def check_output(
-        self, user_id: UUID, text: str
+        self, user_id: UUID, text: str,
     ) -> tuple[str, list[GuardrailDecision]]: ...
 
 
@@ -135,7 +135,7 @@ class _CompiledRule:
     with no per-call string parsing.
     """
 
-    __slots__ = ("id", "name", "phase", "action", "patterns", "replacement")
+    __slots__ = ("action", "id", "name", "patterns", "phase", "replacement")
 
     def __init__(
         self,
@@ -174,6 +174,7 @@ class PydanticGuardrail:
         windows are anchored to the current wall-clock minute so
         every user gets a full budget each minute regardless of when
         the guardrail is instantiated.
+
     """
 
     def __init__(
@@ -192,7 +193,7 @@ class PydanticGuardrail:
     # ---------------------------------------------------------------- #
 
     async def check_input(
-        self, user_id: UUID, prompt: str
+        self, user_id: UUID, prompt: str,
     ) -> tuple[str, list[GuardrailDecision]]:
         """Run input-phase rules + rate limit against ``prompt``.
 
@@ -227,7 +228,7 @@ class PydanticGuardrail:
                         reason=rule.name,
                         content_before=current,
                         content_after=None,
-                    )
+                    ),
                 )
                 # Short-circuit — caller must not forward to sub-agents.
                 return prompt, decisions
@@ -241,7 +242,7 @@ class PydanticGuardrail:
                         reason=rule.name,
                         content_before=current,
                         content_after=modified,
-                    )
+                    ),
                 )
                 current = modified
                 continue
@@ -255,13 +256,13 @@ class PydanticGuardrail:
                     reason=rule.name,
                     content_before=current,
                     content_after=None,
-                )
+                ),
             )
 
         return current, decisions
 
     async def check_output(
-        self, user_id: UUID, text: str
+        self, user_id: UUID, text: str,
     ) -> tuple[str, list[GuardrailDecision]]:
         """Run output-phase rules against Sub_Agent-generated ``text``.
 
@@ -288,7 +289,7 @@ class PydanticGuardrail:
                         reason=rule.name,
                         content_before=current,
                         content_after=None,
-                    )
+                    ),
                 )
                 return text, decisions
             if rule.action == "modify":
@@ -301,7 +302,7 @@ class PydanticGuardrail:
                         reason=rule.name,
                         content_before=current,
                         content_after=modified,
-                    )
+                    ),
                 )
                 current = modified
                 continue
@@ -313,7 +314,7 @@ class PydanticGuardrail:
                     reason=rule.name,
                     content_before=current,
                     content_after=None,
-                )
+                ),
             )
 
         return current, decisions
@@ -354,7 +355,7 @@ class PydanticGuardrail:
                     action=action,
                     patterns=patterns,
                     replacement=replacement,
-                )
+                ),
             )
         return compiled
 
@@ -370,7 +371,7 @@ class PydanticGuardrail:
         return modified
 
     async def _check_rate_limit(
-        self, user_id: UUID, prompt: str
+        self, user_id: UUID, prompt: str,
     ) -> GuardrailDecision | None:
         """Per-user per-minute counter. Returns a refuse decision on overrun."""
         if self._redis is None:
@@ -378,7 +379,7 @@ class PydanticGuardrail:
 
         window_epoch = int(time.time()) // _RATE_LIMIT_WINDOW_SECONDS
         key = GUARDRAIL_RATE_LIMIT_KEY_TEMPLATE.format(
-            user_id=str(user_id), window_epoch=window_epoch
+            user_id=str(user_id), window_epoch=window_epoch,
         )
 
         # INCR returns the post-increment value. Expire is set on the

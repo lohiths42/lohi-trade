@@ -1,5 +1,4 @@
-"""
-Property-based tests for Health Endpoint Completeness.
+"""Property-based tests for Health Endpoint Completeness.
 
 Verifies that SetupService.get_status() returns a SetupStatusResponse
 containing an entry for every registered service with its correct
@@ -27,7 +26,7 @@ from hypothesis import strategies as st
 # ---------------------------------------------------------------------------
 
 _backend_gateway_dir = str(
-    Path(__file__).resolve().parents[1] / "backend-gateway"
+    Path(__file__).resolve().parents[1] / "backend-gateway",
 )
 if _backend_gateway_dir not in sys.path:
     sys.path.insert(0, _backend_gateway_dir)
@@ -52,7 +51,7 @@ VALID_GROUP_IDS = [g.group_id for g in CREDENTIAL_GROUPS]
 service_status_strategy = st.sampled_from(list(ServiceStatus))
 
 registry_state_strategy = st.fixed_dictionaries(
-    {group_id: service_status_strategy for group_id in VALID_GROUP_IDS}
+    dict.fromkeys(VALID_GROUP_IDS, service_status_strategy),
 )
 
 
@@ -67,7 +66,7 @@ class TestHealthEndpointCompleteness:
     @given(registry_state=registry_state_strategy)
     @settings(max_examples=200)
     def test_get_status_contains_all_services_with_correct_status(
-        self, registry_state: dict[str, ServiceStatus]
+        self, registry_state: dict[str, ServiceStatus],
     ) -> None:
         """For any valid service registry state, get_status() SHALL contain
         an entry for every registered service with correct status and

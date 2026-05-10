@@ -18,7 +18,6 @@ from src.research.observability.metrics import (
     reset_metrics_registry,
 )
 
-
 # --------------------------------------------------------------------------- #
 # Fixtures                                                                    #
 # --------------------------------------------------------------------------- #
@@ -48,7 +47,7 @@ class TestCounters:
         metrics_module.research_runs_total.labels(status="done").inc()
 
         samples = _collect_samples(
-            metrics_module.research_runs_total, name="research_runs_total"
+            metrics_module.research_runs_total, name="research_runs_total",
         )
         done = [s for s in samples if s.labels.get("status") == "done"]
         assert done, "expected a sample for status=done"
@@ -60,7 +59,7 @@ class TestCounters:
         metrics_module.research_runs_total.labels(status="partial").inc()
 
         samples = _collect_samples(
-            metrics_module.research_runs_total, name="research_runs_total"
+            metrics_module.research_runs_total, name="research_runs_total",
         )
         by_status = {s.labels.get("status"): s.value for s in samples}
         assert by_status.get("done") == 1
@@ -79,13 +78,13 @@ class TestCounters:
 
     def test_guardrail_blocks_counter_tracks_rule_id(self) -> None:
         metrics_module.research_guardrail_blocks_total.labels(
-            rule_id="jailbreak_v1_override"
+            rule_id="jailbreak_v1_override",
         ).inc()
         metrics_module.research_guardrail_blocks_total.labels(
-            rule_id="jailbreak_v1_override"
+            rule_id="jailbreak_v1_override",
         ).inc()
         metrics_module.research_guardrail_blocks_total.labels(
-            rule_id="pii_pan"
+            rule_id="pii_pan",
         ).inc()
 
         samples = _collect_samples(
@@ -213,10 +212,9 @@ class TestMetricsEndpoint:
         if gateway_root not in sys.path:
             sys.path.insert(0, gateway_root)
 
+        from app.routers.research import router
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
-
-        from app.routers.research import router
 
         app = FastAPI()
         app.include_router(router, prefix="/api/v2/research", tags=["research"])
@@ -267,7 +265,7 @@ def _collect_samples(metric: object, *, name: str | None = None) -> list[_Sample
 class _Sample:
     """Lightweight dataclass-like wrapper for a single metric sample."""
 
-    __slots__ = ("name", "labels", "value")
+    __slots__ = ("labels", "name", "value")
 
     def __init__(self, *, name: str, labels: dict[str, str], value: float) -> None:
         self.name = name

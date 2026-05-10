@@ -1,5 +1,4 @@
-"""
-Paper Trading Engine for LOHI-TRADE.
+"""Paper Trading Engine for LOHI-TRADE.
 
 Simulates order execution without calling any broker API. Used for
 validating strategies in a risk-free environment before going live.
@@ -10,10 +9,9 @@ Requirements: 16.1, 16.2, 16.3, 16.4, 16.5, 16.6
 import random
 import time
 import uuid
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from src.ingestion.broker_interface import Order, OrderSide, OrderStatus, OrderType
+from src.ingestion.broker_interface import Order, OrderSide, OrderStatus
 from src.utils.config import PaperTradingConfig
 from src.utils.logger import get_logger
 
@@ -39,13 +37,13 @@ class PaperTradingEngine:
     def __init__(
         self,
         config: PaperTradingConfig,
-        db_path: Optional[str] = None,
-        sqlite_path: Optional[str] = None,
+        db_path: str | None = None,
+        sqlite_path: str | None = None,
     ) -> None:
         self._config = config
         self._db_path = db_path
         self._sqlite_path = sqlite_path or "data/lohi_trade.db"
-        self.api_calls_made: List[Dict[str, Any]] = []
+        self.api_calls_made: list[dict[str, Any]] = []
 
     # ------------------------------------------------------------------
     # Properties
@@ -94,6 +92,7 @@ class PaperTradingEngine:
             The same *order* instance, mutated to reflect the fill.
 
         Requirements: 16.2, 16.3, 16.4
+
         """
         slippage_pct = self._config.simulated_slippage_pct
         delay_range = self._config.simulated_fill_delay_ms
@@ -127,6 +126,7 @@ class PaperTradingEngine:
 
         Returns:
             The same *order* instance with status set to CANCELLED.
+
         """
         order.status = OrderStatus.CANCELLED
         self.log_paper_trade(order, "CANCEL")
@@ -155,11 +155,12 @@ class PaperTradingEngine:
             action: A short label such as ``FILL`` or ``CANCEL``.
 
         Requirements: 16.6
+
         """
         logger.info(
             f"PAPER {action}: symbol={order.symbol} side={order.side.value} "
             f"qty={order.quantity} status={order.status.value} "
-            f"broker_id={order.broker_order_id} filled_price={order.filled_price}"
+            f"broker_id={order.broker_order_id} filled_price={order.filled_price}",
         )
 
     # ------------------------------------------------------------------

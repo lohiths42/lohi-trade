@@ -6,7 +6,7 @@ Satisfies: Req 13.2, Req 15.9
 Design: §15
 """
 
-from src.research.observability.metrics import (  # noqa: F401
+from src.research.observability.metrics import (
     render_metrics,
     research_first_agent_ms,
     research_first_token_ms,

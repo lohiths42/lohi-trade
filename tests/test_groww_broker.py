@@ -1,5 +1,4 @@
-"""
-Tests for the Groww trading API broker adapter.
+"""Tests for the Groww trading API broker adapter.
 
 Covers: OAuth2 token exchange, order placement parameter mapping,
 order status polling, holdings retrieval, retry logic,
@@ -8,36 +7,33 @@ and all BrokerInterface methods.
 Requirements: 16.1, 16.2, 16.3, 16.4, 16.5, 16.6, 16.7
 """
 
-import time
-from datetime import datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
 
+from src.ingestion.broker_interface import (
+    AuthenticationError,
+    BrokerCredentials,
+    ConnectionError,
+    Order,
+    OrderNotFoundError,
+    OrderRejectionError,
+    OrderSide,
+    OrderStatus,
+    OrderType,
+    ProductType,
+)
 from src.ingestion.groww_broker import (
-    GrowwBroker,
+    _MAX_RETRIES,
     _ORDER_TYPE_MAP,
     _PRODUCT_TYPE_MAP,
     _STATUS_MAP,
+    GrowwBroker,
     _groww_error,
-    _safe_float,
     _reverse_order_type,
     _reverse_product_type,
-    _MAX_RETRIES,
+    _safe_float,
 )
-from src.ingestion.broker_interface import (
-    BrokerCredentials,
-    Order,
-    OrderType,
-    OrderSide,
-    OrderStatus,
-    ProductType,
-    ConnectionError,
-    AuthenticationError,
-    OrderRejectionError,
-    OrderNotFoundError,
-)
-
 
 # ── fixtures ──────────────────────────────────────────────────────
 
@@ -459,7 +455,7 @@ class TestGetPositions:
                             "average_price": 2500.0,
                             "ltp": 2520.0,
                             "pnl": 200.0,
-                        }
+                        },
                     ],
                 },
             }),
@@ -505,7 +501,7 @@ class TestGetHoldings:
                             "ltp": 3450.0,
                             "pnl": 250.0,
                             "isin": "INE467B01029",
-                        }
+                        },
                     ],
                 },
             }),
@@ -636,7 +632,7 @@ class TestInstrumentMaster:
                             "instrument_type": "EQ",
                             "name": "Reliance Industries",
                             "isin": "INE002A01018",
-                        }
+                        },
                     ],
                 },
             }),

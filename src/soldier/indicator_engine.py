@@ -1,5 +1,4 @@
-"""
-Indicator Engine for LOHI-TRADE.
+"""Indicator Engine for LOHI-TRADE.
 
 Calculates technical indicators on completed candles using pandas-ta.
 Maintains a rolling window of the last 100 candles per (symbol, timeframe)
@@ -12,7 +11,6 @@ Requirements: 3.1, 3.2, 3.3, 3.4, 3.6
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Dict, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -41,8 +39,7 @@ MIN_CANDLES_REQUIRED = 35
 
 @dataclass
 class IndicatorSet:
-    """
-    Complete set of technical indicators for a symbol at a point in time.
+    """Complete set of technical indicators for a symbol at a point in time.
 
     Attributes:
         symbol: Trading symbol (e.g., "RELIANCE")
@@ -62,6 +59,7 @@ class IndicatorSet:
         supertrend_direction: Supertrend direction (1=bullish, -1=bearish)
         atr_14: Average True Range (14-period)
         volume_avg_20: 20-period volume moving average
+
     """
 
     symbol: str
@@ -108,8 +106,7 @@ class IndicatorSet:
 
 
 class IndicatorEngine:
-    """
-    Calculates technical indicators on completed candles.
+    """Calculates technical indicators on completed candles.
 
     Maintains a rolling window of the last 100 candles per (symbol, timeframe)
     pair and recalculates all indicators when a new candle is added.
@@ -118,12 +115,11 @@ class IndicatorEngine:
     """
 
     def __init__(self) -> None:
-        self._candle_windows: Dict[Tuple[str, str], list[Candle]] = defaultdict(list)
-        self._latest_indicators: Dict[Tuple[str, str], IndicatorSet] = {}
+        self._candle_windows: dict[tuple[str, str], list[Candle]] = defaultdict(list)
+        self._latest_indicators: dict[tuple[str, str], IndicatorSet] = {}
 
-    def add_candle(self, candle: Candle) -> Optional[IndicatorSet]:
-        """
-        Add a completed candle and recalculate indicators.
+    def add_candle(self, candle: Candle) -> IndicatorSet | None:
+        """Add a completed candle and recalculate indicators.
 
         Appends the candle to the rolling window for its (symbol, timeframe),
         trims to MAX_ROLLING_WINDOW, and calculates all indicators.
@@ -136,6 +132,7 @@ class IndicatorEngine:
             or calculation error.
 
         Requirements: 3.1, 3.3, 3.6
+
         """
         key = (candle.symbol, candle.timeframe)
 
@@ -148,7 +145,7 @@ class IndicatorEngine:
         if len(self._candle_windows[key]) < MIN_CANDLES_REQUIRED:
             logger.debug(
                 f"Insufficient data for {candle.symbol}/{candle.timeframe}: "
-                f"{len(self._candle_windows[key])}/{MIN_CANDLES_REQUIRED} candles"
+                f"{len(self._candle_windows[key])}/{MIN_CANDLES_REQUIRED} candles",
             )
             return None
 
@@ -166,10 +163,9 @@ class IndicatorEngine:
             return None
 
     def calculate_indicators(
-        self, df: pd.DataFrame, symbol: str, timeframe: str
-    ) -> Optional[IndicatorSet]:
-        """
-        Calculate all technical indicators from a candle DataFrame.
+        self, df: pd.DataFrame, symbol: str, timeframe: str,
+    ) -> IndicatorSet | None:
+        """Calculate all technical indicators from a candle DataFrame.
 
         Args:
             df: DataFrame with columns: open, high, low, close, volume, timestamp.
@@ -181,14 +177,15 @@ class IndicatorEngine:
             core indicator produces NaN.
 
         Requirements: 3.1, 3.2
+
         """
         if not HAS_PANDAS_TA:
             logger.warning(
                 "pandas-ta not installed; indicators will not be calculated. "
-                "Install with: pip install lohi-trade[ml]"
+                "Install with: pip install lohi-trade[ml]",
             )
             return None
-        
+
         try:
             # RSI (14)
             rsi = ta.rsi(df["close"], length=14)
@@ -198,7 +195,7 @@ class IndicatorEngine:
             if macd_df is None:
                 logger.debug(
                     f"MACD returned None for {symbol}/{timeframe}, "
-                    f"insufficient warm-up data ({len(df)} candles)"
+                    f"insufficient warm-up data ({len(df)} candles)",
                 )
                 return None
 
@@ -346,7 +343,7 @@ class IndicatorEngine:
             if any(pd.isna(v) for v in core_values):
                 logger.debug(
                     f"NaN detected in core indicators for {symbol}/{timeframe}, "
-                    f"likely insufficient warm-up data"
+                    f"likely insufficient warm-up data",
                 )
                 return None
 
@@ -412,9 +409,8 @@ class IndicatorEngine:
             )
             return None
 
-    def get_latest_indicators(self, symbol: str, timeframe: str = "1m") -> Optional[IndicatorSet]:
-        """
-        Get the most recently calculated indicators for a symbol.
+    def get_latest_indicators(self, symbol: str, timeframe: str = "1m") -> IndicatorSet | None:
+        """Get the most recently calculated indicators for a symbol.
 
         Args:
             symbol: Trading symbol.
@@ -422,12 +418,12 @@ class IndicatorEngine:
 
         Returns:
             The latest IndicatorSet, or None if not yet calculated.
+
         """
         return self._latest_indicators.get((symbol, timeframe))
 
     def get_candle_count(self, symbol: str, timeframe: str = "1m") -> int:
-        """
-        Get the number of candles in the rolling window for a symbol.
+        """Get the number of candles in the rolling window for a symbol.
 
         Args:
             symbol: Trading symbol.
@@ -435,17 +431,18 @@ class IndicatorEngine:
 
         Returns:
             Number of candles currently stored.
+
         """
         return len(self._candle_windows.get((symbol, timeframe), []))
 
-    def reset(self, symbol: Optional[str] = None, timeframe: Optional[str] = None) -> None:
-        """
-        Reset candle windows and cached indicators.
+    def reset(self, symbol: str | None = None, timeframe: str | None = None) -> None:
+        """Reset candle windows and cached indicators.
 
         Args:
             symbol: If provided with timeframe, reset only that pair.
                     If None, reset everything.
             timeframe: Timeframe to reset (used with symbol).
+
         """
         if symbol is not None and timeframe is not None:
             key = (symbol, timeframe)
@@ -470,8 +467,7 @@ class IndicatorEngine:
 
     @staticmethod
     def _calculate_vwap(df: pd.DataFrame) -> pd.Series:
-        """
-        Calculate VWAP as cumulative (typical_price * volume) / cumulative volume.
+        """Calculate VWAP as cumulative (typical_price * volume) / cumulative volume.
 
         Uses the standard typical price = (high + low + close) / 3.
         """

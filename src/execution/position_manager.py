@@ -1,5 +1,4 @@
-"""
-Position Manager for LOHI-TRADE.
+"""Position Manager for LOHI-TRADE.
 
 Manages open positions with stop-loss, target, and trailing stop orders.
 Handles OCO (One-Cancels-Other) logic, position closing with P&L
@@ -9,10 +8,11 @@ Requirements: 12.1, 12.2, 12.3, 12.4, 12.5, 12.6, 12.7
 """
 
 import uuid
-from dataclasses import dataclass, field
+from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Callable, Dict, List, Optional
 
+from src.execution.oms import OrderManagementSystem
 from src.ingestion.broker_interface import (
     Order,
     OrderSide,
@@ -20,7 +20,6 @@ from src.ingestion.broker_interface import (
     OrderType,
     ProductType,
 )
-from src.execution.oms import OrderManagementSystem
 from src.state.database import DatabaseConnectionManager
 from src.state.event_bus import EventBus
 from src.state.redis_client import RedisClient
@@ -48,13 +47,13 @@ class Position:
     target: float
     trailing_stop: float
     entry_time: datetime
-    exit_time: Optional[datetime] = None
-    exit_price: Optional[float] = None
-    realized_pnl: Optional[float] = None
+    exit_time: datetime | None = None
+    exit_price: float | None = None
+    realized_pnl: float | None = None
     strategy: str = ""
     status: str = "OPEN"
-    stop_order_id: Optional[str] = None
-    target_order_id: Optional[str] = None
+    stop_order_id: str | None = None
+    target_order_id: str | None = None
     signal_id: str = ""
 
 
@@ -77,7 +76,7 @@ class PositionManager:
         event_bus: EventBus,
         redis_client: RedisClient,
         *,
-        now_fn: Optional[Callable[[], datetime]] = None,
+        now_fn: Callable[[], datetime] | None = None,
     ) -> None:
         self._config = config
         self._oms = oms
@@ -87,10 +86,10 @@ class PositionManager:
         self._now_fn = now_fn or datetime.now
 
         # In-memory position index keyed by position_id
-        self._positions: Dict[str, Position] = {}
+        self._positions: dict[str, Position] = {}
 
         # Reverse lookup: order_id -> position_id for stop/target orders
-        self._order_to_position: Dict[str, str] = {}
+        self._order_to_position: dict[str, str] = {}
 
         logger.info("PositionManager initialised")
 
@@ -123,6 +122,7 @@ class PositionManager:
 
         Returns:
             The newly created Position.
+
         """
         position_id = str(uuid.uuid4())
         now = self._now_fn()
@@ -156,7 +156,7 @@ class PositionManager:
 
         logger.info(
             f"Position opened: {position_id} symbol={symbol} side={side} "
-            f"entry={entry_price} qty={quantity} sl={stop_loss} target={target}"
+            f"entry={entry_price} qty={quantity} sl={stop_loss} target={target}",
         )
 
         return position
@@ -167,6 +167,7 @@ class PositionManager:
         Args:
             position_id: Position to update.
             current_price: Latest market price.
+
         """
         position = self._positions.get(position_id)
         if position is None or position.status != "OPEN":
@@ -183,7 +184,7 @@ class PositionManager:
         # Trailing stop logic
         self._update_trailing_stop(position, current_price)
 
-    def on_stop_hit(self, order_id: str, fill_price: float) -> Optional[Position]:
+    def on_stop_hit(self, order_id: str, fill_price: float) -> Position | None:
         """Handle stop-loss order fill.
 
         Args:
@@ -192,6 +193,7 @@ class PositionManager:
 
         Returns:
             The closed Position, or None if order not tracked.
+
         """
         position_id = self._order_to_position.get(order_id)
         if position_id is None:
@@ -203,7 +205,7 @@ class PositionManager:
 
         return self._close_position(position, fill_price, "STOP_LOSS")
 
-    def on_target_hit(self, order_id: str, fill_price: float) -> Optional[Position]:
+    def on_target_hit(self, order_id: str, fill_price: float) -> Position | None:
         """Handle target order fill.
 
         Args:
@@ -212,6 +214,7 @@ class PositionManager:
 
         Returns:
             The closed Position, or None if order not tracked.
+
         """
         position_id = self._order_to_position.get(order_id)
         if position_id is None:
@@ -223,13 +226,14 @@ class PositionManager:
 
         return self._close_position(position, fill_price, "TARGET")
 
-    def force_square_off(self) -> List[Position]:
+    def force_square_off(self) -> list[Position]:
         """Force close all open positions at market price.
 
         Returns:
             List of positions that were squared off.
+
         """
-        squared_off: List[Position] = []
+        squared_off: list[Position] = []
 
         for position in list(self._positions.values()):
             if position.status != "OPEN":
@@ -263,7 +267,7 @@ class PositionManager:
 
             logger.info(
                 f"Forced square-off: {position.position_id} symbol={position.symbol} "
-                f"side={position.side} exit_price={exit_price}"
+                f"side={position.side} exit_price={exit_price}",
             )
 
         return squared_off
@@ -273,6 +277,7 @@ class PositionManager:
 
         Returns:
             True if square-off was triggered.
+
         """
         now = self._now_fn()
         current_minutes = now.hour * 60 + now.minute
@@ -285,17 +290,17 @@ class PositionManager:
             if open_positions:
                 logger.info(
                     f"Square-off time reached ({now.strftime('%H:%M')}), "
-                    f"closing {len(open_positions)} open positions"
+                    f"closing {len(open_positions)} open positions",
                 )
                 self.force_square_off()
                 return True
         return False
 
-    def get_position(self, position_id: str) -> Optional[Position]:
+    def get_position(self, position_id: str) -> Position | None:
         """Get a position by ID."""
         return self._positions.get(position_id)
 
-    def get_open_positions(self) -> List[Position]:
+    def get_open_positions(self) -> list[Position]:
         """Get all open positions."""
         return [p for p in self._positions.values() if p.status == "OPEN"]
 
@@ -326,12 +331,12 @@ class PositionManager:
             self._order_to_position[sl_order.order_id] = position.position_id
             logger.info(
                 f"Stop-loss placed: order={sl_order.order_id} "
-                f"position={position.position_id} trigger={position.trailing_stop}"
+                f"position={position.position_id} trigger={position.trailing_stop}",
             )
         else:
             logger.error(
                 f"Failed to place stop-loss for position {position.position_id}: "
-                f"{result.error_message}"
+                f"{result.error_message}",
             )
 
     def _place_target(self, position: Position) -> None:
@@ -357,12 +362,12 @@ class PositionManager:
             self._order_to_position[target_order.order_id] = position.position_id
             logger.info(
                 f"Target placed: order={target_order.order_id} "
-                f"position={position.position_id} price={position.target}"
+                f"position={position.position_id} price={position.target}",
             )
         else:
             logger.error(
                 f"Failed to place target for position {position.position_id}: "
-                f"{result.error_message}"
+                f"{result.error_message}",
             )
 
     # ------------------------------------------------------------------
@@ -384,19 +389,18 @@ class PositionManager:
                     self._replace_stop_order(position)
                     logger.info(
                         f"Trailing stop updated (BUY): position={position.position_id} "
-                        f"old={old_stop:.2f} new={new_stop:.2f}"
+                        f"old={old_stop:.2f} new={new_stop:.2f}",
                     )
-        else:  # SELL
-            if current_price < position.entry_price:
-                new_stop = position.entry_price - 0.5 * (position.entry_price - current_price)
-                if new_stop < position.trailing_stop:
-                    old_stop = position.trailing_stop
-                    position.trailing_stop = new_stop
-                    self._replace_stop_order(position)
-                    logger.info(
-                        f"Trailing stop updated (SELL): position={position.position_id} "
-                        f"old={old_stop:.2f} new={new_stop:.2f}"
-                    )
+        elif current_price < position.entry_price:
+            new_stop = position.entry_price - 0.5 * (position.entry_price - current_price)
+            if new_stop < position.trailing_stop:
+                old_stop = position.trailing_stop
+                position.trailing_stop = new_stop
+                self._replace_stop_order(position)
+                logger.info(
+                    f"Trailing stop updated (SELL): position={position.position_id} "
+                    f"old={old_stop:.2f} new={new_stop:.2f}",
+                )
 
     def _replace_stop_order(self, position: Position) -> None:
         """Cancel old stop order and place a new one at the updated trailing stop."""
@@ -411,7 +415,7 @@ class PositionManager:
     # ------------------------------------------------------------------
 
     def _close_position(
-        self, position: Position, exit_price: float, exit_reason: str
+        self, position: Position, exit_price: float, exit_reason: str,
     ) -> Position:
         """Close a position, calculate P&L, cancel remaining orders, persist, publish."""
         position.status = "CLOSED"
@@ -446,7 +450,7 @@ class PositionManager:
 
         logger.info(
             f"Position closed: {position.position_id} reason={exit_reason} "
-            f"exit_price={exit_price} pnl={position.realized_pnl:.2f}"
+            f"exit_price={exit_price} pnl={position.realized_pnl:.2f}",
         )
 
         return position

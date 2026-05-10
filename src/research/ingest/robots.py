@@ -94,6 +94,7 @@ class RobotsChecker:
         when the caller does not override it in ``is_allowed``. Also
         sent as the ``User-Agent`` header when fetching
         ``/robots.txt`` itself.
+
     """
 
     def __init__(self, *, user_agent: str = DEFAULT_USER_AGENT) -> None:
@@ -223,4 +224,4 @@ class RobotsChecker:
         return parser
 
 
-__all__ = ["RobotsChecker", "DEFAULT_USER_AGENT"]
+__all__ = ["DEFAULT_USER_AGENT", "RobotsChecker"]

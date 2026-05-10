@@ -46,7 +46,6 @@ from src.research.judge.judge import JudgeReport
 from src.research.providers.base import ChunkHit, ChunkRecord
 from src.research.validators.types import UnsupportedClaim
 
-
 # --------------------------------------------------------------------------- #
 # Test doubles                                                                #
 # --------------------------------------------------------------------------- #
@@ -125,7 +124,6 @@ def _canned_synthesizer(
     resynth_brief: dict[str, str] | None = None,
 ) -> Any:
     """Build a synthesiser stub with distinct first-pass + resynth outputs."""
-
     first = brief if brief is not None else {
         "summary": "First pass summary [cite:c1].",
         "thesis": "First pass thesis [cite:c1].",
@@ -147,7 +145,6 @@ def _canned_synthesizer(
 
 def _canned_judge(reports: list[JudgeReport]) -> Any:
     """Judge stub returning canned reports in order."""
-
     queue = list(reports)
 
     async def _judge(*, brief: Any, retry_count: int) -> JudgeReport:
@@ -179,7 +176,7 @@ def _failing_report(run_id: UUID, *, retry_count: int = 0) -> JudgeReport:
                 start_offset=0,
                 end_offset=15,
                 reason="no_citation",
-            )
+            ),
         ],
         safe_to_display=False,
         retry_count=retry_count,
@@ -579,7 +576,7 @@ class TestQualityLabel:
             sub_agents=[_StubAgent(name="filings")],
             synthesizer=_canned_synthesizer(),
             judge_fn=_canned_judge(
-                [_failing_report(run_id), _healthy_report(run_id, retry_count=1)]
+                [_failing_report(run_id), _healthy_report(run_id, retry_count=1)],
             ),
             retriever=None,
         )
@@ -599,7 +596,7 @@ class TestQualityLabel:
             sub_agents=[_StubAgent(name="filings")],
             synthesizer=_canned_synthesizer(),
             judge_fn=_canned_judge(
-                [_failing_report(run_id), _failing_report(run_id, retry_count=1)]
+                [_failing_report(run_id), _failing_report(run_id, retry_count=1)],
             ),
             retriever=None,
         )

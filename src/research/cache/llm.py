@@ -97,7 +97,7 @@ _DEFAULT_TTL_SECONDS = 30 * 60
 
 
 def _canonical_prompt_bytes(
-    messages: list[Message], params: LLMParams
+    messages: list[Message], params: LLMParams,
 ) -> bytes:
     """Return canonical UTF-8 bytes for ``(messages, params)`` hashing.
 
@@ -129,7 +129,7 @@ def _canonical_prompt_bytes(
 
     canonical = {"messages": msg_dicts, "params": param_dict}
     return json.dumps(
-        canonical, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        canonical, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
     ).encode("utf-8")
 
 
@@ -139,7 +139,7 @@ def _sha256_hex(data: bytes) -> str:
 
 
 def _build_key(
-    *, provider: str, model: str, prompt_sha256: str, context_sha256: str
+    *, provider: str, model: str, prompt_sha256: str, context_sha256: str,
 ) -> str:
     """Assemble the ``research:llm:...`` cache key from its components."""
     return LLM_RESPONSE_CACHE_KEY_TEMPLATE.format(
@@ -179,7 +179,7 @@ async def cached_complete(
     messages: list[Message],
     params: LLMParams,
     *,
-    redis_client: "Redis | Any",
+    redis_client: Redis | Any,
     provider: str,
     model: str,
     context: str = "",
@@ -228,6 +228,7 @@ async def cached_complete(
     -------
     Completion
         The Provider_Contract shape (Req 2.11).
+
     """
     if ttl_seconds <= 0:
         raise ValueError(f"ttl_seconds must be positive, got {ttl_seconds}")

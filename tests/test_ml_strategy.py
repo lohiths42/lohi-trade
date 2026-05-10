@@ -1,19 +1,17 @@
+"""Unit tests for the ML-Enhanced Strategy.
 """
-Unit tests for the ML-Enhanced Strategy.
-"""
+
+import shutil
+import tempfile
+from datetime import datetime
 
 import numpy as np
-import pytest
-import tempfile
-import shutil
-from datetime import datetime, timezone
-from unittest.mock import MagicMock, patch
-
 import pandas as pd
+import pytest
 
+from src.ml.feature_engine import NUM_FEATURES, SentimentFeatures
 from src.ml.ml_strategy import MLStrategy, MLStrategyConfig
 from src.ml.model_trainer import ModelTrainer, TrainingSample
-from src.ml.feature_engine import SentimentFeatures, NUM_FEATURES
 from src.soldier.indicator_engine import IndicatorSet
 from src.soldier.strategy_engine import Signal, Strategy
 
@@ -53,6 +51,7 @@ def _make_candles() -> pd.DataFrame:
 
 class MockStrategy(Strategy):
     """Mock base strategy for testing."""
+
     def __init__(self, signal=None, enabled=True):
         self._signal = signal
         self._enabled = enabled

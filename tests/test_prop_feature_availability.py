@@ -1,5 +1,4 @@
-"""
-Property-based tests for Feature Availability Correctness.
+"""Property-based tests for Feature Availability Correctness.
 
 Verifies that the ServiceRegistry correctly computes feature availability
 based on which services are configured. A feature is available if and only
@@ -27,7 +26,7 @@ from hypothesis import strategies as st
 # ---------------------------------------------------------------------------
 
 _backend_gateway_dir = str(
-    Path(__file__).resolve().parents[1] / "backend-gateway"
+    Path(__file__).resolve().parents[1] / "backend-gateway",
 )
 if _backend_gateway_dir not in sys.path:
     sys.path.insert(0, _backend_gateway_dir)
@@ -49,7 +48,7 @@ VALID_GROUP_IDS = [g.group_id for g in CREDENTIAL_GROUPS]
 # Strategy: generate a random subset of group IDs that are CONFIGURED.
 # Non-selected groups will be left as UNCONFIGURED.
 configured_subset_strategy = st.frozensets(
-    st.sampled_from(VALID_GROUP_IDS)
+    st.sampled_from(VALID_GROUP_IDS),
 )
 
 
@@ -59,7 +58,7 @@ configured_subset_strategy = st.frozensets(
 
 
 def expected_feature_available(
-    feature: str, configured_groups: frozenset[str]
+    feature: str, configured_groups: frozenset[str],
 ) -> bool:
     """Independent reference implementation of feature availability logic.
 
@@ -89,7 +88,7 @@ class TestFeatureAvailabilityCorrectness:
     @given(configured_groups=configured_subset_strategy)
     @settings(max_examples=200)
     def test_feature_available_iff_dependency_configured(
-        self, configured_groups: frozenset[str]
+        self, configured_groups: frozenset[str],
     ) -> None:
         """For any subset of configured services, the feature availability
         map SHALL mark a feature as available if and only if at least one
@@ -124,7 +123,7 @@ class TestFeatureAvailabilityCorrectness:
     @given(configured_groups=configured_subset_strategy)
     @settings(max_examples=200)
     def test_is_feature_available_matches_map(
-        self, configured_groups: frozenset[str]
+        self, configured_groups: frozenset[str],
     ) -> None:
         """The is_feature_available() method SHALL return the same result
         as the corresponding entry in get_available_features() for every

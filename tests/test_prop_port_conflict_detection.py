@@ -1,5 +1,4 @@
-"""
-Property-based tests for Port Conflict Detection.
+"""Property-based tests for Port Conflict Detection.
 
 Verifies that the port checking logic correctly detects all port conflicts
 and returns port number + process information for any combination of
@@ -27,7 +26,7 @@ from hypothesis import strategies as st
 # ---------------------------------------------------------------------------
 
 _backend_gateway_dir = str(
-    Path(__file__).resolve().parents[1] / "backend-gateway"
+    Path(__file__).resolve().parents[1] / "backend-gateway",
 )
 if _backend_gateway_dir not in sys.path:
     sys.path.insert(0, _backend_gateway_dir)
@@ -68,6 +67,7 @@ def check_ports(occupied_ports: dict[int, tuple[int, str]]) -> list[PortConflict
 
     Returns:
         A list of PortConflict entries for each required port that is occupied.
+
     """
     conflicts: list[PortConflict] = []
 
@@ -80,7 +80,7 @@ def check_ports(occupied_ports: dict[int, tuple[int, str]]) -> list[PortConflict
                     pid=pid,
                     process_name=process_name,
                     description=PORT_DESCRIPTIONS.get(port, "Unknown service"),
-                )
+                ),
             )
 
     return conflicts
@@ -152,7 +152,7 @@ def check_ports_with_lsof() -> list[PortConflict]:
                     pid=pid,
                     process_name=process_name,
                     description=PORT_DESCRIPTIONS.get(port, "Unknown service"),
-                )
+                ),
             )
 
     return conflicts
@@ -164,7 +164,7 @@ def check_ports_with_lsof() -> list[PortConflict]:
 
 # Strategy: generate a random subset of ports from REQUIRED_PORTS to "occupy"
 occupied_ports_strategy = st.frozensets(
-    st.sampled_from(sorted(REQUIRED_PORTS))
+    st.sampled_from(sorted(REQUIRED_PORTS)),
 )
 
 # Strategy: generate random PIDs (realistic range)
@@ -172,19 +172,19 @@ pid_strategy = st.integers(min_value=1, max_value=65535)
 
 # Strategy: generate random process names
 process_name_strategy = st.sampled_from(
-    ["postgres", "redis-server", "python3", "node", "uvicorn", "vite", "nginx", "httpd"]
+    ["postgres", "redis-server", "python3", "node", "uvicorn", "vite", "nginx", "httpd"],
 )
 
 # Combined strategy: generate occupied port scenarios with process info
 port_occupation_strategy = st.frozensets(
-    st.sampled_from(sorted(REQUIRED_PORTS))
+    st.sampled_from(sorted(REQUIRED_PORTS)),
 ).flatmap(
     lambda ports: st.fixed_dictionaries(
         {
             port: st.tuples(pid_strategy, process_name_strategy)
             for port in ports
-        }
-    )
+        },
+    ),
 )
 
 
@@ -199,7 +199,7 @@ class TestPortConflictDetection:
     @given(occupation=port_occupation_strategy)
     @settings(max_examples=200)
     def test_all_occupied_ports_detected(
-        self, occupation: dict[int, tuple[int, str]]
+        self, occupation: dict[int, tuple[int, str]],
     ) -> None:
         """For any port in {5432, 6379, 8000, 3000} that is occupied,
         check_ports() SHALL detect the conflict and return the port number
@@ -222,7 +222,7 @@ class TestPortConflictDetection:
     @given(occupation=port_occupation_strategy)
     @settings(max_examples=200)
     def test_conflict_contains_port_and_process_info(
-        self, occupation: dict[int, tuple[int, str]]
+        self, occupation: dict[int, tuple[int, str]],
     ) -> None:
         """For each detected conflict, the result SHALL contain the port number
         and the conflicting process information (PID and process name).
@@ -255,7 +255,7 @@ class TestPortConflictDetection:
     @given(occupation=port_occupation_strategy)
     @settings(max_examples=200)
     def test_no_false_positives(
-        self, occupation: dict[int, tuple[int, str]]
+        self, occupation: dict[int, tuple[int, str]],
     ) -> None:
         """check_ports() SHALL NOT report conflicts for ports that are not
         occupied. Only actually occupied ports should appear in the result.
@@ -277,7 +277,7 @@ class TestPortConflictDetection:
     @given(occupation=port_occupation_strategy)
     @settings(max_examples=200)
     def test_conflicts_ordered_by_port(
-        self, occupation: dict[int, tuple[int, str]]
+        self, occupation: dict[int, tuple[int, str]],
     ) -> None:
         """check_ports() SHALL return conflicts in port-number order,
         matching the setup.sh iteration order.
@@ -302,7 +302,7 @@ class TestPortConflictDetection:
         """
         # Generate a random subset of ports to occupy
         occupied_set = data.draw(
-            st.frozensets(st.sampled_from(sorted(REQUIRED_PORTS)))
+            st.frozensets(st.sampled_from(sorted(REQUIRED_PORTS))),
         )
 
         # Use unique PIDs per port to avoid ambiguity in the mock

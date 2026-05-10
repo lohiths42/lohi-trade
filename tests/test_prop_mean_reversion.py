@@ -1,5 +1,4 @@
-"""
-Property-based tests for MeanReversionStrategy.
+"""Property-based tests for MeanReversionStrategy.
 
 Uses hypothesis to verify that the Mean Reversion strategy behaves correctly
 across a wide range of randomly generated indicator values.
@@ -18,13 +17,12 @@ from datetime import datetime
 
 import pandas as pd
 import pytest
-from hypothesis import given, settings, assume
+from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from src.soldier.indicator_engine import IndicatorSet
 from src.soldier.strategy_engine import MeanReversionStrategy
 from src.utils.config import MeanReversionStrategy as MeanReversionConfig
-
 
 # ---------------------------------------------------------------------------
 # Strategies (hypothesis generators)
@@ -53,8 +51,7 @@ def _default_config(
 
 @st.composite
 def valid_mean_reversion_inputs(draw):
-    """
-    Generate indicator values where ALL 4 Mean Reversion conditions are met:
+    """Generate indicator values where ALL 4 Mean Reversion conditions are met:
       1. RSI < 30
       2. close < bb_lower
       3. volume > 1.5 × volume_avg_20
@@ -120,8 +117,7 @@ def valid_mean_reversion_inputs(draw):
 
 @st.composite
 def invalid_mean_reversion_inputs(draw):
-    """
-    Generate indicator values where AT LEAST ONE condition fails.
+    """Generate indicator values where AT LEAST ONE condition fails.
 
     We first generate a valid set, then deliberately break one condition.
     """
@@ -200,8 +196,7 @@ def invalid_mean_reversion_inputs(draw):
 # ---------------------------------------------------------------------------
 
 class TestMeanReversionProperties:
-    """
-    **Validates: Requirements 4.2**
+    """**Validates: Requirements 4.2**
 
     Property 11: Mean Reversion Signal Conditions
     """
@@ -209,8 +204,7 @@ class TestMeanReversionProperties:
     @given(data=valid_mean_reversion_inputs())
     @settings(max_examples=25)
     def test_all_conditions_met_generates_buy_signal(self, data):
-        """
-        Property: When all 4 conditions are met, a BUY signal is always generated.
+        """Property: When all 4 conditions are met, a BUY signal is always generated.
 
         **Validates: Requirements 4.2**
         """
@@ -226,8 +220,7 @@ class TestMeanReversionProperties:
     @given(data=invalid_mean_reversion_inputs())
     @settings(max_examples=25)
     def test_any_condition_fails_no_signal(self, data):
-        """
-        Property: When any single condition fails, no signal is generated.
+        """Property: When any single condition fails, no signal is generated.
 
         **Validates: Requirements 4.2**
         """
@@ -241,8 +234,7 @@ class TestMeanReversionProperties:
     @given(data=valid_mean_reversion_inputs())
     @settings(max_examples=25)
     def test_stop_loss_below_entry_price(self, data):
-        """
-        Property: For any generated signal, stop_loss < entry_price.
+        """Property: For any generated signal, stop_loss < entry_price.
 
         **Validates: Requirements 4.2**
         """
@@ -259,8 +251,7 @@ class TestMeanReversionProperties:
     @given(data=valid_mean_reversion_inputs())
     @settings(max_examples=25)
     def test_target_equals_bb_middle(self, data):
-        """
-        Property: For any generated signal, target == bb_middle.
+        """Property: For any generated signal, target == bb_middle.
 
         **Validates: Requirements 4.2**
         """
@@ -277,8 +268,7 @@ class TestMeanReversionProperties:
     @given(data=valid_mean_reversion_inputs())
     @settings(max_examples=25)
     def test_stop_loss_formula_correctness(self, data):
-        """
-        Property: stop_loss == entry_price - (stop_loss_atr_multiplier × atr_14).
+        """Property: stop_loss == entry_price - (stop_loss_atr_multiplier × atr_14).
 
         **Validates: Requirements 4.2**
         """

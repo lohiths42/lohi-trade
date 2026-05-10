@@ -1,5 +1,4 @@
-"""
-Tests for the NSE Market Data Collector.
+"""Tests for the NSE Market Data Collector.
 
 Covers: connection, tick processing & publishing, reconnection with
 exponential backoff, broker fallback, pre/post-market sessions,
@@ -8,24 +7,21 @@ message parsing, and subscription management.
 Requirements: 25.1, 25.2, 25.4, 25.5, 25.6, 25.7
 """
 
-import asyncio
 import json
-import time
-from datetime import datetime, timezone, timedelta
-from unittest.mock import MagicMock, patch, AsyncMock
+from datetime import datetime
+from unittest.mock import MagicMock, patch
 
 import pytest
 
-from src.ingestion.market_data_collector import (
-    MarketDataCollector,
-    TickData,
-    FeedSource,
-    MarketSession,
-    ConnectionStats,
-    IST,
-)
 from src.ingestion.broker_interface import Tick
-
+from src.ingestion.market_data_collector import (
+    IST,
+    ConnectionStats,
+    FeedSource,
+    MarketDataCollector,
+    MarketSession,
+    TickData,
+)
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -150,7 +146,7 @@ class TestSubscription:
     def test_unsubscribe_removes_symbols(self):
         bus = _make_event_bus()
         collector = MarketDataCollector(
-            event_bus=bus, subscribed_symbols=["RELIANCE", "TCS", "INFY"]
+            event_bus=bus, subscribed_symbols=["RELIANCE", "TCS", "INFY"],
         )
 
         collector.unsubscribe(["TCS"])
@@ -405,7 +401,7 @@ class TestConnectionLifecycle:
 
     @pytest.mark.asyncio
     async def test_disconnect(self):
-        """disconnect clears state."""
+        """Disconnect clears state."""
         bus = _make_event_bus()
         collector = MarketDataCollector(event_bus=bus)
         await collector.connect_nse_feed()
@@ -508,7 +504,7 @@ class TestBrokerFallback:
         bus = _make_event_bus()
         broker = _make_fallback_broker()
         collector = MarketDataCollector(
-            event_bus=bus, fallback_broker=broker, subscribed_symbols=["TCS"]
+            event_bus=bus, fallback_broker=broker, subscribed_symbols=["TCS"],
         )
 
         await collector._activate_fallback()
@@ -521,7 +517,7 @@ class TestBrokerFallback:
         bus = _make_event_bus()
         broker = _make_fallback_broker()
         collector = MarketDataCollector(
-            event_bus=bus, fallback_broker=broker, subscribed_symbols=["INFY"]
+            event_bus=bus, fallback_broker=broker, subscribed_symbols=["INFY"],
         )
         collector._fallback_active = True
 
@@ -700,7 +696,7 @@ class TestBSEInit:
         bus = _make_event_bus()
         dual = ["RELIANCE", "TCS", "INFY"]
         collector = MarketDataCollector(
-            event_bus=bus, dual_listed_symbols=dual
+            event_bus=bus, dual_listed_symbols=dual,
         )
         assert collector.dual_listed_symbols == dual
 
@@ -708,14 +704,14 @@ class TestBSEInit:
         bus = _make_event_bus()
         bse_only = ["BSELTD", "BSESTOCK"]
         collector = MarketDataCollector(
-            event_bus=bus, bse_only_symbols=bse_only
+            event_bus=bus, bse_only_symbols=bse_only,
         )
         assert collector.bse_only_symbols == bse_only
 
     def test_init_with_custom_bse_feed_url(self):
         bus = _make_event_bus()
         collector = MarketDataCollector(
-            event_bus=bus, bse_feed_url="wss://custom-bse.example.com/ws"
+            event_bus=bus, bse_feed_url="wss://custom-bse.example.com/ws",
         )
         assert collector.bse_feed_url == "wss://custom-bse.example.com/ws"
 
@@ -770,7 +766,7 @@ class TestBSEConnection:
 
         # Simulate BSE connection failure
         with patch.object(
-            collector, "_establish_bse_connection", side_effect=Exception("BSE down")
+            collector, "_establish_bse_connection", side_effect=Exception("BSE down"),
         ):
             await collector.connect_bse_feed()
 
@@ -1086,7 +1082,7 @@ class TestBSEFeedUnavailability:
 
         # BSE fails to connect
         with patch.object(
-            collector, "_establish_bse_connection", side_effect=Exception("BSE down")
+            collector, "_establish_bse_connection", side_effect=Exception("BSE down"),
         ):
             await collector.connect_bse_feed()
 

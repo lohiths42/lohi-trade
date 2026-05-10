@@ -1,5 +1,4 @@
-"""
-Property-based tests for Sentiment Persistence.
+"""Property-based tests for Sentiment Persistence.
 
 Validates that sentiment results are correctly published to the Redis
 Stream (stream:sentiment) and stored in the SQLite sentiment_log table.
@@ -16,19 +15,16 @@ Properties tested:
 
 import sqlite3
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from src.commander.sentiment_analyzer import (
-    INSERT_SENTIMENT_SQL,
     SENTIMENT_STREAM_NAME,
     SentimentAnalyzer,
-    SentimentResult,
 )
-
 
 # ---------------------------------------------------------------------------
 # Mocks
@@ -59,9 +55,9 @@ class MockEventBus:
     """Records all published messages."""
 
     def __init__(self):
-        self.messages: List[Dict[str, Any]] = []
+        self.messages: list[dict[str, Any]] = []
 
-    def publish(self, stream_name: str, message: Dict[str, Any], maxlen=None) -> str:
+    def publish(self, stream_name: str, message: dict[str, Any], maxlen=None) -> str:
         self.messages.append({"stream": stream_name, "data": message})
         return f"mock-{len(self.messages)}"
 
@@ -92,7 +88,7 @@ class MockDatabaseManager:
         self._conn.commit()
         return cursor
 
-    def get_all_rows(self) -> List[Dict[str, Any]]:
+    def get_all_rows(self) -> list[dict[str, Any]]:
         self._conn.row_factory = sqlite3.Row
         rows = self._conn.execute("SELECT * FROM sentiment_log").fetchall()
         return [dict(r) for r in rows]
@@ -127,8 +123,7 @@ _title = st.text(min_size=1, max_size=100, alphabet=st.characters(categories=("L
 
 
 class TestSentimentPersistenceProperties:
-    """
-    **Property 73: Sentiment Persistence**
+    """**Property 73: Sentiment Persistence**
     **Validates: Requirements 7.6**
     """
 

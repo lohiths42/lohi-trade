@@ -28,7 +28,8 @@ concrete backends.
 
 from __future__ import annotations
 
-from typing import Any, AsyncIterator, Literal, Protocol, runtime_checkable
+from collections.abc import AsyncIterator
+from typing import Any, Literal, Protocol, runtime_checkable
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -174,13 +175,13 @@ class LLMProvider(Protocol):
     """
 
     async def complete(
-        self, messages: list[Message], params: LLMParams
+        self, messages: list[Message], params: LLMParams,
     ) -> Completion:
         """Produce a single non-streamed ``Completion`` (Req 2.11)."""
         ...
 
     def stream(
-        self, messages: list[Message], params: LLMParams
+        self, messages: list[Message], params: LLMParams,
     ) -> AsyncIterator[CompletionChunk]:
         """Produce an async iterator of ``CompletionChunk`` deltas.
 
@@ -249,7 +250,7 @@ class ChunkRecord(BaseModel):
     )
     symbol: str = Field(..., description="Namespace key, e.g. 'RELIANCE'.")
     position: int = Field(
-        ..., ge=0, description="Zero-based chunk position within the source doc."
+        ..., ge=0, description="Zero-based chunk position within the source doc.",
     )
     token_count: int = Field(..., ge=0, description="Tokens in ``text``.")
     text: str = Field(..., description="Chunk body as stored in the vector backend.")
@@ -303,13 +304,13 @@ class ChunkHit(BaseModel):
     chunk: ChunkRecord = Field(..., description="The matched chunk.")
     score: float = Field(..., description="Final fused score used for ordering.")
     bm25_rank: int | None = Field(
-        default=None, ge=1, description="BM25 rank (1-based) if available."
+        default=None, ge=1, description="BM25 rank (1-based) if available.",
     )
     dense_rank: int | None = Field(
-        default=None, ge=1, description="Dense-search rank (1-based) if available."
+        default=None, ge=1, description="Dense-search rank (1-based) if available.",
     )
     rerank_rank: int | None = Field(
-        default=None, ge=1, description="Cross-encoder rank (1-based) if available."
+        default=None, ge=1, description="Cross-encoder rank (1-based) if available.",
     )
 
 

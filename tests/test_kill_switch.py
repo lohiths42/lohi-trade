@@ -1,5 +1,4 @@
-"""
-Unit tests for the Kill Switch module.
+"""Unit tests for the Kill Switch module.
 
 Tests state management, automatic triggers, order cancellation,
 notifications, audit logging, and manual deactivation requirement.
@@ -7,16 +6,11 @@ notifications, audit logging, and manual deactivation requirement.
 Requirements: 13.1, 13.2, 13.3, 13.6, 13.7, 13.8, 13.9
 """
 
-import json
-import sqlite3
 from datetime import datetime
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock
 
-import pytest
-
-from src.execution.kill_switch import KillSwitch, NOTIFICATION_STREAM
+from src.execution.kill_switch import NOTIFICATION_STREAM, KillSwitch
 from src.utils.config import CapitalConfig, Config, RiskLimitsConfig, TradingHoursConfig
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -204,7 +198,7 @@ class TestAutomaticTriggers:
     def test_nifty_volatility_activates_on_large_drop(self):
         # 3% drop: start=20000, current=19400
         ks, *_ = _make_kill_switch(
-            nifty_current="19400", nifty_start="20000"
+            nifty_current="19400", nifty_start="20000",
         )
         result = ks.check_nifty_volatility()
         assert result is True
@@ -213,7 +207,7 @@ class TestAutomaticTriggers:
     def test_nifty_volatility_no_activation_below_threshold(self):
         # 1% drop: start=20000, current=19800
         ks, *_ = _make_kill_switch(
-            nifty_current="19800", nifty_start="20000"
+            nifty_current="19800", nifty_start="20000",
         )
         result = ks.check_nifty_volatility()
         assert result is False
@@ -222,7 +216,7 @@ class TestAutomaticTriggers:
     def test_nifty_volatility_no_activation_on_rise(self):
         # Price went up
         ks, *_ = _make_kill_switch(
-            nifty_current="20500", nifty_start="20000"
+            nifty_current="20500", nifty_start="20000",
         )
         result = ks.check_nifty_volatility()
         assert result is False
@@ -234,7 +228,7 @@ class TestAutomaticTriggers:
 
     def test_nifty_volatility_invalid_data(self):
         ks, *_ = _make_kill_switch(
-            nifty_current="invalid", nifty_start="20000"
+            nifty_current="invalid", nifty_start="20000",
         )
         result = ks.check_nifty_volatility()
         assert result is False
@@ -261,7 +255,7 @@ class TestAutomaticTriggers:
 
     def test_run_checks_activates_on_volatility(self):
         ks, *_ = _make_kill_switch(
-            nifty_current="19400", nifty_start="20000"
+            nifty_current="19400", nifty_start="20000",
         )
         result = ks.run_checks()
         assert result is True
@@ -299,7 +293,7 @@ class TestOrderCancellation:
 
     def test_all_pending_orders_cancelled(self):
         ks, _, oms, *_ = _make_kill_switch(
-            pending_order_ids=["order-1", "order-2", "order-3"]
+            pending_order_ids=["order-1", "order-2", "order-3"],
         )
         cancelled = ks.cancel_all_pending_orders()
         assert cancelled == 3
@@ -313,14 +307,14 @@ class TestOrderCancellation:
 
     def test_activation_cancels_orders(self):
         ks, _, oms, *_ = _make_kill_switch(
-            pending_order_ids=["order-1", "order-2"]
+            pending_order_ids=["order-1", "order-2"],
         )
         ks.activate("Test activation")
         assert oms.cancel_order.call_count == 2
 
     def test_cancel_handles_failure_gracefully(self):
         ks, _, oms, *_ = _make_kill_switch(
-            pending_order_ids=["order-1", "order-2"]
+            pending_order_ids=["order-1", "order-2"],
         )
         oms.cancel_order.side_effect = [True, Exception("Broker error")]
         cancelled = ks.cancel_all_pending_orders()
@@ -392,7 +386,7 @@ class TestManualDeactivation:
 
     def test_stays_active_after_run_checks(self):
         ks, *_ = _make_kill_switch(
-            nifty_current="19400", nifty_start="20000"
+            nifty_current="19400", nifty_start="20000",
         )
         ks.run_checks()
         assert ks.is_active() is True

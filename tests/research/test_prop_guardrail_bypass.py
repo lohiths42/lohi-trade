@@ -70,7 +70,6 @@ from src.research.guardrails.pydantic_guard import (
     PydanticGuardrail,
 )
 
-
 # --------------------------------------------------------------------------- #
 # Seed corpus                                                                 #
 # --------------------------------------------------------------------------- #
@@ -88,7 +87,7 @@ def _load_seeds() -> list[str]:
     seeds = data.get("seeds") or []
     if not seeds:
         raise RuntimeError(
-            f"Empty jailbreak corpus at {_CORPUS_PATH}; property test cannot run."
+            f"Empty jailbreak corpus at {_CORPUS_PATH}; property test cannot run.",
         )
     return [str(s) for s in seeds]
 
@@ -189,7 +188,7 @@ def _case_and_whitespace_mutation(draw: st.DrawFn) -> tuple[str, str]:
             st.integers(min_value=0, max_value=max(0, len(seed) - 1)),
             min_size=n_flips,
             max_size=n_flips,
-        )
+        ),
     )
 
     # 0–3 extra whitespace insertions at existing boundaries.

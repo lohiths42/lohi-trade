@@ -1,5 +1,4 @@
-"""
-Property-based tests for the Telegram Bot module.
+"""Property-based tests for the Telegram Bot module.
 
 Property 69: Telegram Trade Notifications
 For any trade entry/exit, a notification should be sent with all
@@ -11,12 +10,11 @@ Requirements: 18.1, 18.2, 18.7
 from datetime import datetime
 from unittest.mock import MagicMock, patch
 
-from hypothesis import given, settings, assume
+from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
 from src.ui.telegram_bot import TelegramNotifier
 from src.utils.config import Config, TelegramConfig
-
 
 # ---------------------------------------------------------------------------
 # Hypothesis strategies
@@ -78,7 +76,7 @@ def _make_notifier(rate_limit: int = 1000) -> TelegramNotifier:
 @settings(max_examples=25)
 @patch("src.ui.telegram_bot.requests.post")
 def test_prop_69_trade_entry_contains_all_fields(
-    mock_post, symbol, side, quantity, price, strategy
+    mock_post, symbol, side, quantity, price, strategy,
 ):
     """Property 69: Trade entry notification contains symbol, side, qty, price, strategy."""
     mock_post.return_value = MagicMock(status_code=200)
@@ -106,7 +104,7 @@ def test_prop_69_trade_entry_contains_all_fields(
 @settings(max_examples=25)
 @patch("src.ui.telegram_bot.requests.post")
 def test_prop_69_trade_exit_contains_all_fields(
-    mock_post, symbol, side, quantity, entry_price, pnl, holding
+    mock_post, symbol, side, quantity, entry_price, pnl, holding,
 ):
     """Property 69: Trade exit notification contains symbol, exit price, P&L, holding."""
     # Derive a valid exit price from entry + pnl/qty
@@ -119,7 +117,7 @@ def test_prop_69_trade_exit_contains_all_fields(
     n = _make_notifier()
 
     result = n.send_trade_exit(
-        symbol, side, quantity, entry_price, exit_price, pnl, holding
+        symbol, side, quantity, entry_price, exit_price, pnl, holding,
     )
     assert result is True
 
@@ -169,7 +167,7 @@ def test_prop_69_rate_limit_enforced(mock_post, num_messages, rate_limit):
 @settings(max_examples=25)
 @patch("src.ui.telegram_bot.requests.post")
 def test_prop_69_daily_summary_contains_all_fields(
-    mock_post, total_pnl, num_trades, win_rate, capital
+    mock_post, total_pnl, num_trades, win_rate, capital,
 ):
     """Property 69: Daily summary contains P&L, trade count, win rate."""
     mock_post.return_value = MagicMock(status_code=200)

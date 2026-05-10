@@ -1,5 +1,4 @@
-"""
-Tests for BrokerRouter — unified broker routing with per-user failover.
+"""Tests for BrokerRouter — unified broker routing with per-user failover.
 
 Validates:
 - Broker registry management
@@ -14,7 +13,6 @@ Validates:
 Requirements: 17.1, 17.2, 17.3, 17.4, 17.5, 17.6, 17.7
 """
 
-from datetime import datetime
 from unittest.mock import MagicMock
 
 import pytest
@@ -32,9 +30,7 @@ from src.ingestion.broker_router import (
     SUPPORTED_BROKERS,
     BrokerConnectionStatus,
     BrokerRouter,
-    UserBrokerPreference,
 )
-
 
 # ── Fixtures ──────────────────────────────────────────────────────
 

@@ -55,8 +55,9 @@ Satisfies
 from __future__ import annotations
 
 import time
+from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import Any, Final, Iterable
+from typing import Any, Final
 
 from src.research.agents._base import AgentConfig
 from src.research.agents._stream import (
@@ -132,7 +133,7 @@ class TechnicalsAgent:
             temperature=_DEFAULT_TEMPERATURE,
             max_tokens=_DEFAULT_MAX_TOKENS,
             prompt_version=_PROMPT_VERSION,
-        )
+        ),
     )
 
     stream_name_template: str = _DEFAULT_STREAM_NAME_TEMPLATE
@@ -161,7 +162,7 @@ class TechnicalsAgent:
         if self.redis_reader is None:
             raise ValueError(
                 f"{self.name} agent requires a RedisStreamReader; "
-                "construct with ``redis_reader=...``."
+                "construct with ``redis_reader=...``.",
             )
 
         stream_name = self._resolve_stream_name(context.symbol)
@@ -210,7 +211,7 @@ class TechnicalsAgent:
         if self.llm is None:
             raise ValueError(
                 f"{self.name} agent requires an LLMProvider; "
-                "construct with ``llm=...``."
+                "construct with ``llm=...``.",
             )
         completion = await self.llm.complete(messages, self._llm_params())
 
@@ -244,7 +245,7 @@ class TechnicalsAgent:
             raise ValueError(
                 "stream_name_template must contain '{symbol}' to enable "
                 "per-symbol sharded reads; got "
-                f"{self.stream_name_template!r}"
+                f"{self.stream_name_template!r}",
             )
         return self.stream_name_template.format(symbol=symbol)
 

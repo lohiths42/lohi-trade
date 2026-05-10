@@ -1,5 +1,4 @@
-"""
-Performance tests for LOHI-TRADE.
+"""Performance tests for LOHI-TRADE.
 
 Validates:
   - Tick processing latency < 10ms (p99)
@@ -9,22 +8,19 @@ Validates:
 Requirements: 26.5
 """
 
-import time
 import statistics
+import time
 import uuid
-import pytest
-from unittest.mock import MagicMock, patch, PropertyMock
-from dataclasses import dataclass
-from datetime import datetime, time as dt_time, timedelta
+from datetime import datetime, timedelta
+from unittest.mock import MagicMock
 
-from src.execution.rms import RiskManagementSystem, ValidationResult
+from src.execution.rms import RiskManagementSystem
 from src.ingestion.broker_interface import (
-    Order, OrderSide, OrderType, ProductType, OrderStatus, Tick,
+    Tick,
 )
 from src.soldier.candle_builder import CandleBuilder
 from src.soldier.indicator_engine import IndicatorSet
 from src.soldier.strategy_engine import Signal
-
 
 # ---------------------------------------------------------------------------
 # Helpers

@@ -32,7 +32,8 @@ Satisfies: Req 8.3, Req 11.3, design §3.10.
 
 from __future__ import annotations
 
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
@@ -43,7 +44,6 @@ from src.research.snapshot.bias_listener import (
     BiasInvalidationListener,
     build_invalidation_fields,
 )
-
 
 # --------------------------------------------------------------------------- #
 # Stubs                                                                       #
@@ -156,7 +156,7 @@ class TestHappyPath:
                         },
                     ),
                 ],
-            }
+            },
         )
         publisher = _RecordingPublisher()
         resolver = _InMemoryWatchlist({"RELIANCE": [user_a, user_b]})
@@ -187,7 +187,8 @@ class TestHappyPath:
     @pytest.mark.asyncio
     async def test_sharded_stream_resolves_ticker_from_name(self) -> None:
         """An event without a ``ticker`` field is still translated
-        when the stream name carries the ticker suffix."""
+        when the stream name carries the ticker suffix.
+        """
         user_c = uuid4()
         reader = _FakeStreamReader(
             {
@@ -198,7 +199,7 @@ class TestHappyPath:
                         {"bias": "BEARISH", "timestamp": "2024-02-01T00:00:00+00:00"},
                     ),
                 ],
-            }
+            },
         )
         publisher = _RecordingPublisher()
         resolver = _InMemoryWatchlist({"TCS": [user_c]})
@@ -221,7 +222,7 @@ class TestHappyPath:
                 "stream:bias:INFY": [
                     ("1-0", {"ticker": "INFY", "bias": "NEUTRAL"}),
                 ],
-            }
+            },
         )
         publisher = _RecordingPublisher()
         resolver = _InMemoryWatchlist({})  # no users watching anything
@@ -271,8 +272,8 @@ class TestDedup:
             {
                 "stream:bias:HDFC": [
                     ("1-0", {"ticker": "HDFC", "bias": "BULLISH"}),
-                ]
-            }
+                ],
+            },
         )
         publisher = _RecordingPublisher()
         resolver = _InMemoryWatchlist({"HDFC": [user]})
@@ -287,7 +288,7 @@ class TestDedup:
 
         # A fresh bias event on the same stream.
         reader._per_stream["stream:bias:HDFC"].insert(
-            0, ("2-0", {"ticker": "HDFC", "bias": "BEARISH"})
+            0, ("2-0", {"ticker": "HDFC", "bias": "BEARISH"}),
         )
         assert await listener.poll_once() == 1
         assert len(publisher.calls) == 2
@@ -306,8 +307,8 @@ class TestDiscovery:
             {
                 "stream:bias:WIPRO": [
                     ("1-0", {"ticker": "WIPRO", "bias": "BULLISH"}),
-                ]
-            }
+                ],
+            },
         )
         publisher = _RecordingPublisher()
         resolver = _InMemoryWatchlist({"WIPRO": [user]})
@@ -373,7 +374,7 @@ class TestResilience:
         reader = _FakeStreamReader(
             {
                 "stream:bias:X": [("1-0", {"ticker": "X", "bias": "B"})],
-            }
+            },
         )
         publisher = _RecordingPublisher()
         resolver = _InMemoryWatchlist(raise_on="X")
@@ -398,7 +399,7 @@ class TestResilience:
                 "stream:bias:TATA": [
                     ("1-0", {"ticker": "TATA", "bias": "BULLISH"}),
                 ],
-            }
+            },
         )
         publisher = _RecordingPublisher(raise_on_calls=[0])  # first call raises
         resolver = _InMemoryWatchlist({"TATA": [user_a, user_b]})

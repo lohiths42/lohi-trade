@@ -1,5 +1,4 @@
-"""
-Property-based tests for TrendFollowingStrategy.
+"""Property-based tests for TrendFollowingStrategy.
 
 Uses hypothesis to verify that the Trend Following strategy behaves correctly
 across a wide range of randomly generated indicator values.
@@ -25,7 +24,6 @@ from hypothesis import strategies as st
 from src.soldier.indicator_engine import IndicatorSet
 from src.soldier.strategy_engine import TrendFollowingStrategy
 from src.utils.config import TrendFollowingStrategy as TrendFollowingConfig
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -53,14 +51,13 @@ _price = st.floats(min_value=1.0, max_value=100_000.0, allow_nan=False, allow_in
 
 @st.composite
 def valid_trend_following_inputs(draw):
-    """
-    Generate indicator values where ALL 6 Trend Following conditions are met:
-      1. EMA(9) > EMA(21)
-      2. MACD > 0
-      3. MACD histogram > 0
-      4. close > VWAP
-      5. supertrend_direction == 1
-      6. volume > volume_avg_20
+    """Generate indicator values where ALL 6 Trend Following conditions are met:
+    1. EMA(9) > EMA(21)
+    2. MACD > 0
+    3. MACD histogram > 0
+    4. close > VWAP
+    5. supertrend_direction == 1
+    6. volume > volume_avg_20
     """
     # EMA crossover: ema_9 > ema_21
     ema_21 = draw(st.floats(min_value=1.0, max_value=50_000.0, allow_nan=False, allow_infinity=False))
@@ -118,8 +115,7 @@ def valid_trend_following_inputs(draw):
 
 @st.composite
 def invalid_trend_following_inputs(draw):
-    """
-    Generate indicator values where AT LEAST ONE of the 6 conditions fails.
+    """Generate indicator values where AT LEAST ONE of the 6 conditions fails.
 
     We first generate a valid set, then deliberately break one condition.
     """
@@ -198,8 +194,7 @@ def invalid_trend_following_inputs(draw):
 # ---------------------------------------------------------------------------
 
 class TestTrendFollowingProperties:
-    """
-    **Validates: Requirements 4.3**
+    """**Validates: Requirements 4.3**
 
     Property 12: Trend Following Signal Conditions
     """
@@ -207,8 +202,7 @@ class TestTrendFollowingProperties:
     @given(data=valid_trend_following_inputs())
     @settings(max_examples=100)
     def test_all_conditions_met_generates_buy_signal(self, data):
-        """
-        Property: When all 6 conditions are met, a BUY signal is always generated.
+        """Property: When all 6 conditions are met, a BUY signal is always generated.
 
         **Validates: Requirements 4.3**
         """
@@ -224,8 +218,7 @@ class TestTrendFollowingProperties:
     @given(data=invalid_trend_following_inputs())
     @settings(max_examples=100)
     def test_any_condition_fails_no_signal(self, data):
-        """
-        Property: When any single condition fails, no signal is generated.
+        """Property: When any single condition fails, no signal is generated.
 
         **Validates: Requirements 4.3**
         """
@@ -239,8 +232,7 @@ class TestTrendFollowingProperties:
     @given(data=valid_trend_following_inputs())
     @settings(max_examples=100)
     def test_stop_loss_below_entry_price(self, data):
-        """
-        Property: For any generated signal, stop_loss < entry_price.
+        """Property: For any generated signal, stop_loss < entry_price.
 
         **Validates: Requirements 4.3**
         """
@@ -257,8 +249,7 @@ class TestTrendFollowingProperties:
     @given(data=valid_trend_following_inputs())
     @settings(max_examples=100)
     def test_target_above_entry_price(self, data):
-        """
-        Property: For any generated signal, target > entry_price.
+        """Property: For any generated signal, target > entry_price.
 
         **Validates: Requirements 4.3**
         """
@@ -275,8 +266,7 @@ class TestTrendFollowingProperties:
     @given(data=valid_trend_following_inputs())
     @settings(max_examples=100)
     def test_stop_loss_formula_correctness(self, data):
-        """
-        Property: stop_loss == entry_price - (stop_loss_atr_multiplier × atr_14).
+        """Property: stop_loss == entry_price - (stop_loss_atr_multiplier × atr_14).
 
         **Validates: Requirements 4.3**
         """
@@ -296,8 +286,7 @@ class TestTrendFollowingProperties:
     @given(data=valid_trend_following_inputs())
     @settings(max_examples=100)
     def test_target_formula_correctness(self, data):
-        """
-        Property: target == entry_price + (target_atr_multiplier × atr_14).
+        """Property: target == entry_price + (target_atr_multiplier × atr_14).
 
         **Validates: Requirements 4.3**
         """

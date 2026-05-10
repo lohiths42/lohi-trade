@@ -33,7 +33,7 @@ def main() -> int:
         ),
     )
     parser.add_argument(
-        "--version", action="version", version=f"lohi-trade {__version__}"
+        "--version", action="version", version=f"lohi-trade {__version__}",
     )
 
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
@@ -116,25 +116,24 @@ def main() -> int:
         from src.cli.commands.setup import run_setup
 
         return run_setup(args)
-    elif args.command == "doctor":
+    if args.command == "doctor":
         from src.cli.commands.doctor import run_doctor
 
         return run_doctor()
-    elif args.command == "start":
+    if args.command == "start":
         from src.cli.commands.start import run_start
 
         return run_start(args)
-    elif args.command == "stop":
+    if args.command == "stop":
         from src.cli.commands.stop import run_stop
 
         return run_stop()
-    elif args.command == "status":
+    if args.command == "status":
         from src.cli.commands.status import run_status
 
         return run_status()
-    else:
-        parser.print_help()
-        return 1
+    parser.print_help()
+    return 1
 
 
 def cli() -> None:

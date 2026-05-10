@@ -23,7 +23,6 @@ from src.research.agents.logging import (
 )
 from src.research.judge.logging import log_judge_call
 
-
 # --------------------------------------------------------------------------- #
 # Helpers                                                                     #
 # --------------------------------------------------------------------------- #
@@ -50,7 +49,7 @@ class TestLogSubAgentInvocation:
     """One structured INFO line per Sub_Agent invocation (Req 13.5)."""
 
     def test_log_sub_agent_invocation_emits_structured_line(
-        self, caplog: pytest.LogCaptureFixture
+        self, caplog: pytest.LogCaptureFixture,
     ) -> None:
         run_id = uuid4()
         user_id = uuid4()
@@ -74,18 +73,18 @@ class TestLogSubAgentInvocation:
         assert rec.levelno == logging.INFO
         # UUIDs are stringified so JSON consumers can ingest them
         # without a custom decoder.
-        assert getattr(rec, "run_id") == str(run_id)
-        assert getattr(rec, "user_id") == str(user_id)
-        assert getattr(rec, "agent_name") == "filings"
-        assert getattr(rec, "kind") == "ok"
-        assert getattr(rec, "section_name") == "financial_highlights"
-        assert getattr(rec, "wall_time_ms") == 1234
-        assert getattr(rec, "input_tokens") == 512
-        assert getattr(rec, "output_tokens") == 256
-        assert getattr(rec, "reason") == ""
+        assert rec.run_id == str(run_id)
+        assert rec.user_id == str(user_id)
+        assert rec.agent_name == "filings"
+        assert rec.kind == "ok"
+        assert rec.section_name == "financial_highlights"
+        assert rec.wall_time_ms == 1234
+        assert rec.input_tokens == 512
+        assert rec.output_tokens == 256
+        assert rec.reason == ""
 
     def test_log_sub_agent_invocation_preserves_reason_text(
-        self, caplog: pytest.LogCaptureFixture
+        self, caplog: pytest.LogCaptureFixture,
     ) -> None:
         run_id = uuid4()
         user_id = uuid4()
@@ -104,11 +103,11 @@ class TestLogSubAgentInvocation:
             )
         records = _records_for(caplog, "sub_agent_invocation")
         assert len(records) == 1
-        assert getattr(records[0], "kind") == "no_data"
-        assert getattr(records[0], "reason").startswith("no_data:")
+        assert records[0].kind == "no_data"
+        assert records[0].reason.startswith("no_data:")
 
     def test_log_sub_agent_invocation_redacts_secrets(
-        self, caplog: pytest.LogCaptureFixture
+        self, caplog: pytest.LogCaptureFixture,
     ) -> None:
         """The helper forwards only the named fields.
 
@@ -151,7 +150,7 @@ class TestLogSubAgentInvocation:
 
 class TestLogRetrievalCall:
     def test_log_retrieval_call_emits_structured_line(
-        self, caplog: pytest.LogCaptureFixture
+        self, caplog: pytest.LogCaptureFixture,
     ) -> None:
         run_id = uuid4()
         user_id = uuid4()
@@ -171,15 +170,15 @@ class TestLogRetrievalCall:
         assert len(records) == 1
         rec = records[0]
         assert rec.levelno == logging.INFO
-        assert getattr(rec, "agent_name") == "filings"
-        assert getattr(rec, "k") == 10
-        assert getattr(rec, "symbol") == "RELIANCE"
-        assert getattr(rec, "wall_time_ms") == 78
-        assert getattr(rec, "hit_count") == 8
-        assert getattr(rec, "run_id") == str(run_id)
+        assert rec.agent_name == "filings"
+        assert rec.k == 10
+        assert rec.symbol == "RELIANCE"
+        assert rec.wall_time_ms == 78
+        assert rec.hit_count == 8
+        assert rec.run_id == str(run_id)
 
     def test_log_retrieval_call_accepts_null_symbol(
-        self, caplog: pytest.LogCaptureFixture
+        self, caplog: pytest.LogCaptureFixture,
     ) -> None:
         run_id = uuid4()
         user_id = uuid4()
@@ -195,7 +194,7 @@ class TestLogRetrievalCall:
             )
         records = _records_for(caplog, "retrieval_call")
         assert len(records) == 1
-        assert getattr(records[0], "symbol") is None
+        assert records[0].symbol is None
 
 
 # --------------------------------------------------------------------------- #
@@ -205,7 +204,7 @@ class TestLogRetrievalCall:
 
 class TestLogOrchestratorEvent:
     def test_log_orchestrator_event_emits_structured_line(
-        self, caplog: pytest.LogCaptureFixture
+        self, caplog: pytest.LogCaptureFixture,
     ) -> None:
         run_id = uuid4()
         user_id = uuid4()
@@ -221,17 +220,17 @@ class TestLogOrchestratorEvent:
         records = _records_for(caplog, "plan_done")
         assert len(records) == 1
         rec = records[0]
-        assert getattr(rec, "event") == "plan_done"
-        assert getattr(rec, "agents_requested") == ["filings", "fundamentals"]
-        assert getattr(rec, "run_id") == str(run_id)
-        assert getattr(rec, "user_id") == str(user_id)
+        assert rec.event == "plan_done"
+        assert rec.agents_requested == ["filings", "fundamentals"]
+        assert rec.run_id == str(run_id)
+        assert rec.user_id == str(user_id)
 
     @pytest.mark.parametrize(
         "event",
         ["plan_done", "fan_out_start", "fan_out_done", "synthesis_done", "judge_done"],
     )
     def test_log_orchestrator_event_supports_canonical_events(
-        self, caplog: pytest.LogCaptureFixture, event: str
+        self, caplog: pytest.LogCaptureFixture, event: str,
     ) -> None:
         run_id = uuid4()
         user_id = uuid4()
@@ -243,7 +242,7 @@ class TestLogOrchestratorEvent:
             )
         records = _records_for(caplog, event)
         assert len(records) == 1
-        assert getattr(records[0], "event") == event
+        assert records[0].event == event
 
 
 # --------------------------------------------------------------------------- #
@@ -253,7 +252,7 @@ class TestLogOrchestratorEvent:
 
 class TestLogJudgeCall:
     def test_log_judge_call_emits_structured_line(
-        self, caplog: pytest.LogCaptureFixture
+        self, caplog: pytest.LogCaptureFixture,
     ) -> None:
         run_id = uuid4()
 
@@ -274,18 +273,18 @@ class TestLogJudgeCall:
         assert len(records) == 1
         rec = records[0]
         assert rec.levelno == logging.INFO
-        assert getattr(rec, "run_id") == str(run_id)
-        assert getattr(rec, "user_id") is None
-        assert getattr(rec, "model_id") == "nvidia_nim/llama-3"
-        assert getattr(rec, "elapsed_ms") == 1850
-        assert getattr(rec, "safe_to_display") is True
-        assert getattr(rec, "min_score") == pytest.approx(0.7)
-        assert getattr(rec, "unsupported_count") == 0
-        assert getattr(rec, "off_policy_count") == 0
-        assert getattr(rec, "retry_count") == 0
+        assert rec.run_id == str(run_id)
+        assert rec.user_id is None
+        assert rec.model_id == "nvidia_nim/llama-3"
+        assert rec.elapsed_ms == 1850
+        assert rec.safe_to_display is True
+        assert rec.min_score == pytest.approx(0.7)
+        assert rec.unsupported_count == 0
+        assert rec.off_policy_count == 0
+        assert rec.retry_count == 0
 
     def test_log_judge_call_stringifies_user_id(
-        self, caplog: pytest.LogCaptureFixture
+        self, caplog: pytest.LogCaptureFixture,
     ) -> None:
         """``user_id`` is optional but when supplied it is stringified."""
         run_id = uuid4()
@@ -304,6 +303,6 @@ class TestLogJudgeCall:
             )
         records = _records_for(caplog, "judge_call")
         assert len(records) == 1
-        assert getattr(records[0], "user_id") == str(user_id)
-        assert getattr(records[0], "safe_to_display") is False
-        assert getattr(records[0], "unsupported_count") == 3
+        assert records[0].user_id == str(user_id)
+        assert records[0].safe_to_display is False
+        assert records[0].unsupported_count == 3

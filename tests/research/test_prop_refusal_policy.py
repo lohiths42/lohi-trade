@@ -55,8 +55,9 @@ the first few examples while YAML loading warms the module cache.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Final, Mapping
+from typing import Any, Final
 
 import yaml
 from hypothesis import HealthCheck, given, settings
@@ -66,7 +67,6 @@ from src.research.validators.refusal_classifier import (
     RefusalSignal,
     classify_refusal,
 )
-
 
 # --------------------------------------------------------------------------- #
 # Corpus                                                                      #
@@ -91,17 +91,17 @@ def _load_corpus() -> Mapping[str, Any]:
     if not data.get("categories"):
         raise RuntimeError(
             f"Empty or missing 'categories' in {_CORPUS_PATH}; "
-            "property test cannot run."
+            "property test cannot run.",
         )
     if not data.get("entities"):
         raise RuntimeError(
             f"Missing 'entities' list in {_CORPUS_PATH}; "
-            "property test cannot run."
+            "property test cannot run.",
         )
     if not data.get("negative"):
         raise RuntimeError(
             f"Missing 'negative' section in {_CORPUS_PATH}; "
-            "negative-path test cannot run."
+            "negative-path test cannot run.",
         )
     return data
 

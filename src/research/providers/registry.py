@@ -57,7 +57,8 @@ from __future__ import annotations
 
 import importlib
 import os
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from src.utils.logger import get_logger
 
@@ -143,20 +144,20 @@ def _resolve(factory: Factory) -> Callable[[dict], Any]:
     if not isinstance(factory, str) or ":" not in factory:
         raise TypeError(
             "Factory must be a callable or a 'module:attr' string; "
-            f"got {factory!r}."
+            f"got {factory!r}.",
         )
     module_path, attr = factory.split(":", 1)
     module = importlib.import_module(module_path)
     resolved = getattr(module, attr)
     if not callable(resolved):
         raise TypeError(
-            f"Resolved factory {factory!r} is not callable: {resolved!r}."
+            f"Resolved factory {factory!r} is not callable: {resolved!r}.",
         )
     return resolved
 
 
 def _lookup(
-    registry: dict[str, Factory], kind: str, name: str
+    registry: dict[str, Factory], kind: str, name: str,
 ) -> Callable[[dict], Any]:
     """Fetch a factory by name or raise ``UnknownProviderError``.
 
@@ -302,14 +303,14 @@ _CLOUD_LLM_PROVIDERS: frozenset[str] = frozenset(
         "groq",
         "together",
         "openrouter",
-    }
+    },
 )
 
 _CLOUD_EMBEDDINGS_PROVIDERS: frozenset[str] = frozenset(
     {
         "nvidia_nim",
         "openai",
-    }
+    },
 )
 
 

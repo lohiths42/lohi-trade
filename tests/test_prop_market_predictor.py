@@ -1,5 +1,4 @@
-"""
-Property-based tests for the Market Predictor using Hypothesis.
+"""Property-based tests for the Market Predictor using Hypothesis.
 
 Tests invariants:
 - Pattern features always have shape (12,) when enough data
@@ -10,34 +9,31 @@ Tests invariants:
 """
 
 import numpy as np
-import pytest
-from hypothesis import given, settings, assume
+from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
 from src.ml.market_predictor import (
-    MarketPredictor,
-    PatternSample,
-    extract_pattern_features,
-    compute_regime_label,
     LOOKBACK_CANDLES,
-    FORECAST_CANDLES,
-    REGIME_UP,
     REGIME_DOWN,
     REGIME_SIDEWAYS,
+    REGIME_UP,
+    MarketPredictor,
+    PatternSample,
+    compute_regime_label,
+    extract_pattern_features,
 )
-
 
 positive_float = st.floats(
-    min_value=0.01, max_value=1e4, allow_nan=False, allow_infinity=False
+    min_value=0.01, max_value=1e4, allow_nan=False, allow_infinity=False,
 )
 price_float = st.floats(
-    min_value=1.0, max_value=1e4, allow_nan=False, allow_infinity=False
+    min_value=1.0, max_value=1e4, allow_nan=False, allow_infinity=False,
 )
 volume_float = st.floats(
-    min_value=0.0, max_value=1e8, allow_nan=False, allow_infinity=False
+    min_value=0.0, max_value=1e8, allow_nan=False, allow_infinity=False,
 )
 threshold_pct = st.floats(
-    min_value=0.01, max_value=10.0, allow_nan=False, allow_infinity=False
+    min_value=0.01, max_value=10.0, allow_nan=False, allow_infinity=False,
 )
 
 
@@ -144,7 +140,7 @@ class TestExtractPatternFeaturesProperties:
 class TestComputeRegimeLabelProperties:
     @given(
         future=st.lists(
-            price_float, min_size=1, max_size=20
+            price_float, min_size=1, max_size=20,
         ).map(np.array),
         current=price_float,
         threshold=threshold_pct,
@@ -196,7 +192,7 @@ def _build_trained_predictor():
     for label in [0, 1, 2]:
         for _ in range(20):
             mp.add_sample(PatternSample(
-                features=rng.randn(12), label=label
+                features=rng.randn(12), label=label,
             ))
     mp.train()
     return mp
@@ -218,7 +214,7 @@ class TestMarketPredictorProperties:
         mp = MarketPredictor()
         for i in range(sample_count):
             mp.add_sample(PatternSample(
-                features=np.random.randn(12), label=i % 3
+                features=np.random.randn(12), label=i % 3,
             ))
         assert mp.sample_count == sample_count
 
@@ -230,7 +226,7 @@ class TestMarketPredictorProperties:
         mp = MarketPredictor(min_samples=50)
         for i in range(n_samples):
             mp.add_sample(PatternSample(
-                features=np.random.randn(12), label=i % 3
+                features=np.random.randn(12), label=i % 3,
             ))
         result = mp.train()
         assert not result

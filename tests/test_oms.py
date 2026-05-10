@@ -1,5 +1,4 @@
-"""
-Unit tests for the Order Management System (OMS).
+"""Unit tests for the Order Management System (OMS).
 
 Covers:
 - Order placement with MIS product type enforcement
@@ -16,9 +15,7 @@ Requirements: 11.1, 11.2, 11.4
 
 import sqlite3
 from datetime import datetime, timedelta
-from unittest.mock import MagicMock, patch, call
-
-import pytest
+from unittest.mock import MagicMock
 
 from src.execution.oms import OrderManagementSystem, OrderResult
 from src.ingestion.broker_interface import (
@@ -29,7 +26,6 @@ from src.ingestion.broker_interface import (
     OrderType,
     ProductType,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -117,7 +113,7 @@ def _get_order_row(db_manager: MagicMock, order_id: str) -> sqlite3.Row:
     """Fetch an order row from the in-memory SQLite."""
     conn = db_manager.connect_sqlite()
     return conn.execute(
-        "SELECT * FROM orders WHERE order_id=?", (order_id,)
+        "SELECT * FROM orders WHERE order_id=?", (order_id,),
     ).fetchone()
 
 

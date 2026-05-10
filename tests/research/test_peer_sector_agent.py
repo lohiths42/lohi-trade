@@ -41,7 +41,7 @@ class _RaisingLLM(FakeLLMProvider):
 
 
 def _build_hit(
-    *, chunk_id: str, user_id: UUID, symbol: str, text: str
+    *, chunk_id: str, user_id: UUID, symbol: str, text: str,
 ) -> ChunkHit:
     return ChunkHit(
         chunk=ChunkRecord(
@@ -129,7 +129,7 @@ class TestHappyPath:
         agent = PeerSectorAgent(llm=llm)
 
         result = await agent.invoke(
-            _build_context(user_id=user_id, symbol="TCS", retriever=retriever)
+            _build_context(user_id=user_id, symbol="TCS", retriever=retriever),
         )
         assert result.kind == "ok"
         assert result.agent_name == "peer_sector"
@@ -154,12 +154,12 @@ class TestRetrievalShape:
                     user_id=user_id,
                     symbol="TCS",
                     text="t",
-                )
-            ]
+                ),
+            ],
         )
         agent = PeerSectorAgent(llm=FakeLLMProvider())
         await agent.invoke(
-            _build_context(user_id=user_id, symbol="TCS", retriever=retriever)
+            _build_context(user_id=user_id, symbol="TCS", retriever=retriever),
         )
         filter_used: RetrievalFilter = retriever.calls[0]["filter"]
         assert filter_used.document_type is None
@@ -176,8 +176,8 @@ class TestRetrievalShape:
                     user_id=user_id,
                     symbol="TCS",
                     text="t",
-                )
-            ]
+                ),
+            ],
         )
         agent = PeerSectorAgent(llm=FakeLLMProvider())
         await agent.invoke(
@@ -186,7 +186,7 @@ class TestRetrievalShape:
                 symbol="TCS",
                 retriever=retriever,
                 user_prompt="Why invest in TCS?",
-            )
+            ),
         )
         query = retriever.calls[0]["query"]
         assert "Why invest in TCS?" in query
@@ -203,8 +203,8 @@ class TestRetrievalShape:
                     user_id=user_id,
                     symbol="TCS",
                     text="t",
-                )
-            ]
+                ),
+            ],
         )
         agent = PeerSectorAgent(llm=FakeLLMProvider())
         await agent.invoke(
@@ -213,7 +213,7 @@ class TestRetrievalShape:
                 symbol="TCS",
                 retriever=retriever,
                 retrieval_plan={"peer_sector": "compare TCS to INFY"},
-            )
+            ),
         )
         assert retriever.calls[0]["query"] == "compare TCS to INFY"
 
@@ -230,7 +230,7 @@ class TestFailureModes:
         retriever = _RecordingRetriever(canned=[])
         agent = PeerSectorAgent(llm=FakeLLMProvider())
         result = await agent.invoke(
-            _build_context(user_id=user_id, symbol="TCS", retriever=retriever)
+            _build_context(user_id=user_id, symbol="TCS", retriever=retriever),
         )
         assert result.kind == "no_data"
         assert "no peer_sector chunks" in result.reason
@@ -241,7 +241,7 @@ class TestFailureModes:
         retriever = _RecordingRetriever(canned=[])
         agent = PeerSectorAgent(llm=FakeLLMProvider())
         result = await agent.invoke(
-            _build_context(user_id=user_id, symbol=None, retriever=retriever)
+            _build_context(user_id=user_id, symbol=None, retriever=retriever),
         )
         assert result.kind == "no_data"
 
@@ -255,13 +255,13 @@ class TestFailureModes:
                     user_id=user_id,
                     symbol="TCS",
                     text="t",
-                )
-            ]
+                ),
+            ],
         )
         agent = PeerSectorAgent(llm=_RaisingLLM())
         with pytest.raises(RuntimeError, match="peer_sector llm exploded"):
             await agent.invoke(
                 _build_context(
-                    user_id=user_id, symbol="TCS", retriever=retriever
-                )
+                    user_id=user_id, symbol="TCS", retriever=retriever,
+                ),
             )

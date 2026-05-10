@@ -1,5 +1,4 @@
-"""
-Property-based tests for the Kill Switch module.
+"""Property-based tests for the Kill Switch module.
 
 Properties tested:
 - Property 57: Kill Switch Order Cancellation
@@ -17,9 +16,8 @@ from unittest.mock import MagicMock
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from src.execution.kill_switch import KillSwitch, NOTIFICATION_STREAM
+from src.execution.kill_switch import NOTIFICATION_STREAM, KillSwitch
 from src.utils.config import CapitalConfig, Config, RiskLimitsConfig, TradingHoursConfig
-
 
 # ---------------------------------------------------------------------------
 # Hypothesis strategies
@@ -188,7 +186,7 @@ def test_prop_57_kill_switch_order_cancellation(reason, num_orders):
 )
 @settings(max_examples=50)
 def test_prop_58_automatic_kill_switch_on_volatility(
-    start_price, vol_threshold, extra_drop_pct
+    start_price, vol_threshold, extra_drop_pct,
 ):
     """Property 58: Kill switch activates when Nifty drop > threshold."""
     # Compute a current price that drops more than the threshold
@@ -214,7 +212,7 @@ def test_prop_58_automatic_kill_switch_on_volatility(
 )
 @settings(max_examples=50)
 def test_prop_58_no_activation_below_threshold(
-    start_price, vol_threshold, below_drop_pct
+    start_price, vol_threshold, below_drop_pct,
 ):
     """Property 58 (negative): No activation when drop < threshold."""
     # Drop is below_drop_pct * threshold, so always < threshold
@@ -246,7 +244,7 @@ def test_prop_58_no_activation_below_threshold(
 )
 @settings(max_examples=50)
 def test_prop_59_automatic_kill_switch_on_daily_loss(
-    capital, max_loss_pct, extra_loss
+    capital, max_loss_pct, extra_loss,
 ):
     """Property 59: Kill switch activates when daily loss exceeds limit."""
     loss_limit = -(max_loss_pct / 100) * capital
@@ -271,7 +269,7 @@ def test_prop_59_automatic_kill_switch_on_daily_loss(
 )
 @settings(max_examples=50)
 def test_prop_59_no_activation_within_limits(
-    capital, max_loss_pct, within_pct
+    capital, max_loss_pct, within_pct,
 ):
     """Property 59 (negative): No activation when loss within limits."""
     loss_limit = -(max_loss_pct / 100) * capital

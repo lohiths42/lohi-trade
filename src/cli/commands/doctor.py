@@ -45,13 +45,12 @@ def run_doctor() -> int:
                 if port_check.pid:
                     process_info += f" (PID {port_check.pid})"
             console.warn(
-                f"Port {port_check.port} ({port_check.service_name}): in use{process_info}"
+                f"Port {port_check.port} ({port_check.service_name}): in use{process_info}",
             )
 
     # ── Summary ──────────────────────────────────────────────────────────────
     if all_ok:
         console.done("All dependencies satisfied. Ready to run: lohi setup")
         return 0
-    else:
-        console.error("Some dependencies need attention. Fix the issues above and re-run: lohi doctor")
-        return 1
+    console.error("Some dependencies need attention. Fix the issues above and re-run: lohi doctor")
+    return 1

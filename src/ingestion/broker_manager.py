@@ -1,5 +1,4 @@
-"""
-Broker Manager for LOHI-TRADE.
+"""Broker Manager for LOHI-TRADE.
 
 Manages primary/backup broker switching with health monitoring.
 Monitors the active broker's health and automatically switches to the
@@ -9,11 +8,10 @@ Requirements: 1.5
 """
 
 import threading
-import time
-from dataclasses import dataclass, field
+from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Callable, Dict, List, Optional
 
 from src.ingestion.broker_interface import (
     BrokerCredentials,
@@ -29,6 +27,7 @@ logger = get_logger("BrokerManager")
 
 class BrokerState(Enum):
     """State of a broker connection."""
+
     DISCONNECTED = "DISCONNECTED"
     CONNECTED = "CONNECTED"
     DEGRADED = "DEGRADED"
@@ -38,17 +37,17 @@ class BrokerState(Enum):
 @dataclass
 class BrokerHealth:
     """Tracks health metrics for a broker."""
+
     consecutive_failures: int = 0
     total_failures: int = 0
     total_successes: int = 0
-    last_failure_time: Optional[datetime] = None
-    last_success_time: Optional[datetime] = None
+    last_failure_time: datetime | None = None
+    last_success_time: datetime | None = None
     state: BrokerState = BrokerState.DISCONNECTED
 
 
 class BrokerManager:
-    """
-    Manages primary and backup broker connections with automatic failover.
+    """Manages primary and backup broker connections with automatic failover.
 
     Monitors the active broker's health by tracking consecutive failures.
     When the failure threshold is exceeded, switches to the backup broker.
@@ -69,21 +68,21 @@ class BrokerManager:
         failure_threshold: int = DEFAULT_FAILURE_THRESHOLD,
         recovery_check_interval: float = DEFAULT_RECOVERY_CHECK_INTERVAL,
     ):
-        """
-        Initialize the broker manager.
+        """Initialize the broker manager.
 
         Args:
             primary_broker: The primary broker adapter (e.g., Shoonya)
             backup_broker: The backup broker adapter (e.g., Angel One)
             failure_threshold: Consecutive failures before switching
             recovery_check_interval: Seconds between recovery checks for failed broker
+
         """
         self._primary = primary_broker
         self._backup = backup_broker
         self._failure_threshold = failure_threshold
         self._recovery_check_interval = recovery_check_interval
 
-        self._health: Dict[str, BrokerHealth] = {
+        self._health: dict[str, BrokerHealth] = {
             "primary": BrokerHealth(),
             "backup": BrokerHealth(),
         }
@@ -92,15 +91,15 @@ class BrokerManager:
         self._lock = threading.RLock()
 
         # Credentials stored for reconnection
-        self._primary_credentials: Optional[BrokerCredentials] = None
-        self._backup_credentials: Optional[BrokerCredentials] = None
+        self._primary_credentials: BrokerCredentials | None = None
+        self._backup_credentials: BrokerCredentials | None = None
 
         # Recovery monitoring
-        self._recovery_thread: Optional[threading.Thread] = None
+        self._recovery_thread: threading.Thread | None = None
         self._recovery_stop_event = threading.Event()
 
         # Callbacks
-        self._on_switch_callbacks: List[Callable[[str, str, str], None]] = []
+        self._on_switch_callbacks: list[Callable[[str, str, str], None]] = []
 
     @property
     def active_broker(self) -> BrokerInterface:
@@ -117,16 +116,16 @@ class BrokerManager:
             return self._active_broker_key
 
     @property
-    def health(self) -> Dict[str, BrokerHealth]:
+    def health(self) -> dict[str, BrokerHealth]:
         """Return health metrics for both brokers."""
         return self._health
 
     def on_switch(self, callback: Callable[[str, str, str], None]) -> None:
-        """
-        Register a callback for broker switch events.
+        """Register a callback for broker switch events.
 
         Args:
             callback: Called with (from_broker, to_broker, reason)
+
         """
         self._on_switch_callbacks.append(callback)
 
@@ -135,8 +134,7 @@ class BrokerManager:
         primary_credentials: BrokerCredentials,
         backup_credentials: BrokerCredentials,
     ) -> bool:
-        """
-        Connect to the primary broker. Stores backup credentials for failover.
+        """Connect to the primary broker. Stores backup credentials for failover.
 
         Args:
             primary_credentials: Credentials for the primary broker
@@ -144,6 +142,7 @@ class BrokerManager:
 
         Returns:
             True if primary broker connected successfully
+
         """
         self._primary_credentials = primary_credentials
         self._backup_credentials = backup_credentials
@@ -155,10 +154,9 @@ class BrokerManager:
                 self._health["primary"].last_success_time = datetime.now()
                 logger.info("Primary broker connected successfully")
                 return True
-            else:
-                self._health["primary"].state = BrokerState.FAILED
-                logger.warning("Primary broker connection returned False, attempting backup")
-                return self._switch_to_backup("Primary broker connection failed")
+            self._health["primary"].state = BrokerState.FAILED
+            logger.warning("Primary broker connection returned False, attempting backup")
+            return self._switch_to_backup("Primary broker connection failed")
         except Exception as e:
             self._health["primary"].state = BrokerState.FAILED
             logger.error(f"Primary broker connection error: {e}", exc_info=True)
@@ -181,9 +179,8 @@ class BrokerManager:
         """Check if the active broker is connected."""
         return self.active_broker.is_connected()
 
-    def subscribe(self, symbols: List[str], on_tick: Callable[[Tick], None]) -> bool:
-        """
-        Subscribe to tick data via the active broker.
+    def subscribe(self, symbols: list[str], on_tick: Callable[[Tick], None]) -> bool:
+        """Subscribe to tick data via the active broker.
 
         Args:
             symbols: Symbols to subscribe to
@@ -191,13 +188,14 @@ class BrokerManager:
 
         Returns:
             True if subscription succeeded
+
         """
         return self._execute_with_failover(
             lambda broker: broker.subscribe(symbols, on_tick),
             "subscribe",
         )
 
-    def unsubscribe(self, symbols: List[str]) -> bool:
+    def unsubscribe(self, symbols: list[str]) -> bool:
         """Unsubscribe from tick data via the active broker."""
         return self._execute_with_failover(
             lambda broker: broker.unsubscribe(symbols),
@@ -225,14 +223,14 @@ class BrokerManager:
             "get_order_status",
         )
 
-    def get_positions(self) -> List[dict]:
+    def get_positions(self) -> list[dict]:
         """Get positions via the active broker."""
         return self._execute_with_failover(
             lambda broker: broker.get_positions(),
             "get_positions",
         )
 
-    def get_instrument_master(self) -> List[dict]:
+    def get_instrument_master(self) -> list[dict]:
         """Get instrument master via the active broker."""
         return self._execute_with_failover(
             lambda broker: broker.get_instrument_master(),
@@ -242,8 +240,7 @@ class BrokerManager:
     # ---- Internal methods ----
 
     def _execute_with_failover(self, operation: Callable, operation_name: str):
-        """
-        Execute an operation on the active broker with automatic failover.
+        """Execute an operation on the active broker with automatic failover.
 
         On success, records a healthy heartbeat. On failure, increments the
         failure counter and switches brokers if the threshold is exceeded.
@@ -257,6 +254,7 @@ class BrokerManager:
 
         Raises:
             BrokerError: If both brokers fail
+
         """
         try:
             result = operation(self.active_broker)
@@ -269,7 +267,7 @@ class BrokerManager:
                 health = self._health[self._active_broker_key]
                 if health.consecutive_failures >= self._failure_threshold:
                     switched = self._switch_to_other_broker(
-                        f"{operation_name} failed {health.consecutive_failures} times consecutively"
+                        f"{operation_name} failed {health.consecutive_failures} times consecutively",
                     )
                     if switched:
                         # Retry on the new active broker
@@ -281,11 +279,11 @@ class BrokerManager:
                             self._record_failure(operation_name, second_error)
                             raise BrokerError(
                                 f"Both brokers failed for {operation_name}: "
-                                f"primary={first_error}, backup={second_error}"
+                                f"primary={first_error}, backup={second_error}",
                             ) from second_error
 
             raise BrokerError(
-                f"{operation_name} failed on active broker: {first_error}"
+                f"{operation_name} failed on active broker: {first_error}",
             ) from first_error
 
     def _record_success(self) -> None:
@@ -317,14 +315,14 @@ class BrokerManager:
         )
 
     def _switch_to_backup(self, reason: str) -> bool:
-        """
-        Switch from primary to backup broker and connect it.
+        """Switch from primary to backup broker and connect it.
 
         Args:
             reason: Why the switch is happening
 
         Returns:
             True if backup broker connected successfully
+
         """
         if self._backup_credentials is None:
             logger.error("Cannot switch to backup: no backup credentials stored")
@@ -344,23 +342,22 @@ class BrokerManager:
                 self._notify_switch(old_key, "backup", reason)
                 self._start_recovery_monitor()
                 return True
-            else:
-                logger.error("Backup broker connection returned False")
-                return False
+            logger.error("Backup broker connection returned False")
+            return False
         except Exception as e:
             logger.error(f"Backup broker connection failed: {e}", exc_info=True)
             self._health["backup"].state = BrokerState.FAILED
             return False
 
     def _switch_to_other_broker(self, reason: str) -> bool:
-        """
-        Switch to whichever broker is not currently active.
+        """Switch to whichever broker is not currently active.
 
         Args:
             reason: Why the switch is happening
 
         Returns:
             True if the switch succeeded
+
         """
         with self._lock:
             current = self._active_broker_key
@@ -402,9 +399,8 @@ class BrokerManager:
                 self._notify_switch(current, target, reason)
                 self._start_recovery_monitor()
                 return True
-            else:
-                logger.error(f"{target} broker connection returned False")
-                return False
+            logger.error(f"{target} broker connection returned False")
+            return False
         except Exception as e:
             logger.error(f"{target} broker connection failed: {e}", exc_info=True)
             self._health[target].state = BrokerState.FAILED
@@ -440,8 +436,7 @@ class BrokerManager:
             logger.info("Recovery monitor stopped")
 
     def _recovery_monitor_loop(self) -> None:
-        """
-        Periodically check if the previously failed broker has recovered.
+        """Periodically check if the previously failed broker has recovered.
 
         If the failed broker reconnects successfully, switch back to primary
         (if it was the one that failed).

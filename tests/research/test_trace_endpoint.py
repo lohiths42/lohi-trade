@@ -25,7 +25,6 @@ from __future__ import annotations
 import sys
 import time
 from pathlib import Path
-from unittest.mock import AsyncMock
 from uuid import UUID, uuid4
 
 import pytest
@@ -38,13 +37,11 @@ if _gateway_root not in sys.path:
     sys.path.insert(0, _gateway_root)
 
 
-from fastapi import FastAPI  # noqa: E402
-from fastapi.testclient import TestClient  # noqa: E402
-
 from app.routers.auth_v2 import get_current_user_id  # noqa: E402
 from app.routers.research import get_research_service, router  # noqa: E402
 from app.services.research_service import ResearchService, RunRecord  # noqa: E402
-
+from fastapi import FastAPI  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
 
 # --------------------------------------------------------------------------- #
 # Helpers                                                                     #
@@ -128,7 +125,7 @@ def _brief_with_provenance_and_judge() -> dict:
                 "rule_id": "jailbreak_v1_override",
                 "action": "allow",
                 "reason": "prompt passed",
-            }
+            },
         ],
         "judge": {
             "run_id": "placeholder",

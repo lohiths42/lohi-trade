@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Optional
 
 import yaml
 from pydantic import ValidationError
@@ -30,21 +29,21 @@ class MarketRegistry:
     the user's active market selection (persisted to config/market.yaml).
     """
 
-    def __init__(self, config_path: Optional[Path] = None):
+    def __init__(self, config_path: Path | None = None):
         self._config_path = config_path or MARKET_CONFIG_PATH
         self._profiles: dict[str, MarketProfile] = dict(ALL_PROFILES)
-        self._active_profile: Optional[MarketProfile] = None
+        self._active_profile: MarketProfile | None = None
         self._load_active()
 
     # ── Public API ──────────────────────────────────────────────────────
 
     @property
-    def active_profile(self) -> Optional[MarketProfile]:
+    def active_profile(self) -> MarketProfile | None:
         """The currently active market profile, or None if not yet selected."""
         return self._active_profile
 
     @property
-    def active_country(self) -> Optional[Country]:
+    def active_country(self) -> Country | None:
         """The currently active country code."""
         if self._active_profile:
             return self._active_profile.country
@@ -74,7 +73,7 @@ class MarketRegistry:
             })
         return countries
 
-    def get_profile(self, country_code: str) -> Optional[MarketProfile]:
+    def get_profile(self, country_code: str) -> MarketProfile | None:
         """Get the market profile for a specific country code."""
         return self._profiles.get(country_code)
 
@@ -92,13 +91,14 @@ class MarketRegistry:
 
         Raises:
             ValueError: If country_code is not supported
+
         """
         profile = self._profiles.get(country_code)
         if profile is None:
             supported = ", ".join(sorted(self._profiles.keys()))
             raise ValueError(
                 f"Unsupported country code: '{country_code}'. "
-                f"Supported: {supported}"
+                f"Supported: {supported}",
             )
 
         self._active_profile = profile
@@ -120,6 +120,7 @@ class MarketRegistry:
 
         Returns:
             Updated MarketProfile
+
         """
         profile = self._profiles.get(country_code)
         if profile is None:
@@ -151,7 +152,7 @@ class MarketRegistry:
             return
 
         try:
-            with open(self._config_path, "r") as f:
+            with open(self._config_path) as f:
                 data = yaml.safe_load(f)
 
             if not data or "country" not in data:
@@ -203,7 +204,7 @@ class MarketRegistry:
             "benchmark_index": profile.benchmark_index_name,
             "benchmark_symbol": profile.benchmark_symbol,
             "selected_at": __import__("datetime").datetime.now(
-                __import__("datetime").timezone.utc
+                __import__("datetime").timezone.utc,
             ).isoformat(),
         }
 
@@ -227,10 +228,10 @@ class MarketRegistry:
 
 # ── Global Instance ─────────────────────────────────────────────────────────
 
-_registry: Optional[MarketRegistry] = None
+_registry: MarketRegistry | None = None
 
 
-def get_market_registry(config_path: Optional[Path] = None) -> MarketRegistry:
+def get_market_registry(config_path: Path | None = None) -> MarketRegistry:
     """Get or create the global MarketRegistry instance."""
     global _registry
     if _registry is None:
@@ -238,7 +239,7 @@ def get_market_registry(config_path: Optional[Path] = None) -> MarketRegistry:
     return _registry
 
 
-def reload_market_registry(config_path: Optional[Path] = None) -> MarketRegistry:
+def reload_market_registry(config_path: Path | None = None) -> MarketRegistry:
     """Force reload the market registry from disk."""
     global _registry
     _registry = MarketRegistry(config_path)

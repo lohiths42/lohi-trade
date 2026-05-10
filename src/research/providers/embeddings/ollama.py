@@ -217,7 +217,7 @@ class OllamaEmbeddings:
             raise RuntimeError(
                 "ollama embeddings: dim is not yet known. Either set "
                 "cfg['dim'] to the model's output width or call "
-                "embed() at least once before reading .dim."
+                "embed() at least once before reading .dim.",
             )
         return self._dim
 

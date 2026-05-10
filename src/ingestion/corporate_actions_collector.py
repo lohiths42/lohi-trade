@@ -1,5 +1,4 @@
-"""
-Corporate Actions Collector for LOHI-TRADE.
+"""Corporate Actions Collector for LOHI-TRADE.
 
 Fetches corporate actions (dividends, splits, bonuses, rights, buybacks)
 and exchange announcements (circuit breakers, trading halts, new listings)
@@ -12,12 +11,11 @@ after market close.
 Requirements: 27.1, 27.2, 27.3, 27.4, 27.5, 27.6
 """
 
-import asyncio
 import json
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 from src.state.event_bus import EventBus
 from src.utils.logger import get_logger
@@ -30,6 +28,7 @@ IST = timezone(timedelta(hours=5, minutes=30))
 
 class CorporateActionType(Enum):
     """Types of corporate actions tracked."""
+
     DIVIDEND = "DIVIDEND"
     SPLIT = "SPLIT"
     BONUS = "BONUS"
@@ -39,6 +38,7 @@ class CorporateActionType(Enum):
 
 class AnnouncementType(Enum):
     """Types of exchange announcements tracked."""
+
     CIRCUIT_BREAKER = "CIRCUIT_BREAKER"
     TRADING_HALT = "TRADING_HALT"
     NEW_LISTING = "NEW_LISTING"
@@ -47,20 +47,20 @@ class AnnouncementType(Enum):
 
 @dataclass
 class CorporateAction:
-    """
-    A corporate action record.
+    """A corporate action record.
 
     Requirement 27.4: Store action type, ex-date, record date, and details.
     """
+
     symbol: str
     action_type: CorporateActionType
-    ex_date: Optional[date] = None
-    record_date: Optional[date] = None
-    details: Dict[str, Any] = field(default_factory=dict)
+    ex_date: date | None = None
+    record_date: date | None = None
+    details: dict[str, Any] = field(default_factory=dict)
     source: str = "NSE"
-    fetched_at: Optional[datetime] = None
+    fetched_at: datetime | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dict for storage and event bus publishing."""
         return {
             "symbol": self.symbol,
@@ -73,7 +73,7 @@ class CorporateAction:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "CorporateAction":
+    def from_dict(cls, data: dict[str, Any]) -> "CorporateAction":
         """Deserialize from dict."""
         ex_date = None
         if data.get("ex_date"):
@@ -100,18 +100,18 @@ class CorporateAction:
 
 @dataclass
 class ExchangeAnnouncement:
-    """
-    An exchange announcement record.
+    """An exchange announcement record.
 
     Requirement 27.2: circuit breakers, trading halts, new listings.
     """
+
     symbol: str
     announcement_type: AnnouncementType
-    details: Dict[str, Any] = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
     source: str = "NSE"
-    announced_at: Optional[datetime] = None
+    announced_at: datetime | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize to dict."""
         return {
             "symbol": self.symbol,
@@ -122,7 +122,7 @@ class ExchangeAnnouncement:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ExchangeAnnouncement":
+    def from_dict(cls, data: dict[str, Any]) -> "ExchangeAnnouncement":
         """Deserialize from dict."""
         announced_at = None
         if data.get("announced_at"):
@@ -141,8 +141,7 @@ class ExchangeAnnouncement:
 
 
 class CorporateActionsCollector:
-    """
-    Collects corporate actions and exchange announcements from NSE/BSE.
+    """Collects corporate actions and exchange announcements from NSE/BSE.
 
     Fetches dividends, splits, bonuses, rights, buybacks (Req 27.1),
     exchange announcements (Req 27.2), sends notifications for watchlist
@@ -178,11 +177,10 @@ class CorporateActionsCollector:
         event_bus: EventBus,
         nse_api_url: str = "https://nse-api.example.com",
         bse_api_url: str = "https://bse-api.example.com",
-        watchlist_symbols: Optional[List[str]] = None,
-        stock_universe: Optional[Dict[str, Dict[str, Any]]] = None,
+        watchlist_symbols: list[str] | None = None,
+        stock_universe: dict[str, dict[str, Any]] | None = None,
     ):
-        """
-        Initialize the corporate actions collector.
+        """Initialize the corporate actions collector.
 
         Args:
             event_bus: EventBus instance for publishing notifications.
@@ -190,21 +188,22 @@ class CorporateActionsCollector:
             bse_api_url: Base URL for BSE corporate actions API.
             watchlist_symbols: Symbols in user watchlists for notifications.
             stock_universe: Current stock universe mapping symbol -> metadata.
+
         """
         self.event_bus = event_bus
         self.nse_api_url = nse_api_url
         self.bse_api_url = bse_api_url
-        self._watchlist_symbols: List[str] = watchlist_symbols or []
-        self._stock_universe: Dict[str, Dict[str, Any]] = stock_universe or {}
+        self._watchlist_symbols: list[str] = watchlist_symbols or []
+        self._stock_universe: dict[str, dict[str, Any]] = stock_universe or {}
 
         # Corporate action history (Req 27.4)
-        self._action_history: List[CorporateAction] = []
+        self._action_history: list[CorporateAction] = []
         # Exchange announcement history (Req 27.2)
-        self._announcement_history: List[ExchangeAnnouncement] = []
+        self._announcement_history: list[ExchangeAnnouncement] = []
 
         # Scheduling state
         self._running = False
-        self._last_fetch_time: Optional[datetime] = None
+        self._last_fetch_time: datetime | None = None
 
         # Stats
         self._total_actions_fetched: int = 0
@@ -217,9 +216,8 @@ class CorporateActionsCollector:
     # Public API
     # ------------------------------------------------------------------
 
-    async def fetch_corporate_actions(self) -> List[CorporateAction]:
-        """
-        Fetch corporate actions from NSE and BSE.
+    async def fetch_corporate_actions(self) -> list[CorporateAction]:
+        """Fetch corporate actions from NSE and BSE.
 
         Fetches dividends, splits, bonuses, rights, and buybacks.
         Stores in history, sends notifications for watchlist securities,
@@ -229,10 +227,11 @@ class CorporateActionsCollector:
             List of newly fetched corporate actions.
 
         Requirements: 27.1, 27.3, 27.4, 27.5
+
         """
         logger.info("Fetching corporate actions from NSE/BSE")
         now = datetime.now(IST)
-        all_actions: List[CorporateAction] = []
+        all_actions: list[CorporateAction] = []
 
         try:
             # Fetch from NSE (Req 27.1)
@@ -266,7 +265,7 @@ class CorporateActionsCollector:
 
             logger.info(
                 f"Fetched {len(all_actions)} corporate actions "
-                f"(NSE: {len(nse_actions)}, BSE: {len(bse_actions)})"
+                f"(NSE: {len(nse_actions)}, BSE: {len(bse_actions)})",
             )
 
         except Exception as e:
@@ -275,18 +274,18 @@ class CorporateActionsCollector:
 
         return all_actions
 
-    async def fetch_exchange_announcements(self) -> List[ExchangeAnnouncement]:
-        """
-        Fetch exchange announcements: circuit breakers, trading halts, new listings.
+    async def fetch_exchange_announcements(self) -> list[ExchangeAnnouncement]:
+        """Fetch exchange announcements: circuit breakers, trading halts, new listings.
 
         Returns:
             List of newly fetched announcements.
 
         Requirements: 27.2
+
         """
         logger.info("Fetching exchange announcements from NSE/BSE")
         now = datetime.now(IST)
-        all_announcements: List[ExchangeAnnouncement] = []
+        all_announcements: list[ExchangeAnnouncement] = []
 
         try:
             nse_announcements = await self._fetch_nse_announcements()
@@ -314,33 +313,32 @@ class CorporateActionsCollector:
 
         return all_announcements
 
-    def update_watchlist(self, symbols: List[str]) -> None:
-        """
-        Update the watchlist symbols for notification filtering.
+    def update_watchlist(self, symbols: list[str]) -> None:
+        """Update the watchlist symbols for notification filtering.
 
         Args:
             symbols: Current watchlist symbols.
+
         """
         self._watchlist_symbols = list(symbols)
         logger.info(f"Updated watchlist with {len(symbols)} symbols")
 
-    def update_stock_universe(self, universe: Dict[str, Dict[str, Any]]) -> None:
-        """
-        Update the stock universe reference.
+    def update_stock_universe(self, universe: dict[str, dict[str, Any]]) -> None:
+        """Update the stock universe reference.
 
         Args:
             universe: Mapping of symbol -> metadata dict.
+
         """
         self._stock_universe = dict(universe)
         logger.info(f"Updated stock universe with {len(universe)} securities")
 
     def get_action_history(
         self,
-        symbol: Optional[str] = None,
-        action_type: Optional[CorporateActionType] = None,
-    ) -> List[CorporateAction]:
-        """
-        Retrieve stored corporate action history with optional filters.
+        symbol: str | None = None,
+        action_type: CorporateActionType | None = None,
+    ) -> list[CorporateAction]:
+        """Retrieve stored corporate action history with optional filters.
 
         Args:
             symbol: Filter by symbol.
@@ -348,6 +346,7 @@ class CorporateActionsCollector:
 
         Returns:
             Filtered list of corporate actions.
+
         """
         result = list(self._action_history)
         if symbol:
@@ -358,11 +357,10 @@ class CorporateActionsCollector:
 
     def get_announcement_history(
         self,
-        symbol: Optional[str] = None,
-        announcement_type: Optional[AnnouncementType] = None,
-    ) -> List[ExchangeAnnouncement]:
-        """
-        Retrieve stored exchange announcement history with optional filters.
+        symbol: str | None = None,
+        announcement_type: AnnouncementType | None = None,
+    ) -> list[ExchangeAnnouncement]:
+        """Retrieve stored exchange announcement history with optional filters.
 
         Args:
             symbol: Filter by symbol.
@@ -370,6 +368,7 @@ class CorporateActionsCollector:
 
         Returns:
             Filtered list of announcements.
+
         """
         result = list(self._announcement_history)
         if symbol:
@@ -378,9 +377,8 @@ class CorporateActionsCollector:
             result = [a for a in result if a.announcement_type == announcement_type]
         return result
 
-    def should_fetch_now(self, now: Optional[datetime] = None) -> bool:
-        """
-        Determine if a fetch should be triggered based on the schedule.
+    def should_fetch_now(self, now: datetime | None = None) -> bool:
+        """Determine if a fetch should be triggered based on the schedule.
 
         Fetches every 30 minutes during market hours (9:15-15:30 IST)
         and once at 7:00 PM IST after market close.
@@ -392,14 +390,14 @@ class CorporateActionsCollector:
             True if a fetch should be triggered.
 
         Requirements: 27.6
+
         """
         if now is None:
             now = datetime.now(IST)
+        elif now.tzinfo is None:
+            now = now.replace(tzinfo=IST)
         else:
-            if now.tzinfo is None:
-                now = now.replace(tzinfo=IST)
-            else:
-                now = now.astimezone(IST)
+            now = now.astimezone(IST)
 
         t = now.hour * 60 + now.minute
 
@@ -427,15 +425,15 @@ class CorporateActionsCollector:
 
         return True
 
-    async def run_scheduled_fetch(self, now: Optional[datetime] = None) -> Optional[List[CorporateAction]]:
-        """
-        Run a fetch if the schedule says it's time.
+    async def run_scheduled_fetch(self, now: datetime | None = None) -> list[CorporateAction] | None:
+        """Run a fetch if the schedule says it's time.
 
         Args:
             now: Current time for schedule check.
 
         Returns:
             List of actions if fetch was triggered, None otherwise.
+
         """
         if self.should_fetch_now(now):
             actions = await self.fetch_corporate_actions()
@@ -459,7 +457,7 @@ class CorporateActionsCollector:
         return self._running
 
     @property
-    def last_fetch_time(self) -> Optional[datetime]:
+    def last_fetch_time(self) -> datetime | None:
         """Time of the last successful fetch."""
         return self._last_fetch_time
 
@@ -484,28 +482,27 @@ class CorporateActionsCollector:
         return self._fetch_errors
 
     @property
-    def action_history(self) -> List[CorporateAction]:
+    def action_history(self) -> list[CorporateAction]:
         return list(self._action_history)
 
     @property
-    def announcement_history(self) -> List[ExchangeAnnouncement]:
+    def announcement_history(self) -> list[ExchangeAnnouncement]:
         return list(self._announcement_history)
 
     @property
-    def watchlist_symbols(self) -> List[str]:
+    def watchlist_symbols(self) -> list[str]:
         return list(self._watchlist_symbols)
 
     @property
-    def stock_universe(self) -> Dict[str, Dict[str, Any]]:
+    def stock_universe(self) -> dict[str, dict[str, Any]]:
         return dict(self._stock_universe)
 
     # ------------------------------------------------------------------
     # Internal: Fetching from exchanges
     # ------------------------------------------------------------------
 
-    async def _fetch_from_nse(self) -> List[CorporateAction]:
-        """
-        Fetch corporate actions from NSE API.
+    async def _fetch_from_nse(self) -> list[CorporateAction]:
+        """Fetch corporate actions from NSE API.
 
         In production, this would call the NSE corporate actions REST API.
         Returns empty list by default; override or inject for testing.
@@ -515,9 +512,8 @@ class CorporateActionsCollector:
         # Production: HTTP GET to NSE corporate actions endpoint
         return []
 
-    async def _fetch_from_bse(self) -> List[CorporateAction]:
-        """
-        Fetch corporate actions from BSE API.
+    async def _fetch_from_bse(self) -> list[CorporateAction]:
+        """Fetch corporate actions from BSE API.
 
         In production, this would call the BSE corporate actions REST API.
         Returns empty list by default; override or inject for testing.
@@ -527,17 +523,15 @@ class CorporateActionsCollector:
         # Production: HTTP GET to BSE corporate actions endpoint
         return []
 
-    async def _fetch_nse_announcements(self) -> List[ExchangeAnnouncement]:
-        """
-        Fetch exchange announcements from NSE.
+    async def _fetch_nse_announcements(self) -> list[ExchangeAnnouncement]:
+        """Fetch exchange announcements from NSE.
 
         Requirements: 27.2
         """
         return []
 
-    async def _fetch_bse_announcements(self) -> List[ExchangeAnnouncement]:
-        """
-        Fetch exchange announcements from BSE.
+    async def _fetch_bse_announcements(self) -> list[ExchangeAnnouncement]:
+        """Fetch exchange announcements from BSE.
 
         Requirements: 27.2
         """
@@ -547,9 +541,8 @@ class CorporateActionsCollector:
     # Internal: Deduplication
     # ------------------------------------------------------------------
 
-    def _deduplicate_actions(self, actions: List[CorporateAction]) -> List[CorporateAction]:
-        """
-        Deduplicate corporate actions by (symbol, action_type, ex_date).
+    def _deduplicate_actions(self, actions: list[CorporateAction]) -> list[CorporateAction]:
+        """Deduplicate corporate actions by (symbol, action_type, ex_date).
 
         When the same action appears from both NSE and BSE, keep the NSE version.
         Also deduplicates against existing history.
@@ -560,7 +553,7 @@ class CorporateActionsCollector:
             key = (existing.symbol, existing.action_type, existing.ex_date)
             seen.add(key)
 
-        unique: List[CorporateAction] = []
+        unique: list[CorporateAction] = []
         for action in actions:
             key = (action.symbol, action.action_type, action.ex_date)
             if key not in seen:
@@ -577,7 +570,7 @@ class CorporateActionsCollector:
         self._action_history.append(action)
         logger.debug(
             f"Stored corporate action: {action.action_type.value} "
-            f"for {action.symbol}"
+            f"for {action.symbol}",
         )
 
     def _store_announcement(self, announcement: ExchangeAnnouncement) -> None:
@@ -585,7 +578,7 @@ class CorporateActionsCollector:
         self._announcement_history.append(announcement)
         logger.debug(
             f"Stored announcement: {announcement.announcement_type.value} "
-            f"for {announcement.symbol}"
+            f"for {announcement.symbol}",
         )
 
     # ------------------------------------------------------------------
@@ -618,9 +611,8 @@ class CorporateActionsCollector:
     # Internal: Notifications (Req 27.3)
     # ------------------------------------------------------------------
 
-    def _send_watchlist_notifications(self, actions: List[CorporateAction]) -> None:
-        """
-        Send notifications for corporate actions on watchlist securities.
+    def _send_watchlist_notifications(self, actions: list[CorporateAction]) -> None:
+        """Send notifications for corporate actions on watchlist securities.
 
         Requirements: 27.3
         """
@@ -636,7 +628,7 @@ class CorporateActionsCollector:
                     data=action.to_dict(),
                 )
 
-    def _send_announcement_notifications(self, announcements: List[ExchangeAnnouncement]) -> None:
+    def _send_announcement_notifications(self, announcements: list[ExchangeAnnouncement]) -> None:
         """Send notifications for exchange announcements on watchlist securities."""
         for ann in announcements:
             if ann.symbol in self._watchlist_symbols:
@@ -655,7 +647,7 @@ class CorporateActionsCollector:
         symbol: str,
         title: str,
         message: str,
-        data: Dict[str, Any],
+        data: dict[str, Any],
     ) -> None:
         """Publish a notification to the notifications stream."""
         try:
@@ -679,9 +671,8 @@ class CorporateActionsCollector:
     # Internal: Price adjustments (Req 27.5)
     # ------------------------------------------------------------------
 
-    def _apply_price_adjustments(self, actions: List[CorporateAction]) -> None:
-        """
-        Update stock universe with adjusted prices after splits/bonuses.
+    def _apply_price_adjustments(self, actions: list[CorporateAction]) -> None:
+        """Update stock universe with adjusted prices after splits/bonuses.
 
         For SPLIT actions, divides the price by the split ratio.
         For BONUS actions, adjusts price based on the bonus ratio.
@@ -695,8 +686,7 @@ class CorporateActionsCollector:
                 self._adjust_for_bonus(action)
 
     def _adjust_for_split(self, action: CorporateAction) -> None:
-        """
-        Adjust stock universe price for a stock split.
+        """Adjust stock universe price for a stock split.
 
         Expects details to contain 'ratio' as 'new:old' (e.g., '5:1'
         means 5 new shares for every 1 old share, price divides by 5).
@@ -731,12 +721,11 @@ class CorporateActionsCollector:
             self._total_price_adjustments += 1
             logger.info(
                 f"Adjusted {symbol} price for split {ratio_str}: "
-                f"{current_price:.2f} -> {adjusted_price:.2f}"
+                f"{current_price:.2f} -> {adjusted_price:.2f}",
             )
 
     def _adjust_for_bonus(self, action: CorporateAction) -> None:
-        """
-        Adjust stock universe price for a bonus issue.
+        """Adjust stock universe price for a bonus issue.
 
         Expects details to contain 'ratio' as 'bonus:existing'
         (e.g., '1:1' means 1 bonus share for every 1 existing,
@@ -773,5 +762,5 @@ class CorporateActionsCollector:
             self._total_price_adjustments += 1
             logger.info(
                 f"Adjusted {symbol} price for bonus {ratio_str}: "
-                f"{current_price:.2f} -> {adjusted_price:.2f}"
+                f"{current_price:.2f} -> {adjusted_price:.2f}",
             )

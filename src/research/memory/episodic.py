@@ -30,7 +30,8 @@ Design: §3.4, §4.1
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, Any, Callable, Final
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Final
 from uuid import UUID
 
 if TYPE_CHECKING:  # pragma: no cover - typing only
@@ -77,13 +78,14 @@ class EpisodicMemory:
 
     Requirements: 4.4, 4.7
     Design: §3.4, §4.1
+
     """
 
     def __init__(
         self,
         *,
         connection_factory: Callable[
-            [UUID], "AbstractAsyncContextManager[asyncpg.Connection]"
+            [UUID], AbstractAsyncContextManager[asyncpg.Connection],
         ],
     ) -> None:
         self._conn_factory = connection_factory
@@ -138,7 +140,7 @@ class EpisodicMemory:
         # but guard anyway so a driver-level oddity surfaces clearly.
         if row is None:  # pragma: no cover - defensive
             raise RuntimeError(
-                "episodic_memory.add: INSERT … RETURNING id returned no row"
+                "episodic_memory.add: INSERT … RETURNING id returned no row",
             )
         return row["id"]
 
@@ -232,7 +234,7 @@ class EpisodicMemory:
         async with self._conn_factory(user_id) as conn:
             if symbol is None:
                 result = await conn.execute(
-                    "DELETE FROM research_episodic_memory"
+                    "DELETE FROM research_episodic_memory",
                 )
             else:
                 result = await conn.execute(

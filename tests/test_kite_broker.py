@@ -1,5 +1,4 @@
-"""
-Tests for the Zerodha Kite Connect broker adapter.
+"""Tests for the Zerodha Kite Connect broker adapter.
 
 Covers: OAuth2 session creation, order placement parameter mapping,
 order status polling, daily token refresh, retry logic, WebSocket lifecycle,
@@ -8,40 +7,34 @@ and all BrokerInterface methods.
 Requirements: 15.1, 15.2, 15.3, 15.4, 15.5, 15.6, 15.7, 15.8
 """
 
-import json
 import struct
-import time
-import threading
-from datetime import datetime
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
+from src.ingestion.broker_interface import (
+    AuthenticationError,
+    BrokerCredentials,
+    ConnectionError,
+    Order,
+    OrderNotFoundError,
+    OrderRejectionError,
+    OrderSide,
+    OrderStatus,
+    OrderType,
+    ProductType,
+)
 from src.ingestion.kite_broker import (
-    KiteBroker,
+    _MAX_RETRIES,
     _ORDER_TYPE_MAP,
     _PRODUCT_TYPE_MAP,
     _STATUS_MAP,
+    KiteBroker,
     _kite_error,
-    _safe_float,
     _reverse_order_type,
     _reverse_product_type,
-    _MAX_RETRIES,
+    _safe_float,
 )
-from src.ingestion.broker_interface import (
-    BrokerCredentials,
-    Order,
-    OrderType,
-    OrderSide,
-    OrderStatus,
-    ProductType,
-    Tick,
-    ConnectionError,
-    AuthenticationError,
-    OrderRejectionError,
-    OrderNotFoundError,
-)
-
 
 # ── fixtures ──────────────────────────────────────────────────────
 
@@ -325,7 +318,7 @@ class TestGetOrderStatus:
                         "trigger_price": 0,
                         "status": "COMPLETE",
                         "status_message": None,
-                    }
+                    },
                 ],
             }),
         )
@@ -355,7 +348,7 @@ class TestGetOrderStatus:
                         "trigger_price": 0,
                         "status": "REJECTED",
                         "status_message": "Insufficient margin",
-                    }
+                    },
                 ],
             }),
         )
@@ -493,7 +486,7 @@ class TestGetPositions:
                             "average_price": 2500.0,
                             "last_price": 2520.0,
                             "pnl": 200.0,
-                        }
+                        },
                     ],
                     "day": [],
                 },
@@ -541,7 +534,7 @@ class TestGetHoldings:
                         "last_price": 3450.0,
                         "pnl": 250.0,
                         "isin": "INE467B01029",
-                    }
+                    },
                 ],
             }),
         )

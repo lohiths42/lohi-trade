@@ -27,7 +27,8 @@ Covers
 
 from __future__ import annotations
 
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
@@ -36,7 +37,6 @@ from src.research.agents.news_sentiment import NewsSentimentAgent
 from src.research.agents.orchestrator import AgentContext, PlanOutput, SubAgent
 from src.research.providers.base import LLMParams, Message
 from tests.research.fakes import FakeLLMProvider
-
 
 # --------------------------------------------------------------------------- #
 # Stubs                                                                       #
@@ -110,20 +110,20 @@ def _build_context(
 class TestIdentity:
     def test_name_is_news_sentiment(self) -> None:
         agent = NewsSentimentAgent(
-            llm=FakeLLMProvider(), redis_reader=_StubRedisReader()
+            llm=FakeLLMProvider(), redis_reader=_StubRedisReader(),
         )
         assert agent.name == "news_sentiment"
 
     def test_section_name_is_summary(self) -> None:
         agent = NewsSentimentAgent(
-            llm=FakeLLMProvider(), redis_reader=_StubRedisReader()
+            llm=FakeLLMProvider(), redis_reader=_StubRedisReader(),
         )
         assert agent.section_name == "summary"
 
     def test_default_stream_names_match_req_8_3(self) -> None:
         """Req 8.3 enumerates ``news_clean``, ``sentiment``, ``bias``."""
         agent = NewsSentimentAgent(
-            llm=FakeLLMProvider(), redis_reader=_StubRedisReader()
+            llm=FakeLLMProvider(), redis_reader=_StubRedisReader(),
         )
         assert agent.news_clean_stream == "news_clean"
         assert agent.sentiment_stream == "sentiment"
@@ -131,7 +131,7 @@ class TestIdentity:
 
     def test_conforms_to_subagent_protocol(self) -> None:
         agent = NewsSentimentAgent(
-            llm=FakeLLMProvider(), redis_reader=_StubRedisReader()
+            llm=FakeLLMProvider(), redis_reader=_StubRedisReader(),
         )
         assert isinstance(agent, SubAgent)
 
@@ -182,7 +182,7 @@ class TestHappyPath:
                         },
                     ),
                 ],
-            }
+            },
         )
         llm = FakeLLMProvider(
             canned_completion='{"headlines":[{"text":"Reliance posts record quarterly profit [cite:1700000000000-0]","published_at":"2024-10-21T09:00:00Z","sentiment":"positive","chunk_id":"1700000000000-0"}],"themes":["earnings [cite:1700000001000-0]"],"sentiment_summary":"Bullish [cite:1700000002000-0]."}',
@@ -192,7 +192,7 @@ class TestHappyPath:
         agent = NewsSentimentAgent(llm=llm, redis_reader=reader)
 
         result = await agent.invoke(
-            _build_context(user_id=user_id, symbol="RELIANCE")
+            _build_context(user_id=user_id, symbol="RELIANCE"),
         )
 
         assert result.kind == "ok"
@@ -221,13 +221,13 @@ class TestHappyPath:
                 "news_clean": [
                     ("1-0", {"ticker": "RELIANCE", "title": "t"}),
                 ],
-            }
+            },
         )
         agent = NewsSentimentAgent(
-            llm=FakeLLMProvider(), redis_reader=reader, events_per_stream=5
+            llm=FakeLLMProvider(), redis_reader=reader, events_per_stream=5,
         )
         await agent.invoke(
-            _build_context(user_id=user_id, symbol="RELIANCE")
+            _build_context(user_id=user_id, symbol="RELIANCE"),
         )
         for call in reader.calls:
             assert call["count"] == 5
@@ -250,13 +250,13 @@ class TestSymbolFiltering:
                     ("2-0", {"ticker": "TCS", "title": "tcs news"}),
                     ("3-0", {"ticker": "INFY", "title": "infy news"}),
                 ],
-            }
+            },
         )
         llm = _RecordingLLM()
         agent = NewsSentimentAgent(llm=llm, redis_reader=reader)
 
         result = await agent.invoke(
-            _build_context(user_id=user_id, symbol="RELIANCE")
+            _build_context(user_id=user_id, symbol="RELIANCE"),
         )
         assert result.kind == "ok"
         assert len(llm.calls) == 1
@@ -284,13 +284,13 @@ class TestSymbolFiltering:
                         },
                     ),
                 ],
-            }
+            },
         )
         llm = _RecordingLLM()
         agent = NewsSentimentAgent(llm=llm, redis_reader=reader)
 
         result = await agent.invoke(
-            _build_context(user_id=user_id, symbol="RELIANCE")
+            _build_context(user_id=user_id, symbol="RELIANCE"),
         )
         assert result.kind == "ok"
         assert len(llm.calls) == 1
@@ -313,7 +313,7 @@ class TestNoData:
         agent = NewsSentimentAgent(llm=llm, redis_reader=reader)
 
         result = await agent.invoke(
-            _build_context(user_id=user_id, symbol=None)
+            _build_context(user_id=user_id, symbol=None),
         )
         assert result.kind == "no_data"
         assert "requires a symbol" in result.reason
@@ -325,13 +325,13 @@ class TestNoData:
     async def test_all_streams_empty_returns_no_data(self) -> None:
         user_id = uuid4()
         reader = _StubRedisReader(
-            per_stream={"news_clean": [], "sentiment": [], "bias": []}
+            per_stream={"news_clean": [], "sentiment": [], "bias": []},
         )
         llm = _RecordingLLM()
         agent = NewsSentimentAgent(llm=llm, redis_reader=reader)
 
         result = await agent.invoke(
-            _build_context(user_id=user_id, symbol="RELIANCE")
+            _build_context(user_id=user_id, symbol="RELIANCE"),
         )
         assert result.kind == "no_data"
         # Reason surfaces the configured stream names.
@@ -351,13 +351,13 @@ class TestNoData:
                 "news_clean": [("1-0", {"ticker": "TCS", "title": "t"})],
                 "sentiment": [("2-0", {"ticker": "TCS", "sentiment": "POSITIVE"})],
                 "bias": [("3-0", {"ticker": "TCS", "bias": "BULLISH"})],
-            }
+            },
         )
         llm = _RecordingLLM()
         agent = NewsSentimentAgent(llm=llm, redis_reader=reader)
 
         result = await agent.invoke(
-            _build_context(user_id=user_id, symbol="RELIANCE")
+            _build_context(user_id=user_id, symbol="RELIANCE"),
         )
         assert result.kind == "no_data"
         assert llm.calls == []
@@ -374,13 +374,13 @@ class TestErrorPath:
         user_id = uuid4()
         reader = _StubRedisReader(
             per_stream={
-                "news_clean": [("1-0", {"ticker": "RELIANCE", "title": "t"})]
-            }
+                "news_clean": [("1-0", {"ticker": "RELIANCE", "title": "t"})],
+            },
         )
         agent = NewsSentimentAgent(llm=_RaisingLLM(), redis_reader=reader)
         with pytest.raises(RuntimeError, match="news_sentiment llm exploded"):
             await agent.invoke(
-                _build_context(user_id=user_id, symbol="RELIANCE")
+                _build_context(user_id=user_id, symbol="RELIANCE"),
             )
 
     @pytest.mark.asyncio
@@ -389,7 +389,7 @@ class TestErrorPath:
         agent = NewsSentimentAgent(llm=FakeLLMProvider(), redis_reader=None)
         with pytest.raises(ValueError, match="RedisStreamReader"):
             await agent.invoke(
-                _build_context(user_id=user_id, symbol="RELIANCE")
+                _build_context(user_id=user_id, symbol="RELIANCE"),
             )
 
     @pytest.mark.asyncio
@@ -397,13 +397,13 @@ class TestErrorPath:
         user_id = uuid4()
         reader = _StubRedisReader(
             per_stream={
-                "news_clean": [("1-0", {"ticker": "RELIANCE", "title": "t"})]
-            }
+                "news_clean": [("1-0", {"ticker": "RELIANCE", "title": "t"})],
+            },
         )
         agent = NewsSentimentAgent(llm=None, redis_reader=reader)
         with pytest.raises(ValueError, match="LLMProvider"):
             await agent.invoke(
-                _build_context(user_id=user_id, symbol="RELIANCE")
+                _build_context(user_id=user_id, symbol="RELIANCE"),
             )
 
 
@@ -428,7 +428,7 @@ class TestPromptRendering:
                         },
                     ),
                 ],
-            }
+            },
         )
         llm = _RecordingLLM(canned_completion='{"headlines":[]}')
         agent = NewsSentimentAgent(llm=llm, redis_reader=reader)
@@ -438,7 +438,7 @@ class TestPromptRendering:
                 user_id=user_id,
                 symbol="TCS",
                 user_prompt="Summarise today's news for TCS",
-            )
+            ),
         )
 
         assert len(llm.calls) == 1

@@ -1,5 +1,4 @@
-"""
-Unified broker router with per-user failover for LOHI-TRADE.
+"""Unified broker router with per-user failover for LOHI-TRADE.
 
 Maintains a registry of broker adapters (shoonya, angelone, kite, groww)
 and routes operations to each user's preferred primary broker, automatically
@@ -11,16 +10,13 @@ Requirements: 17.1, 17.2, 17.3, 17.4, 17.5, 17.6, 17.7
 """
 
 import threading
-import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Dict, List, Optional
 
 from src.ingestion.broker_interface import (
     BrokerError,
     BrokerInterface,
-    ConnectionError as BrokerConnectionError,
     Order,
 )
 from src.utils.logger import get_logger
@@ -33,6 +29,7 @@ SUPPORTED_BROKERS = {"shoonya", "angelone", "kite", "groww"}
 
 class BrokerConnectionStatus(Enum):
     """Connection status for a broker instance. Requirement 17.7."""
+
     CONNECTED = "connected"
     DISCONNECTED = "disconnected"
     TOKEN_EXPIRED = "token_expired"
@@ -41,13 +38,15 @@ class BrokerConnectionStatus(Enum):
 @dataclass
 class UserBrokerPreference:
     """Per-user primary and backup broker selection. Requirement 17.2."""
+
     primary_broker: str
-    backup_broker: Optional[str] = None
+    backup_broker: str | None = None
 
 
 @dataclass
 class AuditEntry:
     """Audit log entry for broker API interactions. Requirement 17.6."""
+
     timestamp: datetime
     user_id: str
     broker_name: str
@@ -60,8 +59,7 @@ class AuditEntry:
 
 
 class BrokerRouter:
-    """
-    Unified broker routing with per-user failover.
+    """Unified broker routing with per-user failover.
 
     Maintains a registry of broker adapters and routes operations to each
     user's primary broker, automatically failing over to their backup
@@ -70,17 +68,17 @@ class BrokerRouter:
     Requirements: 17.1, 17.2, 17.3, 17.4, 17.5, 17.6, 17.7
     """
 
-    def __init__(self, registry: Optional[Dict[str, BrokerInterface]] = None) -> None:
-        """
-        Initialise the router with a broker registry.
+    def __init__(self, registry: dict[str, BrokerInterface] | None = None) -> None:
+        """Initialise the router with a broker registry.
 
         Args:
             registry: Mapping of broker name → BrokerInterface instance.
                       Keys must be from SUPPORTED_BROKERS.
+
         """
-        self._registry: Dict[str, BrokerInterface] = {}
-        self._user_preferences: Dict[str, UserBrokerPreference] = {}
-        self._audit_log: List[AuditEntry] = []
+        self._registry: dict[str, BrokerInterface] = {}
+        self._user_preferences: dict[str, UserBrokerPreference] = {}
+        self._audit_log: list[AuditEntry] = []
         self._lock = threading.RLock()
 
         if registry:
@@ -90,8 +88,7 @@ class BrokerRouter:
     # ── registry management ───────────────────────────────────────
 
     def register_broker(self, name: str, broker: BrokerInterface) -> None:
-        """
-        Register a broker adapter in the registry.
+        """Register a broker adapter in the registry.
 
         Args:
             name: Broker name (must be in SUPPORTED_BROKERS).
@@ -99,17 +96,18 @@ class BrokerRouter:
 
         Raises:
             ValueError: If the broker name is not supported.
+
         """
         name = name.lower()
         if name not in SUPPORTED_BROKERS:
             raise ValueError(
-                f"Unsupported broker '{name}'. Must be one of {SUPPORTED_BROKERS}"
+                f"Unsupported broker '{name}'. Must be one of {SUPPORTED_BROKERS}",
             )
         with self._lock:
             self._registry[name] = broker
         logger.info(f"Registered broker: {name}")
 
-    def get_registered_brokers(self) -> List[str]:
+    def get_registered_brokers(self) -> list[str]:
         """Return list of registered broker names."""
         with self._lock:
             return list(self._registry.keys())
@@ -120,10 +118,9 @@ class BrokerRouter:
         self,
         user_id: str,
         primary_broker: str,
-        backup_broker: Optional[str] = None,
+        backup_broker: str | None = None,
     ) -> None:
-        """
-        Set a user's primary and optional backup broker.
+        """Set a user's primary and optional backup broker.
 
         Args:
             user_id: Unique user identifier.
@@ -132,6 +129,7 @@ class BrokerRouter:
 
         Raises:
             ValueError: If broker names are invalid or not registered.
+
         """
         primary_broker = primary_broker.lower()
         if backup_broker:
@@ -140,11 +138,11 @@ class BrokerRouter:
         with self._lock:
             if primary_broker not in self._registry:
                 raise ValueError(
-                    f"Primary broker '{primary_broker}' is not registered"
+                    f"Primary broker '{primary_broker}' is not registered",
                 )
             if backup_broker and backup_broker not in self._registry:
                 raise ValueError(
-                    f"Backup broker '{backup_broker}' is not registered"
+                    f"Backup broker '{backup_broker}' is not registered",
                 )
             if backup_broker and backup_broker == primary_broker:
                 raise ValueError("Backup broker must differ from primary broker")
@@ -155,10 +153,10 @@ class BrokerRouter:
             )
         logger.info(
             f"User {user_id} preference set: primary={primary_broker}, "
-            f"backup={backup_broker}"
+            f"backup={backup_broker}",
         )
 
-    def get_user_preference(self, user_id: str) -> Optional[UserBrokerPreference]:
+    def get_user_preference(self, user_id: str) -> UserBrokerPreference | None:
         """Return the user's broker preference, or None if not set."""
         with self._lock:
             return self._user_preferences.get(user_id)
@@ -166,8 +164,7 @@ class BrokerRouter:
     # ── broker status ─────────────────────────────────────────────
 
     def get_broker_status(self, broker_name: str) -> BrokerConnectionStatus:
-        """
-        Return the connection status of a broker.
+        """Return the connection status of a broker.
 
         Requirement 17.7
         """
@@ -184,7 +181,7 @@ class BrokerRouter:
         except Exception:
             return BrokerConnectionStatus.DISCONNECTED
 
-    def get_all_broker_statuses(self) -> Dict[str, BrokerConnectionStatus]:
+    def get_all_broker_statuses(self) -> dict[str, BrokerConnectionStatus]:
         """Return connection status for every registered broker."""
         with self._lock:
             names = list(self._registry.keys())
@@ -193,8 +190,7 @@ class BrokerRouter:
     # ── order routing with failover ───────────────────────────────
 
     def route_order(self, user_id: str, order: Order) -> str:
-        """
-        Route an order to the user's primary broker with automatic failover.
+        """Route an order to the user's primary broker with automatic failover.
 
         Requirement 17.3, 17.4
 
@@ -208,12 +204,13 @@ class BrokerRouter:
         Raises:
             ValueError: If user has no broker preference set.
             BrokerError: If both primary and backup brokers fail.
+
         """
         pref = self._get_preference_or_raise(user_id)
 
         # Try primary broker
         primary_result = self._try_place_order(
-            user_id, pref.primary_broker, order, failover=False
+            user_id, pref.primary_broker, order, failover=False,
         )
         if primary_result is not None:
             return primary_result
@@ -222,28 +219,28 @@ class BrokerRouter:
         if pref.backup_broker:
             logger.warning(
                 f"Primary broker '{pref.primary_broker}' unavailable for user "
-                f"{user_id}. Failing over to '{pref.backup_broker}'."
+                f"{user_id}. Failing over to '{pref.backup_broker}'.",
             )
             backup_result = self._try_place_order(
-                user_id, pref.backup_broker, order, failover=True
+                user_id, pref.backup_broker, order, failover=True,
             )
             if backup_result is not None:
                 return backup_result
 
             raise BrokerError(
                 f"Both primary ({pref.primary_broker}) and backup "
-                f"({pref.backup_broker}) brokers failed for user {user_id}"
+                f"({pref.backup_broker}) brokers failed for user {user_id}",
             )
 
         raise BrokerError(
             f"Primary broker '{pref.primary_broker}' unavailable and no "
-            f"backup broker configured for user {user_id}"
+            f"backup broker configured for user {user_id}",
         )
 
     # ── common broker interface contract (Req 17.5) ───────────────
 
     def cancel_order(
-        self, user_id: str, broker_order_id: str
+        self, user_id: str, broker_order_id: str,
     ) -> bool:
         """Cancel an order via the user's primary broker with failover."""
         return self._execute_with_failover(
@@ -254,7 +251,7 @@ class BrokerRouter:
         )
 
     def get_order_status(
-        self, user_id: str, broker_order_id: str
+        self, user_id: str, broker_order_id: str,
     ) -> Order:
         """Get order status via the user's primary broker with failover."""
         return self._execute_with_failover(
@@ -264,7 +261,7 @@ class BrokerRouter:
             fn=lambda broker: broker.get_order_status(broker_order_id),
         )
 
-    def get_positions(self, user_id: str) -> List[dict]:
+    def get_positions(self, user_id: str) -> list[dict]:
         """Get positions via the user's primary broker with failover."""
         return self._execute_with_failover(
             user_id,
@@ -273,7 +270,7 @@ class BrokerRouter:
             fn=lambda broker: broker.get_positions(),
         )
 
-    def get_holdings(self, user_id: str) -> List[dict]:
+    def get_holdings(self, user_id: str) -> list[dict]:
         """Get holdings via the user's primary broker with failover."""
         return self._execute_with_failover(
             user_id,
@@ -285,10 +282,9 @@ class BrokerRouter:
     # ── audit log access ──────────────────────────────────────────
 
     def get_audit_log(
-        self, user_id: Optional[str] = None, limit: int = 100
-    ) -> List[AuditEntry]:
-        """
-        Return recent audit entries, optionally filtered by user.
+        self, user_id: str | None = None, limit: int = 100,
+    ) -> list[AuditEntry]:
+        """Return recent audit entries, optionally filtered by user.
 
         Requirement 17.6
         """
@@ -319,7 +315,7 @@ class BrokerRouter:
         broker_name: str,
         order: Order,
         failover: bool,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Attempt to place an order on a specific broker. Returns order ID or None."""
         broker = self._get_broker(broker_name)
         start = datetime.now()
@@ -343,7 +339,7 @@ class BrokerRouter:
             if failover:
                 logger.info(
                     f"Failover order placed on '{broker_name}' for user "
-                    f"{user_id}: {broker_order_id}"
+                    f"{user_id}: {broker_order_id}",
                 )
             return broker_order_id
         except Exception as exc:
@@ -359,7 +355,7 @@ class BrokerRouter:
                 failover=failover,
             )
             logger.error(
-                f"place_order failed on '{broker_name}' for user {user_id}: {exc}"
+                f"place_order failed on '{broker_name}' for user {user_id}: {exc}",
             )
             return None
 
@@ -370,8 +366,7 @@ class BrokerRouter:
         request_summary: str,
         fn,
     ):
-        """
-        Execute a broker operation with primary → backup failover.
+        """Execute a broker operation with primary → backup failover.
 
         Used for cancel_order, get_order_status, get_positions, get_holdings.
         """
@@ -389,7 +384,7 @@ class BrokerRouter:
         if pref.backup_broker:
             logger.warning(
                 f"'{operation_name}' failed on primary '{pref.primary_broker}' "
-                f"for user {user_id}. Failing over to '{pref.backup_broker}'."
+                f"for user {user_id}. Failing over to '{pref.backup_broker}'.",
             )
             backup_result = self._try_operation(
                 user_id, pref.backup_broker, operation_name,
@@ -401,12 +396,12 @@ class BrokerRouter:
             raise BrokerError(
                 f"'{operation_name}' failed on both primary "
                 f"({pref.primary_broker}) and backup ({pref.backup_broker}) "
-                f"for user {user_id}"
+                f"for user {user_id}",
             )
 
         raise BrokerError(
             f"'{operation_name}' failed on primary '{pref.primary_broker}' "
-            f"and no backup configured for user {user_id}"
+            f"and no backup configured for user {user_id}",
         )
 
     def _try_operation(
@@ -429,7 +424,7 @@ class BrokerRouter:
                 broker_name=broker_name,
                 operation=operation_name,
                 request_summary=request_summary,
-                response_summary=f"success",
+                response_summary="success",
                 success=True,
                 duration_ms=duration_ms,
                 failover=failover,
@@ -449,7 +444,7 @@ class BrokerRouter:
             )
             logger.error(
                 f"'{operation_name}' failed on '{broker_name}' for user "
-                f"{user_id}: {exc}"
+                f"{user_id}: {exc}",
             )
             return _SENTINEL
 

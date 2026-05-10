@@ -1,5 +1,4 @@
-"""
-Property-based tests for Position Sizer.
+"""Property-based tests for Position Sizer.
 
 Uses hypothesis to verify position sizing properties across a wide range
 of randomly generated inputs: capital, entry prices, stop losses, and
@@ -11,14 +10,13 @@ risk/position-size percentages.
 from datetime import datetime
 from unittest.mock import MagicMock
 
-from hypothesis import given, settings, assume
+from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
 from src.execution.position_sizer import PositionSizer
 from src.soldier.indicator_engine import IndicatorSet
 from src.soldier.strategy_engine import Signal
 from src.utils.config import CapitalConfig, Config
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -98,8 +96,7 @@ stop_offsets = st.floats(min_value=0.01, max_value=5000, allow_nan=False, allow_
 # ---------------------------------------------------------------------------
 
 class TestProperty39PositionSizeCalculationFormula:
-    """
-    **Validates: Requirements 10.1**
+    """**Validates: Requirements 10.1**
 
     For any valid signal, quantity = round(min(
         max_risk / risk_per_share,
@@ -116,7 +113,7 @@ class TestProperty39PositionSizeCalculationFormula:
     )
     @settings(max_examples=100)
     def test_formula_matches_expected(
-        self, capital, entry_price, stop_offset, risk_pct, max_pos_pct
+        self, capital, entry_price, stop_offset, risk_pct, max_pos_pct,
     ):
         stop_loss = entry_price - stop_offset
         risk_per_share = abs(entry_price - stop_loss)
@@ -145,8 +142,7 @@ class TestProperty39PositionSizeCalculationFormula:
 # ---------------------------------------------------------------------------
 
 class TestProperty40MaximumRiskPerTrade:
-    """
-    **Validates: Requirements 10.2**
+    """**Validates: Requirements 10.2**
 
     For any valid result, risk_amount <= 1% of capital.
     (More generally, risk_amount <= risk_pct% of capital, but the system
@@ -162,7 +158,7 @@ class TestProperty40MaximumRiskPerTrade:
     )
     @settings(max_examples=100)
     def test_risk_does_not_exceed_limit(
-        self, capital, entry_price, stop_offset, risk_pct, max_pos_pct
+        self, capital, entry_price, stop_offset, risk_pct, max_pos_pct,
     ):
         stop_loss = entry_price - stop_offset
         risk_per_share = abs(entry_price - stop_loss)
@@ -186,8 +182,7 @@ class TestProperty40MaximumRiskPerTrade:
 # ---------------------------------------------------------------------------
 
 class TestProperty41MaximumPositionSize:
-    """
-    **Validates: Requirements 10.3**
+    """**Validates: Requirements 10.3**
 
     For any valid result, position_value <= max_position_size_pct% of capital.
     """
@@ -201,7 +196,7 @@ class TestProperty41MaximumPositionSize:
     )
     @settings(max_examples=100)
     def test_position_value_within_limit(
-        self, capital, entry_price, stop_offset, risk_pct, max_pos_pct
+        self, capital, entry_price, stop_offset, risk_pct, max_pos_pct,
     ):
         stop_loss = entry_price - stop_offset
         risk_per_share = abs(entry_price - stop_loss)
@@ -225,8 +220,7 @@ class TestProperty41MaximumPositionSize:
 # ---------------------------------------------------------------------------
 
 class TestProperty42QuantityCapping:
-    """
-    **Validates: Requirements 10.4**
+    """**Validates: Requirements 10.4**
 
     For any valid result, quantity * entry_price <= max_position_value.
     (With rounding tolerance of one share.)
@@ -241,7 +235,7 @@ class TestProperty42QuantityCapping:
     )
     @settings(max_examples=100)
     def test_quantity_capped_by_position_value(
-        self, capital, entry_price, stop_offset, risk_pct, max_pos_pct
+        self, capital, entry_price, stop_offset, risk_pct, max_pos_pct,
     ):
         stop_loss = entry_price - stop_offset
         risk_per_share = abs(entry_price - stop_loss)
@@ -262,8 +256,7 @@ class TestProperty42QuantityCapping:
 # ---------------------------------------------------------------------------
 
 class TestProperty43QuantityRounding:
-    """
-    **Validates: Requirements 10.5**
+    """**Validates: Requirements 10.5**
 
     For any valid result, quantity is an integer (no fractional shares).
     """
@@ -277,7 +270,7 @@ class TestProperty43QuantityRounding:
     )
     @settings(max_examples=100)
     def test_quantity_is_integer(
-        self, capital, entry_price, stop_offset, risk_pct, max_pos_pct
+        self, capital, entry_price, stop_offset, risk_pct, max_pos_pct,
     ):
         stop_loss = entry_price - stop_offset
         risk_per_share = abs(entry_price - stop_loss)
@@ -297,8 +290,7 @@ class TestProperty43QuantityRounding:
 # ---------------------------------------------------------------------------
 
 class TestProperty44MinimumQuantityRejection:
-    """
-    **Validates: Requirements 10.7**
+    """**Validates: Requirements 10.7**
 
     When calculated quantity rounds to 0, result.is_valid is False.
     """
@@ -311,7 +303,7 @@ class TestProperty44MinimumQuantityRejection:
     )
     @settings(max_examples=100)
     def test_rejected_when_quantity_rounds_to_zero(
-        self, capital, entry_price, risk_pct, max_pos_pct
+        self, capital, entry_price, risk_pct, max_pos_pct,
     ):
         # Use a very wide stop loss so risk_per_share is large, making quantity tiny
         # risk_per_share > max_risk ensures quantity < 1

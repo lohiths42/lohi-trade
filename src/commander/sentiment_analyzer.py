@@ -1,5 +1,4 @@
-"""
-Sentiment Analyzer for The Commander.
+"""Sentiment Analyzer for The Commander.
 
 Classifies news sentiment using FinBERT (ONNX Runtime) with Indian market
 keyword boosters. Publishes results to stream:sentiment and stores in
@@ -10,11 +9,9 @@ Requirements: 7.1, 7.2, 7.3, 7.5, 7.6, 7.7
 
 import json
 import logging
-import time
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
 
 from src.state.database import DatabaseConnectionManager
 from src.state.event_bus import EventBus
@@ -40,7 +37,7 @@ DEFAULT_TOKENIZER_PATH = "data/models/finbert_tokenizer"
 DEFAULT_KEYWORDS_PATH = "config/keywords.json"
 
 
-def _softmax(logits: List[float]) -> List[float]:
+def _softmax(logits: list[float]) -> list[float]:
     """Compute softmax probabilities from raw logits."""
     import math
 
@@ -50,9 +47,8 @@ def _softmax(logits: List[float]) -> List[float]:
     return [e / total for e in exps]
 
 
-def load_keywords(path: str = DEFAULT_KEYWORDS_PATH) -> Dict[str, Dict[str, float]]:
-    """
-    Load Indian market keyword boosters from JSON file.
+def load_keywords(path: str = DEFAULT_KEYWORDS_PATH) -> dict[str, dict[str, float]]:
+    """Load Indian market keyword boosters from JSON file.
 
     Args:
         path: Path to keywords.json.
@@ -61,13 +57,14 @@ def load_keywords(path: str = DEFAULT_KEYWORDS_PATH) -> Dict[str, Dict[str, floa
         Dict with 'positive' and 'negative' keyword mappings.
 
     Requirements: 7.5
+
     """
     try:
-        with open(path, "r") as f:
+        with open(path) as f:
             data = json.load(f)
         logger.info(
             f"Loaded {len(data.get('positive', {}))} positive and "
-            f"{len(data.get('negative', {}))} negative keyword boosters"
+            f"{len(data.get('negative', {}))} negative keyword boosters",
         )
         return data
     except FileNotFoundError:
@@ -80,8 +77,7 @@ def load_keywords(path: str = DEFAULT_KEYWORDS_PATH) -> Dict[str, Dict[str, floa
 
 @dataclass
 class SentimentResult:
-    """
-    Result of sentiment analysis for a news article/ticker pair.
+    """Result of sentiment analysis for a news article/ticker pair.
 
     Attributes:
         article_id: UUID of the source article.
@@ -91,6 +87,7 @@ class SentimentResult:
         raw_score: Signed score before keyword boosting (-1.0 to 1.0).
         boosted_score: Score after applying keyword boosters.
         timestamp: When the analysis was performed.
+
     """
 
     article_id: str = ""
@@ -99,12 +96,11 @@ class SentimentResult:
     confidence: float = 0.0
     raw_score: float = 0.0
     boosted_score: float = 0.0
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 class SentimentAnalyzer:
-    """
-    Classifies news sentiment using FinBERT via ONNX Runtime.
+    """Classifies news sentiment using FinBERT via ONNX Runtime.
 
     Supports:
     - ONNX model loading with CoreML execution provider (Apple Neural Engine)
@@ -120,8 +116,8 @@ class SentimentAnalyzer:
         model_path: str = DEFAULT_ONNX_MODEL_PATH,
         tokenizer_path: str = DEFAULT_TOKENIZER_PATH,
         keywords_path: str = DEFAULT_KEYWORDS_PATH,
-        event_bus: Optional[EventBus] = None,
-        db_manager: Optional[DatabaseConnectionManager] = None,
+        event_bus: EventBus | None = None,
+        db_manager: DatabaseConnectionManager | None = None,
     ) -> None:
         self._model_path = model_path
         self._tokenizer_path = tokenizer_path
@@ -157,7 +153,7 @@ class SentimentAnalyzer:
             if not Path(self._model_path).exists():
                 logger.warning(
                     f"ONNX model not found at {self._model_path}. "
-                    "Run: python scripts/convert_finbert_onnx.py"
+                    "Run: python scripts/convert_finbert_onnx.py",
                 )
                 return
 
@@ -169,12 +165,12 @@ class SentimentAnalyzer:
             providers.append("CPUExecutionProvider")
 
             self._session = ort.InferenceSession(
-                self._model_path, providers=providers
+                self._model_path, providers=providers,
             )
             self._model_loaded = True
             logger.info(
                 f"ONNX model loaded from {self._model_path} "
-                f"(providers: {self._session.get_providers()})"
+                f"(providers: {self._session.get_providers()})",
             )
         except Exception as e:
             logger.warning(f"Failed to load ONNX model: {e}")
@@ -197,8 +193,7 @@ class SentimentAnalyzer:
         news_title: str = "",
         news_source: str = "",
     ) -> SentimentResult:
-        """
-        Classify sentiment of a text using FinBERT.
+        """Classify sentiment of a text using FinBERT.
 
         On inference failure, defaults to NEUTRAL with confidence 0.0.
 
@@ -213,6 +208,7 @@ class SentimentAnalyzer:
             SentimentResult with classification and scores.
 
         Requirements: 7.3, 7.5, 7.7
+
         """
         try:
             raw_label, raw_confidence, raw_score = self._run_inference(text)
@@ -249,7 +245,7 @@ class SentimentAnalyzer:
             confidence=round(confidence, 4),
             raw_score=round(raw_score, 4),
             boosted_score=round(boosted_score, 4),
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
 
         logger.info(
@@ -272,8 +268,7 @@ class SentimentAnalyzer:
         news_title: str = "",
         news_source: str = "",
     ) -> SentimentResult:
-        """
-        Analyze sentiment, publish to Redis Stream, and store in SQLite.
+        """Analyze sentiment, publish to Redis Stream, and store in SQLite.
 
         Args:
             text: Text to analyze.
@@ -286,6 +281,7 @@ class SentimentAnalyzer:
             SentimentResult.
 
         Requirements: 7.6
+
         """
         result = self.analyze(text, article_id, ticker, news_title, news_source)
 
@@ -301,15 +297,15 @@ class SentimentAnalyzer:
     # Inference internals
     # ------------------------------------------------------------------
 
-    def _run_inference(self, text: str) -> Tuple[str, float, float]:
-        """
-        Run FinBERT inference via ONNX Runtime.
+    def _run_inference(self, text: str) -> tuple[str, float, float]:
+        """Run FinBERT inference via ONNX Runtime.
 
         Returns:
             (label, confidence, signed_score) where signed_score is in [-1, 1].
 
         Raises:
             RuntimeError: If model or tokenizer is not loaded.
+
         """
         if not self.is_model_loaded:
             raise RuntimeError("ONNX model or tokenizer not loaded")
@@ -355,8 +351,7 @@ class SentimentAnalyzer:
     # ------------------------------------------------------------------
 
     def _calculate_boost(self, text: str) -> float:
-        """
-        Calculate keyword boost for a text.
+        """Calculate keyword boost for a text.
 
         Scans text for positive and negative keywords and sums their
         boost values.
@@ -381,10 +376,9 @@ class SentimentAnalyzer:
     # ------------------------------------------------------------------
 
     def _neutral_fallback(
-        self, article_id: str = "", ticker: str = ""
+        self, article_id: str = "", ticker: str = "",
     ) -> SentimentResult:
-        """
-        Return NEUTRAL sentiment as fallback on inference failure.
+        """Return NEUTRAL sentiment as fallback on inference failure.
 
         Requirements: 7.7
         """
@@ -399,7 +393,7 @@ class SentimentAnalyzer:
             confidence=0.0,
             raw_score=0.0,
             boosted_score=0.0,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )
 
     # ------------------------------------------------------------------
@@ -418,7 +412,7 @@ class SentimentAnalyzer:
             "timestamp": result.timestamp.isoformat(),
         }
         msg_id = self._event_bus.publish(
-            SENTIMENT_STREAM_NAME, message, maxlen=SENTIMENT_STREAM_MAXLEN
+            SENTIMENT_STREAM_NAME, message, maxlen=SENTIMENT_STREAM_MAXLEN,
         )
         logger.debug(
             f"Published sentiment to {SENTIMENT_STREAM_NAME}: {msg_id}",
@@ -427,7 +421,7 @@ class SentimentAnalyzer:
         return msg_id
 
     def _store_in_sqlite(
-        self, result: SentimentResult, news_title: str, news_source: str
+        self, result: SentimentResult, news_title: str, news_source: str,
     ) -> None:
         """Persist sentiment result in sentiment_log table. Requirements: 7.6"""
         self._db_manager.execute_with_retry(

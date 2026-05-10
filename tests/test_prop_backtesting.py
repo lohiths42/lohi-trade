@@ -1,5 +1,4 @@
-"""
-Property-based tests for the BacktestingEngine.
+"""Property-based tests for the BacktestingEngine.
 
 Property 62: Transaction Cost Application
 Property 63: Slippage Application
@@ -8,18 +7,16 @@ Property 64: Backtest Metrics Calculation
 
 import math
 
-import numpy as np
 import pandas as pd
 import pytest
-from hypothesis import given, settings, assume
+from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
 from src.backtesting.backtesting_engine import (
+    SLIPPAGE_PCT,
     BacktestingEngine,
     TradeRecord,
-    SLIPPAGE_PCT,
 )
-
 
 # ---------------------------------------------------------------------------
 # Shared fixtures / helpers
@@ -171,7 +168,7 @@ class TestProperty64Metrics:
             st.floats(min_value=10.0, max_value=1_000_000.0, allow_nan=False, allow_infinity=False),
             min_size=3,
             max_size=300,
-        )
+        ),
     )
     @settings(max_examples=25, deadline=None)
     def test_max_drawdown_non_negative(self, values):
@@ -186,7 +183,7 @@ class TestProperty64Metrics:
             st.floats(min_value=10.0, max_value=1_000_000.0, allow_nan=False, allow_infinity=False),
             min_size=3,
             max_size=300,
-        )
+        ),
     )
     @settings(max_examples=25, deadline=None)
     def test_max_drawdown_bounded(self, values):
@@ -214,7 +211,7 @@ class TestProperty64Metrics:
             st.floats(min_value=10.0, max_value=1_000_000.0, allow_nan=False, allow_infinity=False),
             min_size=3,
             max_size=300,
-        )
+        ),
     )
     @settings(max_examples=25, deadline=None)
     def test_sharpe_finite(self, values):
@@ -262,7 +259,7 @@ class TestProperty64Metrics:
             st.floats(min_value=10.0, max_value=1_000_000.0, allow_nan=False, allow_infinity=False),
             min_size=3,
             max_size=300,
-        )
+        ),
     )
     @settings(max_examples=25, deadline=None)
     def test_monotonic_equity_zero_drawdown(self, values):

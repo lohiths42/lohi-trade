@@ -45,10 +45,10 @@ Design: §17.3
 from __future__ import annotations
 
 import asyncio
-import importlib
 import sys
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
@@ -68,26 +68,23 @@ from app.middleware.errors import register_research_exception_handlers
 from app.routers import research as research_router
 from app.routers.auth_v2 import get_current_user_id
 from app.services.research_service import ResearchService
+
 from src.research.agents.orchestrator import (
     AgentContext,
     AgentResult,
     ResearchOrchestrator,
     SubAgent,
 )
-from src.research.constants import RESEARCH_PARTIALS_STREAM
 from src.research.judge.judge import JudgeReport
-from src.research.providers.base import ChunkHit, RetrievalFilter
-
+from src.research.providers.base import RetrievalFilter
 from tests.research.fakes import (
     FakeEmbeddingsProvider,
     FakeLLMProvider,
     FakeVectorStore,
 )
 from tests.research.fixtures.filings import (
-    FILINGS,
     _build_chunk_records_async,
 )
-
 
 # --------------------------------------------------------------------------- #
 # Fakes                                                                       #
@@ -197,7 +194,7 @@ def _healthy_judge_fn(run_id: UUID):
         # Every brief section gets a perfect score so the
         # re-synthesis loop takes the happy path (design §11.2).
         sections = brief.keys() if isinstance(brief, dict) else ()
-        scores = {name: 1.0 for name in sections} or {"summary": 1.0}
+        scores = dict.fromkeys(sections, 1.0) or {"summary": 1.0}
         return JudgeReport(
             run_id=run_id,
             groundedness_score=scores,
@@ -313,7 +310,7 @@ def llm() -> FakeLLMProvider:
 
 @pytest_asyncio.fixture
 async def vector_store(
-    user_id: UUID, embeddings: FakeEmbeddingsProvider
+    user_id: UUID, embeddings: FakeEmbeddingsProvider,
 ) -> FakeVectorStore:
     """Fresh :class:`FakeVectorStore` seeded from the filings fixture corpus.
 

@@ -1,11 +1,10 @@
-"""
-Unit tests for NewsDeduplicator.
+"""Unit tests for NewsDeduplicator.
 
 Requirements: 5.4, 5.5
 """
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import MagicMock
 
 import pytest
@@ -26,8 +25,8 @@ def _make_article(title: str = "Test Article", content: str = "Some content") ->
         title=title,
         content=content,
         url="https://example.com/article",
-        published_at=datetime.now(timezone.utc),
-        fetched_at=datetime.now(timezone.utc),
+        published_at=datetime.now(UTC),
+        fetched_at=datetime.now(UTC),
         content_hash=compute_content_hash(title, content),
     )
 
@@ -70,7 +69,7 @@ class TestMarkSeen:
 
         expected_key = f"{HASH_KEY_PREFIX}{article.content_hash}"
         mock_redis.set.assert_called_once_with(
-            expected_key, article.article_id, ex=HASH_TTL_SECONDS
+            expected_key, article.article_id, ex=HASH_TTL_SECONDS,
         )
 
     def test_ttl_is_86400_seconds(self):

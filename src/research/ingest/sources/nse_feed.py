@@ -44,8 +44,9 @@ Integration caveats
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timezone
-from typing import Any, Final, Iterable
+from collections.abc import Iterable
+from datetime import UTC, datetime
+from typing import Any, Final
 
 import httpx
 
@@ -106,6 +107,7 @@ class NseFeedPoller:
     referer:
         Override the ``Referer`` header. Defaults to
         ``https://www.nseindia.com/``.
+
     """
 
     def __init__(
@@ -138,7 +140,7 @@ class NseFeedPoller:
                 await self.poll_once()
             except asyncio.CancelledError:
                 raise
-            except Exception as exc:  # noqa: BLE001 — top of loop
+            except Exception as exc:
                 self._logger.error(
                     "NSE poll iteration failed",
                     extra={"error_class": type(exc).__name__, "error": str(exc)},
@@ -244,7 +246,7 @@ class NseFeedPoller:
             ("attchmntFile", "attachmentFile", "attachment", "fileLink"),
         )
         published_at_raw = _first_nonempty(
-            row, ("an_dt", "exchdisstime", "sort_date", "published_at")
+            row, ("an_dt", "exchdisstime", "sort_date", "published_at"),
         )
 
         if not symbol or not document_url or not published_at_raw:
@@ -288,8 +290,8 @@ def _to_iso8601_utc(value: str) -> str:
         except ValueError:
             continue
         if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=timezone.utc)
-        return dt.astimezone(timezone.utc).isoformat()
+            dt = dt.replace(tzinfo=UTC)
+        return dt.astimezone(UTC).isoformat()
     return text
 
 
@@ -311,11 +313,12 @@ async def build(
         Async Redis client.
     robots:
         Shared :class:`RobotsChecker`.
+
     """
     if robots is None:
         raise ValueError(
             "nse_feed.build requires a RobotsChecker; pass a shared instance "
-            "created once per research-indexer worker (design §3.2)."
+            "created once per research-indexer worker (design §3.2).",
         )
     return NseFeedPoller(
         watchlist_symbols=list(cfg.get("watchlist_symbols", []) or []),
@@ -325,7 +328,7 @@ async def build(
         user_agent=str(cfg.get("user_agent", DEFAULT_USER_AGENT)),
         endpoint=str(cfg.get("endpoint", _DEFAULT_ENDPOINT)),
         browser_user_agent=str(
-            cfg.get("browser_user_agent", _BROWSER_USER_AGENT)
+            cfg.get("browser_user_agent", _BROWSER_USER_AGENT),
         ),
         referer=str(cfg.get("referer", _DEFAULT_REFERER)),
     )

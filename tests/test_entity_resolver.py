@@ -1,5 +1,4 @@
-"""
-Unit tests for EntityResolver.
+"""Unit tests for EntityResolver.
 
 Validates entity extraction via spaCy NER, ticker mapping with fuzzy
 matching, unmapped entity handling, and publishing to stream:entities.
@@ -8,16 +7,13 @@ Requirements: 6.1, 6.2, 6.3, 6.4, 6.5
 """
 
 import json
-from datetime import datetime, timezone
-from unittest.mock import MagicMock, patch
-
-import pytest
+from datetime import UTC, datetime
+from unittest.mock import MagicMock
 
 from src.commander.entity_resolver import (
     ENTITIES_STREAM_MAXLEN,
     ENTITIES_STREAM_NAME,
     EntityResolver,
-    ResolvedEntity,
 )
 from src.commander.rss_poller import NewsArticle
 from src.ingestion.ticker_mapper import TickerMapper
@@ -30,8 +26,8 @@ def _make_article(**overrides) -> NewsArticle:
         title="Reliance Industries reports strong Q3 results",
         content="Reliance Industries Limited posted record profits this quarter.",
         url="https://example.com/article/1",
-        published_at=datetime(2024, 1, 15, 10, 0, 0, tzinfo=timezone.utc),
-        fetched_at=datetime(2024, 1, 15, 10, 0, 5, tzinfo=timezone.utc),
+        published_at=datetime(2024, 1, 15, 10, 0, 0, tzinfo=UTC),
+        fetched_at=datetime(2024, 1, 15, 10, 0, 5, tzinfo=UTC),
         content_hash="abc123",
     )
     defaults.update(overrides)

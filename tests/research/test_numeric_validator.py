@@ -26,7 +26,6 @@ from src.research.validators.numeric_validator import (
 )
 from src.research.validators.types import UnsupportedClaim
 
-
 # --------------------------------------------------------------------------- #
 # Helpers                                                                     #
 # --------------------------------------------------------------------------- #
@@ -58,26 +57,26 @@ class TestExtractNumericTokens:
     def test_rs_dot_prefix(self) -> None:
         tokens = extract_numeric_tokens("Profit of Rs. 500 was reported.")
         assert len(tokens) == 1
-        assert tokens[0].value == Decimal("500")
+        assert tokens[0].value == Decimal(500)
         assert tokens[0].unit == "INR"
 
     def test_crore_suffix_without_currency(self) -> None:
         tokens = extract_numeric_tokens("EBITDA of 1.2 Cr this quarter.")
         assert len(tokens) == 1
-        assert tokens[0].value == Decimal("12000000")
+        assert tokens[0].value == Decimal(12000000)
         assert tokens[0].unit == "count_or_inr"
 
     def test_lakh_suffix_without_currency(self) -> None:
         tokens = extract_numeric_tokens("Order book is 2.5 lakh units.")
         assert len(tokens) == 1
-        assert tokens[0].value == Decimal("250000")
+        assert tokens[0].value == Decimal(250000)
         assert tokens[0].unit == "count_or_inr"
 
     def test_rupee_with_crore_suffix(self) -> None:
         tokens = extract_numeric_tokens("Revenue was ₹1,234.56 Cr.")
         assert len(tokens) == 1
         # 1,234.56 Cr → 12,345,600,000
-        assert tokens[0].value == Decimal("12345600000")
+        assert tokens[0].value == Decimal(12345600000)
         assert tokens[0].unit == "INR"
 
     def test_percent(self) -> None:
@@ -89,37 +88,37 @@ class TestExtractNumericTokens:
     def test_percent_word(self) -> None:
         tokens = extract_numeric_tokens("A 10 percent dividend was declared.")
         assert len(tokens) == 1
-        assert tokens[0].value == Decimal("10")
+        assert tokens[0].value == Decimal(10)
         assert tokens[0].unit == "percent"
 
     def test_fiscal_year_two_digit(self) -> None:
         tokens = extract_numeric_tokens("Results for FY24 were strong.")
         assert len(tokens) == 1
-        assert tokens[0].value == Decimal("2024")
+        assert tokens[0].value == Decimal(2024)
         assert tokens[0].unit == "fiscal_year"
 
     def test_fiscal_year_four_digit(self) -> None:
         tokens = extract_numeric_tokens("Outlook for FY2025 remains positive.")
         assert len(tokens) == 1
-        assert tokens[0].value == Decimal("2025")
+        assert tokens[0].value == Decimal(2025)
         assert tokens[0].unit == "fiscal_year"
 
     def test_fiscal_quarter(self) -> None:
         tokens = extract_numeric_tokens("Q1 FY25 revenue beat estimates.")
         assert len(tokens) == 1
-        assert tokens[0].value == Decimal("20251")  # fy*10 + quarter
+        assert tokens[0].value == Decimal(20251)  # fy*10 + quarter
         assert tokens[0].unit == "fiscal_quarter"
 
     def test_fiscal_quarter_no_space(self) -> None:
         tokens = extract_numeric_tokens("Q3FY26 guidance was maintained.")
         assert len(tokens) == 1
-        assert tokens[0].value == Decimal("20263")
+        assert tokens[0].value == Decimal(20263)
 
     def test_fiscal_range(self) -> None:
         tokens = extract_numeric_tokens("For 2023-24 the company reported growth.")
         assert len(tokens) == 1
         # 2023-24 → ending year 2024
-        assert tokens[0].value == Decimal("2024")
+        assert tokens[0].value == Decimal(2024)
         assert tokens[0].unit == "fiscal_year"
 
     def test_bare_number(self) -> None:
@@ -131,19 +130,19 @@ class TestExtractNumericTokens:
     def test_indian_grouping(self) -> None:
         tokens = extract_numeric_tokens("Revenue of ₹12,34,567 was recorded.")
         assert len(tokens) == 1
-        assert tokens[0].value == Decimal("1234567")
+        assert tokens[0].value == Decimal(1234567)
 
     def test_fy_pivot_recent(self) -> None:
         """Two-digit FY below pivot resolves to 21st century."""
         tokens = extract_numeric_tokens("The FY49 outlook is speculative.")
         assert len(tokens) == 1
-        assert tokens[0].value == Decimal("2049")
+        assert tokens[0].value == Decimal(2049)
 
     def test_fy_pivot_legacy(self) -> None:
         """Two-digit FY at/above pivot resolves to 20th century."""
         tokens = extract_numeric_tokens("In FY99 the company went public.")
         assert len(tokens) == 1
-        assert tokens[0].value == Decimal("1999")
+        assert tokens[0].value == Decimal(1999)
 
     def test_multiple_tokens_preserved_in_order(self) -> None:
         text = "Revenue ₹1,234 Cr in FY24 grew 12.5% over Q1 FY23."
@@ -278,10 +277,10 @@ class TestNumericValidator:
         chunks = [_FakeChunk(text="Revenue ₹1,050.")]
         # 5% drift — default 1% rejects, 10% accepts.
         assert NumericValidator(epsilon=0.01).validate(
-            brief=brief, cited_chunks=chunks
+            brief=brief, cited_chunks=chunks,
         )
         assert NumericValidator(epsilon=0.10).validate(
-            brief=brief, cited_chunks=chunks
+            brief=brief, cited_chunks=chunks,
         ) == []
 
     def test_epsilon_negative_raises(self) -> None:

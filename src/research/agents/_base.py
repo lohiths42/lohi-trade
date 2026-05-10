@@ -67,8 +67,9 @@ Design references
 from __future__ import annotations
 
 import time
+from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import Any, Final, Iterable
+from typing import Any, Final
 
 from src.research.agents.orchestrator import AgentContext, AgentResult
 from src.research.guardrails.refusal_policy import REFUSAL_POLICY_BLOCK
@@ -81,7 +82,7 @@ from src.research.providers.base import (
     RetrievalFilter,
 )
 
-__all__ = ["BaseRetrievalAgent", "AgentConfig"]
+__all__ = ["AgentConfig", "BaseRetrievalAgent"]
 
 
 # Canonical default for the ``{{REFUSAL_NO_CONTEXT}}`` placeholder in
@@ -166,6 +167,7 @@ class BaseRetrievalAgent:
     config:
         Optional :class:`AgentConfig` override. Defaults to the
         shared values documented on :class:`AgentConfig`.
+
     """
 
     # Class-level identity (overridden by every concrete subclass).
@@ -272,7 +274,7 @@ class BaseRetrievalAgent:
             # AttributeError on ``llm.complete``.
             raise ValueError(
                 f"{self.name} agent requires an LLMProvider; "
-                "construct with ``llm=...``."
+                "construct with ``llm=...``.",
             )
         completion = await self.llm.complete(messages, self._llm_params())
 

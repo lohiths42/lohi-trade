@@ -62,15 +62,12 @@ from __future__ import annotations
 import asyncio
 import os
 import time
+from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import (
     Any,
-    Awaitable,
-    Callable,
     Final,
-    Mapping,
     Protocol,
-    Sequence,
     runtime_checkable,
 )
 from uuid import UUID
@@ -117,12 +114,12 @@ except Exception:  # noqa: BLE001 - best-effort logger wiring
 
 __all__ = [
     "AgentResult",
-    "PlanOutput",
-    "SubAgent",
-    "Synthesizer",
     "JudgeFn",
     "PartialsPublisher",
+    "PlanOutput",
     "ResearchOrchestrator",
+    "SubAgent",
+    "Synthesizer",
 ]
 
 
@@ -214,6 +211,7 @@ class AgentResult:
         Free-text reason when ``kind != "ok"`` (e.g. ``"no_data: no
         BSE filings for RELIANCE"``). Surfaced in the trace
         (Req 13.3) and in the UI's ``NoDataState`` component.
+
     """
 
     agent_name: str
@@ -287,7 +285,7 @@ class SubAgent(Protocol):
 
     name: str
 
-    async def invoke(self, context: "AgentContext") -> AgentResult:
+    async def invoke(self, context: AgentContext) -> AgentResult:
         """Run the Sub_Agent and return its result."""
         ...
 
@@ -378,7 +376,7 @@ async def _default_plan(
     if chat_llm is None:
         return PlanOutput(
             agents_requested=list(available_agents),
-            retrieval_plan={name: user_prompt for name in available_agents},
+            retrieval_plan=dict.fromkeys(available_agents, user_prompt),
             plan_md="",
         )
 
@@ -420,7 +418,7 @@ async def _default_plan(
 
     return PlanOutput(
         agents_requested=list(available_agents),
-        retrieval_plan={name: user_prompt for name in available_agents},
+        retrieval_plan=dict.fromkeys(available_agents, user_prompt),
         plan_md=plan_md,
     )
 
@@ -520,6 +518,7 @@ class ResearchOrchestrator:
         this value is not ``None``, :meth:`effective_full_brief_budget_ms`
         returns it instead of ``full_brief_ms_budget`` to
         accommodate Ollama + local embeddings latency.
+
     """
 
     def __init__(
@@ -542,11 +541,11 @@ class ResearchOrchestrator:
     ) -> None:
         if concurrency_cap < 1:
             raise ValueError(
-                f"concurrency_cap must be ≥ 1; got {concurrency_cap}"
+                f"concurrency_cap must be ≥ 1; got {concurrency_cap}",
             )
         if max_retries < 0:
             raise ValueError(
-                f"max_retries must be non-negative; got {max_retries}"
+                f"max_retries must be non-negative; got {max_retries}",
             )
 
         self._sub_agents: tuple[SubAgent, ...] = tuple(sub_agents)
@@ -585,7 +584,7 @@ class ResearchOrchestrator:
         the caller did not wire a budget).
         """
         offline = os.environ.get(
-            "LOHI_RESEARCH_OFFLINE", ""
+            "LOHI_RESEARCH_OFFLINE", "",
         ).strip().lower() in ("true", "1", "yes")
         if offline and self._offline_full_brief_ms_budget is not None:
             return self._offline_full_brief_ms_budget
@@ -655,6 +654,7 @@ class ResearchOrchestrator:
             model lands in Task 13.8; until then this dict carries
             the same field names so Task 13.8 can swap the return
             type without touching callers.
+
         """
         wall_start = time.perf_counter()
 
@@ -752,7 +752,7 @@ class ResearchOrchestrator:
             quality=outcome.quality,
             retry_count=int(getattr(outcome.judge_report, "retry_count", 0)),
             safe_to_display=bool(
-                getattr(outcome.judge_report, "safe_to_display", False)
+                getattr(outcome.judge_report, "safe_to_display", False),
             ),
         )
 

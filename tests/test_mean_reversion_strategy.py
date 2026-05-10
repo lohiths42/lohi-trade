@@ -1,5 +1,4 @@
-"""
-Tests for the MeanReversionStrategy.
+"""Tests for the MeanReversionStrategy.
 
 Validates:
 - Signal generation when all 4 entry conditions are met
@@ -13,15 +12,13 @@ Requirements: 4.2
 """
 
 from datetime import datetime
-from typing import Optional
 
 import pandas as pd
 import pytest
 
 from src.soldier.indicator_engine import IndicatorSet
-from src.soldier.strategy_engine import MeanReversionStrategy, Signal
+from src.soldier.strategy_engine import MeanReversionStrategy
 from src.utils.config import MeanReversionStrategy as MeanReversionConfig
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -78,7 +75,7 @@ def _make_candles(close: float = 93.0, volume: float = 80000.0) -> pd.DataFrame:
             "close": [close],
             "volume": [volume],
             "timestamp": [datetime(2024, 1, 15, 10, 0, 0)],
-        }
+        },
     )
 
 

@@ -83,9 +83,10 @@ here would indicate a real regression in the atom/renderer pair.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Callable, Literal
+from typing import Literal
 
 from hypothesis import HealthCheck, assume, given, settings
 from hypothesis import strategies as st
@@ -96,7 +97,6 @@ from src.research.validators.numeric_validator import (
     validate_numeric_fidelity,
 )
 from src.research.validators.types import UnsupportedClaim
-
 
 # --------------------------------------------------------------------------- #
 # Atom model                                                                  #
@@ -161,7 +161,7 @@ def _render_inr_cr(value: Decimal) -> str:
     ``₹1234.5 Cr`` equivalently, so we skip the grouping commas to
     keep the output simple and shrinkable.
     """
-    cr_value = value / Decimal("10000000")
+    cr_value = value / Decimal(10000000)
     text = _format_decimal(cr_value, max_places=4)
     return f"\u20B9{text} Cr"
 
@@ -181,7 +181,7 @@ def _render_raw_int(value: Decimal) -> str:
 
 def _render_inr_lakh(value: Decimal) -> str:
     """``₹2.5 lakh`` — rupee prefix + lakh suffix."""
-    lakh_value = value / Decimal("100000")
+    lakh_value = value / Decimal(100000)
     text = _format_decimal(lakh_value, max_places=4)
     return f"\u20B9{text} lakh"
 
@@ -213,13 +213,13 @@ def _render_percent_word(value: Decimal) -> str:
 
 def _render_count_cr(value: Decimal) -> str:
     """``1.2 Cr`` — crore suffix, no currency."""
-    cr_value = value / Decimal("10000000")
+    cr_value = value / Decimal(10000000)
     return f"{_format_decimal(cr_value, max_places=4)} Cr"
 
 
 def _render_count_lakh(value: Decimal) -> str:
     """``2.5 lakh`` — lakh suffix, no currency."""
-    lakh_value = value / Decimal("100000")
+    lakh_value = value / Decimal(100000)
     return f"{_format_decimal(lakh_value, max_places=4)} lakh"
 
 
@@ -306,17 +306,17 @@ def _atom_strategy(kind: _AtomKind) -> st.SearchStrategy[_NumericAtom]:
         # Step of 1e6 (10 lakh) so ``value / 1e7`` is always a clean
         # 4-decimal quantity that renders without rounding loss.
         return st.integers(min_value=10, max_value=99_990).map(
-            lambda n: _NumericAtom(kind="inr_cr", value=Decimal(n) * Decimal(1_000_000))
+            lambda n: _NumericAtom(kind="inr_cr", value=Decimal(n) * Decimal(1_000_000)),
         )
     if kind == "inr_lakh":
         # 1 lakh – 999 lakh expressed as expanded rupees (1e5 – 9.99e7).
         return st.integers(min_value=10, max_value=99_900).map(
-            lambda n: _NumericAtom(kind="inr_lakh", value=Decimal(n) * Decimal(10_000))
+            lambda n: _NumericAtom(kind="inr_lakh", value=Decimal(n) * Decimal(10_000)),
         )
     if kind == "inr_plain":
         # Small rupee amounts with up to two decimal places.
         return st.decimals(
-            min_value=Decimal("1"),
+            min_value=Decimal(1),
             max_value=Decimal("99999.99"),
             places=2,
             allow_nan=False,
@@ -324,7 +324,7 @@ def _atom_strategy(kind: _AtomKind) -> st.SearchStrategy[_NumericAtom]:
         ).map(lambda v: _NumericAtom(kind="inr_plain", value=v))
     if kind == "usd_plain":
         return st.decimals(
-            min_value=Decimal("1"),
+            min_value=Decimal(1),
             max_value=Decimal("99999.99"),
             places=2,
             allow_nan=False,
@@ -342,18 +342,18 @@ def _atom_strategy(kind: _AtomKind) -> st.SearchStrategy[_NumericAtom]:
         ).map(lambda v: _NumericAtom(kind="percent", value=v))
     if kind == "count_cr":
         return st.integers(min_value=10, max_value=99_990).map(
-            lambda n: _NumericAtom(kind="count_cr", value=Decimal(n) * Decimal(1_000_000))
+            lambda n: _NumericAtom(kind="count_cr", value=Decimal(n) * Decimal(1_000_000)),
         )
     if kind == "count_lakh":
         return st.integers(min_value=10, max_value=99_900).map(
-            lambda n: _NumericAtom(kind="count_lakh", value=Decimal(n) * Decimal(10_000))
+            lambda n: _NumericAtom(kind="count_lakh", value=Decimal(n) * Decimal(10_000)),
         )
     if kind == "fiscal_year":
         # 2000-2049 so both 2-digit and 4-digit renderings parse to
         # the same year under the validator's FY-pivot rule
         # (``_FY_PIVOT=50`` → ``FY24`` == ``2024``).
         return st.integers(min_value=2000, max_value=2049).map(
-            lambda y: _NumericAtom(kind="fiscal_year", value=Decimal(y))
+            lambda y: _NumericAtom(kind="fiscal_year", value=Decimal(y)),
         )
     # fiscal_quarter
     # Synthetic scalar ``fy*10 + q`` per the validator's convention.
@@ -364,7 +364,7 @@ def _atom_strategy(kind: _AtomKind) -> st.SearchStrategy[_NumericAtom]:
         lambda pair: _NumericAtom(
             kind="fiscal_quarter",
             value=Decimal(pair[0] * 10 + pair[1]),
-        )
+        ),
     )
 
 
@@ -562,8 +562,8 @@ def _matching_brief_and_chunks(
                 "financial_highlights",
                 "management_commentary",
                 "risks",
-            )
-        )
+            ),
+        ),
     )
     brief = {section: brief_text}
 
@@ -572,7 +572,7 @@ def _matching_brief_and_chunks(
     chunks: list[_FakeChunk] = []
     for atom in atoms:
         chunk_text = draw(
-            _compose_text_from_atoms([atom], which_rendering="secondary")
+            _compose_text_from_atoms([atom], which_rendering="secondary"),
         )
         chunks.append(_FakeChunk(text=chunk_text))
 
@@ -686,8 +686,8 @@ def _mismatched_brief_and_chunks(
                 "financial_highlights",
                 "management_commentary",
                 "risks",
-            )
-        )
+            ),
+        ),
     )
     brief = {section: brief_text}
 
@@ -697,9 +697,9 @@ def _mismatched_brief_and_chunks(
         chunks.append(
             _FakeChunk(
                 text=draw(
-                    _compose_text_from_atoms([atom], which_rendering="secondary")
-                )
-            )
+                    _compose_text_from_atoms([atom], which_rendering="secondary"),
+                ),
+            ),
         )
 
     return brief, chunks, rogue
@@ -784,12 +784,12 @@ def test_mismatched_atom_is_always_flagged(
 # §3.8): fiscal shapes and ``percent`` require exact unit equality;
 # everything else is pooled.
 _MAGNITUDE_COMPARABLE_UNITS: frozenset[str] = frozenset(
-    {"INR", "USD", "count_or_inr", "number"}
+    {"INR", "USD", "count_or_inr", "number"},
 )
 
 
 def _rogue_collides_with_any(
-    rogue: _NumericAtom, good_atoms: list[_NumericAtom]
+    rogue: _NumericAtom, good_atoms: list[_NumericAtom],
 ) -> bool:
     """True iff ``rogue`` is matchable against any entry in ``good_atoms``.
 
@@ -899,7 +899,7 @@ def test_validator_instance_matches_module_helper(
     """
     brief, chunks = case
     instance_result = NumericValidator().validate(
-        brief=brief, cited_chunks=chunks
+        brief=brief, cited_chunks=chunks,
     )
     helper_result = validate_numeric_fidelity(brief=brief, cited_chunks=chunks)
     assert instance_result == helper_result == []

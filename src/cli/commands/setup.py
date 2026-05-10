@@ -15,7 +15,6 @@ from src.cli import console
 from src.cli.system import (
     check_all_dependencies,
     check_required_ports,
-    detect_os,
     find_project_root,
 )
 
@@ -111,7 +110,7 @@ def run_setup(args: Namespace) -> int:
         # No separate venv — use the current Python environment
         python_path = sys.executable
         pip_path = python_path.replace("python", "pip")
-        console.success(f"Using current environment")
+        console.success("Using current environment")
 
     _run([python_path, "-m", "pip", "install", "--quiet", "--upgrade", "pip"], "Upgrading pip")
     _run([python_path, "-m", "pip", "install", "--quiet", "-e", "."], "Installing project dependencies")
@@ -347,8 +346,8 @@ def _wait_healthy(service: str, timeout: int = 60) -> bool:
 
 def _wait_for_url(url: str, timeout: int = 30) -> bool:
     """Wait for a URL to respond with 200."""
-    import urllib.request
     import urllib.error
+    import urllib.request
 
     elapsed = 0
     interval = 2

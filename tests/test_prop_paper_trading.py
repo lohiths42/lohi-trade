@@ -1,5 +1,4 @@
-"""
-Property-based tests for the Paper Trading Engine.
+"""Property-based tests for the Paper Trading Engine.
 
 Uses hypothesis to verify paper trading properties across randomly
 generated orders and prices.
@@ -11,9 +10,9 @@ Properties tested:
 - Property 68: Paper Trade Logging        (Validates: Requirements 16.6)
 """
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
-from hypothesis import given, settings, assume
+from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
 from src.execution.paper_trading import PaperTradingEngine
@@ -25,7 +24,6 @@ from src.ingestion.broker_interface import (
     ProductType,
 )
 from src.utils.config import PaperTradingConfig
-
 
 # ---------------------------------------------------------------------------
 # Strategies
@@ -74,7 +72,8 @@ def _make_config(
 class TestProperty65PaperModeAPIBypass:
     """For any order in paper trading mode, no actual broker API call
     should be made.  ``api_calls_made`` must always be empty after
-    ``simulate_order_fill``."""
+    ``simulate_order_fill``.
+    """
 
     @given(
         symbol=symbols,
@@ -110,7 +109,8 @@ class TestProperty65PaperModeAPIBypass:
 
 class TestProperty66PaperFillSimulation:
     """For any paper order, the fill price should be based on the next
-    available tick price, within slippage tolerance."""
+    available tick price, within slippage tolerance.
+    """
 
     @given(
         tick_price=prices,
@@ -184,7 +184,8 @@ class TestProperty66PaperFillSimulation:
 class TestProperty67PaperFillDelay:
     """For any paper order, the fill delay should be between the
     configured min and max (default 100-500 ms).  We mock ``time.sleep``
-    and verify the argument is in range."""
+    and verify the argument is in range.
+    """
 
     @given(
         tick_price=prices,
@@ -225,7 +226,8 @@ class TestProperty67PaperFillDelay:
 
 class TestProperty68PaperTradeLogging:
     """For any trade in paper trading mode, the notification should
-    include the ``PAPER`` prefix."""
+    include the ``PAPER`` prefix.
+    """
 
     @given(message=st.text(min_size=0, max_size=500))
     @settings(max_examples=25)

@@ -36,7 +36,6 @@ import pytest
 from src.research.providers import registry
 from src.research.providers.errors import UnknownProviderError
 
-
 # --------------------------------------------------------------------------- #
 # Fixtures                                                                    #
 # --------------------------------------------------------------------------- #
@@ -57,7 +56,6 @@ def _reset_auto_cache(monkeypatch):
     of the fixture lifecycle see ``None``.
     """
     monkeypatch.setattr(registry, "_AUTO_RESOLVED_BACKEND", None)
-    yield
 
 
 @pytest.fixture(autouse=True)
@@ -100,10 +98,10 @@ def test_auto_resolves_pgvector_when_extension_present(monkeypatch):
     """
     monkeypatch.setenv("DATABASE_URL", "postgresql://u:p@localhost/db")
     monkeypatch.setattr(
-        registry, "probe_pgvector_sync", lambda _dsn: True
+        registry, "probe_pgvector_sync", lambda _dsn: True,
     )
     registry.register_vector_store(
-        "pgvector", lambda cfg: "PGVECTOR_INSTANCE"
+        "pgvector", lambda cfg: "PGVECTOR_INSTANCE",
     )
 
     result = registry.get_vector_store({"backend": "auto"})
@@ -122,10 +120,10 @@ def test_auto_resolves_chroma_when_extension_missing(monkeypatch):
     """
     monkeypatch.setenv("DATABASE_URL", "postgresql://u:p@localhost/db")
     monkeypatch.setattr(
-        registry, "probe_pgvector_sync", lambda _dsn: False
+        registry, "probe_pgvector_sync", lambda _dsn: False,
     )
     registry.register_vector_store(
-        "chroma", lambda cfg: "CHROMA_INSTANCE"
+        "chroma", lambda cfg: "CHROMA_INSTANCE",
     )
 
     result = registry.get_vector_store({"backend": "auto"})
@@ -148,14 +146,14 @@ def test_auto_resolves_chroma_when_database_url_missing(monkeypatch):
     def _probe_must_not_run(_dsn):
         raise AssertionError(
             "probe_pgvector_sync should not be called when "
-            "DATABASE_URL is unset"
+            "DATABASE_URL is unset",
         )
 
     monkeypatch.setattr(
-        registry, "probe_pgvector_sync", _probe_must_not_run
+        registry, "probe_pgvector_sync", _probe_must_not_run,
     )
     registry.register_vector_store(
-        "chroma", lambda cfg: "CHROMA_INSTANCE"
+        "chroma", lambda cfg: "CHROMA_INSTANCE",
     )
 
     result = registry.get_vector_store({"backend": "auto"})
@@ -178,14 +176,14 @@ def test_explicit_chroma_bypasses_probe_even_when_pgvector_available(monkeypatch
     def _probe_must_not_run(_dsn):
         raise AssertionError(
             "probe_pgvector_sync should not be called for an explicit "
-            "backend override"
+            "backend override",
         )
 
     monkeypatch.setattr(
-        registry, "probe_pgvector_sync", _probe_must_not_run
+        registry, "probe_pgvector_sync", _probe_must_not_run,
     )
     registry.register_vector_store(
-        "chroma", lambda cfg: "CHROMA_INSTANCE"
+        "chroma", lambda cfg: "CHROMA_INSTANCE",
     )
 
     result = registry.get_vector_store({"backend": "chroma"})
@@ -203,14 +201,14 @@ def test_explicit_qdrant_bypasses_probe(monkeypatch):
     def _probe_must_not_run(_dsn):
         raise AssertionError(
             "probe_pgvector_sync should not be called for an explicit "
-            "backend override"
+            "backend override",
         )
 
     monkeypatch.setattr(
-        registry, "probe_pgvector_sync", _probe_must_not_run
+        registry, "probe_pgvector_sync", _probe_must_not_run,
     )
     registry.register_vector_store(
-        "qdrant", lambda cfg: "QDRANT_INSTANCE"
+        "qdrant", lambda cfg: "QDRANT_INSTANCE",
     )
 
     result = registry.get_vector_store({"backend": "qdrant"})
@@ -230,11 +228,11 @@ def test_unknown_backend_raises_structured_error(monkeypatch):
     def _probe_must_not_run(_dsn):
         raise AssertionError(
             "probe_pgvector_sync should not be called for an explicit "
-            "backend override"
+            "backend override",
         )
 
     monkeypatch.setattr(
-        registry, "probe_pgvector_sync", _probe_must_not_run
+        registry, "probe_pgvector_sync", _probe_must_not_run,
     )
 
     with pytest.raises(UnknownProviderError) as exc_info:

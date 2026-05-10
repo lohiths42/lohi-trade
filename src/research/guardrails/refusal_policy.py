@@ -68,6 +68,7 @@ class RefusalResult(BaseModel):
         :data:`REFUSAL_POLICY_BLOCK` so the dashboard always shows the
         same canonical wording when a specific message is not
         supplied.
+
     """
 
     reason: str = Field(..., description="Machine-readable refusal reason (snake_case).")
@@ -105,6 +106,7 @@ def refuse(
         A validated Pydantic model ready for logging, for inclusion in
         the ``ResearchBrief.provenance`` guardrail summary, and for
         direct serialisation to the gateway response payload.
+
     """
     return RefusalResult(
         reason=reason,

@@ -63,7 +63,8 @@ from __future__ import annotations
 import asyncio
 import json
 import os
-from typing import TYPE_CHECKING, Any, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import TYPE_CHECKING, Any
 
 from src.research.constants import RESEARCH_JUDGE_REPORT_CHANNEL
 from src.research.judge.judge import JudgeReport
@@ -87,11 +88,11 @@ if TYPE_CHECKING:  # pragma: no cover - typing only
 
 __all__ = [
     "JudgeReportPublisher",
-    "should_run_async",
-    "schedule_background_judge",
+    "budget_for_mode",
     "publish_judge_report",
     "redis_publisher_for",
-    "budget_for_mode",
+    "schedule_background_judge",
+    "should_run_async",
 ]
 
 
@@ -161,16 +162,17 @@ def should_run_async(
         are always a caller bug — returning a silent ``True`` would
         mask the misconfiguration, which is the opposite of what
         Req 7.6 (fail fast on bad config) intends.
+
     """
     if elapsed_ms < 0:
         raise ValueError(f"elapsed_ms must be non-negative; got {elapsed_ms}")
     if expected_judge_ms < 0:
         raise ValueError(
-            f"expected_judge_ms must be non-negative; got {expected_judge_ms}"
+            f"expected_judge_ms must be non-negative; got {expected_judge_ms}",
         )
     if full_brief_ms_budget < 0:
         raise ValueError(
-            f"full_brief_ms_budget must be non-negative; got {full_brief_ms_budget}"
+            f"full_brief_ms_budget must be non-negative; got {full_brief_ms_budget}",
         )
 
     # Strictly greater — equal fits by the budget's own definition.
@@ -219,10 +221,11 @@ def budget_for_mode(
     -------
     int
         The budget in milliseconds appropriate to the current mode.
+
     """
     if offline is None:
         offline = os.environ.get(
-            "LOHI_RESEARCH_OFFLINE", ""
+            "LOHI_RESEARCH_OFFLINE", "",
         ).strip().lower() in ("true", "1", "yes")
     return offline_full_brief_ms if offline else full_brief_ms
 
@@ -238,7 +241,7 @@ def schedule_background_judge(
     publisher: JudgeReportPublisher,
     channel: str = RESEARCH_JUDGE_REPORT_CHANNEL,
     task_name: str = "research-async-judge",
-) -> "asyncio.Task[None]":
+) -> asyncio.Task[None]:
     """Schedule ``judge_coro`` on the current event loop and publish the result.
 
     The returned :class:`asyncio.Task` is started **immediately** (the
@@ -290,6 +293,7 @@ def schedule_background_judge(
         (integration tests, graceful-shutdown hooks) can ``await``
         it. Production callers ignore the return value — the point
         of the fallback is to return to the caller immediately.
+
     """
     return asyncio.create_task(
         _run_and_publish(judge_coro, publisher=publisher, channel=channel),
@@ -352,7 +356,7 @@ async def _run_and_publish(
 
 
 async def publish_judge_report(
-    redis_client: "Redis | Any",
+    redis_client: Redis | Any,
     channel: str,
     payload: dict,
 ) -> None:
@@ -376,6 +380,7 @@ async def publish_judge_report(
     payload:
         JSON-serialisable :class:`JudgeReport` payload (typically
         produced by ``report.model_dump(mode='json')``).
+
     """
     try:
         serialised = json.dumps(payload, separators=(",", ":"), ensure_ascii=False)
@@ -397,7 +402,7 @@ async def publish_judge_report(
         )
 
 
-def redis_publisher_for(redis_client: "Redis | Any") -> JudgeReportPublisher:
+def redis_publisher_for(redis_client: Redis | Any) -> JudgeReportPublisher:
     """Build a :data:`JudgeReportPublisher` bound to a Redis client.
 
     Lets the Orchestrator wire ``schedule_background_judge`` with one

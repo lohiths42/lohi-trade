@@ -202,7 +202,7 @@ def startup_safety_checks() -> list[str]:
         warnings.append(
             f"Backup status: {backup_status['status']} "
             f"(count={backup_status['backup_count']}, "
-            f"latest={backup_status['latest_backup']})"
+            f"latest={backup_status['latest_backup']})",
         )
 
     # 2. Verify protected paths are not world-writable

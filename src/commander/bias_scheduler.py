@@ -1,5 +1,4 @@
-"""
-Bias Recalculation Scheduler for The Commander.
+"""Bias Recalculation Scheduler for The Commander.
 
 Periodically recalculates sentiment bias for all configured tickers during
 market hours. Publishes results to Redis Streams and stores them in the
@@ -10,8 +9,7 @@ Requirements: 8.4, 8.5, 8.6
 
 import logging
 import threading
-from datetime import datetime, time, timezone, timedelta
-from typing import List, Optional
+from datetime import UTC, datetime, time, timedelta
 
 from src.commander.bias_calculator import BiasCalculator, BiasResult
 from src.state.database import DatabaseConnectionManager
@@ -36,8 +34,7 @@ INSERT_BIAS_SQL = """
 
 
 class BiasScheduler:
-    """
-    Schedules periodic bias recalculation during market hours.
+    """Schedules periodic bias recalculation during market hours.
 
     For each configured ticker the scheduler:
     1. Calls BiasCalculator.calculate_bias()
@@ -50,9 +47,9 @@ class BiasScheduler:
     def __init__(
         self,
         bias_calculator: BiasCalculator,
-        tickers: List[str],
-        event_bus: Optional[EventBus] = None,
-        db_manager: Optional[DatabaseConnectionManager] = None,
+        tickers: list[str],
+        event_bus: EventBus | None = None,
+        db_manager: DatabaseConnectionManager | None = None,
         interval_seconds: int = DEFAULT_INTERVAL_SECONDS,
         market_open: time = DEFAULT_MARKET_OPEN,
         market_close: time = DEFAULT_MARKET_CLOSE,
@@ -65,14 +62,14 @@ class BiasScheduler:
         self._market_open = market_open
         self._market_close = market_close
 
-        self._timer: Optional[threading.Timer] = None
+        self._timer: threading.Timer | None = None
         self._running = False
         self._lock = threading.Lock()
 
         logger.info(
             f"BiasScheduler created: tickers={self._tickers}, "
             f"interval={self._interval}s, "
-            f"market_hours={self._market_open}-{self._market_close}"
+            f"market_hours={self._market_open}-{self._market_close}",
         )
 
     # ------------------------------------------------------------------
@@ -102,39 +99,39 @@ class BiasScheduler:
                 self._timer = None
             logger.info("BiasScheduler stopped")
 
-    def is_market_hours(self, now: Optional[datetime] = None) -> bool:
-        """
-        Check whether the current time falls within market hours (IST).
+    def is_market_hours(self, now: datetime | None = None) -> bool:
+        """Check whether the current time falls within market hours (IST).
 
         Args:
             now: Reference time in UTC. Defaults to current UTC time.
 
         Returns:
             True if within market_open–market_close IST window.
+
         """
         if now is None:
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
 
         ist_time = (now + IST_OFFSET).time()
         return self._market_open <= ist_time <= self._market_close
 
-    def recalculate_all(self, now: Optional[datetime] = None) -> List[BiasResult]:
-        """
-        Recalculate bias for every ticker, publish and store results.
+    def recalculate_all(self, now: datetime | None = None) -> list[BiasResult]:
+        """Recalculate bias for every ticker, publish and store results.
 
         Skips execution when outside market hours.
 
         Returns:
             List of BiasResult objects (empty if outside market hours).
+
         """
         if now is None:
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
 
         if not self.is_market_hours(now):
             logger.debug("Outside market hours — skipping bias recalculation")
             return []
 
-        results: List[BiasResult] = []
+        results: list[BiasResult] = []
         for ticker in self._tickers:
             try:
                 result = self._calculator.calculate_bias(ticker, now=now)
@@ -152,8 +149,7 @@ class BiasScheduler:
     # ------------------------------------------------------------------
 
     def publish_bias(self, result: BiasResult) -> None:
-        """
-        Publish a BiasResult to stream:bias:{ticker}.
+        """Publish a BiasResult to stream:bias:{ticker}.
 
         Requirements: 8.5
         """
@@ -177,8 +173,7 @@ class BiasScheduler:
             logger.error(f"Failed to publish bias for {result.ticker}: {e}")
 
     def store_bias(self, result: BiasResult) -> None:
-        """
-        Store a BiasResult in the bias_log SQLite table.
+        """Store a BiasResult in the bias_log SQLite table.
 
         Requirements: 8.6
         """

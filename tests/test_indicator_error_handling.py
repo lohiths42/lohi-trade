@@ -1,5 +1,4 @@
-"""
-Property-based test for Indicator Calculation Error Handling.
+"""Property-based test for Indicator Calculation Error Handling.
 
 Property: Indicator calculation error handling
 
@@ -12,14 +11,12 @@ Feature: lohi-trade, Property: Indicator Calculation Error Handling
 """
 
 from datetime import datetime, timedelta
-from unittest.mock import patch
 
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from src.soldier.candle_builder import Candle
-from src.soldier.indicator_engine import IndicatorEngine, MIN_CANDLES_REQUIRED
-
+from src.soldier.indicator_engine import MIN_CANDLES_REQUIRED, IndicatorEngine
 
 # ---------------------------------------------------------------------------
 # Strategies
@@ -27,8 +24,7 @@ from src.soldier.indicator_engine import IndicatorEngine, MIN_CANDLES_REQUIRED
 
 @st.composite
 def valid_candle_series(draw, symbol: str = "RELIANCE", num_candles: int = 50):
-    """
-    Generate a series of candles with normal, well-behaved prices for a symbol.
+    """Generate a series of candles with normal, well-behaved prices for a symbol.
     Prices walk around a base price with small increments.
     """
     base_price = draw(st.floats(min_value=100.0, max_value=5000.0, allow_nan=False, allow_infinity=False))
@@ -63,8 +59,7 @@ def valid_candle_series(draw, symbol: str = "RELIANCE", num_candles: int = 50):
 
 @st.composite
 def bad_candle_series(draw, symbol: str = "BADSTOCK", num_candles: int = 50):
-    """
-    Generate a series of candles with extreme/edge-case values that might
+    """Generate a series of candles with extreme/edge-case values that might
     stress indicator calculations: very small prices near zero, zero volumes,
     identical OHLC values, etc.
     """
@@ -129,8 +124,7 @@ def bad_candle_series(draw, symbol: str = "BADSTOCK", num_candles: int = 50):
 )
 @settings(max_examples=25, deadline=None)
 def test_property_indicator_error_handling_continues_other_symbols(good_candles, bad_candles):
-    """
-    Property: Indicator calculation error handling
+    """Property: Indicator calculation error handling
 
     When indicator calculation fails for one symbol, the engine should log
     the error and continue processing other symbols without crashing.
@@ -152,7 +146,7 @@ def test_property_indicator_error_handling_continues_other_symbols(good_candles,
                 engine.add_candle(bad_candles[i])
             except Exception as exc:
                 raise AssertionError(
-                    f"Engine raised exception on bad candle #{i} for BADSTOCK: {exc}"
+                    f"Engine raised exception on bad candle #{i} for BADSTOCK: {exc}",
                 ) from exc
 
         # Feed good candle (if available) — should never raise
@@ -161,7 +155,7 @@ def test_property_indicator_error_handling_continues_other_symbols(good_candles,
                 result = engine.add_candle(good_candles[i])
             except Exception as exc:
                 raise AssertionError(
-                    f"Engine raised exception on good candle #{i} for RELIANCE: {exc}"
+                    f"Engine raised exception on good candle #{i} for RELIANCE: {exc}",
                 ) from exc
 
     # After feeding all candles, the good symbol should have valid indicators
@@ -186,8 +180,7 @@ def test_property_indicator_error_handling_continues_other_symbols(good_candles,
 @given(good_candles=valid_candle_series(symbol="SYMBOL_A", num_candles=50))
 @settings(max_examples=25, deadline=None)
 def test_property_indicator_error_handling_monkey_patched_recovery(good_candles):
-    """
-    Property: Indicator calculation error handling (monkey-patch recovery)
+    """Property: Indicator calculation error handling (monkey-patch recovery)
 
     When calculate_indicators is monkey-patched to raise an exception,
     add_candle should return None (not raise). After restoring the original
@@ -244,7 +237,7 @@ def test_property_indicator_error_handling_monkey_patched_recovery(good_candles)
             result_b = engine.add_candle(filler)
         except Exception as exc:
             raise AssertionError(
-                f"Engine raised exception with broken calculate_indicators: {exc}"
+                f"Engine raised exception with broken calculate_indicators: {exc}",
             ) from exc
 
     # The result should be None because calculate_indicators is broken
@@ -271,7 +264,7 @@ def test_property_indicator_error_handling_monkey_patched_recovery(good_candles)
         result_a_after = engine.add_candle(extra_candle)
     except Exception as exc:
         raise AssertionError(
-            f"Engine raised exception after restoring calculate_indicators: {exc}"
+            f"Engine raised exception after restoring calculate_indicators: {exc}",
         ) from exc
 
     assert result_a_after is not None, (

@@ -34,7 +34,8 @@ Contract highlights
 from __future__ import annotations
 
 import json
-from typing import Any, AsyncIterator
+from collections.abc import AsyncIterator
+from typing import Any
 
 import httpx
 
@@ -153,7 +154,7 @@ class OpenAILLM:
     # ------------------------------------------------------------------ #
 
     async def complete(
-        self, messages: list[Message], params: LLMParams
+        self, messages: list[Message], params: LLMParams,
     ) -> Completion:
         """Single non-streamed chat completion (Req 2.11)."""
         payload = self._build_payload(messages, params, stream=False)
@@ -185,7 +186,7 @@ class OpenAILLM:
         )
 
     async def stream(
-        self, messages: list[Message], params: LLMParams
+        self, messages: list[Message], params: LLMParams,
     ) -> AsyncIterator[CompletionChunk]:
         """Async iterator over server-sent deltas (design §3.1)."""
         payload = self._build_payload(messages, params, stream=True)
@@ -256,7 +257,7 @@ def build(cfg: dict) -> LLMProvider:
         missing = exc.args[0]
         raise KeyError(
             f"openai provider config is missing required key {missing!r}; "
-            "expected 'model' and 'api_key' (see design §7.1)."
+            "expected 'model' and 'api_key' (see design §7.1).",
         ) from exc
 
     base_url = cfg.get("base_url") or _DEFAULT_BASE_URL

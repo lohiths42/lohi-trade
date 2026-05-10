@@ -60,9 +60,10 @@ from __future__ import annotations
 
 import asyncio
 import os
-from datetime import datetime, timezone
+from collections.abc import Callable
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Callable, Final
+from typing import Any, Final
 from uuid import UUID
 
 from src.research.constants import RESEARCH_INDEX_EVENTS_STREAM
@@ -101,6 +102,7 @@ class UserUploadWatcher:
     user_id_resolver:
         Callback from filename to :class:`uuid.UUID`. See module
         docstring.
+
     """
 
     def __init__(
@@ -143,7 +145,7 @@ class UserUploadWatcher:
         class _Handler(FileSystemEventHandler):
             """Watchdog callback → asyncio bridge."""
 
-            def on_created(self, event: Any) -> None:  # noqa: D401
+            def on_created(self, event: Any) -> None:
                 if event.is_directory:
                     return
                 src_path = getattr(event, "src_path", None)
@@ -224,7 +226,7 @@ class UserUploadWatcher:
             "document_url": f"file://{absolute}",
             "symbol": symbol,
             "document_type": _DOCUMENT_TYPE,
-            "published_at": datetime.now(tz=timezone.utc).isoformat(),
+            "published_at": datetime.now(tz=UTC).isoformat(),
             "source": _SOURCE_TAG,
             "user_id": str(user_id),
         }
@@ -235,7 +237,7 @@ class UserUploadWatcher:
         """XADD *event* onto :data:`RESEARCH_INDEX_EVENTS_STREAM`."""
         try:
             await self._redis.xadd(RESEARCH_INDEX_EVENTS_STREAM, event)
-        except Exception as exc:  # noqa: BLE001 — log + swallow
+        except Exception as exc:
             self._logger.error(
                 "Failed to publish user-upload index event",
                 extra={
@@ -289,11 +291,12 @@ async def build(
         Callback ``(filename: str) -> UUID | None``. Required — the
         factory does not attempt any default resolution because the
         concrete scheme is deployment-specific (see module docstring).
+
     """
     if user_id_resolver is None:
         raise ValueError(
             "user_uploads.build requires a user_id_resolver callback; the "
-            "gateway wires this at startup (design §3.2)."
+            "gateway wires this at startup (design §3.2).",
         )
     return UserUploadWatcher(
         watch_dir=str(cfg.get("watch_dir", "data/research/uploads")),
@@ -302,4 +305,4 @@ async def build(
     )
 
 
-__all__ = ["UserUploadWatcher", "UserIdResolver", "build"]
+__all__ = ["UserIdResolver", "UserUploadWatcher", "build"]

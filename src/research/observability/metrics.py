@@ -182,6 +182,7 @@ def render_metrics() -> tuple[bytes, str]:
     The FastAPI router wires this into ``Response`` so Prometheus
     scrapes pick up the research metrics at
     ``GET /api/v2/research/metrics``.
+
     """
     return generate_latest(_REGISTRY), CONTENT_TYPE_LATEST
 

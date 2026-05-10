@@ -1,5 +1,4 @@
-"""
-Groww trading API broker adapter implementation.
+"""Groww trading API broker adapter implementation.
 
 This module implements the BrokerInterface for Groww,
 providing OAuth2 authentication, order management, portfolio holdings
@@ -9,28 +8,26 @@ Requirements: 16.1, 16.2, 16.3, 16.4, 16.5, 16.6, 16.7
 """
 
 import time
-import threading
+from collections.abc import Callable
 from datetime import datetime
-from typing import Callable, List, Optional, Dict
 
 import requests
 
 from src.ingestion.broker_interface import (
-    BrokerInterface,
+    AuthenticationError,
     BrokerCredentials,
-    Tick,
+    BrokerInterface,
+    ConnectionError,
     Order,
-    OrderStatus,
+    OrderNotFoundError,
+    OrderRejectionError,
     OrderSide,
+    OrderStatus,
     OrderType,
     ProductType,
-    ConnectionError,
-    AuthenticationError,
-    OrderRejectionError,
-    OrderNotFoundError,
+    Tick,
 )
 from src.utils.logger import get_logger
-
 
 logger = get_logger("GrowwBroker")
 
@@ -39,7 +36,7 @@ _TRANSIENT_HTTP_CODES = {502, 503, 504, 429}
 _MAX_RETRIES = 2
 
 # Groww order-type mapping from internal enum to Groww API string
-_ORDER_TYPE_MAP: Dict[OrderType, str] = {
+_ORDER_TYPE_MAP: dict[OrderType, str] = {
     OrderType.MARKET: "MARKET",
     OrderType.LIMIT: "LIMIT",
     OrderType.SL: "SL",
@@ -47,14 +44,14 @@ _ORDER_TYPE_MAP: Dict[OrderType, str] = {
 }
 
 # Groww product-type mapping
-_PRODUCT_TYPE_MAP: Dict[ProductType, str] = {
+_PRODUCT_TYPE_MAP: dict[ProductType, str] = {
     ProductType.MIS: "INTRADAY",
     ProductType.CNC: "DELIVERY",
     ProductType.NRML: "DELIVERY",
 }
 
 # Groww order-status → internal OrderStatus mapping
-_STATUS_MAP: Dict[str, OrderStatus] = {
+_STATUS_MAP: dict[str, OrderStatus] = {
     "OPEN": OrderStatus.PLACED,
     "PENDING": OrderStatus.PENDING,
     "EXECUTED": OrderStatus.FILLED,
@@ -73,8 +70,7 @@ _TERMINAL_STATUSES = {
 
 
 class GrowwBroker(BrokerInterface):
-    """
-    Groww trading API broker adapter.
+    """Groww trading API broker adapter.
 
     Implements OAuth2 login, order placement with Groww parameter mapping,
     order status tracking until terminal state, portfolio holdings retrieval,
@@ -87,17 +83,16 @@ class GrowwBroker(BrokerInterface):
     AUTH_URL = "https://api.groww.in/v1/oauth/token"
 
     def __init__(self) -> None:
-        self._client_id: Optional[str] = None
-        self._client_secret: Optional[str] = None
-        self._access_token: Optional[str] = None
-        self._user_id: Optional[str] = None
+        self._client_id: str | None = None
+        self._client_secret: str | None = None
+        self._access_token: str | None = None
+        self._user_id: str | None = None
         self._connected: bool = False
 
     # ── authentication ────────────────────────────────────────────
 
     def connect(self, credentials: BrokerCredentials) -> bool:
-        """
-        Authenticate via Groww OAuth2 flow.
+        """Authenticate via Groww OAuth2 flow.
 
         ``credentials.api_key``     → Groww client ID
         ``credentials.password``    → Groww client secret
@@ -118,7 +113,7 @@ class GrowwBroker(BrokerInterface):
 
             if not auth_code:
                 raise AuthenticationError(
-                    "authorization_code is required (pass via credentials.totp_secret)"
+                    "authorization_code is required (pass via credentials.totp_secret)",
                 )
 
             token_data = self._exchange_token(auth_code)
@@ -162,7 +157,7 @@ class GrowwBroker(BrokerInterface):
         resp = self._groww_post("/oauth/token", payload, auth=False)
         return resp
 
-    def _auth_headers(self) -> Dict[str, str]:
+    def _auth_headers(self) -> dict[str, str]:
         return {
             "Authorization": f"Bearer {self._access_token}",
             "Content-Type": "application/json",
@@ -175,14 +170,14 @@ class GrowwBroker(BrokerInterface):
         url = f"{self.BASE_URL}{path}"
         headers = self._auth_headers() if auth else {"Content-Type": "application/json"}
 
-        last_exc: Optional[Exception] = None
+        last_exc: Exception | None = None
         for attempt in range(_MAX_RETRIES + 1):
             try:
                 resp = requests.post(url, json=data, headers=headers, timeout=10)
                 if resp.status_code in _TRANSIENT_HTTP_CODES and attempt < _MAX_RETRIES:
                     logger.warning(
                         f"Transient error {resp.status_code} on POST {path}, "
-                        f"retry {attempt + 1}/{_MAX_RETRIES}"
+                        f"retry {attempt + 1}/{_MAX_RETRIES}",
                     )
                     time.sleep(0.5 * (attempt + 1))
                     continue
@@ -197,7 +192,7 @@ class GrowwBroker(BrokerInterface):
                 last_exc = exc
                 if attempt < _MAX_RETRIES:
                     logger.warning(
-                        f"Network error on POST {path}, retry {attempt + 1}/{_MAX_RETRIES}: {exc}"
+                        f"Network error on POST {path}, retry {attempt + 1}/{_MAX_RETRIES}: {exc}",
                     )
                     time.sleep(0.5 * (attempt + 1))
                     continue
@@ -210,14 +205,14 @@ class GrowwBroker(BrokerInterface):
         url = f"{self.BASE_URL}{path}"
         headers = self._auth_headers()
 
-        last_exc: Optional[Exception] = None
+        last_exc: Exception | None = None
         for attempt in range(_MAX_RETRIES + 1):
             try:
                 resp = requests.get(url, headers=headers, timeout=10)
                 if resp.status_code in _TRANSIENT_HTTP_CODES and attempt < _MAX_RETRIES:
                     logger.warning(
                         f"Transient error {resp.status_code} on GET {path}, "
-                        f"retry {attempt + 1}/{_MAX_RETRIES}"
+                        f"retry {attempt + 1}/{_MAX_RETRIES}",
                     )
                     time.sleep(0.5 * (attempt + 1))
                     continue
@@ -232,7 +227,7 @@ class GrowwBroker(BrokerInterface):
                 last_exc = exc
                 if attempt < _MAX_RETRIES:
                     logger.warning(
-                        f"Network error on GET {path}, retry {attempt + 1}/{_MAX_RETRIES}: {exc}"
+                        f"Network error on GET {path}, retry {attempt + 1}/{_MAX_RETRIES}: {exc}",
                     )
                     time.sleep(0.5 * (attempt + 1))
                     continue
@@ -245,7 +240,7 @@ class GrowwBroker(BrokerInterface):
         url = f"{self.BASE_URL}{path}"
         headers = self._auth_headers()
 
-        last_exc: Optional[Exception] = None
+        last_exc: Exception | None = None
         for attempt in range(_MAX_RETRIES + 1):
             try:
                 resp = requests.delete(url, headers=headers, timeout=10)
@@ -270,8 +265,7 @@ class GrowwBroker(BrokerInterface):
     # ── order management ──────────────────────────────────────────
 
     def place_order(self, order: Order) -> str:
-        """
-        Place an order via Groww trading API.
+        """Place an order via Groww trading API.
 
         Maps internal Order to Groww params: symbol, exchange,
         transaction_type, quantity, price, trigger_price, order_type, product.
@@ -284,7 +278,7 @@ class GrowwBroker(BrokerInterface):
         groww_order_type = _ORDER_TYPE_MAP.get(order.order_type, "MARKET")
         groww_product = _PRODUCT_TYPE_MAP.get(order.product_type, "DELIVERY")
 
-        params: Dict = {
+        params: dict = {
             "symbol": order.symbol,
             "exchange": "NSE",
             "transaction_type": order.side.value,  # BUY / SELL
@@ -325,8 +319,7 @@ class GrowwBroker(BrokerInterface):
             return False
 
     def get_order_status(self, broker_order_id: str) -> Order:
-        """
-        Get current status of an order from Groww.
+        """Get current status of an order from Groww.
 
         Raises OrderNotFoundError if the order does not exist.
         """
@@ -359,10 +352,9 @@ class GrowwBroker(BrokerInterface):
         )
 
     def poll_order_status(
-        self, broker_order_id: str, interval: float = 1.0, max_polls: int = 300
+        self, broker_order_id: str, interval: float = 1.0, max_polls: int = 300,
     ) -> Order:
-        """
-        Poll order status every *interval* seconds until a terminal state.
+        """Poll order status every *interval* seconds until a terminal state.
 
         Terminal states: EXECUTED, CANCELLED, REJECTED.
 
@@ -375,13 +367,13 @@ class GrowwBroker(BrokerInterface):
             time.sleep(interval)
 
         logger.warning(
-            f"Order {broker_order_id} did not reach terminal state after {max_polls} polls"
+            f"Order {broker_order_id} did not reach terminal state after {max_polls} polls",
         )
         return self.get_order_status(broker_order_id)
 
     # ── positions ─────────────────────────────────────────────────
 
-    def get_positions(self) -> List[dict]:
+    def get_positions(self) -> list[dict]:
         """Get all open positions from Groww."""
         if not self.is_connected():
             raise ConnectionError("Not connected to Groww API")
@@ -403,9 +395,8 @@ class GrowwBroker(BrokerInterface):
             logger.error(f"Error fetching positions: {exc}")
             return []
 
-    def get_holdings(self) -> List[dict]:
-        """
-        Get portfolio holdings from Groww for reconciliation.
+    def get_holdings(self) -> list[dict]:
+        """Get portfolio holdings from Groww for reconciliation.
 
         Requirement: 16.7
         """
@@ -432,16 +423,15 @@ class GrowwBroker(BrokerInterface):
 
     # ── instrument master ─────────────────────────────────────────
 
-    def get_instrument_master(self) -> List[dict]:
-        """
-        Download instrument master from Groww.
+    def get_instrument_master(self) -> list[dict]:
+        """Download instrument master from Groww.
 
         Returns list of dicts with symbol, token, exchange, lot_size, tick_size.
         """
         logger.info("Fetching instrument master from Groww...")
         try:
             data = self._groww_get("/instruments")
-            instruments: List[dict] = []
+            instruments: list[dict] = []
             items = data if isinstance(data, list) else data.get("instruments", []) if isinstance(data, dict) else []
             for row in items:
                 try:
@@ -466,15 +456,14 @@ class GrowwBroker(BrokerInterface):
 
     # ── WebSocket (not supported by Groww — stub) ─────────────────
 
-    def subscribe(self, symbols: List[str], on_tick: Callable[[Tick], None]) -> bool:
-        """
-        Groww does not provide a WebSocket market data feed.
+    def subscribe(self, symbols: list[str], on_tick: Callable[[Tick], None]) -> bool:
+        """Groww does not provide a WebSocket market data feed.
         Returns False — use NSE/BSE feed or another broker for live ticks.
         """
         logger.warning("Groww does not support WebSocket market data subscriptions")
         return False
 
-    def unsubscribe(self, symbols: List[str]) -> bool:
+    def unsubscribe(self, symbols: list[str]) -> bool:
         """No-op for Groww (no WebSocket support)."""
         return False
 
@@ -493,7 +482,7 @@ def _groww_error(error_code: str, message: str) -> Exception:
     return ConnectionError(message)
 
 
-def _safe_float(value) -> Optional[float]:
+def _safe_float(value) -> float | None:
     if value is None:
         return None
     try:
@@ -504,7 +493,7 @@ def _safe_float(value) -> Optional[float]:
 
 def _reverse_order_type(groww_type: str) -> OrderType:
     # Explicit mapping since SL and SL_M both map to "SL" in Groww
-    _map: Dict[str, OrderType] = {
+    _map: dict[str, OrderType] = {
         "MARKET": OrderType.MARKET,
         "LIMIT": OrderType.LIMIT,
         "SL": OrderType.SL,
@@ -514,7 +503,7 @@ def _reverse_order_type(groww_type: str) -> OrderType:
 
 def _reverse_product_type(groww_product: str) -> ProductType:
     # Explicit mapping since CNC and NRML both map to "DELIVERY" in Groww
-    _map: Dict[str, ProductType] = {
+    _map: dict[str, ProductType] = {
         "INTRADAY": ProductType.MIS,
         "DELIVERY": ProductType.CNC,
     }

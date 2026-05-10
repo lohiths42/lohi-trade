@@ -1,5 +1,4 @@
-"""
-Tests for the Corporate Actions Collector.
+"""Tests for the Corporate Actions Collector.
 
 Covers: fetching corporate actions, exchange announcements, deduplication,
 storage, notifications for watchlist securities, price adjustments for
@@ -8,22 +7,19 @@ splits/bonuses, scheduling logic, and serialization round-trips.
 Requirements: 27.1, 27.2, 27.3, 27.4, 27.5, 27.6
 """
 
-import asyncio
-import json
-from datetime import date, datetime, timedelta, timezone
-from unittest.mock import MagicMock, AsyncMock, patch
+from datetime import date, datetime
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from src.ingestion.corporate_actions_collector import (
-    CorporateActionsCollector,
+    IST,
+    AnnouncementType,
     CorporateAction,
+    CorporateActionsCollector,
     CorporateActionType,
     ExchangeAnnouncement,
-    AnnouncementType,
-    IST,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -594,14 +590,14 @@ class TestAnnouncementHistory:
     def test_get_announcement_history_filter_by_type(self):
         collector, _ = _make_collector()
         collector._store_announcement(
-            _make_announcement(ann_type=AnnouncementType.CIRCUIT_BREAKER)
+            _make_announcement(ann_type=AnnouncementType.CIRCUIT_BREAKER),
         )
         collector._store_announcement(
-            _make_announcement(symbol="TCS", ann_type=AnnouncementType.NEW_LISTING)
+            _make_announcement(symbol="TCS", ann_type=AnnouncementType.NEW_LISTING),
         )
 
         result = collector.get_announcement_history(
-            announcement_type=AnnouncementType.NEW_LISTING
+            announcement_type=AnnouncementType.NEW_LISTING,
         )
         assert len(result) == 1
 

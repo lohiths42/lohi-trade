@@ -26,7 +26,8 @@ Covers
 
 from __future__ import annotations
 
-from typing import Any, Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
@@ -37,7 +38,6 @@ from src.research.workers.snapshotter import (
     InvalidationEvent,
     SnapshotWorker,
 )
-
 
 # --------------------------------------------------------------------------- #
 # Fakes                                                                       #
@@ -99,7 +99,7 @@ class _FakeSnapshotStore:
                 "symbol": symbol,
                 "brief": dict(brief),
                 "hashes": list(input_document_hashes),
-            }
+            },
         )
 
     async def mark_stale(self, user_id: UUID, symbol: str) -> bool:
@@ -134,7 +134,7 @@ class _FakeOrchestrator:
                 "user_id": user_id,
                 "symbol": symbol,
                 "user_prompt": user_prompt,
-            }
+            },
         )
         if self._raise is not None:
             raise self._raise
@@ -203,7 +203,7 @@ def _build_worker(
                 "user_id": user_id,
                 "symbol": symbol,
                 "skip_agents": skip_agents,
-            }
+            },
         )
         return orchestrator
 
@@ -387,7 +387,7 @@ class TestStreamIntake:
         orch = _FakeOrchestrator()
         clock = _ManualClock()
         worker = _build_worker(
-            reader=reader, store=store, orchestrator=orch, clock=clock
+            reader=reader, store=store, orchestrator=orch, clock=clock,
         )
 
         user = uuid4()
@@ -408,7 +408,7 @@ class TestStreamIntake:
         orch = _FakeOrchestrator()
         clock = _ManualClock()
         worker = _build_worker(
-            reader=reader, store=store, orchestrator=orch, clock=clock
+            reader=reader, store=store, orchestrator=orch, clock=clock,
         )
 
         await worker.poll_once()
@@ -422,7 +422,7 @@ class TestStreamIntake:
         orch = _FakeOrchestrator()
         clock = _ManualClock()
         worker = _build_worker(
-            reader=reader, store=store, orchestrator=orch, clock=clock
+            reader=reader, store=store, orchestrator=orch, clock=clock,
         )
         # Must not raise.
         folded = await worker.poll_once()
@@ -435,7 +435,7 @@ class TestStreamIntake:
         orch = _FakeOrchestrator()
         clock = _ManualClock()
         worker = _build_worker(
-            reader=reader, store=store, orchestrator=orch, clock=clock
+            reader=reader, store=store, orchestrator=orch, clock=clock,
         )
         await worker.poll_once()
         assert reader.calls[-1]["name"] == RESEARCH_SNAPSHOT_INVALIDATIONS_STREAM
@@ -532,7 +532,7 @@ class TestStaleOnFailure:
                 user_prompt: str,
             ) -> dict[str, Any]:
                 self.run_calls.append(
-                    {"user_id": user_id, "symbol": symbol}
+                    {"user_id": user_id, "symbol": symbol},
                 )
                 call_count["n"] += 1
                 if call_count["n"] == 1:
@@ -610,7 +610,7 @@ class TestSelectorAndHashes:
                 "user_id": user,
                 "symbol": "X",
                 "skip_agents": ("filings", "macro"),
-            }
+            },
         ]
 
     @pytest.mark.asyncio
@@ -643,7 +643,7 @@ class TestSelectorAndHashes:
 
         # Still regened, with no skip hints.
         assert worker._factory_calls == [  # type: ignore[attr-defined]
-            {"user_id": user, "symbol": "X", "skip_agents": ()}
+            {"user_id": user, "symbol": "X", "skip_agents": ()},
         ]
         assert len(orch.run_calls) == 1
 

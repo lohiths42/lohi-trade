@@ -1,5 +1,4 @@
-"""
-Property-based tests for Sentiment Classification.
+"""Property-based tests for Sentiment Classification.
 
 Validates that the SentimentAnalyzer produces valid sentiment labels,
 confidence scores, and raw scores for arbitrary text inputs, including
@@ -16,23 +15,14 @@ Properties tested:
   5. When model is unavailable, fallback returns NEUTRAL with confidence 0.0
 """
 
-import math
-import uuid
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Tuple
-from unittest.mock import MagicMock, patch
 
-from hypothesis import given, settings, assume
+from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from src.commander.sentiment_analyzer import (
-    FINBERT_LABELS,
     SentimentAnalyzer,
-    SentimentResult,
     _softmax,
-    load_keywords,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers / Mocks
@@ -41,7 +31,7 @@ from src.commander.sentiment_analyzer import (
 VALID_LABELS = {"POSITIVE", "NEGATIVE", "NEUTRAL"}
 
 
-def _make_fake_logits(pos: float, neg: float, neu: float) -> List[float]:
+def _make_fake_logits(pos: float, neg: float, neu: float) -> list[float]:
     """Build a logits vector [positive, negative, neutral]."""
     return [pos, neg, neu]
 
@@ -62,7 +52,7 @@ class FakeTokenizer:
 class FakeOnnxSession:
     """ONNX session mock that returns configurable logits."""
 
-    def __init__(self, logits: Optional[List[float]] = None):
+    def __init__(self, logits: list[float] | None = None):
         import numpy as np
 
         self._logits = logits or [0.5, -0.3, 0.1]
@@ -76,8 +66,8 @@ class FakeOnnxSession:
 
 
 def _build_analyzer(
-    logits: Optional[List[float]] = None,
-    keywords: Optional[Dict[str, Dict[str, float]]] = None,
+    logits: list[float] | None = None,
+    keywords: dict[str, dict[str, float]] | None = None,
 ) -> SentimentAnalyzer:
     """Build a SentimentAnalyzer with mocked model and tokenizer."""
     analyzer = SentimentAnalyzer.__new__(SentimentAnalyzer)
@@ -112,8 +102,7 @@ _logits = st.tuples(
 
 
 class TestSentimentClassificationProperties:
-    """
-    **Property 22: Sentiment Classification**
+    """**Property 22: Sentiment Classification**
     **Validates: Requirements 7.3**
     """
 

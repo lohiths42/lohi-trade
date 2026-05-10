@@ -49,7 +49,6 @@ from src.research.providers.base import (
 from src.research.validators.types import UnsupportedClaim
 from tests.research.fakes import FakeLLMProvider
 
-
 # --------------------------------------------------------------------------- #
 # Helpers                                                                     #
 # --------------------------------------------------------------------------- #
@@ -146,7 +145,7 @@ class _RecordingLLM(FakeLLMProvider):
         self.calls: list[tuple[list[Message], LLMParams]] = []
 
     async def complete(
-        self, messages: list[Message], params: LLMParams
+        self, messages: list[Message], params: LLMParams,
     ):
         self.calls.append(([m.model_copy() for m in messages], params))
         return await super().complete(messages, params)
@@ -289,7 +288,7 @@ class TestHappyPath:
                 section_name="management_commentary",
                 section_md="body",
                 chunk_ids=["c1"],
-            )
+            ),
         ]
         await synth(
             agent_results=results,
@@ -393,7 +392,7 @@ class TestMissingSections:
                     },
                 ],
                 "executive_summary": "Summary only.",
-            }
+            },
         )
         llm = FakeLLMProvider(canned_completion=partial_json)
         synth = Synthesizer(llm=llm)
@@ -404,7 +403,7 @@ class TestMissingSections:
                     agent_name="filings",
                     section_name="management_commentary",
                     section_md="x",
-                )
+                ),
             ],
             symbol="RELIANCE",
             user_prompt="Brief.",
@@ -432,7 +431,7 @@ class TestMissingSections:
                 "thesis": "Flat thesis.",
                 "risks": "Flat risks.",
                 # Other sections absent; should default to "".
-            }
+            },
         )
         llm = FakeLLMProvider(canned_completion=flat_json)
         synth = Synthesizer(llm=llm)
@@ -464,8 +463,8 @@ class TestMissingSections:
                         "content_markdown": "impostor",
                         "citations": [],
                     },
-                ]
-            }
+                ],
+            },
         )
         llm = FakeLLMProvider(canned_completion=rogue_json)
         synth = Synthesizer(llm=llm)
@@ -495,7 +494,7 @@ class TestNoDataAndErrorResults:
 
         results = [
             _no_data_result(
-                agent_name="filings", section_name="management_commentary"
+                agent_name="filings", section_name="management_commentary",
             ),
             _no_data_result(agent_name="fundamentals", section_name="financial_highlights"),
             _no_data_result(agent_name="macro", section_name="macro_context"),
@@ -526,7 +525,7 @@ class TestNoDataAndErrorResults:
             ),
             _no_data_result(agent_name="macro", section_name="macro_context"),
             _error_result(
-                agent_name="peer_sector", section_name="peers"
+                agent_name="peer_sector", section_name="peers",
             ),
         ]
         # Does not raise.
@@ -599,7 +598,7 @@ class TestResynthesisPath:
                     section_name="management_commentary",
                     section_md="body",
                     chunk_ids=["c1"],
-                )
+                ),
             ],
             symbol="RELIANCE",
             user_prompt="Brief.",
@@ -636,8 +635,8 @@ class TestResynthesisPath:
                         "content_markdown": "Revenue Rs 600 Cr. [cite:c1]",
                         "citations": ["c1"],
                     },
-                ]
-            }
+                ],
+            },
         )
         llm = FakeLLMProvider(canned_completion=revised_json)
         synth = Synthesizer(llm=llm)
@@ -651,7 +650,7 @@ class TestResynthesisPath:
                     section_name="financial_highlights",
                     section_md="fund body",
                     chunk_ids=["c1"],
-                )
+                ),
             ],
             symbol="RELIANCE",
             user_prompt="Brief.",
@@ -708,7 +707,7 @@ class TestErrorPropagation:
                         agent_name="filings",
                         section_name="management_commentary",
                         section_md="body",
-                    )
+                    ),
                 ],
                 symbol="RELIANCE",
                 user_prompt="Brief.",

@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
-from uuid import UUID, uuid4
+from uuid import UUID
 
 import pytest
 
@@ -27,7 +27,6 @@ from src.research.validators.citation_validator import (
 )
 from src.research.validators.types import UnsupportedClaim
 from tests.research.fakes import FakeVectorStore
-
 
 # --------------------------------------------------------------------------- #
 # Helpers                                                                     #
@@ -132,7 +131,7 @@ class TestValidateCitationsHappyPath:
         async def _body() -> None:
             store = FakeVectorStore()
             await store.upsert(
-                [_chunk("a"), _chunk("b"), _chunk("c"), _chunk("d")]
+                [_chunk("a"), _chunk("b"), _chunk("c"), _chunk("d")],
             )
             brief = [_FakeCitation(chunk_id=x) for x in ("a", "c", "d")]
             result = await validate_citations(
@@ -307,7 +306,7 @@ class TestNamespaceScoping:
                     _chunk("in-scope", user_id=_USER_A, symbol=_SYMBOL),
                     _chunk("other-user", user_id=_USER_B, symbol=_SYMBOL),
                     _chunk("other-symbol", user_id=_USER_A, symbol=_OTHER_SYMBOL),
-                ]
+                ],
             )
             result = await validate_citations(
                 vector_store=store,

@@ -81,7 +81,6 @@ from tests.research.fakes import (
     install_fakes,
 )
 
-
 # --------------------------------------------------------------------------- #
 # Alt vector store — simulates a backend swap with different ordering.        #
 # --------------------------------------------------------------------------- #
@@ -164,20 +163,20 @@ def llm_params_strategy(draw: st.DrawFn) -> LLMParams:
     """
     return LLMParams(
         temperature=draw(
-            st.one_of(st.none(), st.floats(min_value=0.0, max_value=2.0))
+            st.one_of(st.none(), st.floats(min_value=0.0, max_value=2.0)),
         ),
         max_tokens=draw(
-            st.one_of(st.none(), st.integers(min_value=1, max_value=4096))
+            st.one_of(st.none(), st.integers(min_value=1, max_value=4096)),
         ),
         top_p=draw(st.one_of(st.none(), st.floats(min_value=0.0, max_value=1.0))),
         stop=draw(
             st.one_of(
                 st.none(),
                 st.lists(st.text(min_size=1, max_size=16), max_size=4),
-            )
+            ),
         ),
         timeout_ms=draw(
-            st.one_of(st.none(), st.integers(min_value=1, max_value=60000))
+            st.one_of(st.none(), st.integers(min_value=1, max_value=60000)),
         ),
     )
 
@@ -205,7 +204,7 @@ def chunk_record_strategy(draw: st.DrawFn, *, dim: int) -> ChunkRecord:
             ),
             min_size=dim,
             max_size=dim,
-        )
+        ),
     )
     return ChunkRecord(
         chunk_id=chunk_id,
@@ -230,7 +229,7 @@ def chunk_record_strategy(draw: st.DrawFn, *, dim: int) -> ChunkRecord:
 @given(messages=messages_strategy(), params=llm_params_strategy())
 @settings(max_examples=30, deadline=None)
 async def test_llm_complete_shape_invariant_across_providers(
-    messages: list[Message], params: LLMParams
+    messages: list[Message], params: LLMParams,
 ) -> None:
     """``LLMProvider.complete`` yields the same ``Completion`` shape across providers.
 
@@ -277,7 +276,7 @@ async def test_llm_complete_shape_invariant_across_providers(
     # Both expose the same field set; documents the shape invariant.
     assert set(Completion.model_fields.keys()) == set(type(result_a).model_fields.keys())
     assert set(type(result_a).model_fields.keys()) == set(
-        type(result_b).model_fields.keys()
+        type(result_b).model_fields.keys(),
     )
 
     # Per-field Python types match across the swap.
@@ -288,7 +287,7 @@ async def test_llm_complete_shape_invariant_across_providers(
 @given(messages=messages_strategy(), params=llm_params_strategy())
 @settings(max_examples=30, deadline=None)
 async def test_llm_stream_chunk_shape_invariant_across_providers(
-    messages: list[Message], params: LLMParams
+    messages: list[Message], params: LLMParams,
 ) -> None:
     """``LLMProvider.stream`` yields ``CompletionChunk``s with identical shape across providers.
 
@@ -344,7 +343,7 @@ async def test_llm_stream_chunk_shape_invariant_across_providers(
 
 @pytest.mark.asyncio
 @given(
-    texts=st.lists(st.text(min_size=0, max_size=200), min_size=1, max_size=10)
+    texts=st.lists(st.text(min_size=0, max_size=200), min_size=1, max_size=10),
 )
 @settings(max_examples=30, deadline=None)
 async def test_embeddings_embed_shape_invariant_across_providers(
@@ -396,7 +395,7 @@ async def test_embeddings_embed_shape_invariant_across_providers(
 
 @pytest.mark.asyncio
 @given(
-    chunks=st.lists(chunk_record_strategy(dim=384), min_size=1, max_size=3)
+    chunks=st.lists(chunk_record_strategy(dim=384), min_size=1, max_size=3),
 )
 @settings(
     max_examples=30,

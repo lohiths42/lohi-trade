@@ -197,7 +197,7 @@ class OpenAIEmbeddings:
             raise RuntimeError(
                 "openai embeddings: dim is not yet known. Either set "
                 "cfg['dim'] to the model's output width or call "
-                "embed() at least once before reading .dim."
+                "embed() at least once before reading .dim.",
             )
         return self._dim
 
@@ -233,7 +233,7 @@ def build(cfg: dict[str, Any]) -> EmbeddingsProvider:
         raise KeyError(
             f"openai embeddings provider config is missing required "
             f"key {missing!r}; expected 'api_key' and 'model' "
-            "(see design §7.1)."
+            "(see design §7.1).",
         ) from exc
 
     base_url = cfg.get("base_url") or _DEFAULT_BASE_URL

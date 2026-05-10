@@ -1,5 +1,4 @@
-"""
-Unit tests for the Setup Router — API endpoints for the Easy Setup Wizard.
+"""Unit tests for the Setup Router — API endpoints for the Easy Setup Wizard.
 
 Tests:
 - Localhost-only guard rejects non-loopback requests (Requirement 5.5)
@@ -22,13 +21,10 @@ import pytest
 # ---------------------------------------------------------------------------
 
 _backend_gateway_dir = str(
-    Path(__file__).resolve().parents[1] / "backend-gateway"
+    Path(__file__).resolve().parents[1] / "backend-gateway",
 )
 if _backend_gateway_dir not in sys.path:
     sys.path.insert(0, _backend_gateway_dir)
-
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
 
 from app.routers.setup import (
     get_setup_service,
@@ -38,7 +34,8 @@ from app.routers.setup import (
 from app.services.credential_store import CredentialStore
 from app.services.service_registry import ServiceRegistry, ServiceStatus
 from app.services.setup_service import SetupService
-
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -111,8 +108,6 @@ class TestLocalhostGuard:
 
     def test_non_localhost_request_rejected(self, setup_service: SetupService):
         """GET /api/setup/status from non-localhost IP → 403."""
-        from fastapi import Request
-
         app = FastAPI()
         app.include_router(router, prefix="/api")
         app.dependency_overrides[get_setup_service] = lambda: setup_service
@@ -186,7 +181,7 @@ class TestCredentialSubmission:
                     "SHOONYA_API_KEY": "abcdefgh12345678",
                     "SHOONYA_CLIENT_ID": "ABC123",
                     "SHOONYA_PASSWORD": "mypassword",
-                }
+                },
             },
         )
         assert response.status_code == 200
@@ -207,7 +202,7 @@ class TestCredentialSubmission:
                     "SHOONYA_API_KEY": "short",  # Too short (< 8 chars)
                     "SHOONYA_CLIENT_ID": "ab",  # Too short and lowercase
                     "SHOONYA_PASSWORD": "hi",  # Too short (< 4 chars)
-                }
+                },
             },
         )
         assert response.status_code == 422
@@ -223,7 +218,7 @@ class TestCredentialSubmission:
                     "SHOONYA_API_KEY": "",
                     "SHOONYA_CLIENT_ID": "",
                     "SHOONYA_PASSWORD": "",
-                }
+                },
             },
         )
         assert response.status_code == 422
@@ -247,7 +242,7 @@ class TestCredentialSubmission:
             json={
                 "credentials": {
                     "NVIDIA_NIM_API_KEY": "nvapi-abcdefghijklmnopqrst",
-                }
+                },
             },
         )
         assert response.status_code == 200
@@ -263,7 +258,7 @@ class TestCredentialSubmission:
             json={
                 "credentials": {
                     "NVIDIA_NIM_API_KEY": "invalid-key-without-prefix",
-                }
+                },
             },
         )
         assert response.status_code == 422
@@ -278,7 +273,7 @@ class TestSkipFlow:
     """Requirement 3.1: Skip optional groups and update registry."""
 
     def test_skip_telegram_updates_registry(
-        self, app_client: TestClient, setup_service: SetupService
+        self, app_client: TestClient, setup_service: SetupService,
     ):
         """POST /api/setup/skip/telegram → 200, registry shows SKIPPED."""
         app_client.app.dependency_overrides[require_localhost] = lambda: True
@@ -295,7 +290,7 @@ class TestSkipFlow:
         assert status == ServiceStatus.SKIPPED
 
     def test_skip_nvidia_nim_updates_registry(
-        self, app_client: TestClient, setup_service: SetupService
+        self, app_client: TestClient, setup_service: SetupService,
     ):
         """POST /api/setup/skip/nvidia_nim → 200, registry shows SKIPPED."""
         app_client.app.dependency_overrides[require_localhost] = lambda: True
@@ -314,7 +309,7 @@ class TestSkipFlow:
         assert response.status_code == 422
 
     def test_skip_multiple_groups(
-        self, app_client: TestClient, setup_service: SetupService
+        self, app_client: TestClient, setup_service: SetupService,
     ):
         """Skipping multiple groups updates each independently."""
         app_client.app.dependency_overrides[require_localhost] = lambda: True
@@ -342,7 +337,7 @@ class TestCompleteSetup:
     """Requirement 8.3: Complete endpoint sets setup_complete flag."""
 
     def test_complete_setup_sets_flag(
-        self, app_client: TestClient, setup_service: SetupService
+        self, app_client: TestClient, setup_service: SetupService,
     ):
         """POST /api/setup/complete → 200, setup_complete=True."""
         app_client.app.dependency_overrides[require_localhost] = lambda: True
@@ -360,7 +355,7 @@ class TestCompleteSetup:
         assert setup_service.registry.setup_complete is True
 
     def test_complete_setup_persists_across_reload(
-        self, tmp_dir: Path, app_client: TestClient, setup_service: SetupService
+        self, tmp_dir: Path, app_client: TestClient, setup_service: SetupService,
     ):
         """setup_complete flag persists when registry is reloaded."""
         app_client.app.dependency_overrides[require_localhost] = lambda: True
@@ -373,7 +368,7 @@ class TestCompleteSetup:
         assert new_registry.setup_complete is True
 
     def test_status_reflects_complete(
-        self, app_client: TestClient, setup_service: SetupService
+        self, app_client: TestClient, setup_service: SetupService,
     ):
         """GET /api/setup/status shows setup_complete=True after completion."""
         app_client.app.dependency_overrides[require_localhost] = lambda: True
@@ -397,7 +392,7 @@ class TestSetupStatus:
     """Additional tests for the GET /api/setup/status endpoint."""
 
     def test_status_returns_all_services(
-        self, app_client: TestClient, setup_service: SetupService
+        self, app_client: TestClient, setup_service: SetupService,
     ):
         """GET /api/setup/status returns entries for all credential groups."""
         app_client.app.dependency_overrides[require_localhost] = lambda: True
@@ -416,7 +411,7 @@ class TestSetupStatus:
         assert group_ids == expected_ids
 
     def test_status_reflects_configured_service(
-        self, app_client: TestClient, setup_service: SetupService
+        self, app_client: TestClient, setup_service: SetupService,
     ):
         """Status shows 'configured' after credentials are submitted."""
         app_client.app.dependency_overrides[require_localhost] = lambda: True
@@ -429,7 +424,7 @@ class TestSetupStatus:
                     "SHOONYA_API_KEY": "abcdefgh12345678",
                     "SHOONYA_CLIENT_ID": "ABC123",
                     "SHOONYA_PASSWORD": "mypassword",
-                }
+                },
             },
         )
 
@@ -452,7 +447,7 @@ class TestHotReload:
 
     @patch("app.routers.setup.reload_registry")
     def test_submit_credentials_triggers_reload(
-        self, mock_reload, app_client: TestClient
+        self, mock_reload, app_client: TestClient,
     ):
         """POST /api/setup/credentials/{group_id} calls reload_registry on success."""
         app_client.app.dependency_overrides[require_localhost] = lambda: True
@@ -464,7 +459,7 @@ class TestHotReload:
                     "SHOONYA_API_KEY": "abcdefgh12345678",
                     "SHOONYA_CLIENT_ID": "ABC123",
                     "SHOONYA_PASSWORD": "mypassword",
-                }
+                },
             },
         )
         assert response.status_code == 200
@@ -472,7 +467,7 @@ class TestHotReload:
 
     @patch("app.routers.setup.reload_registry")
     def test_submit_invalid_credentials_does_not_trigger_reload(
-        self, mock_reload, app_client: TestClient
+        self, mock_reload, app_client: TestClient,
     ):
         """POST /api/setup/credentials/{group_id} does NOT call reload_registry on validation failure."""
         app_client.app.dependency_overrides[require_localhost] = lambda: True
@@ -484,7 +479,7 @@ class TestHotReload:
                     "SHOONYA_API_KEY": "short",
                     "SHOONYA_CLIENT_ID": "ab",
                     "SHOONYA_PASSWORD": "hi",
-                }
+                },
             },
         )
         assert response.status_code == 422
@@ -503,7 +498,7 @@ class TestHotReload:
                     "SHOONYA_API_KEY": "abcdefgh12345678",
                     "SHOONYA_CLIENT_ID": "ABC123",
                     "SHOONYA_PASSWORD": "mypassword",
-                }
+                },
             },
         )
         mock_reload.reset_mock()
@@ -515,7 +510,7 @@ class TestHotReload:
 
     @patch("app.routers.setup.reload_registry")
     def test_reset_unknown_group_does_not_trigger_reload(
-        self, mock_reload, app_client: TestClient
+        self, mock_reload, app_client: TestClient,
     ):
         """POST /api/setup/reset/nonexistent does NOT call reload_registry."""
         app_client.app.dependency_overrides[require_localhost] = lambda: True

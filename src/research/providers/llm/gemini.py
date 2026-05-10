@@ -70,7 +70,8 @@ Wire-format specifics
 from __future__ import annotations
 
 import json
-from typing import Any, AsyncIterator
+from collections.abc import AsyncIterator
+from typing import Any
 
 import httpx
 
@@ -272,7 +273,7 @@ class GeminiLLM:
     # ------------------------------------------------------------------ #
 
     async def complete(
-        self, messages: list[Message], params: LLMParams
+        self, messages: list[Message], params: LLMParams,
     ) -> Completion:
         """Single non-streamed ``generateContent`` call (Req 2.11)."""
         payload = self._build_payload(messages, params)
@@ -313,7 +314,7 @@ class GeminiLLM:
         )
 
     async def stream(
-        self, messages: list[Message], params: LLMParams
+        self, messages: list[Message], params: LLMParams,
     ) -> AsyncIterator[CompletionChunk]:
         """Async iterator over ``:streamGenerateContent`` SSE deltas (design §3.1).
 
@@ -397,7 +398,7 @@ def build(cfg: dict) -> LLMProvider:
         missing = exc.args[0]
         raise KeyError(
             f"gemini provider config is missing required key {missing!r}; "
-            "expected 'model' and 'api_key' (see design §7.1)."
+            "expected 'model' and 'api_key' (see design §7.1).",
         ) from exc
 
     base_url = cfg.get("base_url") or _DEFAULT_BASE_URL

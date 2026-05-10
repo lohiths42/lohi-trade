@@ -1,5 +1,4 @@
-"""
-Unit tests for HistoricalDataManager.
+"""Unit tests for HistoricalDataManager.
 
 Covers:
 - Daily data download (yfinance)
@@ -10,18 +9,14 @@ Covers:
 - Scheduled daily update
 """
 
-import os
-import tempfile
 from datetime import date, datetime, timedelta
 from pathlib import Path
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, patch
 
 import duckdb
 import pandas as pd
-import pytest
 
 from src.data.historical_data import HistoricalDataManager
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -166,7 +161,7 @@ class TestGetHistoricalData:
         hdm.store_to_duckdb(df, "historical_intraday")
 
         result = hdm.get_historical_data(
-            "RELIANCE", date(2024, 1, 2), date(2024, 1, 2), timeframe="intraday"
+            "RELIANCE", date(2024, 1, 2), date(2024, 1, 2), timeframe="intraday",
         )
         assert len(result) == 10
 
@@ -274,7 +269,7 @@ class TestBackfillMissing:
         mgr = _make_db_manager(tmp_path)
         hdm = HistoricalDataManager(_make_config(), mgr)
         mock_dl.return_value = pd.DataFrame(
-            columns=["symbol", "date", "open", "high", "low", "close", "volume"]
+            columns=["symbol", "date", "open", "high", "low", "close", "volume"],
         )
         total = hdm.backfill_missing("RELIANCE", [date(2024, 1, 4)])
         assert total == 0

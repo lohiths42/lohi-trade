@@ -1,25 +1,21 @@
-"""
-Tests for order book depth collection (Requirement 25.3).
+"""Tests for order book depth collection (Requirement 25.3).
 
 Covers: OrderBookDepth dataclass, Redis hash serialization/deserialization,
 collect_order_book(), _store_order_book_depth(), get_order_book_depth(),
 and edge cases.
 """
 
-import asyncio
-import json
-from datetime import datetime, timezone, timedelta
-from unittest.mock import MagicMock, AsyncMock, patch
+from datetime import datetime
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 from src.ingestion.market_data_collector import (
+    IST,
     MarketDataCollector,
     OrderBookDepth,
     OrderBookLevel,
-    IST,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -166,7 +162,7 @@ class TestOrderBookDepthToRedisHash:
         expected_keys = {"symbol", "timestamp"}
         for i in range(1, 6):
             expected_keys.update({
-                f"bid_{i}", f"ask_{i}", f"bid_qty_{i}", f"ask_qty_{i}"
+                f"bid_{i}", f"ask_{i}", f"bid_qty_{i}", f"ask_qty_{i}",
             })
         assert set(h.keys()) == expected_keys
 
@@ -344,7 +340,7 @@ class TestCollectOrderBook:
     async def test_uses_subscribed_symbols_by_default(self):
         bus = _make_event_bus()
         collector = MarketDataCollector(
-            event_bus=bus, subscribed_symbols=["RELIANCE", "TCS"]
+            event_bus=bus, subscribed_symbols=["RELIANCE", "TCS"],
         )
 
         # _fetch_order_book_depth returns None by default

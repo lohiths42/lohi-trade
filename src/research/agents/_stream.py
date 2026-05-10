@@ -56,14 +56,15 @@ Design references
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
-from typing import Any, Final, Iterable, Mapping, Protocol, runtime_checkable
+from typing import Any, Final, Protocol, runtime_checkable
 
 __all__ = [
-    "StreamEvent",
     "RedisStreamReader",
-    "parse_stream_entry",
+    "StreamEvent",
     "filter_events_by_symbol",
+    "parse_stream_entry",
 ]
 
 
@@ -123,6 +124,7 @@ class StreamEvent:
         the prompt context so the LLM can cite an ISO-8601 stamp.
         ``None`` when no candidate field is present — the prompt
         then renders the entry without a trailing ``@ <ts>`` marker.
+
     """
 
     event_id: str
@@ -263,6 +265,7 @@ def filter_events_by_symbol(
         ``stream:indicators:{symbol}``). When ``False`` (the default),
         events without a symbol field are dropped since we have no
         way to confirm they belong to the requested ticker.
+
     """
     kept: list[StreamEvent] = []
     for event in events:

@@ -56,8 +56,9 @@ Satisfies
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any, Callable, Final, Mapping
+from collections.abc import Callable, Mapping
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING, Any, Final
 from uuid import UUID
 
 if TYPE_CHECKING:  # pragma: no cover - typing only
@@ -105,12 +106,12 @@ class SnapshotRecord:
     """
 
     __slots__ = (
-        "user_id",
-        "symbol",
         "brief",
         "generated_at",
         "input_document_hashes",
         "stale",
+        "symbol",
+        "user_id",
     )
 
     def __init__(
@@ -154,6 +155,7 @@ class SnapshotStore:
         for the freshness comparison. Defaults to
         ``lambda: datetime.now(timezone.utc)``. Exposed so unit tests
         can pin time without monkey-patching module state.
+
     """
 
     # Columns in the migration order (design §4.1):
@@ -195,7 +197,7 @@ class SnapshotStore:
         self,
         *,
         connection_factory: Callable[
-            [UUID], "AbstractAsyncContextManager[asyncpg.Connection]"
+            [UUID], AbstractAsyncContextManager[asyncpg.Connection],
         ],
         clock: Callable[[], datetime] | None = None,
     ) -> None:
@@ -329,9 +331,9 @@ class SnapshotStore:
         # sides to UTC-aware datetimes so naive test clocks don't
         # trip an awareness mismatch.
         if generated_at.tzinfo is None:
-            generated_at = generated_at.replace(tzinfo=timezone.utc)
+            generated_at = generated_at.replace(tzinfo=UTC)
         if now.tzinfo is None:
-            now = now.replace(tzinfo=timezone.utc)
+            now = now.replace(tzinfo=UTC)
 
         age_sec = (now - generated_at).total_seconds()
         if age_sec < 0:
@@ -361,7 +363,7 @@ class SnapshotStore:
 
 def _default_clock() -> datetime:
     """UTC-aware "now" used by :class:`SnapshotStore` by default."""
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def _normalise_symbol(symbol: str) -> str:

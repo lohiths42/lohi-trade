@@ -149,7 +149,7 @@ class LanceDbVectorStore:
     rationale.
     """
 
-    def __init__(self, *, db: "lancedb.DBConnection") -> None:
+    def __init__(self, *, db: lancedb.DBConnection) -> None:
         # Kept private so callers go through the ``VectorStore``
         # protocol methods; the underlying connection is not part of
         # the public contract.
@@ -246,7 +246,7 @@ class LanceDbVectorStore:
                     # infer the schema from — caller must handle None.
                     return None
                 return self._db.create_table(
-                    _TABLE_NAME, data=seed_rows, mode="create"
+                    _TABLE_NAME, data=seed_rows, mode="create",
                 )
 
             table = await loop.run_in_executor(None, _open_or_create)

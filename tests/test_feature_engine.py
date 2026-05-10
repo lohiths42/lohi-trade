@@ -1,21 +1,19 @@
-"""
-Unit tests for the ML Feature Engine.
+"""Unit tests for the ML Feature Engine.
 """
 
-import numpy as np
-import pytest
 from datetime import datetime
 
+import numpy as np
+
 from src.ml.feature_engine import (
+    FEATURE_NAMES,
+    NUM_FEATURES,
+    SentimentFeatures,
+    _macd_crossover,
+    _rsi_zone,
+    _safe_div,
     extract_features,
     extract_label,
-    SentimentFeatures,
-    FeatureVector,
-    NUM_FEATURES,
-    FEATURE_NAMES,
-    _safe_div,
-    _rsi_zone,
-    _macd_crossover,
 )
 from src.soldier.indicator_engine import IndicatorSet
 

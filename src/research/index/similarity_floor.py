@@ -39,7 +39,7 @@ Defaults (design §3.3, Decision-Log #6)
 
 from __future__ import annotations
 
-__all__ = ["similarity_floor_for", "DEFAULT_FLOORS"]
+__all__ = ["DEFAULT_FLOORS", "similarity_floor_for"]
 
 
 # --------------------------------------------------------------------------- #
@@ -102,5 +102,5 @@ def similarity_floor_for(
         f"Known models: {known}. "
         "Either add it to research.retrieval.similarity_floor.<model_id> in "
         "config/settings.yaml or extend DEFAULT_FLOORS in "
-        "src/research/index/similarity_floor.py."
+        "src/research/index/similarity_floor.py.",
     )

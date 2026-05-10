@@ -1,5 +1,4 @@
-"""
-Market data wiring module for LOHI-TRADE.
+"""Market data wiring module for LOHI-TRADE.
 
 Connects MarketDataCollector and CorporateActionsCollector outputs to the
 existing Redis Streams event bus so that Soldier/Commander/RMS/OMS consume
@@ -9,19 +8,16 @@ to the push notification center for watchlist securities.
 Task 28.2 — Requirements: 25.4, 27.3
 """
 
-import json
 import logging
-from typing import Any, Callable, Dict, List, Optional
+from collections.abc import Callable
+from typing import Any
 
+from src.ingestion.corporate_actions_collector import (
+    CorporateActionsCollector,
+)
 from src.ingestion.market_data_collector import (
     MarketDataCollector,
     TickData,
-)
-from src.ingestion.corporate_actions_collector import (
-    CorporateActionsCollector,
-    CorporateAction,
-    CorporateActionType,
-    ExchangeAnnouncement,
 )
 from src.state.event_bus import EventBus
 
@@ -37,8 +33,7 @@ NOTIFICATION_STREAM_MAXLEN = 500
 
 
 class MarketDataWiring:
-    """
-    Wires MarketDataCollector and CorporateActionsCollector to the existing
+    """Wires MarketDataCollector and CorporateActionsCollector to the existing
     Redis Streams event bus.
 
     Responsibilities:
@@ -55,10 +50,9 @@ class MarketDataWiring:
         event_bus: EventBus,
         market_data_collector: MarketDataCollector,
         corporate_actions_collector: CorporateActionsCollector,
-        push_notification_callback: Optional[Callable] = None,
+        push_notification_callback: Callable | None = None,
     ):
-        """
-        Initialize wiring between collectors and event bus.
+        """Initialize wiring between collectors and event bus.
 
         Args:
             event_bus: The Redis Streams event bus.
@@ -67,6 +61,7 @@ class MarketDataWiring:
             push_notification_callback: Optional async callback for sending
                 push notifications. Signature:
                 ``async def callback(user_id, symbol, title, message, data)``
+
         """
         self.event_bus = event_bus
         self.market_data_collector = market_data_collector
@@ -77,8 +72,7 @@ class MarketDataWiring:
         self._notifications_forwarded = 0
 
     def wire(self) -> None:
-        """
-        Wire all connections between collectors and the event bus.
+        """Wire all connections between collectors and the event bus.
 
         This patches the MarketDataCollector's ``_process_tick`` to also
         publish to the unified ``stream:ticks`` stream, and hooks into
@@ -94,8 +88,7 @@ class MarketDataWiring:
         logger.info("MarketDataWiring: all connections established")
 
     def _wire_market_data_to_unified_stream(self) -> None:
-        """
-        Patch MarketDataCollector to also publish ticks to the unified
+        """Patch MarketDataCollector to also publish ticks to the unified
         ``stream:ticks`` stream.
 
         The collector already publishes to per-symbol streams
@@ -129,12 +122,11 @@ class MarketDataWiring:
 
         self.market_data_collector._process_tick = enhanced_process_tick
         logger.info(
-            "Wired MarketDataCollector → unified stream:ticks"
+            "Wired MarketDataCollector → unified stream:ticks",
         )
 
     def _wire_corporate_action_notifications(self) -> None:
-        """
-        Patch CorporateActionsCollector to forward watchlist notifications
+        """Patch CorporateActionsCollector to forward watchlist notifications
         to the push notification center.
 
         The collector already publishes to ``stream:notifications`` via
@@ -152,7 +144,7 @@ class MarketDataWiring:
             symbol: str,
             title: str,
             message: str,
-            data: Dict[str, Any],
+            data: dict[str, Any],
         ) -> None:
             # Call original (publishes to stream:notifications)
             original_send_notification(
@@ -174,7 +166,7 @@ class MarketDataWiring:
                     self._notifications_forwarded += 1
                     logger.info(
                         f"Forwarded corporate action notification for {symbol} "
-                        "to push notification center"
+                        "to push notification center",
                     )
                 except Exception as e:
                     logger.error(
@@ -186,7 +178,7 @@ class MarketDataWiring:
             enhanced_send_notification
         )
         logger.info(
-            "Wired CorporateActionsCollector → push notification center"
+            "Wired CorporateActionsCollector → push notification center",
         )
 
     @property

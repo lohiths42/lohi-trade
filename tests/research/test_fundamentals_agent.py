@@ -24,7 +24,6 @@ from src.research.providers.base import (
 )
 from tests.research.fakes import FakeLLMProvider
 
-
 # --------------------------------------------------------------------------- #
 # Helpers (identical shape to test_filings_agent; tiny duplication is fine)   #
 # --------------------------------------------------------------------------- #
@@ -52,7 +51,7 @@ class _RaisingLLM(FakeLLMProvider):
 
 
 def _build_hit(
-    *, chunk_id: str, user_id: UUID, symbol: str, text: str
+    *, chunk_id: str, user_id: UUID, symbol: str, text: str,
 ) -> ChunkHit:
     return ChunkHit(
         chunk=ChunkRecord(
@@ -141,7 +140,7 @@ class TestHappyPath:
         agent = FundamentalsAgent(llm=llm)
 
         result = await agent.invoke(
-            _build_context(user_id=user_id, symbol="INFY", retriever=retriever)
+            _build_context(user_id=user_id, symbol="INFY", retriever=retriever),
         )
         assert result.kind == "ok"
         assert result.section_name == "financial_highlights"
@@ -166,12 +165,12 @@ class TestRetrievalShape:
                     user_id=user_id,
                     symbol="INFY",
                     text="t",
-                )
-            ]
+                ),
+            ],
         )
         agent = FundamentalsAgent(llm=FakeLLMProvider())
         await agent.invoke(
-            _build_context(user_id=user_id, symbol="INFY", retriever=retriever)
+            _build_context(user_id=user_id, symbol="INFY", retriever=retriever),
         )
         filter_used: RetrievalFilter = retriever.calls[0]["filter"]
         assert filter_used.document_type == "annual_report"
@@ -187,8 +186,8 @@ class TestRetrievalShape:
                     user_id=user_id,
                     symbol="INFY",
                     text="t",
-                )
-            ]
+                ),
+            ],
         )
         agent = FundamentalsAgent(llm=FakeLLMProvider())
         await agent.invoke(
@@ -197,7 +196,7 @@ class TestRetrievalShape:
                 symbol="INFY",
                 retriever=retriever,
                 user_prompt="How strong is INFY?",
-            )
+            ),
         )
         query = retriever.calls[0]["query"]
         assert "How strong is INFY?" in query
@@ -215,8 +214,8 @@ class TestRetrievalShape:
                     user_id=user_id,
                     symbol="INFY",
                     text="t",
-                )
-            ]
+                ),
+            ],
         )
         agent = FundamentalsAgent(llm=FakeLLMProvider())
         await agent.invoke(
@@ -225,7 +224,7 @@ class TestRetrievalShape:
                 symbol="INFY",
                 retriever=retriever,
                 retrieval_plan={"fundamentals": "FY24 margins walkthrough"},
-            )
+            ),
         )
         assert retriever.calls[0]["query"] == "FY24 margins walkthrough"
 
@@ -239,8 +238,8 @@ class TestRetrievalShape:
                     user_id=user_id,
                     symbol="INFY",
                     text="t",
-                )
-            ]
+                ),
+            ],
         )
         agent = FundamentalsAgent(llm=FakeLLMProvider())
         await agent.invoke(
@@ -249,7 +248,7 @@ class TestRetrievalShape:
                 symbol="INFY",
                 retriever=retriever,
                 user_prompt="",
-            )
+            ),
         )
         query = retriever.calls[0]["query"]
         assert "revenue" in query
@@ -267,7 +266,7 @@ class TestFailureModes:
         retriever = _RecordingRetriever(canned=[])
         agent = FundamentalsAgent(llm=FakeLLMProvider())
         result = await agent.invoke(
-            _build_context(user_id=user_id, symbol="INFY", retriever=retriever)
+            _build_context(user_id=user_id, symbol="INFY", retriever=retriever),
         )
         assert result.kind == "no_data"
         assert "no fundamentals chunks" in result.reason
@@ -278,7 +277,7 @@ class TestFailureModes:
         retriever = _RecordingRetriever(canned=[])
         agent = FundamentalsAgent(llm=FakeLLMProvider())
         result = await agent.invoke(
-            _build_context(user_id=user_id, symbol=None, retriever=retriever)
+            _build_context(user_id=user_id, symbol=None, retriever=retriever),
         )
         assert result.kind == "no_data"
         assert retriever.calls == []
@@ -293,13 +292,13 @@ class TestFailureModes:
                     user_id=user_id,
                     symbol="INFY",
                     text="t",
-                )
-            ]
+                ),
+            ],
         )
         agent = FundamentalsAgent(llm=_RaisingLLM())
         with pytest.raises(RuntimeError, match="fundamentals llm exploded"):
             await agent.invoke(
                 _build_context(
-                    user_id=user_id, symbol="INFY", retriever=retriever
-                )
+                    user_id=user_id, symbol="INFY", retriever=retriever,
+                ),
             )

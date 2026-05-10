@@ -1,5 +1,4 @@
-"""
-Property-based tests for NewsDeduplicator.
+"""Property-based tests for NewsDeduplicator.
 
 Uses hypothesis to verify that news deduplication correctly filters
 duplicate articles based on content hash comparison, retaining only
@@ -15,15 +14,14 @@ Properties tested:
 """
 
 import uuid
-from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from datetime import UTC, datetime
+from typing import Any
 
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from src.commander.news_deduplicator import HASH_TTL_SECONDS, NewsDeduplicator
+from src.commander.news_deduplicator import NewsDeduplicator
 from src.commander.rss_poller import NewsArticle, compute_content_hash
-
 
 # ---------------------------------------------------------------------------
 # Mock Redis Client (dict-based in-memory storage)
@@ -34,12 +32,12 @@ class MockRedisClient:
     """In-memory Redis client that simulates get/set with a dict."""
 
     def __init__(self) -> None:
-        self._store: Dict[str, str] = {}
+        self._store: dict[str, str] = {}
 
-    def get(self, key: str) -> Optional[str]:
+    def get(self, key: str) -> str | None:
         return self._store.get(key)
 
-    def set(self, key: str, value: Any, ex: Optional[int] = None) -> None:
+    def set(self, key: str, value: Any, ex: int | None = None) -> None:
         self._store[key] = str(value)
 
 
@@ -62,16 +60,15 @@ def article_strategy(draw, title=None, content=None):
         title=t,
         content=c,
         url=f"https://example.com/{uuid.uuid4().hex[:8]}",
-        published_at=datetime.now(timezone.utc),
-        fetched_at=datetime.now(timezone.utc),
+        published_at=datetime.now(UTC),
+        fetched_at=datetime.now(UTC),
         content_hash=compute_content_hash(t, c),
     )
 
 
 @st.composite
 def articles_with_duplicates(draw):
-    """
-    Generate a list of articles where some may share the same content hash.
+    """Generate a list of articles where some may share the same content hash.
 
     Strategy: generate a pool of unique (title, content) pairs, then build
     a list of articles by sampling from that pool (allowing repeats).
@@ -84,7 +81,7 @@ def articles_with_duplicates(draw):
     ]
 
     num_articles = draw(st.integers(min_value=1, max_value=20))
-    articles: List[NewsArticle] = []
+    articles: list[NewsArticle] = []
     for _ in range(num_articles):
         idx = draw(st.integers(min_value=0, max_value=num_unique - 1))
         title, content = unique_pairs[idx]
@@ -95,10 +92,10 @@ def articles_with_duplicates(draw):
                 title=title,
                 content=content,
                 url=f"https://example.com/{uuid.uuid4().hex[:8]}",
-                published_at=datetime.now(timezone.utc),
-                fetched_at=datetime.now(timezone.utc),
+                published_at=datetime.now(UTC),
+                fetched_at=datetime.now(UTC),
                 content_hash=compute_content_hash(title, content),
-            )
+            ),
         )
 
     return articles
@@ -110,8 +107,7 @@ def articles_with_duplicates(draw):
 
 
 class TestNewsDeduplicationProperties:
-    """
-    **Validates: Requirements 5.4, 5.5**
+    """**Validates: Requirements 5.4, 5.5**
 
     Property 18: News Deduplication
     """
@@ -119,8 +115,7 @@ class TestNewsDeduplicationProperties:
     @given(articles=articles_with_duplicates())
     @settings(max_examples=25)
     def test_no_duplicate_hashes_in_result(self, articles):
-        """
-        Property: After deduplication, no two articles share the same content_hash.
+        """Property: After deduplication, no two articles share the same content_hash.
 
         **Validates: Requirements 5.4**
         """
@@ -136,8 +131,7 @@ class TestNewsDeduplicationProperties:
     @given(articles=articles_with_duplicates())
     @settings(max_examples=25)
     def test_earliest_version_retained(self, articles):
-        """
-        Property: The first occurrence of each unique hash in the input is
+        """Property: The first occurrence of each unique hash in the input is
         the one retained in the output.
 
         **Validates: Requirements 5.5**
@@ -146,7 +140,7 @@ class TestNewsDeduplicationProperties:
         result = deduplicator.deduplicate(articles)
 
         # Build map of first occurrence per hash from the input
-        first_occurrence: Dict[str, str] = {}
+        first_occurrence: dict[str, str] = {}
         for article in articles:
             if article.content_hash not in first_occurrence:
                 first_occurrence[article.content_hash] = article.article_id
@@ -160,8 +154,7 @@ class TestNewsDeduplicationProperties:
     @given(articles=articles_with_duplicates())
     @settings(max_examples=25)
     def test_unique_count_equals_distinct_hashes(self, articles):
-        """
-        Property: The number of articles in the result equals the number of
+        """Property: The number of articles in the result equals the number of
         distinct content hashes in the input.
 
         **Validates: Requirements 5.4**
@@ -177,8 +170,7 @@ class TestNewsDeduplicationProperties:
     @given(articles=articles_with_duplicates())
     @settings(max_examples=25)
     def test_all_results_from_original_input(self, articles):
-        """
-        Property: Every article in the deduplicated result was present in
+        """Property: Every article in the deduplicated result was present in
         the original input list.
 
         **Validates: Requirements 5.4, 5.5**

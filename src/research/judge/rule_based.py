@@ -82,7 +82,8 @@ from __future__ import annotations
 
 import re
 import time
-from typing import Final, Iterable, Mapping, Protocol, runtime_checkable
+from collections.abc import Iterable, Mapping
+from typing import Final, Protocol, runtime_checkable
 from uuid import UUID
 
 from src.research.judge.judge import JudgeReport
@@ -174,7 +175,7 @@ _BRIEF_SECTION_NAMES: Final[tuple[str, ...]] = (
 async def invoke_rule_based(
     *,
     run_id: UUID,
-    brief: "Mapping[str, str] | object",
+    brief: Mapping[str, str] | object,
     chunks: Iterable[_ChunkLike],
     numeric_findings: Iterable[UnsupportedClaim] | None = None,
     min_score: float = 0.7,
@@ -225,6 +226,7 @@ async def invoke_rule_based(
         passed: no uncited sentences, no numeric-drift findings,
         no off-policy findings, and every per-section score at or
         above ``min_score``.
+
     """
     start = time.perf_counter()
 
@@ -241,7 +243,7 @@ async def invoke_rule_based(
     # fallback can stand alone.
     if numeric_findings is None:
         numeric_claims = validate_numeric_fidelity(
-            brief=sections, cited_chunks=list(chunks)
+            brief=sections, cited_chunks=list(chunks),
         )
     else:
         numeric_claims = list(numeric_findings)
@@ -341,7 +343,7 @@ def _score_citation_coverage(
                     start_offset=start,
                     end_offset=end,
                     reason="no_citation",
-                )
+                ),
             )
 
         scores[section_name] = cited_count / len(sentences)
@@ -484,7 +486,7 @@ def _merge_claims(
 
 
 def _coerce_brief_sections(
-    brief: "Mapping[str, str] | object",
+    brief: Mapping[str, str] | object,
 ) -> dict[str, str]:
     """Normalise accepted brief inputs into ``{section_name: content}``.
 

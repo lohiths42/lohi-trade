@@ -1,5 +1,4 @@
-"""
-Tests for the Indicator Engine.
+"""Tests for the Indicator Engine.
 
 Validates indicator calculation using pandas-ta, rolling window management,
 insufficient data handling, symbol isolation, and error resilience.
@@ -7,7 +6,6 @@ insufficient data handling, symbol isolation, and error resilience.
 Requirements: 3.1, 3.2, 3.3, 3.4, 3.6
 """
 
-import math
 from datetime import datetime, timedelta
 
 import numpy as np
@@ -70,7 +68,7 @@ def _build_candle_series(
                 volume=volume + int(np.random.uniform(-200, 200)),
                 timestamp=datetime(2024, 1, 15, 9, 15) + timedelta(minutes=i),
                 is_complete=True,
-            )
+            ),
         )
     return candles
 
@@ -335,7 +333,7 @@ class TestErrorHandling:
                     volume=1000,
                     timestamp=datetime(2024, 1, 15, 9, 15) + timedelta(minutes=i),
                     is_complete=True,
-                )
+                ),
             )
         result = None
         for c in candles:

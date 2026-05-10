@@ -1,5 +1,4 @@
-"""
-Publishes completed candles to Redis Streams via the Event Bus.
+"""Publishes completed candles to Redis Streams via the Event Bus.
 
 Registers as a callback on CandleBuilder.on_candle_complete and publishes
 each completed candle to stream:candles:{symbol}:{timeframe} with maxlen=500.
@@ -8,7 +7,6 @@ Requirements: 2.2
 """
 
 import time
-from typing import Optional
 
 from src.soldier.candle_builder import Candle, CandleBuilder
 from src.state.event_bus import EventBus
@@ -20,8 +18,7 @@ CANDLE_STREAM_MAXLEN = 500
 
 
 class CandlePublisher:
-    """
-    Publishes completed candles from CandleBuilder to Redis Streams.
+    """Publishes completed candles from CandleBuilder to Redis Streams.
 
     Automatically registers itself as a callback on the provided CandleBuilder.
     Measures and logs latency from candle completion to publish.

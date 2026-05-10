@@ -1,10 +1,8 @@
 """Tests for RSS Feed Poller."""
 
 import time
-from datetime import datetime, timezone
+from datetime import datetime
 from unittest.mock import MagicMock, patch
-
-import pytest
 
 from src.commander.rss_poller import (
     DEFAULT_RSS_SOURCES,

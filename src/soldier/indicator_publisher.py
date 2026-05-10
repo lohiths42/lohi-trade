@@ -1,5 +1,4 @@
-"""
-Publishes calculated indicators to Redis Streams via the Event Bus.
+"""Publishes calculated indicators to Redis Streams via the Event Bus.
 
 Receives completed candles, feeds them to the IndicatorEngine for calculation,
 and publishes the resulting IndicatorSet to stream:indicators:{symbol}.
@@ -9,7 +8,6 @@ Requirements: 3.3, 3.5
 
 import time
 from dataclasses import asdict
-from typing import Optional
 
 from src.soldier.candle_builder import Candle, CandleBuilder
 from src.soldier.indicator_engine import IndicatorEngine, IndicatorSet
@@ -25,8 +23,7 @@ LATENCY_THRESHOLD_MS = 50
 
 
 class IndicatorPublisher:
-    """
-    Publishes indicator calculations from IndicatorEngine to Redis Streams.
+    """Publishes indicator calculations from IndicatorEngine to Redis Streams.
 
     Processes completed candles through the IndicatorEngine and publishes
     resulting IndicatorSet to stream:indicators:{symbol} with maxlen=100.
@@ -40,9 +37,8 @@ class IndicatorPublisher:
         self._indicator_engine = indicator_engine
         logger.info("IndicatorPublisher initialized")
 
-    def process_candle(self, candle: Candle) -> Optional[IndicatorSet]:
-        """
-        Process a completed candle through the indicator engine and publish results.
+    def process_candle(self, candle: Candle) -> IndicatorSet | None:
+        """Process a completed candle through the indicator engine and publish results.
 
         Calls IndicatorEngine.add_candle to calculate indicators. If sufficient
         historical data exists and calculation succeeds, publishes the IndicatorSet
@@ -55,6 +51,7 @@ class IndicatorPublisher:
             IndicatorSet if indicators were calculated and published, None otherwise.
 
         Requirements: 3.3, 3.5
+
         """
         start = time.monotonic()
 
@@ -98,25 +95,25 @@ class IndicatorPublisher:
         return result
 
     def register_on_candle_builder(self, candle_builder: CandleBuilder) -> None:
-        """
-        Register process_candle as a callback on the CandleBuilder.
+        """Register process_candle as a callback on the CandleBuilder.
 
         Args:
             candle_builder: The CandleBuilder to register on.
+
         """
         candle_builder.on_candle_complete(self.process_candle)
         logger.info("IndicatorPublisher registered on CandleBuilder")
 
     @staticmethod
     def _serialize_indicators(indicator_set: IndicatorSet) -> dict:
-        """
-        Convert an IndicatorSet to a dict suitable for Redis Stream publishing.
+        """Convert an IndicatorSet to a dict suitable for Redis Stream publishing.
 
         Args:
             indicator_set: The IndicatorSet to serialize.
 
         Returns:
             Dictionary with all indicator fields, timestamp as ISO string.
+
         """
         data = asdict(indicator_set)
         data["timestamp"] = indicator_set.timestamp.isoformat()

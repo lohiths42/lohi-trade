@@ -1,5 +1,4 @@
-"""
-Property-based tests for the Position Manager.
+"""Property-based tests for the Position Manager.
 
 Uses hypothesis to verify PositionManager properties across randomly
 generated positions and price movements.
@@ -17,17 +16,15 @@ from datetime import datetime
 from unittest.mock import MagicMock
 
 import pytest
-from hypothesis import given, settings, assume
+from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
-from src.execution.position_manager import PositionManager, Position
 from src.execution.oms import OrderResult
+from src.execution.position_manager import PositionManager
 from src.ingestion.broker_interface import (
     OrderSide,
     OrderType,
-    ProductType,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -64,7 +61,7 @@ def _make_trades_db() -> MagicMock:
 def _make_oms() -> MagicMock:
     oms = MagicMock()
     oms.place_order.return_value = OrderResult(
-        success=True, order_id="mock-order", broker_order_id="BROKER-1"
+        success=True, order_id="mock-order", broker_order_id="BROKER-1",
     )
     oms.cancel_order.return_value = True
     return oms
@@ -144,8 +141,7 @@ def any_position_params(draw):
     """Generate either BUY or SELL position parameters."""
     if draw(st.booleans()):
         return draw(buy_position_params())
-    else:
-        return draw(sell_position_params())
+    return draw(sell_position_params())
 
 
 # ---------------------------------------------------------------------------
@@ -154,8 +150,7 @@ def any_position_params(draw):
 # ---------------------------------------------------------------------------
 
 class TestProperty52StopLossPlacement:
-    """
-    For any filled position, a stop-loss order should be placed at the
+    """For any filled position, a stop-loss order should be placed at the
     signal's stop price immediately.
 
     **Validates: Requirements 12.1**
@@ -233,8 +228,7 @@ class TestProperty52StopLossPlacement:
 # ---------------------------------------------------------------------------
 
 class TestProperty53TargetOrderPlacement:
-    """
-    For any filled position, a target limit order should be placed at the
+    """For any filled position, a target limit order should be placed at the
     signal's target price.
 
     **Validates: Requirements 12.2**
@@ -311,8 +305,7 @@ class TestProperty53TargetOrderPlacement:
 # ---------------------------------------------------------------------------
 
 class TestProperty54TrailingStopLoss:
-    """
-    For any profitable position, the trailing stop should move by 50% of
+    """For any profitable position, the trailing stop should move by 50% of
     profit and never move backward.
 
     **Validates: Requirements 12.3**
@@ -447,8 +440,7 @@ class TestProperty54TrailingStopLoss:
 # ---------------------------------------------------------------------------
 
 class TestProperty55PositionClosing:
-    """
-    For any position where stop or target is hit, the position should be
+    """For any position where stop or target is hit, the position should be
     marked CLOSED with correct realized P&L.
 
     **Validates: Requirements 12.4**
@@ -555,8 +547,7 @@ class TestProperty55PositionClosing:
 # ---------------------------------------------------------------------------
 
 class TestProperty56OCOOrderCancellation:
-    """
-    For any position where one exit order (stop or target) is filled,
+    """For any position where one exit order (stop or target) is filled,
     the other should be cancelled.
 
     **Validates: Requirements 12.5**

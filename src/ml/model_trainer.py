@@ -1,5 +1,4 @@
-"""
-ML Model Trainer with feedback loop for LOHI-TRADE.
+"""ML Model Trainer with feedback loop for LOHI-TRADE.
 
 Trains a gradient-boosted decision tree (scikit-learn) on historical
 trade outcomes. Supports:
@@ -17,13 +16,13 @@ import json
 import logging
 import pickle
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 
-from src.ml.feature_engine import NUM_FEATURES, FEATURE_NAMES
+from src.ml.feature_engine import FEATURE_NAMES
 
 logger = logging.getLogger(__name__)
 
@@ -35,15 +34,16 @@ RETRAIN_THRESHOLD = 20  # retrain after this many new samples
 @dataclass
 class ModelMetrics:
     """Performance metrics for the trained model."""
+
     accuracy: float = 0.0
     precision: float = 0.0
     recall: float = 0.0
     f1_score: float = 0.0
     sample_count: int = 0
-    trained_at: Optional[datetime] = None
-    feature_importances: Dict[str, float] = field(default_factory=dict)
+    trained_at: datetime | None = None
+    feature_importances: dict[str, float] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "accuracy": round(self.accuracy, 4),
             "precision": round(self.precision, 4),
@@ -52,7 +52,7 @@ class ModelMetrics:
             "sample_count": self.sample_count,
             "trained_at": self.trained_at.isoformat() if self.trained_at else None,
             "top_features": dict(
-                sorted(self.feature_importances.items(), key=lambda x: -x[1])[:5]
+                sorted(self.feature_importances.items(), key=lambda x: -x[1])[:5],
             ),
         }
 
@@ -60,15 +60,15 @@ class ModelMetrics:
 @dataclass
 class TrainingSample:
     """A single training example: features + outcome label."""
+
     features: np.ndarray   # shape (NUM_FEATURES,)
     label: float           # continuous in [-1, 1], binarized for classification
     symbol: str = ""
-    timestamp: Optional[datetime] = None
+    timestamp: datetime | None = None
 
 
 class ModelTrainer:
-    """
-    Trains and manages the ML model for signal quality prediction.
+    """Trains and manages the ML model for signal quality prediction.
 
     Uses GradientBoostingClassifier from scikit-learn. The model is
     trained on completed trade outcomes and predicts whether a new
@@ -86,8 +86,8 @@ class ModelTrainer:
         self._min_samples = min_samples
         self._retrain_threshold = retrain_threshold
 
-        self._model: Optional[Any] = None
-        self._samples: List[TrainingSample] = []
+        self._model: Any | None = None
+        self._samples: list[TrainingSample] = []
         self._new_samples_since_train: int = 0
         self._metrics: ModelMetrics = ModelMetrics()
         self._is_trained: bool = False
@@ -108,8 +108,7 @@ class ModelTrainer:
         return len(self._samples)
 
     def add_sample(self, sample: TrainingSample) -> bool:
-        """
-        Add a training sample from a completed trade.
+        """Add a training sample from a completed trade.
 
         Returns True if the model was retrained.
         """
@@ -118,7 +117,7 @@ class ModelTrainer:
 
         logger.debug(
             f"Added training sample: symbol={sample.symbol}, "
-            f"label={sample.label:.3f}, total={len(self._samples)}"
+            f"label={sample.label:.3f}, total={len(self._samples)}",
         )
 
         # Auto-retrain if enough new samples
@@ -131,8 +130,7 @@ class ModelTrainer:
         return False
 
     def train(self) -> ModelMetrics:
-        """
-        Train the model on all accumulated samples.
+        """Train the model on all accumulated samples.
 
         Uses GradientBoostingClassifier with binary labels:
           label > 0 → class 1 (profitable)
@@ -140,14 +138,15 @@ class ModelTrainer:
 
         Returns:
             ModelMetrics with performance on a holdout split.
+
         """
         from sklearn.ensemble import GradientBoostingClassifier
+        from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
         from sklearn.model_selection import train_test_split
-        from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
         if len(self._samples) < self._min_samples:
             logger.warning(
-                f"Not enough samples to train: {len(self._samples)}/{self._min_samples}"
+                f"Not enough samples to train: {len(self._samples)}/{self._min_samples}",
             )
             return self._metrics
 
@@ -164,13 +163,13 @@ class ModelTrainer:
         if np.min(class_counts) < 2:
             logger.warning(
                 f"Minority class has only {np.min(class_counts)} sample(s), "
-                f"need at least 2 for stratified split. Skipping training."
+                f"need at least 2 for stratified split. Skipping training.",
             )
             return self._metrics
 
         test_size = min(0.2, max(5, len(self._samples) // 5) / len(self._samples))
         X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=test_size, stratify=y, random_state=42
+            X, y, test_size=test_size, stratify=y, random_state=42,
         )
 
         model = GradientBoostingClassifier(
@@ -191,9 +190,9 @@ class ModelTrainer:
             recall=float(recall_score(y_test, y_pred, zero_division=0)),
             f1_score=float(f1_score(y_test, y_pred, zero_division=0)),
             sample_count=len(self._samples),
-            trained_at=datetime.now(timezone.utc),
+            trained_at=datetime.now(UTC),
             feature_importances=dict(
-                zip(FEATURE_NAMES, model.feature_importances_.tolist())
+                zip(FEATURE_NAMES, model.feature_importances_.tolist()),
             ),
         )
 
@@ -205,13 +204,12 @@ class ModelTrainer:
 
         logger.info(
             f"Model trained: accuracy={self._metrics.accuracy:.3f}, "
-            f"f1={self._metrics.f1_score:.3f}, samples={len(self._samples)}"
+            f"f1={self._metrics.f1_score:.3f}, samples={len(self._samples)}",
         )
         return self._metrics
 
-    def predict(self, features: np.ndarray) -> Tuple[float, float]:
-        """
-        Predict signal quality.
+    def predict(self, features: np.ndarray) -> tuple[float, float]:
+        """Predict signal quality.
 
         Args:
             features: Feature vector of shape (NUM_FEATURES,).
@@ -219,6 +217,7 @@ class ModelTrainer:
         Returns:
             Tuple of (probability_profitable, predicted_class).
             If model is not trained, returns (0.5, 0) as neutral.
+
         """
         if not self._is_trained or self._model is None:
             return 0.5, 0.0
@@ -265,7 +264,7 @@ class ModelTrainer:
 
                 self._is_trained = True
                 logger.info(
-                    f"Loaded model with {len(self._samples)} samples from {self._model_dir}"
+                    f"Loaded model with {len(self._samples)} samples from {self._model_dir}",
                 )
         except Exception as e:
             logger.warning(f"Could not load model: {e}")

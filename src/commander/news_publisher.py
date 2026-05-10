@@ -1,5 +1,4 @@
-"""
-News Publisher for The Commander.
+"""News Publisher for The Commander.
 
 Publishes unique news articles to the Event Bus (stream:news) and stores
 them in the SQLite news_articles table for later sentiment analysis.
@@ -8,7 +7,6 @@ Requirements: 5.6, 5.7
 """
 
 import time
-from typing import List
 
 from src.commander.rss_poller import NewsArticle
 from src.state.database import DatabaseConnectionManager
@@ -28,8 +26,7 @@ INSERT_NEWS_ARTICLE_SQL = """
 
 
 class NewsPublisher:
-    """
-    Publishes unique news articles to Redis Stream and stores them in SQLite.
+    """Publishes unique news articles to Redis Stream and stores them in SQLite.
 
     Publishes to ``stream:news`` with maxlen=5000 and persists each article
     in the ``news_articles`` table.  The sentiment column is left NULL at
@@ -48,11 +45,11 @@ class NewsPublisher:
     # ------------------------------------------------------------------
 
     def publish(self, article: NewsArticle) -> None:
-        """
-        Publish a single article to the Event Bus and store in SQLite.
+        """Publish a single article to the Event Bus and store in SQLite.
 
         Args:
             article: The unique news article to publish.
+
         """
         start = time.monotonic()
 
@@ -75,15 +72,15 @@ class NewsPublisher:
                 extra={"article_id": article.article_id},
             )
 
-    def publish_batch(self, articles: List[NewsArticle]) -> int:
-        """
-        Publish multiple articles.
+    def publish_batch(self, articles: list[NewsArticle]) -> int:
+        """Publish multiple articles.
 
         Args:
             articles: List of unique news articles to publish.
 
         Returns:
             Number of articles successfully published.
+
         """
         published = 0
         for article in articles:
@@ -115,7 +112,7 @@ class NewsPublisher:
             "content_hash": article.content_hash,
         }
         return self._event_bus.publish(
-            NEWS_STREAM_NAME, message, maxlen=NEWS_STREAM_MAXLEN
+            NEWS_STREAM_NAME, message, maxlen=NEWS_STREAM_MAXLEN,
         )
 
     def _store_in_sqlite(self, article: NewsArticle) -> None:

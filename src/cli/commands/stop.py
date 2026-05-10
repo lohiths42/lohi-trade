@@ -8,7 +8,7 @@ import subprocess
 import time
 
 from src.cli import console
-from src.cli.system import find_project_root, _run_cmd
+from src.cli.system import _run_cmd, find_project_root
 
 
 def run_stop() -> int:

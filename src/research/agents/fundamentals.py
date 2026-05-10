@@ -107,7 +107,7 @@ class FundamentalsAgent(BaseRetrievalAgent):
 
 
 def build(
-    llm: LLMProvider, config: AgentConfig | None = None
+    llm: LLMProvider, config: AgentConfig | None = None,
 ) -> FundamentalsAgent:
     """Convenience factory for registry-style wiring."""
     return FundamentalsAgent(llm=llm, config=config or AgentConfig())

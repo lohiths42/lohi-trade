@@ -37,7 +37,7 @@ Used by:
 from __future__ import annotations
 
 import asyncio
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 from src.research.providers.base import (
     Completion,
@@ -85,7 +85,7 @@ class FakeLLMProvider(LLMProvider):
     # ------------------------------------------------------------------ #
 
     async def complete(
-        self, messages: list[Message], params: LLMParams
+        self, messages: list[Message], params: LLMParams,
     ) -> Completion:
         """Return a canned ``Completion`` after the configured latency.
 
@@ -106,7 +106,7 @@ class FakeLLMProvider(LLMProvider):
         )
 
     async def stream(
-        self, messages: list[Message], params: LLMParams
+        self, messages: list[Message], params: LLMParams,
     ) -> AsyncIterator[CompletionChunk]:
         """Yield ``CompletionChunk`` deltas word-by-word.
 

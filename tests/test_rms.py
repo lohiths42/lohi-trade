@@ -1,19 +1,16 @@
-"""
-Unit tests for the Risk Management System (RMS).
+"""Unit tests for the Risk Management System (RMS).
 
 Tests all 9 pre-order checks and supporting functionality.
 Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7, 9.8, 9.9
 """
 
-import json
 import sqlite3
 from datetime import datetime, timedelta
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
 from src.execution.rms import (
-    ExposureMetrics,
     RiskManagementSystem,
     ValidationResult,
 )
@@ -26,7 +23,6 @@ from src.utils.config import (
     RiskLimitsConfig,
     TradingHoursConfig,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -342,7 +338,7 @@ class TestDailyLossLimitCheck:
         rms.validate_order(_make_signal())
         # Kill switch should have been activated via redis.set
         rms._redis.set.assert_any_call(
-            RiskManagementSystem.KILL_SWITCH_KEY, "true"
+            RiskManagementSystem.KILL_SWITCH_KEY, "true",
         )
 
 
@@ -506,7 +502,7 @@ class TestVolatilityGuardCheck:
         )
         rms.validate_order(_make_signal())
         rms._redis.set.assert_any_call(
-            RiskManagementSystem.KILL_SWITCH_KEY, "true"
+            RiskManagementSystem.KILL_SWITCH_KEY, "true",
         )
 
 
@@ -586,20 +582,20 @@ class TestKillSwitchManagement:
         rms = _make_rms()
         rms.activate_kill_switch("Test reason")
         rms._redis.set.assert_any_call(
-            RiskManagementSystem.KILL_SWITCH_KEY, "true"
+            RiskManagementSystem.KILL_SWITCH_KEY, "true",
         )
         rms._redis.set.assert_any_call(
-            RiskManagementSystem.KILL_SWITCH_REASON_KEY, "Test reason"
+            RiskManagementSystem.KILL_SWITCH_REASON_KEY, "Test reason",
         )
 
     def test_deactivate_kill_switch(self):
         rms = _make_rms()
         rms.deactivate_kill_switch()
         rms._redis.set.assert_called_with(
-            RiskManagementSystem.KILL_SWITCH_KEY, "false"
+            RiskManagementSystem.KILL_SWITCH_KEY, "false",
         )
         rms._redis.delete.assert_called_with(
-            RiskManagementSystem.KILL_SWITCH_REASON_KEY
+            RiskManagementSystem.KILL_SWITCH_REASON_KEY,
         )
 
 
