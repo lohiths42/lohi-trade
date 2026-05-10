@@ -81,3 +81,25 @@ appendonly.aof
 
 # OS
 Thumbs.db
+
+# Local virtualenvs and environment folders
+lohi_trade_venv/
+backend-gateway/venv/
+*/venv/
+venv/
+
+# Mobile build artifacts (ignore only build outputs, not source)
+mobile/**/.build/
+mobile/**/artifacts/
+
+# Node
+node_modules/
+
+# Backup git directories created during cleanup
+.git.broken*/
+
+# Keep large data and caches out of repo
+data/*.duckdb
+data/redis/
+data/backups/
+logs/
