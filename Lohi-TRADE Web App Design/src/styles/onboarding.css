@@ -1,0 +1,191 @@
+/* =============================================================================
+   Onboarding · "Wealth Architect" palette + glass primitives
+   Persona: Lohi — sophisticated, minimalist, bank-grade.
+   Palette: Obsidian (deep black) · Silver (neutral) · Growth Green (accent)
+   ============================================================================= */
+
+:root[data-theme='dark'] {
+  /* Onboarding-specific tokens (sit alongside the main design-tokens.css) */
+  --ob-obsidian-0: #050608;
+  --ob-obsidian-1: #0a0c10;
+  --ob-obsidian-2: #10131a;
+  --ob-obsidian-3: #161a24;
+  --ob-silver-0: rgba(226, 232, 240, 0.06);
+  --ob-silver-1: rgba(226, 232, 240, 0.12);
+  --ob-silver-2: rgba(226, 232, 240, 0.22);
+  --ob-silver-text: #e8ecf2;
+  --ob-silver-muted: #8a93a3;
+  --ob-growth: #00d67f;
+  --ob-growth-glow: rgba(0, 214, 127, 0.35);
+  --ob-growth-soft: rgba(0, 214, 127, 0.10);
+  --ob-growth-line: rgba(0, 214, 127, 0.45);
+}
+
+:root[data-theme='light'] {
+  /* Light mode keeps the same growth-green accent but on a soft silver canvas. */
+  --ob-obsidian-0: #f5f7fa;
+  --ob-obsidian-1: #ffffff;
+  --ob-obsidian-2: #ffffff;
+  --ob-obsidian-3: #f1f3f7;
+  --ob-silver-0: rgba(15, 23, 42, 0.04);
+  --ob-silver-1: rgba(15, 23, 42, 0.08);
+  --ob-silver-2: rgba(15, 23, 42, 0.18);
+  --ob-silver-text: #0f1420;
+  --ob-silver-muted: #5b6576;
+  --ob-growth: #008f57;
+  --ob-growth-glow: rgba(0, 143, 87, 0.22);
+  --ob-growth-soft: rgba(0, 143, 87, 0.08);
+  --ob-growth-line: rgba(0, 143, 87, 0.45);
+}
+
+/* =============================================================================
+   The canvas — deep obsidian with a soft green halo near the top
+   ============================================================================= */
+.ob-canvas {
+  position: relative;
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 0%, var(--ob-growth-soft) 0%, transparent 70%),
+    radial-gradient(ellipse at top right, rgba(120, 150, 220, 0.04) 0%, transparent 55%),
+    var(--ob-obsidian-0);
+  color: var(--ob-silver-text);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* Subtle static particles (CSS-only, no JS cost) */
+.ob-canvas::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    radial-gradient(1px 1px at 23% 18%, rgba(226, 232, 240, 0.18), transparent 40%),
+    radial-gradient(1px 1px at 78% 34%, rgba(226, 232, 240, 0.14), transparent 40%),
+    radial-gradient(1px 1px at 42% 72%, rgba(0, 214, 127, 0.24), transparent 40%),
+    radial-gradient(1px 1px at 88% 88%, rgba(226, 232, 240, 0.10), transparent 40%);
+  background-size: 100% 100%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.7;
+}
+
+/* =============================================================================
+   Glass card — the core primitive
+   ============================================================================= */
+.ob-glass {
+  position: relative;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 60%),
+    color-mix(in srgb, var(--ob-obsidian-2) 78%, transparent);
+  backdrop-filter: saturate(160%) blur(22px);
+  -webkit-backdrop-filter: saturate(160%) blur(22px);
+  border: 1px solid var(--ob-silver-1);
+  border-radius: 20px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 20px 60px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.02);
+}
+.ob-glass::before {
+  /* Subtle top-edge highlight — the "silver rim" */
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--ob-silver-2), transparent);
+  opacity: 0.55;
+  border-radius: 20px 20px 0 0;
+  pointer-events: none;
+}
+
+/* =============================================================================
+   Growth-green focus ring + buttons
+   ============================================================================= */
+.ob-growth-btn {
+  display: inline-flex;
+  align-items: center; justify-content: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #001f14;
+  background: linear-gradient(180deg, #34eea0 0%, var(--ob-growth) 100%);
+  border: 1px solid color-mix(in srgb, var(--ob-growth) 70%, transparent);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.3) inset,
+    0 8px 24px var(--ob-growth-glow);
+  cursor: pointer;
+  transition: transform 200ms var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+              box-shadow 200ms var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+}
+.ob-growth-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.3) inset,
+    0 12px 32px var(--ob-growth-glow);
+}
+.ob-growth-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.3) inset;
+}
+
+.ob-ghost-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ob-silver-muted);
+  background: var(--ob-silver-0);
+  border: 1px solid var(--ob-silver-1);
+  cursor: pointer;
+  transition: background 160ms var(--ease-out, ease);
+}
+.ob-ghost-btn:hover { background: var(--ob-silver-1); color: var(--ob-silver-text); }
+
+/* =============================================================================
+   Animated Lohi halo
+   ============================================================================= */
+@keyframes ob-halo-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.55; }
+  50%      { transform: scale(1.08); opacity: 0.9; }
+}
+
+/* =============================================================================
+   Text field — minimal, bank-grade feel
+   ============================================================================= */
+.ob-field {
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 15px;
+  font-family: inherit;
+  color: var(--ob-silver-text);
+  background: var(--ob-silver-0);
+  border: 1px solid var(--ob-silver-1);
+  border-radius: 12px;
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+.ob-field:focus {
+  border-color: color-mix(in srgb, var(--ob-growth) 55%, transparent);
+  background: var(--ob-silver-0);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--ob-growth) 14%, transparent);
+}
+.ob-field::placeholder { color: var(--ob-silver-muted); }
+
+.ob-field-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ob-silver-muted);
+  margin-bottom: 8px;
+}
+
+/* Reduced motion respect */
+@media (prefers-reduced-motion: reduce) {
+  .ob-canvas::before { display: none; }
+}

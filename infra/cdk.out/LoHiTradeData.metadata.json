@@ -1,0 +1,152 @@
+{
+  "/LoHiTradeData/RedisSubnetGroup": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "RedisSubnetGroup"
+    }
+  ],
+  "/LoHiTradeData/LoHiTradeRedis": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LoHiTradeRedis"
+    }
+  ],
+  "/LoHiTradeData/RdsEndpoint": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "RdsEndpoint"
+    }
+  ],
+  "/LoHiTradeData/RedisEndpoint": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "RedisEndpoint"
+    }
+  ],
+  "/LoHiTradeData/HistoricalDataBucketName": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "HistoricalDataBucketName"
+    }
+  ],
+  "/LoHiTradeData/KycDocumentsBucketName": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "KycDocumentsBucketName"
+    }
+  ],
+  "/LoHiTradeData/ExportsBucketName": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ExportsBucketName"
+    }
+  ],
+  "/LoHiTradeData/DbCredentialsSecretArn": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "DbCredentialsSecretArn"
+    }
+  ],
+  "/LoHiTradeData/RedisAuthSecretArn": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "RedisAuthSecretArn"
+    }
+  ],
+  "/LoHiTradeData/ApiKeysSecretArn": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ApiKeysSecretArn"
+    }
+  ],
+  "/LoHiTradeData/BootstrapVersion": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BootstrapVersion"
+    }
+  ],
+  "/LoHiTradeData/CheckBootstrapVersion": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CheckBootstrapVersion"
+    }
+  ],
+  "/LoHiTradeData/LoHiTradeDb/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LoHiTradeDb6500F50F"
+    }
+  ],
+  "/LoHiTradeData/HistoricalDataBucket/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "HistoricalDataBucketCE4F9135"
+    }
+  ],
+  "/LoHiTradeData/KycDocumentsBucket/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "KycDocumentsBucketBD09E66F"
+    }
+  ],
+  "/LoHiTradeData/ExportsBucket/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ExportsBucket5A12738B"
+    }
+  ],
+  "/LoHiTradeData/RedisAuthToken/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "RedisAuthToken241E45D5"
+    }
+  ],
+  "/LoHiTradeData/ApiKeys/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ApiKeys3BB3983D"
+    }
+  ],
+  "/LoHiTradeData/CDKMetadata/Default": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CDKMetadata"
+    }
+  ],
+  "/LoHiTradeData/Exports/Output{\"Ref\":\"LoHiTradeDb6500F50F\"}": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ExportsOutputRefLoHiTradeDb6500F50FA23AF648"
+    }
+  ],
+  "/LoHiTradeData/Exports/Output{\"Ref\":\"LoHiTradeRedis\"}": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ExportsOutputRefLoHiTradeRedis7EA94D40"
+    }
+  ],
+  "/LoHiTradeData/LoHiTradeDb/SubnetGroup/Default": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LoHiTradeDbSubnetGroup22E8FA3A"
+    }
+  ],
+  "/LoHiTradeData/LoHiTradeDb/Secret/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LoHiTradeDbSecret1FD671A6"
+    }
+  ],
+  "/LoHiTradeData/KycDocumentsBucket/Policy/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "KycDocumentsBucketPolicy036F06AF"
+    }
+  ],
+  "/LoHiTradeData/LoHiTradeDb/Secret/Attachment/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LoHiTradeDbSecretAttachmentC34B85D1"
+    }
+  ]
+}

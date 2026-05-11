@@ -1,0 +1,54 @@
+name: Deploy Documentation
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  docs:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.13"
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install mkdocs mkdocs-material pymdown-extensions
+      
+      - name: Build documentation
+        run: |
+          mkdir -p docs/generated
+          # Copy audit reports to docs
+          cp OSS_AUDIT.md docs/generated/
+          cp AUDIT_SUMMARY.md docs/generated/
+          # Build mkdocs if mkdocs.yml exists
+          if [ -f mkdocs.yml ]; then
+            mkdocs build --strict
+          else
+            echo "mkdocs.yml not found, skipping mkdocs build"
+          fi
+      
+      - name: Upload documentation artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: documentation
+          path: site/
+        if: always()
+      
+      - name: Deploy to GitHub Pages
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site
+          cname: lohi-trade.github.io

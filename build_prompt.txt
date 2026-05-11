@@ -1,0 +1,846 @@
+LOHI-TRADE Open Source Edition — Single-User Real-Money Implementation Guide
+1. System Architecture Overview
+1.1 Core Components and Their Relationships
+The system is a modular monolith deployable as a single Docker Compose stack on a personal server or VPS. All components are designed to run on a single host for one user.
+
+┌───────────────────────────────────────────────────────────────┐
+│                    USER'S BROWSER (HTTPS)                      │
+└────────────────────────┬──────────────────────────────────────┘
+                         │
+┌────────────────────────▼──────────────────────────────────────┐
+│   Caddy 2 (Reverse Proxy, TLS Termination, Let's Encrypt)     │
+└────────────────────────┬──────────────────────────────────────┘
+                         │
+         ┌───────────────┼───────────────┐
+         ▼                               ▼
+┌─────────────────┐              ┌─────────────────┐
+│  web (Next.js)  │              │  api (FastAPI)  │
+│  Port 3000      │◄─── WSS ────►│  Port 8000      │
+│  React 18 UI    │              │  Auth, REST, WS │
+└─────────────────┘              └────────┬────────┘
+                                          │
+            ┌─────────────────────────────┼─────────────────────┐
+            │                             │                     │
+            ▼                             ▼                     ▼
+    ┌───────────────┐           ┌──────────────────┐   ┌──────────────┐
+    │ engine        │           │  SQLite / PG     │   │ worker       │
+    │ (Python asyncio)          │  Primary DB      │   │ (APScheduler)│
+    │ Strategy      │           │  WAL mode        │   │ Token refresh│
+    │ runtime       │           └──────────────────┘   │ Reconcile    │
+    │ Broker        │                                  │ Backups      │
+    │ adapters      │                                  └──────────────┘
+    │ Risk engine   │
+    │ Kill switch   │
+    └───────┬───────┘
+            │
+            ▼
+   ┌────────────────────────────────────────────────┐
+   │ EXTERNAL: Broker APIs (Zerodha/Dhan/Upstox/    │
+   │ Fyers/Angel One) — REST + WebSocket            │
+   └────────────────────────────────────────────────┘
+Component responsibilities:
+
+Component	Responsibility	Process
+web	Next.js 14 App Router frontend; serves UI, no business logic	Container
+api	FastAPI REST + WebSocket; auth, CRUD, session, order routing	Container
+engine	Strategy runtime, tick handling, pre-trade risk, broker adapters	Container
+worker	Scheduled jobs: token refresh, reconciliation, backups, square-off	Container
+db	SQLite (default, single-file) or PostgreSQL 16 (opt-in)	Container or embedded
+caddy	TLS termination, HTTP→HTTPS redirect, static asset caching	Container
+Communication patterns:
+
+web ↔ api: HTTP REST + WebSocket over HTTPS
+api ↔ engine: Unix domain socket (same host) or Redis pub/sub (if LOHI_MODE=distributed)
+api ↔ db: SQLAlchemy async connection pool
+engine ↔ broker: HTTPS REST + WSS over the public internet
+1.2 Technology Stack
+Strictly open-source, OSI-approved, no paid tiers required.
+
+Layer	Technology	Version	License
+Backend language	Python	3.11+	PSF
+API framework	FastAPI	0.110+	MIT
+ASGI server	Uvicorn (+Gunicorn in prod)	latest	BSD
+ORM	SQLAlchemy 2.0 async	latest	MIT
+DB migrations	Alembic	latest	MIT
+Validation	Pydantic v2	2.6+	MIT
+Primary DB	SQLite 3.45 (single-user) or PostgreSQL 16	—	Public Domain / PostgreSQL
+Job scheduling	APScheduler 3	latest	MIT
+Password hashing	Argon2id (argon2-cffi)	latest	MIT
+TOTP	pyotp	latest	MIT
+Encryption	cryptography (Fernet)	latest	Apache-2.0 / BSD
+Indicators	ta-lib, pandas-ta	latest	BSD / MIT
+Frontend framework	Next.js 14 App Router	14+	MIT
+UI runtime	React 18.2+	latest	MIT
+Language	TypeScript 5.3+ strict	latest	Apache-2.0
+Styling	Tailwind CSS 3.4	latest	MIT
+Components	shadcn/ui + Radix UI	latest	MIT
+Charts	Lightweight-Charts (TradingView OSS)	4+	Apache-2.0
+Client state	Zustand 4	latest	MIT
+Server state	TanStack Query 5	latest	MIT
+Reverse proxy	Caddy 2	latest	Apache-2.0
+Containerization	Docker + Docker Compose	latest	Apache-2.0
+Secrets	SOPS + age OR .env with chmod 600	latest	MPL-2.0 / Apache-2.0
+Observability (opt)	Prometheus + Grafana OSS + Loki	latest	Apache-2.0
+1.3 Security Considerations for Real-Money Transactions
+Non-negotiable security baseline:
+
+Credential encryption at rest — Broker API keys/secrets encrypted with Fernet; master key from MASTER_ENCRYPTION_KEY env var (minimum 32 bytes, generated via openssl rand -base64 32).
+Argon2id password hashing — t=3, m=64MB, p=4; no MD5/SHA1/bcrypt fallbacks.
+TOTP mandatory for live mode — cannot enable live trading without 2FA verified.
+HTTPS mandatory — Caddy auto-provisions Let's Encrypt certs; HTTP refuses to serve sensitive endpoints.
+Session cookies — HttpOnly, Secure, SameSite=Strict, 24h idle / 7d absolute expiration.
+CSRF protection — Double-submit cookie pattern on all mutating endpoints.
+Rate limiting — slowapi enforces 5 login attempts per 15 min, 100 req/s general API.
+Idempotency keys — UUID v7 on every order; duplicate submissions rejected at DB level (unique constraint).
+Append-only audit log — Enforced by SQL trigger blocking DELETE on audit_log table.
+Order reconciliation — Every 30 seconds the worker compares local order/position state with broker truth; discrepancies alert the user.
+Kill switch — Multiple trigger paths (UI button, API endpoint, Unix signal SIGUSR1, daily loss breach); flattens positions and halts engine.
+Pre-trade risk checks — Every order passes through max value, max positions, price sanity, rate limit, kill-switch-active checks before hitting broker.
+Secrets never in logs — Log formatter redacts fields matching api_key|secret|token|password|totp.
+No telemetry — Zero outbound calls except to configured brokers and optional notification endpoints.
+Dependency scanning — pip-audit and npm audit in CI; CRITICAL CVEs block builds.
+2. Page-by-Page Interface Design
+The system comprises 22 authenticated pages plus 5 pre-authentication / setup pages. Each is documented below.
+
+2.0 Pre-Authentication Pages
+2.0.1 Installation Terminal (Not a web page)
+Purpose: Initial system bootstrap via CLI.
+Inputs: .env file containing DOMAIN, MASTER_ENCRYPTION_KEY, DB_MODE, ADMIN_RECOVERY_EMAIL (optional).
+Outputs: Running Docker Compose stack.
+Navigation: Upon completion, user navigates to http://localhost:8080 or configured domain → lands on /setup.
+2.0.2 Setup Wizard — /setup
+Purpose: One-time first-run onboarding; locked after completion.
+UI elements: 5-step linear wizard with progress indicator.
+Steps:
+License acceptance (AGPL-3.0 + trading risk disclosure; two mandatory checkboxes)
+Admin account creation (username, password with strength meter, confirmation, optional email, 12-word BIP-39 recovery phrase)
+2FA setup (QR code, TOTP verification, backup codes PDF download, mandatory confirmation checkbox)
+Environment & safety defaults (timezone Asia/Kolkata, currency ₹ locked, risk defaults pre-populated, trading mode locked to PAPER)
+Completion summary with [Go to Login] button
+Inputs: Form fields per step.
+Outputs: users record with Argon2id-hashed password, TOTP secret, recovery-phrase hash; system_config.first_run = false.
+Navigation: → /login
+2.0.3 Login — /login
+Purpose: Primary authentication.
+UI elements: Username input, password input, [Sign In] button, footer with GitHub link.
+Inputs: Username, password.
+Outputs: Temporary session token (2FA-pending, 5-min TTL).
+Navigation: On success → /login/2fa; on failure → same page with error.
+2.0.4 2FA Challenge — /login/2fa
+Purpose: Second factor verification.
+UI elements: 6-digit numeric input (auto-submit on 6 digits), "Use backup code" link swapping to 8-digit input, [Verify] button.
+Inputs: TOTP code or backup code.
+Outputs: Full session cookie (HttpOnly, Secure, SameSite=Strict).
+Navigation: On success → /dashboard; on failure → same page; after 5 failures → account lockout for 15 min.
+2.0.5 Session Expired Modal
+Purpose: Graceful re-authentication.
+UI elements: Modal overlay, [Log In] button preserving ?next= query parameter.
+Navigation: → /login?next=.
+2.1 Page: Dashboard — /dashboard
+Purpose: At-a-glance status of trading activity and system health.
+UI elements:
+Mode banner (amber PAPER / red LIVE, prominently displayed)
+Bento-grid draggable widgets: Today's P&L (realized/unrealized/total with flash animation), Open positions count, Open orders count, Active strategies count, Broker connection status dots, Market status (NSE Open/Closed with countdown), Emergency Stop button (red, 2-click confirm), Recent activity feed (last 10 audit events)
+Data inputs: WebSocket stream from api, queries to local DB.
+Data outputs: User-customized widget layout persisted to user_preferences table.
+Navigation: Each widget links to its detail page (P&L → /analytics, positions → /positions, orders → /orders, strategies → /strategies, brokers → /settings/brokers).
+2.2 Page: Order Placement — /trade (also modal via ⌘B/⌘S)
+Purpose: Manual discretionary order entry.
+UI elements:
+Left column: symbol typeahead, Buy/Sell toggle (large, color-coded), quantity, order type (Market/Limit/SL/SL-M), price, trigger price, product (MIS/CNC/NRML), validity (DAY/IOC), variety (Regular/Cover/Bracket), broker selector, disclosed quantity
+Right column: LTP with flash animation, bid/ask spread, day high/low, available margin (live-queried from broker), estimated charges breakdown (brokerage + STT + GST + exchange fees + stamp duty per Indian tax rules), risk preview
+Data inputs: User form entries, live market data.
+Data outputs: Order record persisted to orders table with status PENDING → SUBMITTED; idempotency key UUID v7.
+Navigation: [Review Order] → confirmation modal (LIVE mode shows red warning banner) → [Confirm Order] → toast notification → order appears in /orders.
+Keyboard shortcuts: B focuses Buy, S focuses Sell, Ctrl+Enter submits.
+2.3 Page: Positions — /positions
+Purpose: View and manage all open positions.
+UI elements:
+Virtual-scrolled table columns: Symbol, Side (Long/Short), Qty, Avg Price, LTP (flash-on-change), P&L ₹, P&L %, Product, Broker, Strategy, Actions
+Row actions: [Close] (opens pre-filled square-off ticket), [Modify SL/TP] (inline edit), [View trades] (drawer with constituent fills)
+Top toolbar: filter by broker/strategy/symbol, [Close All] (password+confirm in LIVE), [Export CSV]
+Data inputs: Positions reconstructed from fills table, reconciled every 30s against broker GET /positions.
+Data outputs: Square-off orders, modifications to bracket/GTT orders.
+Navigation: Row click → position detail drawer; [Close] → Order Placement modal pre-filled; [View trades] → Orders filtered to this position.
+2.4 Page: Orders — /orders
+Purpose: Complete order history and live order management.
+UI elements:
+Tabs: Open / Completed / Cancelled-Rejected / All
+Columns: Timestamp, Symbol, Side, Qty (filled/total), Type, Price/Trigger, Status (colored badge), Broker order ID (click to copy), LOHI order ID, Strategy or "Manual", Actions
+Open-order row actions: [Modify] (ticket pre-filled), [Cancel] (one-click with confirm)
+Filters: date range (default today), symbol, broker, strategy, status, free-text search
+[Export CSV] and [Export Tax Report] (includes charges breakdown)
+Data inputs: orders + fills tables, WebSocket stream for live updates.
+Data outputs: Modified or cancelled orders sent to broker.
+Navigation: Row click → order detail drawer with full lifecycle timeline.
+2.5 Page: Strategy List — /strategies
+Purpose: Central catalog of all discovered strategies.
+UI elements:
+Table columns: Name, Type (Soldier/Commander), Status (Stopped/Starting/Running/Stopping/Error), Mode (Paper/Live), Symbols, Today's P&L, Today's Trades, Actions
+Row actions: [Start]/[Stop] (LIVE start requires confirmation modal), [Configure], [View Logs] (drawer with tail -500), [Backtest]
+Top toolbar: [+ New Strategy] (scaffolds Python file in strategies/), [Reload from disk]
+Data inputs: Engine process state, strategy class metadata from strategies/ directory.
+Data outputs: Start/stop signals to engine, strategy runtime state.
+Navigation: [Configure] → /strategies/soldier/:id or /strategies/commander/:id; [Backtest] → /backtest/new?strategy=:id.
+2.6 Page: Soldier Strategy Configuration — /strategies/soldier/:id
+Purpose: Configure parameters for a single-symbol strategy unit.
+UI elements (two-column):
+Left: Form auto-generated from Pydantic schema — sections: Identity (name, description), Market (symbol, exchange, product, broker routing), Parameters (dynamic from strategy class), Strategy-level risk (max position size, stop-loss, take-profit, max trades/day), Session (active window, days of week), Notifications (entry/exit/SL/error toggles)
+Right: Live preview of symbol chart with parameter-driven indicator overlay
+Data inputs: User form entries.
+Data outputs: strategy_configs record; engine reloads parameters on next tick cycle.
+Navigation: [Save], [Save & Start] (LIVE confirms), [Backtest with these parameters] → /backtest/new, [Cancel] → /strategies.
+2.7 Page: Commander Strategy Configuration — /strategies/commander/:id
+Purpose: Orchestrate multiple Soldiers with portfolio-level rules.
+UI elements:
+Child Soldiers: add/remove panel with allocation % (sum ≤ 100), priority order for capital rationing
+Portfolio Risk: total capital, max gross exposure %, correlation limit (placeholder)
+Rebalancing: schedule (None/Daily/Weekly/On-event), rules (free-text advisory)
+Circuit Breakers: halt-all threshold ₹, halt-and-flatten threshold ₹
+Data inputs: Child Soldier selection, allocation numbers.
+Data outputs: commander_configs record with FK relationships to child Soldiers.
+Navigation: Same as Soldier page.
+2.8 Page: Backtest Runner — /backtest/new
+Purpose: Configure and launch historical backtests.
+UI elements:
+Strategy dropdown (auto-populates parameter form)
+Data source (User CSV upload / NSE Bhavcopy archive auto-downloader / yfinance educational)
+Symbol multi-select, date range, resolution (Tick/1m/5m/15m/1h/1d)
+Execution settings: starting capital ₹, slippage model (Fixed bps / % / Market impact), commission model (Zerodha/Dhan/Upstox/Custom with Indian charges), fill policy (Next bar open / Current bar close)
+Optimization: Single run / Grid search / Walk-forward; if grid — parameter ranges, step sizes, parallelism (# processes)
+Data inputs: All form fields; historical data files in data/historical/.
+Data outputs: Backtest job queued via APScheduler; backtest_runs record with status PENDING.
+Navigation: [Run Backtest] → redirect to /backtest/:run_id with live progress.
+2.9 Page: Backtest Results — /backtest/:run_id
+Purpose: Analyze backtest output.
+UI elements:
+Summary card: Total return, CAGR, Sharpe, Sortino, Max DD, Win rate, Profit factor, Total trades, Avg trade duration
+Equity curve (Lightweight-Charts line) with drawdown filled area underneath
+Trade list table (entry/exit/PnL/duration) with CSV export
+Histogram of trade returns, monthly returns heatmap
+Actions: [Deploy to Paper], [Deploy to Live] (LIVE mode + confirmation), [Save Report PDF], [Clone run]
+Data inputs: backtest_runs + backtest_trades tables.
+Data outputs: Optional new strategy_configs record on deploy; PDF via react-pdf.
+Navigation: Deploy → /strategies/soldier/:new_id preloaded; Clone → /backtest/new with params copied.
+2.10 Page: Screener — /screener
+Purpose: Find symbols matching criteria.
+UI elements:
+Filter builder: add conditions (Price, Volume, % Change 1d/5d/1m, RSI, SMA crossover, Market cap, Sector, Exchange) combined with AND/OR
+Save screen (named, persisted), share screen (encoded URL)
+Results table: symbol, price, change, volume, RSI, sector
+Row click → symbol detail drawer with chart + "Add to Watchlist" + "Trade" buttons
+Data inputs: Query builder state; data refreshed every 30s during market hours.
+Data outputs: saved_screens table; optional additions to watchlists.
+Navigation: "Trade" → Order Placement modal; "Add to Watchlist" → watchlist picker.
+2.11 Page: Watchlist — /watchlist
+Purpose: Monitor personal symbol sets.
+UI elements:
+Left sidebar: named watchlists (up to 20), [+ New], drag-reorder
+Main area: table of symbols with Name, LTP (flash-on-change), Change %, Volume, Actions
+Row actions: [Chart], [Trade], [Set Alert], [Remove]
+Drag-reorder within list; drag-to-list from screener
+Data inputs: watchlists + watchlist_symbols tables, live tick stream.
+Data outputs: Alert records in price_alerts table.
+Navigation: [Chart] → symbol detail page; [Trade] → Order Placement.
+2.12 Page: Stock Universe — /universe
+Purpose: Browse full NSE/BSE symbol master.
+UI elements:
+Command-K search bar (instant results)
+Sector treemap visualization
+Tabbed filters: Equity / F&O / Indices
+Table columns: Symbol, Name, Exchange, Sector, Industry, Market Cap, ISIN
+Data inputs: symbols table refreshed daily from broker's instrument dump (Zerodha instruments.csv, Dhan scrip_master, etc.).
+Data outputs: None (read-only browse).
+Navigation: Row click → symbol detail drawer.
+2.13 Page: Market Data — /market-data
+Purpose: Monitor tick subscription health and inspect raw feed.
+UI elements:
+Subscription manager: list of currently subscribed symbols per broker with subscribe/unsubscribe controls
+Tick log viewer: live-streaming last 500 ticks with timestamp, symbol, LTP, qty (filterable)
+Feed statistics: ticks/second, dropped messages, last heartbeat per broker
+Data inputs: Engine's WebSocket tick stream (mirrored to UI).
+Data outputs: Subscription change commands to engine.
+Navigation: Primarily diagnostic; links to broker settings on error.
+2.14 Page: Broker Settings — /settings/brokers ⚠️ CRITICAL CONNECTION PAGE
+Purpose: Configure and manage broker connections. This page is the gateway to real-money trading.
+UI elements:
+List of configured broker accounts with status dots (green/yellow/red), last-heartbeat timestamp, [Test], [Edit], [Disconnect], [Remove] actions per row
+[+ Add Broker] launches 6-step guided wizard
+6-step wizard:
+Select broker (Zerodha/Dhan/Upstox/Fyers/Angel One/Paper)
+Prerequisites checklist with screenshots
+Credential entry (varies per broker; see Section 4.1)
+Connection test (performs full login flow, displays broker user profile on success)
+Encryption confirmation + [Save & Connect]
+Broker defaults: enable for market data / order execution, product type defaults, exchange subscriptions
+Data inputs: API key, API secret, user ID, TOTP seed, password (varies per broker); OAuth redirect for Upstox/Fyers.
+Data outputs: broker_credentials row with Fernet-encrypted secrets; broker_connections row tracking connection state.
+Navigation: Wizard completion → back to list with new broker shown as green; next logical step is /settings/risk to configure guardrails before enabling live mode.
+2.15 Page: Risk Settings — /settings/risk ⚠️ LIVE MODE ACTIVATION PAGE
+Purpose: Define guardrails and enable live trading.
+UI elements:
+Global risk parameters: max order value ₹1L default, max open positions 10, max per strategy 5, daily loss limit ₹-10k, daily profit target (optional), price sanity 5%, max orders/min 60, allow short selling off, allow options writing off, allow F&O off
+Session windows: active hours 09:15-15:30 IST, intraday square-off 15:15 IST, pre-market toggle
+Kill switch state: current (ACTIVE/TRIGGERED) with reason/timestamp and [Reset] (password + 2FA required)
+Live Trading Activation section (bordered, prominent): current mode badge, toggle "Enable Live Trading" with 3-step confirmation modal
+3-step activation modal:
+Checklist (6 confirmations including "I have paper-traded ≥1 session" — system-verified)
+Re-authentication (password + current TOTP)
+Type ENABLE LIVE TRADING exactly, then [Enable Live Trading]
+Data inputs: Risk parameter form, re-auth credentials, confirmation phrase.
+Data outputs: system_config.trading_mode = LIVE; audit log entry; engine reloads with live broker adapters; dashboard banner turns red; notifications fired.
+Navigation: After enabling → redirected to /dashboard to verify banner change; next suggested step is starting paper-tested strategies.
+2.16 Page: Notifications — /settings/notifications
+Purpose: Configure alert channels and view history.
+UI elements:
+Channel configuration: Desktop notifications (browser permission), ntfy.sh URL + topic, Gotify URL + token, webhook URL + HMAC secret
+Event preferences: toggles per event type (order placed, order filled, order rejected, position closed, stop-loss hit, strategy error, broker disconnect, daily loss limit approaching/breached)
+History: grouped-by-type list, swipe-to-archive on mobile, per-channel success/failure log
+Data inputs: Channel credentials, event preference toggles.
+Data outputs: notification_channels and notification_preferences tables.
+Navigation: Tests buttons per channel to verify delivery.
+2.17 Page: Audit Log — /audit
+Purpose: Complete, immutable activity record.
+UI elements:
+Timeline or table view toggle
+Columns: Timestamp (UTC + IST), Actor (user/system/strategy), Action, Target, Details (JSON), Source IP, Session ID
+Filters: date range, actor, action type (login/order/config change/risk breach/kill switch), full-text search
+[Export CSV], [Export JSON]
+Replay mode for order lifecycle reconstruction
+Data inputs: audit_log table (append-only, enforced by trigger).
+Data outputs: Exports only.
+Navigation: Read-only; row click → detail drawer with full JSON payload.
+2.18 Page: System Status — /status
+Purpose: Operational health dashboard.
+UI elements:
+Process health cards: web, api, engine, worker, db, caddy — each with uptime, memory, CPU, last restart
+DB size + growth chart (30 days)
+Broker heartbeat table: last success, success rate (24h), average latency
+Recent errors feed (from structured logs)
+[Run Diagnostics] button executes lohi doctor equivalent and displays report
+Data inputs: Prometheus-style metrics endpoint /metrics, container stats via Docker socket.
+Data outputs: Diagnostic reports (local file only, never transmitted).
+Navigation: Primarily diagnostic; linked from dashboard on errors.
+2.19 Page: Chatbot — /chat (optional, off by default)
+Purpose: Natural-language queries against local trading state.
+UI elements:
+Chat message list with streaming response rendering
+Input box with file attach (for CSV upload to backtest)
+Tool-call transparency: each tool invocation shown inline as collapsible card (e.g., "🔎 Queried positions → 3 results")
+Read-only by default — no order placement via chat in OSS edition
+Data inputs: User messages; local Ollama endpoint (llama3.1:8b or qwen2.5:7b); falls back to keyword matcher if Ollama not installed.
+Data outputs: Chat history stored locally in chat_sessions.
+Navigation: Standalone page; deep links from other pages ("Ask about this position").
+2.20 Page: Profile — /settings/profile
+Purpose: Admin user profile management.
+UI elements:
+Display name, email, avatar upload (local only), timezone, language (English only in OSS v1)
+Change password (requires current password + new password + confirmation + 2FA)
+Regenerate backup codes (requires 2FA)
+Reset TOTP (requires password + recovery phrase)
+Data inputs: Form fields, re-auth.
+Data outputs: Updates to users table; new Argon2id hash on password change.
+Navigation: Save confirmation toast; session stays active.
+2.21 Page: Settings (General) — /settings
+Purpose: Application preferences.
+UI elements:
+Theme (Dark/Light/System), accent color, data refresh interval
+Default chart timeframe, default order type
+Number formatting (Indian lakh/crore vs. international)
+Keyboard shortcuts overview (read-only reference card)
+Advanced: toggle experimental features, export/import settings JSON
+Data inputs: Toggle and dropdown selections.
+Data outputs: user_preferences table.
+Navigation: Autosave on change with debounced toast.
+2.22 Page: Help / Docs — /help
+Purpose: Embedded documentation.
+UI elements:
+MkDocs Material site embedded via iframe or SSR rendering
+Offline-first: all docs bundled with app
+Full-text search
+Contextual deep links from ? buttons elsewhere in app (each page's help icon opens relevant doc section)
+Data inputs: Search queries.
+Data outputs: None.
+Navigation: External link to GitHub repo; internal link to /status for diagnostic support.
+3. User Workflow Documentation
+3.1 Authentication and Authorization Flow
+Single-user system — only one admin role exists.
+
+User navigates to domain → Caddy serves HTTPS → Next.js serves /login
+User enters username + password → POST /api/auth/login
+API validates rate limit (≤5 attempts / 15 min / IP) → Argon2id verify → issues 2FA-pending token (5-min TTL)
+Browser redirects to /login/2fa
+User reads TOTP from authenticator → enters 6 digits → POST /api/auth/2fa
+API validates TOTP via pyotp (30s window, ±1 skew) → issues full session cookie (HttpOnly, Secure, SameSite=Strict, 24h idle / 7d absolute)
+Redirect to /dashboard
+Every subsequent API request includes session cookie; API middleware validates signature, expiration, user existence; refreshes idle timer
+On logout or expiration → session invalidated server-side → redirect to /login
+3.2 Zero-to-First-Real-Trade Workflow (17 Steps)
+This is the complete path from clean install to first real-money order.
+
+Phase A: Prerequisites (external, before install)
+User opens a broker account with one of: Zerodha, Dhan, Upstox, Fyers, Angel One
+User completes broker KYC and funds the account via broker's own channels
+User subscribes to the broker's API (e.g., Zerodha Kite Connect ₹2000/month; most others free)
+User creates an API app in the broker's developer console, noting API Key, API Secret, and setting Redirect URL to https:///api/brokers//callback
+Phase B: Installation (local, ~10 minutes)
+User provisions a Linux host (Ubuntu 22.04+, 2 vCPU / 4 GB RAM / 20 GB disk) with Docker
+User runs:
+git clone https://github.com/lohi-trade/lohi-trade-oss
+cd lohi-trade-oss
+cp .env.example .env
+# Edit .env: DOMAIN, MASTER_ENCRYPTION_KEY (openssl rand -base64 32), DB_MODE=sqlite
+docker compose up -d
+User opens https:// → lands on /setup
+Phase C: First-Run Setup (~5 minutes)
+User completes 5-step setup wizard (license → admin account → 2FA → defaults → completion)
+Phase D: Broker Connection (~5 minutes)
+User logs in → navigates to /settings/brokers → clicks [+ Add Broker]
+User picks broker, confirms prerequisites, enters credentials → [Test Connection] succeeds → [Save & Connect]
+Engine establishes WebSocket to broker's market-data endpoint; scheduled job registers for daily token refresh (Zerodha/Angel One)
+Phase E: Paper Trading Validation (≥1 trading session, strongly enforced)
+User navigates to /strategies → picks bundled educational strategy (e.g., SMA crossover) → [Configure] → selects a symbol → [Save & Start]
+Strategy runs in PAPER mode throughout at least one trading session; user verifies expected behavior
+User reviews /positions, /orders, /audit to confirm everything behaves as expected
+Phase F: Risk Configuration (~3 minutes)
+User navigates to /settings/risk → reviews defaults → adjusts if needed (e.g., tightens max order value to comfort level)
+Phase G: Live Mode Activation (~2 minutes, deliberate friction)
+User scrolls to "Enable Live Trading" section → clicks toggle
+Modal Step 1: User checks all 6 confirmations (system blocks if broker not configured or no paper sessions logged)
+Modal Step 2: User re-enters password + current TOTP
+Modal Step 3: User types ENABLE LIVE TRADING exactly → [Enable Live Trading]
+Dashboard banner turns red; notification fires; audit log entry created
+Phase H: First Real Order
+Two paths:
+Manual: User navigates to /trade (or ⌘B) → fills ticket → [Review Order] → red warning banner → [Confirm Order] → idempotency key assigned → pre-trade risk checks pass → broker adapter calls broker REST API → order ID returned → toast notification → order visible in /orders with SUBMITTED status → fill event received via WebSocket → status becomes FILLED → position appears in /positions
+Strategy: User starts a previously paper-validated strategy in LIVE mode → strategy generates signal → engine submits order identically to manual flow
+3.3 Fund Deposit and Withdrawal Processes
+Critical: LOHI-TRADE never touches funds.
+
+Deposits: User logs into broker's own app/website (Zerodha Kite, Dhan app, Upstox, etc.) → deposits funds via broker's UPI/netbanking/NEFT channels → funds reflect in broker account.
+Withdrawals: User logs into broker's app → initiates withdrawal to linked bank account per broker's T+1/T+2 settlement rules.
+LOHI-TRADE's role: Display available margin/funds queried live from broker's API (read-only) on order ticket and dashboard. No payment gateway. No bank account integration. No fund movement logic. This is a deliberate architectural choice to avoid SEBI intermediary obligations on the self-hosting user.
+3.4 Trade Execution Workflow (Internal)
+For every order, automated or manual:
+
+Order request received (from UI or strategy)
+Idempotency key generated (UUID v7)
+Pre-trade risk checks executed in sequence:
+kill_switch_active → reject if true
+trading_mode == LIVE check (or reject if attempting live order in paper mode)
+max_order_value check against order notional
+max_open_positions and max_open_positions_per_strategy checks
+price_sanity check against last tick (±5% default)
+max_orders_per_minute rate-limit check
+Product-specific checks (short selling allowed? F&O allowed? options writing allowed?)
+Session-window check (within allowed hours?)
+If any check fails → order rejected → reason logged → user notified → audit log entry
+If all pass → order persisted to orders table with status PENDING → broker adapter invoked
+Broker adapter handles protocol specifics (REST POST to /orders/regular for Zerodha, /orders for Dhan, etc.)
+Broker response processed:
+Success → status SUBMITTED → broker order ID stored → WebSocket event to UI
+Failure → status REJECTED → error reason stored → WebSocket event → user notified
+Broker sends order update events via WebSocket (order acknowledged, partially filled, filled, cancelled, rejected)
+Engine receives event → updates orders and fills tables → recomputes positions → broadcasts to UI
+Worker reconciliation job every 30s calls broker's GET /orders and GET /positions → compares with local state → flags discrepancies
+3.5 Account Management Procedures
+Password change: /settings/profile → requires current password + new password + 2FA re-entry
+TOTP reset: requires password + 12-word recovery phrase from initial setup
+Recovery phrase lost + password forgotten: CLI-only recovery: docker compose exec api lohi reset-password  (requires shell access to host → assumed trusted)
+Broker credential rotation: /settings/brokers → edit broker → update credentials → test → save (old credentials overwritten atomically)
+Backup: lohi backup CLI creates timestamped tar.gz of DB + encrypted config + data/ directory; documentation recommends restic or borgbackup for off-site encrypted storage with sample cron entries
+Uninstall: docker compose down -v removes containers and volumes; user manually deletes ./data/ directory and revokes broker API app
+4. Technical Connections and Integrations
+4.1 Broker API Integrations
+All five brokers supported via their official Python SDKs (all MIT/Apache licensed).
+
+Zerodha — Kite Connect
+SDK: kiteconnect (official, MIT)
+Auth protocol: API key + API secret + daily request_token exchange
+Daily flow: Selenium-free programmatic login using user_id + password + TOTP (seed stored encrypted) → request_token → exchange for access_token valid until 6 AM IST next day
+REST endpoints used: /user/profile, /user/margins, /orders, /orders/regular, /orders/regular/:id, /portfolio/positions, /portfolio/holdings, /instruments
+WebSocket endpoint: wss://ws.kite.trade/?api_key=X&access_token=Y for tick data
+Rate limits: 10 req/s for orders, 3 req/s for others — enforced app-side
+Subscription cost: ₹2,000/month for Kite Connect
+Dhan
+SDK: dhanhq (official, MIT)
+Auth protocol: Long-lived access token (no daily refresh)
+REST endpoints: /profile, /fundlimit, /orders, /positions, /holdings
+WebSocket endpoint: wss://api-feed.dhan.co for ticks
+Rate limits: 25 req/s for orders — enforced app-side
+Subscription cost: Free
+Upstox
+SDK: upstox-python-sdk (official, Apache-2.0)
+Auth protocol: OAuth 2.0 Authorization Code flow with 24h access token
+Daily flow: User consents in browser → callback receives code → exchange for access_token
+REST endpoints: /user/profile, /user/get-funds-and-margin, /order/place, /order/retrieve-all, /portfolio/long-term-positions
+WebSocket endpoint: wss://api-v2.upstox.com/feed/market-data-feed
+Rate limits: 50 req/s for orders
+Subscription cost: Free
+Fyers
+SDK: fyers-apiv3 (official, MIT)
+Auth protocol: OAuth 2.0 with PIN entry
+REST endpoints: /profile, /funds, /orders, /positions, /holdings
+WebSocket endpoint: wss://api-t1.fyers.in/socket/v3/dataSock
+Subscription cost: Free
+Angel One — SmartAPI
+SDK: smartapi-python (official, MIT)
+Auth protocol: Client code + MPIN + TOTP on every login; daily session regenerated
+REST endpoints: /rest/secure/angelbroking/user/v1/getProfile, /rest/secure/angelbroking/user/v1/getRMS, /rest/secure/angelbroking/order/v1/placeOrder, /rest/secure/angelbroking/order/v1/getOrderBook, /rest/secure/angelbroking/order/v1/getPosition
+WebSocket endpoint: wss://smartapisocket.angelone.in/smart-stream
+Subscription cost: Free
+4.2 Payment Gateway Connections
+None. Deliberately out of scope.
+
+LOHI-TRADE OSS does not integrate Razorpay, Stripe, PayU, or any payment processor. All fund movement is handled entirely by the user's broker. This avoids:
+
+SEBI intermediary registration requirements on the user
+KYC/AML obligations on the self-hosting user
+PCI-DSS compliance overhead
+Liability for fund custody
+Users deposit to and withdraw from their broker account through the broker's native channels.
+
+4.3 Database Connections and Schema Requirements
+Default: SQLite 3.45 with WAL mode, single file at data/lohi.db Opt-in: PostgreSQL 16 via DB_MODE=postgres and DATABASE_URL env var
+
+Connection pool: SQLAlchemy async engine, pool_size=5, max_overflow=10
+
+Core schema (28 tables):
+
+Table	Purpose
+users	Single admin user (usually 1 row); Argon2id hash, TOTP secret, recovery hash
+sessions	Active session tokens
+system_config	Key-value: trading_mode, first_run, maintenance_mode, etc.
+broker_credentials	Encrypted API keys/secrets per broker instance
+broker_connections	Runtime state: last heartbeat, error count, subscription list
+strategies_registry	Discovered strategy classes from strategies/ directory
+strategy_configs	User-configured strategy instances (Soldiers)
+commander_configs	Commander strategy instances
+commander_soldier_links	M:N relation between Commanders and child Soldiers
+strategy_runs	Per-start/stop lifecycle record for audit
+orders	All orders across lifecycle; idempotency key unique
+fills	Individual fills/trades from broker
+positions	Derived from fills; reconciled against broker periodically
+positions_snapshots	End-of-day position snapshots for historical P&L
+symbols	NSE/BSE symbol master, refreshed daily from broker instrument dumps
+watchlists	User-named watchlists
+watchlist_symbols	M:N symbols in watchlists
+saved_screens	Screener filter configurations
+price_alerts	User-set price-level alerts
+backtest_runs	Backtest job metadata
+backtest_trades	Simulated trades per backtest run
+backtest_metrics	Cached performance metrics
+notification_channels	Configured notification endpoints
+notification_preferences	Per-event-type channel routing
+notification_log	Delivery audit trail
+user_preferences	UI preferences (theme, layout, etc.)
+chat_sessions	Chatbot conversation history (optional feature)
+audit_log	Append-only via SQL trigger; every state change captured
+Migrations: Alembic-managed; run automatically on api container startup.
+
+Backup: SQLite benefits from Litestream for continuous replication to S3/B2/local mount; PostgreSQL uses pg_dump in lohi backup CLI.
+
+4.4 Authentication Services
+Fully self-contained — no external auth provider.
+
+Username + Argon2id-hashed password stored locally
+TOTP via pyotp (RFC 6238, 30s window, SHA-1 for authenticator-app compatibility)
+Session management: server-side session store in primary DB; cookie contains opaque session ID
+No OAuth, no SSO, no social login — deliberate to avoid external dependencies
+Broker OAuth (Upstox, Fyers) is handled transparently inside broker adapters; tokens stored encrypted
+4.5 Real-Time Data Feeds
+Source: user's own broker, no third-party feeds.
+
+WebSocket connection established per active broker with market data enabled
+Engine subscribes to symbols required by: active strategies, current watchlist, currently-open order ticket
+Tick throughput target: 5,000 ticks/sec on reference hardware (2 vCPU / 4 GB RAM)
+Dropped-message handling: exchange sequence numbers tracked; gaps trigger resubscribe
+Reconnect strategy: exponential backoff (1s, 2s, 4s, 8s, max 60s); persists subscription list across reconnects
+Tick storage (optional): Parquet files partitioned by date at data/ticks/YYYY/MM/DD/*.parquet for replay/research
+4.6 Third-Party Services (All Optional)
+Service	Purpose	Required?
+Let's Encrypt	Automatic HTTPS via Caddy	Strongly recommended for production
+ntfy.sh	Push notifications to phone	Optional
+Gotify	Self-hosted push alternative	Optional
+Ollama (local)	Chatbot LLM	Optional, off by default
+yfinance	Educational historical data	Optional
+NSE Bhavcopy archive	Official historical equity data	Optional, free
+GitHub	Source repo + Discussions + Issues	For contributors only
+restic / borgbackup	Off-site encrypted backup	Strongly recommended
+Zero telemetry. Zero phone-home. Zero analytics beacons.
+
+5. Single-User Implementation Specifics
+5.1 Configuration for Single-User Mode
+Single-user is the default; no configuration needed to activate.
+
+Key defaults in .env.example:
+
+# Core
+LOHI_MODE=single_user
+DB_MODE=sqlite
+DB_PATH=/app/data/lohi.db
+DOMAIN=trade.example.com
+
+# Security
+MASTER_ENCRYPTION_KEY=
+SESSION_SECRET=
+SESSION_IDLE_TIMEOUT_HOURS=24
+SESSION_ABSOLUTE_TIMEOUT_DAYS=7
+
+# Trading
+TRADING_MODE=paper   # Always starts paper; live enabled via UI only
+TIMEZONE=Asia/Kolkata
+CURRENCY=INR
+
+# Networking
+WEB_PORT=3000
+API_PORT=8000
+CADDY_HTTP_PORT=80
+CADDY_HTTPS_PORT=443
+
+# Optional
+OLLAMA_BASE_URL=         # Leave blank to disable chatbot
+NTFY_URL=                # Leave blank to disable
+LOG_LEVEL=INFO
+
+# Safety
+ENFORCE_2FA_FOR_LIVE=true
+REQUIRE_PAPER_SESSIONS_BEFORE_LIVE=1
+KILL_SWITCH_ON_DAILY_LOSS=true
+Single-user restrictions enforced in code:
+
+Registration endpoint disabled after first admin created
+No "Invite User" UI
+All resources implicitly owned by the single user
+No row-level security needed (single tenant)
+5.2 Resource Requirements
+Deployment	CPU	RAM	Disk	Network
+Minimum	2 vCPU	4 GB	20 GB SSD	10 Mbps, low-latency to NSE
+Recommended	4 vCPU	8 GB	50 GB NVMe	50 Mbps, Mumbai region preferred
+Enthusiast	8 vCPU	16 GB	200 GB NVMe	100+ Mbps
+Reference VPS providers (Mumbai region preferred for low NSE latency):
+
+Hetzner CX22: ₹500/month, 2 vCPU / 4 GB / 40 GB
+DigitalOcean Droplet BLR1: ₹1000/month, 2 vCPU / 4 GB
+AWS Lightsail ap-south-1: ₹1200/month equivalent
+Self-hosted home lab (Raspberry Pi 5 with 8GB works, arm64 images published)
+Target performance on reference hardware:
+
+20+ concurrent strategies
+5,000 ticks/second sustained
+Order placement app-side p99 < 150ms (excluding broker network)
+Cold start < 8 seconds
+5.3 Deployment Instructions
+Quick-start (recommended):
+
+# One-liner install script
+curl -fsSL https://get.lohi-trade.dev | sh
+cd lohi-trade
+# Edit .env — set DOMAIN and MASTER_ENCRYPTION_KEY minimum
+docker compose up -d
+# Navigate to https://
+Manual install:
+
+# 1. Prerequisites
+sudo apt update && sudo apt install -y docker.io docker-compose-v2 git
+
+# 2. Clone
+git clone https://github.com/lohi-trade/lohi-trade-oss
+cd lohi-trade-oss
+
+# 3. Generate secrets
+cp .env.example .env
+sed -i "s|MASTER_ENCRYPTION_KEY=.*|MASTER_ENCRYPTION_KEY=$(openssl rand -base64 32)|" .env
+sed -i "s|SESSION_SECRET=.*|SESSION_SECRET=$(openssl rand -base64 64)|" .env
+
+# 4. Set your domain
+sed -i "s|DOMAIN=.*|DOMAIN=trade.example.com|" .env
+
+# 5. Ensure DNS A record points domain → server IP
+
+# 6. Start
+docker compose pull
+docker compose up -d
+
+# 7. Verify
+docker compose ps
+curl https://trade.example.com/health/startup
+# Expected: {"first_run": true}
+
+# 8. Open browser → complete setup wizard
+Update:
+
+cd lohi-trade-oss
+git pull
+docker compose pull
+docker compose up -d
+# Migrations run automatically on api container start
+Backup:
+
+docker compose exec api lohi backup
+# Creates data/backups/lohi-YYYYMMDD-HHMMSS.tar.gz
+# Copy off-site:
+restic -r s3:s3.amazonaws.com/my-bucket backup ./data/backups
+5.4 Security Measures for Protecting Real Funds
+Layered defense — every layer can halt damage independently.
+
+Host hardening:
+
+SSH key-only auth, disable root login, fail2ban enabled
+UFW firewall: only 80, 443, 22 open
+Automatic security updates: unattended-upgrades
+Docker socket not exposed to containers
+Application layer:
+
+HTTPS mandatory; HTTP redirects to HTTPS
+HSTS header set to 1 year
+CSP header restricting script origins
+Session cookies: HttpOnly, Secure, SameSite=Strict
+CSRF double-submit pattern on all mutations
+Rate limiting (slowapi): login 5/15min, general 100/s
+Argon2id with strong parameters
+Credential protection:
+
+Broker API keys encrypted with Fernet using master key from env
+Master key minimum 32 bytes, never in source control
+Master key sourced from env or OS keyring (keyring lib); recommend sops + age for encrypted .env files
+Rotation: user can re-enter credentials in UI; old values overwritten atomically
+Trading safety:
+
+Paper mode default; live requires explicit multi-gate activation
+Pre-trade risk checks on every order (max value, max positions, price sanity, rate limit)
+Kill switch with multiple triggers (UI, API, Unix signal, daily loss breach)
+Idempotency keys prevent duplicate orders
+Reconciliation every 30s detects drift from broker truth
+Session-window enforcement prevents off-hours orders
+Intraday auto-square-off at 15:15 IST
+Audit & observability:
+
+Append-only audit log (SQL trigger prevents DELETE)
+All sensitive fields redacted in logs
+Optional Prometheus/Grafana stack for monitoring
+Notification channels for risk breaches
+Data protection:
+
+DB file permissions 600 (user only)
+Backups encrypted if using restic/borgbackup
+No telemetry leaves the host
+Master encryption key rotation documented (re-encryption tool provided)
+6. Prerequisites and Dependencies
+6.1 Required Accounts (External, User's Responsibility)
+Broker account with one of: Zerodha, Dhan, Upstox, Fyers, Angel One
+Completed KYC
+Funded (minimum varies by broker)
+API subscription active
+Domain registrar account (optional but recommended) — any registrar; ₹500-1000/year
+VPS provider account (unless self-hosting) — Hetzner, DigitalOcean, AWS Lightsail, etc.
+GitHub account (for updates via git pull) — free
+Off-site backup destination (optional but recommended) — AWS S3, Backblaze B2, or any S3-compatible object store
+6.2 API Keys and Credentials Needed
+Per broker (varies):
+
+Broker	Required Credentials
+Zerodha	API Key, API Secret, User ID (client ID), Password, TOTP Seed
+Dhan	Access Token (long-lived), Client ID
+Upstox	API Key, API Secret, Redirect URI (for OAuth)
+Fyers	App ID, Secret Key, Redirect URI, PIN
+Angel One	API Key, Client Code, MPIN, TOTP Seed
+System-generated secrets (created during install):
+
+MASTER_ENCRYPTION_KEY — 32-byte base64, encrypts broker credentials
+SESSION_SECRET — 64-byte base64, signs session tokens
+6.3 Software Dependencies
+Host machine:
+
+Linux (Ubuntu 22.04 LTS or later; Debian 12; Fedora 39+; RHEL 9+)
+macOS 13+ (for development use; production on Linux recommended)
+Docker Engine 24.0+ with Docker Compose v2
+git (for cloning and updates)
+openssl (for generating secrets)
+Optional tooling:
+
+restic or borgbackup for off-site encrypted backups
+sops + age for encrypted .env management
+fail2ban for SSH brute-force protection
+ufw for firewall
+All containerized; no Python/Node installation needed on host.
+
+6.4 Hardware/Hosting Requirements
+See §5.2. Summary: 2 vCPU / 4 GB RAM / 20 GB SSD minimum; Mumbai region VPS preferred for NSE latency.
+
+7. Risk Management and Compliance
+7.1 Safety Mechanisms for Real-Money Trading
+Defense-in-depth across 7 layers:
+
+Mandatory paper-first — Live mode cannot be enabled until at least one strategy has run in paper mode for ≥1 session (system-verified via strategy_runs table lookup).
+Multi-gate live activation — 3-step modal requiring checklist + re-auth + typed confirmation phrase.
+Pre-trade risk checks — Every order validated against configurable limits (max value, max positions, price sanity, rate limit, session window, kill-switch state).
+Kill switch — Multiple triggers:
+UI emergency stop button (2-click confirm)
+API endpoint POST /api/kill-switch
+Unix signal SIGUSR1 to engine container (useful for CLI scripts)
+Automatic trigger on daily loss limit breach
+Automatic trigger on broker authentication failure >3 consecutive times
+Idempotency & reconciliation — UUID v7 keys prevent duplicates; 30s reconciliation loop detects state drift from broker truth.
+Session-window enforcement — Orders rejected outside configured hours; automatic intraday square-off at 15:15 IST for MIS positions.
+Audit trail — Append-only log captures every state change, order, config modification; tamper-evident.
+Additional safeguards:
+
+Credentials encrypted at rest
+Broker connection health continuously monitored
+Notifications fire on risk events
+CLI lohi doctor provides health snapshot
+Chatbot is read-only by default (cannot place orders)
+7.2 Regulatory Considerations
+LOHI-TRADE OSS is a self-hosted software tool, not a regulated service.
+
+Not a SEBI-registered intermediary — the platform does not custody funds, provide investment advice, or act as a broker/RA/IA.
+User is solely responsible for:
+Compliance with SEBI regulations applicable to their trading
+Adherence to broker terms of service (especially around algo trading)
+Tax reporting and record-keeping
+Securing their own infrastructure
+India-specific notes:
+SEBI's algo-trading framework for retail is evolving; users should check current broker-specific algo approval requirements
+Some brokers require algo strategies to be pre-approved by the exchange (particularly for automated order placement at high frequency)
+All tax obligations (STT, GST, stamp duty, capital gains, business income) are the user's responsibility
+Mandatory disclosures shown to user:
+On install (license + risk disclosure)
+On live-mode activation (re-acknowledged)
+In footer of every page
+Licensing:
+Platform: AGPL-3.0 (prevents SaaS forks without contribution)
+Core library: Apache-2.0 (reusable as dependency)
+UI components: MIT
+Docs: CC-BY-4.0
+7.3 Error Handling and Rollback Procedures
+Order-level error handling:
+
+Error class	Handling
+Broker API 5xx	Retry with exponential backoff (3 attempts, 1s/2s/4s); if still failing, mark order FAILED, notify user, do not retry automatically
+Broker API 4xx (client error)	No retry; mark REJECTED with reason; notify user
+Network timeout	Retry once; if still failing, query broker's order book to check if order actually placed (by idempotency key); reconcile state
+Rate limit breach	Queue the order; retry after broker's reset window
+Duplicate idempotency key detected	Reject the new submission; return existing order ID
+System-level error handling:
+
+Error class	Handling
+Broker WebSocket disconnect	Exponential backoff reconnect (1/2/4/8/60s cap); subscription list persisted and re-registered
+DB connection failure	Health check fails; Docker Compose restart policy kicks in (restart: unless-stopped); engine pauses order submission until DB healthy
+Engine crash	Supervisor restarts engine; on startup, engine reads active strategies from DB and resumes; open orders reconciled with broker
+Kill switch triggered	All strategies stopped immediately; open orders cancelled via broker API; all positions flattened (configurable); notification fired; manual reset required
+Corrupt DB	Alembic migration detects incompatible schema; lohi doctor provides diagnostic; restore from backup using lohi restore 
+Rollback procedures:
+
+Bad strategy deployment: Stop strategy via UI → orders placed by strategy remain but no new ones → manually close positions via Positions page or bulk [Close All].
+Bad configuration change: Audit log shows what changed by whom/when; lohi config rollback --steps=1 CLI reverts last N changes (config only, not orders).
+Accidental live-mode enable: Toggle off in /settings/risk → confirmation modal → mode returns to paper → running strategies continue but subsequent orders routed to paper simulator.
+Complete disaster: Restore latest backup via lohi restore; reconcile with broker's authoritative state for positions/orders; manually resolve any discrepancies.
+Post-incident review (recommended):
+
+lohi doctor --since= generates a diagnostic bundle (redacted) with logs, recent audit entries, and system state
+Bundle saved locally only; user decides whether to share for support
+Documentation includes a "post-incident checklist" in the Going Live guide
+Critical operational principle: The system is designed so that every automated action that risks capital can be interrupted by a human within 2 clicks, and every state change is reversible except the trades themselves (which require market action to unwind).
+
+</response>

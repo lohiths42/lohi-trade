@@ -1,0 +1,2201 @@
+{
+ "Resources": {
+  "LoHiTradeCluster8EA56130": {
+   "Type": "AWS::ECS::Cluster",
+   "Properties": {
+    "ClusterSettings": [
+     {
+      "Name": "containerInsights",
+      "Value": "enabled"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/LoHiTradeCluster/Resource"
+   }
+  },
+  "EcrGateway4FD2E918": {
+   "Type": "AWS::ECR::Repository",
+   "Properties": {
+    "ImageTagMutability": "MUTABLE",
+    "RepositoryName": "lohi-trade/gateway"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/EcrGateway/Resource"
+   }
+  },
+  "EcrSoldierB4842672": {
+   "Type": "AWS::ECR::Repository",
+   "Properties": {
+    "ImageTagMutability": "MUTABLE",
+    "RepositoryName": "lohi-trade/soldier"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/EcrSoldier/Resource"
+   }
+  },
+  "EcrCommanderC37C00E5": {
+   "Type": "AWS::ECR::Repository",
+   "Properties": {
+    "ImageTagMutability": "MUTABLE",
+    "RepositoryName": "lohi-trade/commander"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/EcrCommander/Resource"
+   }
+  },
+  "EcrRmsOmsB199BC9E": {
+   "Type": "AWS::ECR::Repository",
+   "Properties": {
+    "ImageTagMutability": "MUTABLE",
+    "RepositoryName": "lohi-trade/rms-oms"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/EcrRmsOms/Resource"
+   }
+  },
+  "EcrMarketDataCollector47972A37": {
+   "Type": "AWS::ECR::Repository",
+   "Properties": {
+    "ImageTagMutability": "MUTABLE",
+    "RepositoryName": "lohi-trade/market-data-collector"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/EcrMarketDataCollector/Resource"
+   }
+  },
+  "EcrVerification0869EFA9": {
+   "Type": "AWS::ECR::Repository",
+   "Properties": {
+    "ImageTagMutability": "MUTABLE",
+    "RepositoryName": "lohi-trade/verification"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/EcrVerification/Resource"
+   }
+  },
+  "EcrChatbot124AF5E0": {
+   "Type": "AWS::ECR::Repository",
+   "Properties": {
+    "ImageTagMutability": "MUTABLE",
+    "RepositoryName": "lohi-trade/chatbot"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/EcrChatbot/Resource"
+   }
+  },
+  "LoHiTradeAlb2EF60F72": {
+   "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+   "Properties": {
+    "LoadBalancerAttributes": [
+     {
+      "Key": "deletion_protection.enabled",
+      "Value": "false"
+     }
+    ],
+    "Scheme": "internet-facing",
+    "SecurityGroups": [
+     {
+      "Fn::ImportValue": "LoHiTradeVpc:ExportsOutputFnGetAttAlbSecurityGroup86A59E99GroupIdE3A37BC7"
+     }
+    ],
+    "Subnets": [
+     {
+      "Fn::ImportValue": "LoHiTradeVpc:ExportsOutputRefLoHiTradeVpcPublicSubnet1Subnet3D86AC4E58F63A3F"
+     },
+     {
+      "Fn::ImportValue": "LoHiTradeVpc:ExportsOutputRefLoHiTradeVpcPublicSubnet2SubnetB2177EF1C869996E"
+     }
+    ],
+    "Type": "application"
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/LoHiTradeAlb/Resource"
+   }
+  },
+  "LoHiTradeAlbHttpListener285F038F": {
+   "Type": "AWS::ElasticLoadBalancingV2::Listener",
+   "Properties": {
+    "DefaultActions": [
+     {
+      "TargetGroupArn": {
+       "Ref": "GatewayTargetGroup1DB55352"
+      },
+      "Type": "forward"
+     }
+    ],
+    "LoadBalancerArn": {
+     "Ref": "LoHiTradeAlb2EF60F72"
+    },
+    "Port": 80,
+    "Protocol": "HTTP"
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/LoHiTradeAlb/HttpListener/Resource"
+   }
+  },
+  "EcsTaskExecutionRoleC0B6A84D": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "ecs-tasks.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/EcsTaskExecutionRole/Resource"
+   }
+  },
+  "EcsTaskExecutionRoleDefaultPolicyDCEEFDC3": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchGetImage"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "EcrGateway4FD2E918",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": "ecr:GetAuthorizationToken",
+       "Effect": "Allow",
+       "Resource": "*"
+      },
+      {
+       "Action": [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchGetImage"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "EcrSoldierB4842672",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchGetImage"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "EcrCommanderC37C00E5",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchGetImage"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "EcrRmsOmsB199BC9E",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchGetImage"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "EcrMarketDataCollector47972A37",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchGetImage"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "EcrVerification0869EFA9",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:GetDownloadUrlForLayer",
+        "ecr:BatchGetImage"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "EcrChatbot124AF5E0",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "LogsGatewayAC85C117",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "LogsSoldierAF07C267",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "LogsCommanderDDB93BD6",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "LogsRmsOms20C0983B",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "LogsMarketDataCollector233C3F73",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "LogsVerification428CA712",
+         "Arn"
+        ]
+       }
+      },
+      {
+       "Action": [
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::GetAtt": [
+         "LogsChatbot45D06FC8",
+         "Arn"
+        ]
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "EcsTaskExecutionRoleDefaultPolicyDCEEFDC3",
+    "Roles": [
+     {
+      "Ref": "EcsTaskExecutionRoleC0B6A84D"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/EcsTaskExecutionRole/DefaultPolicy/Resource"
+   }
+  },
+  "EcsTaskRole8DFA0181": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "ecs-tasks.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/EcsTaskRole/Resource"
+   }
+  },
+  "LogsGatewayAC85C117": {
+   "Type": "AWS::Logs::LogGroup",
+   "Properties": {
+    "LogGroupName": "/ecs/lohi-trade/gateway",
+    "RetentionInDays": 30
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/LogsGateway/Resource"
+   }
+  },
+  "TaskDefGateway6DE280BD": {
+   "Type": "AWS::ECS::TaskDefinition",
+   "Properties": {
+    "ContainerDefinitions": [
+     {
+      "Environment": [
+       {
+        "Name": "SERVICE_NAME",
+        "Value": "gateway"
+       }
+      ],
+      "Essential": true,
+      "Image": {
+       "Fn::Join": [
+        "",
+        [
+         {
+          "Fn::Select": [
+           4,
+           {
+            "Fn::Split": [
+             ":",
+             {
+              "Fn::GetAtt": [
+               "EcrGateway4FD2E918",
+               "Arn"
+              ]
+             }
+            ]
+           }
+          ]
+         },
+         ".dkr.ecr.",
+         {
+          "Fn::Select": [
+           3,
+           {
+            "Fn::Split": [
+             ":",
+             {
+              "Fn::GetAtt": [
+               "EcrGateway4FD2E918",
+               "Arn"
+              ]
+             }
+            ]
+           }
+          ]
+         },
+         ".",
+         {
+          "Ref": "AWS::URLSuffix"
+         },
+         "/",
+         {
+          "Ref": "EcrGateway4FD2E918"
+         },
+         ":latest"
+        ]
+       ]
+      },
+      "LogConfiguration": {
+       "LogDriver": "awslogs",
+       "Options": {
+        "awslogs-group": {
+         "Ref": "LogsGatewayAC85C117"
+        },
+        "awslogs-stream-prefix": "gateway",
+        "awslogs-region": "ap-south-1"
+       }
+      },
+      "Name": "gateway-container",
+      "PortMappings": [
+       {
+        "ContainerPort": 8000,
+        "Protocol": "tcp"
+       }
+      ]
+     }
+    ],
+    "Cpu": "512",
+    "ExecutionRoleArn": {
+     "Fn::GetAtt": [
+      "EcsTaskExecutionRoleC0B6A84D",
+      "Arn"
+     ]
+    },
+    "Family": "LoHiTradeEcsTaskDefGatewayA540B98D",
+    "Memory": "1024",
+    "NetworkMode": "awsvpc",
+    "RequiresCompatibilities": [
+     "FARGATE"
+    ],
+    "TaskRoleArn": {
+     "Fn::GetAtt": [
+      "EcsTaskRole8DFA0181",
+      "Arn"
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/TaskDefGateway/Resource"
+   }
+  },
+  "SvcGatewayService4A1DECE5": {
+   "Type": "AWS::ECS::Service",
+   "Properties": {
+    "Cluster": {
+     "Ref": "LoHiTradeCluster8EA56130"
+    },
+    "DeploymentConfiguration": {
+     "Alarms": {
+      "AlarmNames": [],
+      "Enable": false,
+      "Rollback": false
+     },
+     "MaximumPercent": 200,
+     "MinimumHealthyPercent": 50
+    },
+    "DesiredCount": 2,
+    "EnableECSManagedTags": false,
+    "HealthCheckGracePeriodSeconds": 60,
+    "LaunchType": "FARGATE",
+    "LoadBalancers": [
+     {
+      "ContainerName": "gateway-container",
+      "ContainerPort": 8000,
+      "TargetGroupArn": {
+       "Ref": "GatewayTargetGroup1DB55352"
+      }
+     }
+    ],
+    "NetworkConfiguration": {
+     "AwsvpcConfiguration": {
+      "AssignPublicIp": "DISABLED",
+      "SecurityGroups": [
+       {
+        "Fn::ImportValue": "LoHiTradeVpc:ExportsOutputFnGetAttEcsSecurityGroup44008BF1GroupIdDE2CA5C5"
+       }
+      ],
+      "Subnets": [
+       {
+        "Fn::ImportValue": "LoHiTradeVpc:ExportsOutputRefLoHiTradeVpcPrivateSubnet1SubnetFFBB083D27B2E795"
+       },
+       {
+        "Fn::ImportValue": "LoHiTradeVpc:ExportsOutputRefLoHiTradeVpcPrivateSubnet2SubnetD5F3E8EE53634E8D"
+       }
+      ]
+     }
+    },
+    "TaskDefinition": {
+     "Ref": "TaskDefGateway6DE280BD"
+    }
+   },
+   "DependsOn": [
+    "EcsTaskRole8DFA0181",
+    "LoHiTradeAlbHttpListener285F038F"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/SvcGateway/Service"
+   }
+  },
+  "SvcGatewayTaskCountTargetB40D4D43": {
+   "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+   "Properties": {
+    "MaxCapacity": 10,
+    "MinCapacity": 2,
+    "ResourceId": {
+     "Fn::Join": [
+      "",
+      [
+       "service/",
+       {
+        "Ref": "LoHiTradeCluster8EA56130"
+       },
+       "/",
+       {
+        "Fn::GetAtt": [
+         "SvcGatewayService4A1DECE5",
+         "Name"
+        ]
+       }
+      ]
+     ]
+    },
+    "RoleARN": {
+     "Fn::Join": [
+      "",
+      [
+       "arn:",
+       {
+        "Ref": "AWS::Partition"
+       },
+       ":iam::",
+       {
+        "Ref": "AWS::AccountId"
+       },
+       ":role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService"
+      ]
+     ]
+    },
+    "ScalableDimension": "ecs:service:DesiredCount",
+    "ServiceNamespace": "ecs"
+   },
+   "DependsOn": [
+    "EcsTaskRole8DFA0181"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/SvcGateway/TaskCount/Target/Resource"
+   }
+  },
+  "SvcGatewayTaskCountTargetGatewayCpuScalingAF6FC1DB": {
+   "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+   "Properties": {
+    "PolicyName": "LoHiTradeEcsSvcGatewayTaskCountTargetGatewayCpuScalingBF54B7DA",
+    "PolicyType": "TargetTrackingScaling",
+    "ScalingTargetId": {
+     "Ref": "SvcGatewayTaskCountTargetB40D4D43"
+    },
+    "TargetTrackingScalingPolicyConfiguration": {
+     "PredefinedMetricSpecification": {
+      "PredefinedMetricType": "ECSServiceAverageCPUUtilization"
+     },
+     "ScaleInCooldown": 60,
+     "ScaleOutCooldown": 60,
+     "TargetValue": 70
+    }
+   },
+   "DependsOn": [
+    "EcsTaskRole8DFA0181"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/SvcGateway/TaskCount/Target/GatewayCpuScaling/Resource"
+   }
+  },
+  "LogsSoldierAF07C267": {
+   "Type": "AWS::Logs::LogGroup",
+   "Properties": {
+    "LogGroupName": "/ecs/lohi-trade/soldier",
+    "RetentionInDays": 30
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/LogsSoldier/Resource"
+   }
+  },
+  "TaskDefSoldierBB435FD9": {
+   "Type": "AWS::ECS::TaskDefinition",
+   "Properties": {
+    "ContainerDefinitions": [
+     {
+      "Environment": [
+       {
+        "Name": "SERVICE_NAME",
+        "Value": "soldier"
+       }
+      ],
+      "Essential": true,
+      "Image": {
+       "Fn::Join": [
+        "",
+        [
+         {
+          "Fn::Select": [
+           4,
+           {
+            "Fn::Split": [
+             ":",
+             {
+              "Fn::GetAtt": [
+               "EcrSoldierB4842672",
+               "Arn"
+              ]
+             }
+            ]
+           }
+          ]
+         },
+         ".dkr.ecr.",
+         {
+          "Fn::Select": [
+           3,
+           {
+            "Fn::Split": [
+             ":",
+             {
+              "Fn::GetAtt": [
+               "EcrSoldierB4842672",
+               "Arn"
+              ]
+             }
+            ]
+           }
+          ]
+         },
+         ".",
+         {
+          "Ref": "AWS::URLSuffix"
+         },
+         "/",
+         {
+          "Ref": "EcrSoldierB4842672"
+         },
+         ":latest"
+        ]
+       ]
+      },
+      "LogConfiguration": {
+       "LogDriver": "awslogs",
+       "Options": {
+        "awslogs-group": {
+         "Ref": "LogsSoldierAF07C267"
+        },
+        "awslogs-stream-prefix": "soldier",
+        "awslogs-region": "ap-south-1"
+       }
+      },
+      "Name": "soldier-container",
+      "PortMappings": [
+       {
+        "ContainerPort": 8001,
+        "Protocol": "tcp"
+       }
+      ]
+     }
+    ],
+    "Cpu": "256",
+    "ExecutionRoleArn": {
+     "Fn::GetAtt": [
+      "EcsTaskExecutionRoleC0B6A84D",
+      "Arn"
+     ]
+    },
+    "Family": "LoHiTradeEcsTaskDefSoldier62A501EF",
+    "Memory": "512",
+    "NetworkMode": "awsvpc",
+    "RequiresCompatibilities": [
+     "FARGATE"
+    ],
+    "TaskRoleArn": {
+     "Fn::GetAtt": [
+      "EcsTaskRole8DFA0181",
+      "Arn"
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/TaskDefSoldier/Resource"
+   }
+  },
+  "SvcSoldierService82D16F65": {
+   "Type": "AWS::ECS::Service",
+   "Properties": {
+    "Cluster": {
+     "Ref": "LoHiTradeCluster8EA56130"
+    },
+    "DeploymentConfiguration": {
+     "Alarms": {
+      "AlarmNames": [],
+      "Enable": false,
+      "Rollback": false
+     },
+     "MaximumPercent": 200,
+     "MinimumHealthyPercent": 50
+    },
+    "DesiredCount": 1,
+    "EnableECSManagedTags": false,
+    "LaunchType": "FARGATE",
+    "NetworkConfiguration": {
+     "AwsvpcConfiguration": {
+      "AssignPublicIp": "DISABLED",
+      "SecurityGroups": [
+       {
+        "Fn::ImportValue": "LoHiTradeVpc:ExportsOutputFnGetAttEcsSecurityGroup44008BF1GroupIdDE2CA5C5"
+       }
+      ],
+      "Subnets": [
+       {
+        "Fn::ImportValue": "LoHiTradeVpc:ExportsOutputRefLoHiTradeVpcPrivateSubnet1SubnetFFBB083D27B2E795"
+       },
+       {
+        "Fn::ImportValue": "LoHiTradeVpc:ExportsOutputRefLoHiTradeVpcPrivateSubnet2SubnetD5F3E8EE53634E8D"
+       }
+      ]
+     }
+    },
+    "TaskDefinition": {
+     "Ref": "TaskDefSoldierBB435FD9"
+    }
+   },
+   "DependsOn": [
+    "EcsTaskRole8DFA0181"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/SvcSoldier/Service"
+   }
+  },
+  "LogsCommanderDDB93BD6": {
+   "Type": "AWS::Logs::LogGroup",
+   "Properties": {
+    "LogGroupName": "/ecs/lohi-trade/commander",
+    "RetentionInDays": 30
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/LogsCommander/Resource"
+   }
+  },
+  "TaskDefCommander51B2C935": {
+   "Type": "AWS::ECS::TaskDefinition",
+   "Properties": {
+    "ContainerDefinitions": [
+     {
+      "Environment": [
+       {
+        "Name": "SERVICE_NAME",
+        "Value": "commander"
+       }
+      ],
+      "Essential": true,
+      "Image": {
+       "Fn::Join": [
+        "",
+        [
+         {
+          "Fn::Select": [
+           4,
+           {
+            "Fn::Split": [
+             ":",
+             {
+              "Fn::GetAtt": [
+               "EcrCommanderC37C00E5",
+               "Arn"
+              ]
+             }
+            ]
+           }
+          ]
+         },
+         ".dkr.ecr.",
+         {
+          "Fn::Select": [
+           3,
+           {
+            "Fn::Split": [
+             ":",
+             {
+              "Fn::GetAtt": [
+               "EcrCommanderC37C00E5",
+               "Arn"
+              ]
+             }
+            ]
+           }
+          ]
+         },
+         ".",
+         {
+          "Ref": "AWS::URLSuffix"
+         },
+         "/",
+         {
+          "Ref": "EcrCommanderC37C00E5"
+         },
+         ":latest"
+        ]
+       ]
+      },
+      "LogConfiguration": {
+       "LogDriver": "awslogs",
+       "Options": {
+        "awslogs-group": {
+         "Ref": "LogsCommanderDDB93BD6"
+        },
+        "awslogs-stream-prefix": "commander",
+        "awslogs-region": "ap-south-1"
+       }
+      },
+      "Name": "commander-container",
+      "PortMappings": [
+       {
+        "ContainerPort": 8002,
+        "Protocol": "tcp"
+       }
+      ]
+     }
+    ],
+    "Cpu": "256",
+    "ExecutionRoleArn": {
+     "Fn::GetAtt": [
+      "EcsTaskExecutionRoleC0B6A84D",
+      "Arn"
+     ]
+    },
+    "Family": "LoHiTradeEcsTaskDefCommanderA34939FD",
+    "Memory": "512",
+    "NetworkMode": "awsvpc",
+    "RequiresCompatibilities": [
+     "FARGATE"
+    ],
+    "TaskRoleArn": {
+     "Fn::GetAtt": [
+      "EcsTaskRole8DFA0181",
+      "Arn"
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/TaskDefCommander/Resource"
+   }
+  },
+  "SvcCommanderServiceE0CA40A5": {
+   "Type": "AWS::ECS::Service",
+   "Properties": {
+    "Cluster": {
+     "Ref": "LoHiTradeCluster8EA56130"
+    },
+    "DeploymentConfiguration": {
+     "Alarms": {
+      "AlarmNames": [],
+      "Enable": false,
+      "Rollback": false
+     },
+     "MaximumPercent": 200,
+     "MinimumHealthyPercent": 50
+    },
+    "DesiredCount": 1,
+    "EnableECSManagedTags": false,
+    "LaunchType": "FARGATE",
+    "NetworkConfiguration": {
+     "AwsvpcConfiguration": {
+      "AssignPublicIp": "DISABLED",
+      "SecurityGroups": [
+       {
+        "Fn::ImportValue": "LoHiTradeVpc:ExportsOutputFnGetAttEcsSecurityGroup44008BF1GroupIdDE2CA5C5"
+       }
+      ],
+      "Subnets": [
+       {
+        "Fn::ImportValue": "LoHiTradeVpc:ExportsOutputRefLoHiTradeVpcPrivateSubnet1SubnetFFBB083D27B2E795"
+       },
+       {
+        "Fn::ImportValue": "LoHiTradeVpc:ExportsOutputRefLoHiTradeVpcPrivateSubnet2SubnetD5F3E8EE53634E8D"
+       }
+      ]
+     }
+    },
+    "TaskDefinition": {
+     "Ref": "TaskDefCommander51B2C935"
+    }
+   },
+   "DependsOn": [
+    "EcsTaskRole8DFA0181"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/SvcCommander/Service"
+   }
+  },
+  "LogsRmsOms20C0983B": {
+   "Type": "AWS::Logs::LogGroup",
+   "Properties": {
+    "LogGroupName": "/ecs/lohi-trade/rms-oms",
+    "RetentionInDays": 30
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/LogsRmsOms/Resource"
+   }
+  },
+  "TaskDefRmsOms0C7857AB": {
+   "Type": "AWS::ECS::TaskDefinition",
+   "Properties": {
+    "ContainerDefinitions": [
+     {
+      "Environment": [
+       {
+        "Name": "SERVICE_NAME",
+        "Value": "rms-oms"
+       }
+      ],
+      "Essential": true,
+      "Image": {
+       "Fn::Join": [
+        "",
+        [
+         {
+          "Fn::Select": [
+           4,
+           {
+            "Fn::Split": [
+             ":",
+             {
+              "Fn::GetAtt": [
+               "EcrRmsOmsB199BC9E",
+               "Arn"
+              ]
+             }
+            ]
+           }
+          ]
+         },
+         ".dkr.ecr.",
+         {
+          "Fn::Select": [
+           3,
+           {
+            "Fn::Split": [
+             ":",
+             {
+              "Fn::GetAtt": [
+               "EcrRmsOmsB199BC9E",
+               "Arn"
+              ]
+             }
+            ]
+           }
+          ]
+         },
+         ".",
+         {
+          "Ref": "AWS::URLSuffix"
+         },
+         "/",
+         {
+          "Ref": "EcrRmsOmsB199BC9E"
+         },
+         ":latest"
+        ]
+       ]
+      },
+      "LogConfiguration": {
+       "LogDriver": "awslogs",
+       "Options": {
+        "awslogs-group": {
+         "Ref": "LogsRmsOms20C0983B"
+        },
+        "awslogs-stream-prefix": "rms-oms",
+        "awslogs-region": "ap-south-1"
+       }
+      },
+      "Name": "rms-oms-container",
+      "PortMappings": [
+       {
+        "ContainerPort": 8003,
+        "Protocol": "tcp"
+       }
+      ]
+     }
+    ],
+    "Cpu": "256",
+    "ExecutionRoleArn": {
+     "Fn::GetAtt": [
+      "EcsTaskExecutionRoleC0B6A84D",
+      "Arn"
+     ]
+    },
+    "Family": "LoHiTradeEcsTaskDefRmsOms3B289C79",
+    "Memory": "512",
+    "NetworkMode": "awsvpc",
+    "RequiresCompatibilities": [
+     "FARGATE"
+    ],
+    "TaskRoleArn": {
+     "Fn::GetAtt": [
+      "EcsTaskRole8DFA0181",
+      "Arn"
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/TaskDefRmsOms/Resource"
+   }
+  },
+  "SvcRmsOmsService691DF647": {
+   "Type": "AWS::ECS::Service",
+   "Properties": {
+    "Cluster": {
+     "Ref": "LoHiTradeCluster8EA56130"
+    },
+    "DeploymentConfiguration": {
+     "Alarms": {
+      "AlarmNames": [],
+      "Enable": false,
+      "Rollback": false
+     },
+     "MaximumPercent": 200,
+     "MinimumHealthyPercent": 50
+    },
+    "DesiredCount": 1,
+    "EnableECSManagedTags": false,
+    "LaunchType": "FARGATE",
+    "NetworkConfiguration": {
+     "AwsvpcConfiguration": {
+      "AssignPublicIp": "DISABLED",
+      "SecurityGroups": [
+       {
+        "Fn::ImportValue": "LoHiTradeVpc:ExportsOutputFnGetAttEcsSecurityGroup44008BF1GroupIdDE2CA5C5"
+       }
+      ],
+      "Subnets": [
+       {
+        "Fn::ImportValue": "LoHiTradeVpc:ExportsOutputRefLoHiTradeVpcPrivateSubnet1SubnetFFBB083D27B2E795"
+       },
+       {
+        "Fn::ImportValue": "LoHiTradeVpc:ExportsOutputRefLoHiTradeVpcPrivateSubnet2SubnetD5F3E8EE53634E8D"
+       }
+      ]
+     }
+    },
+    "TaskDefinition": {
+     "Ref": "TaskDefRmsOms0C7857AB"
+    }
+   },
+   "DependsOn": [
+    "EcsTaskRole8DFA0181"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/SvcRmsOms/Service"
+   }
+  },
+  "LogsMarketDataCollector233C3F73": {
+   "Type": "AWS::Logs::LogGroup",
+   "Properties": {
+    "LogGroupName": "/ecs/lohi-trade/market-data-collector",
+    "RetentionInDays": 30
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/LogsMarketDataCollector/Resource"
+   }
+  },
+  "TaskDefMarketDataCollector4C7D69A2": {
+   "Type": "AWS::ECS::TaskDefinition",
+   "Properties": {
+    "ContainerDefinitions": [
+     {
+      "Environment": [
+       {
+        "Name": "SERVICE_NAME",
+        "Value": "market-data-collector"
+       }
+      ],
+      "Essential": true,
+      "Image": {
+       "Fn::Join": [
+        "",
+        [
+         {
+          "Fn::Select": [
+           4,
+           {
+            "Fn::Split": [
+             ":",
+             {
+              "Fn::GetAtt": [
+               "EcrMarketDataCollector47972A37",
+               "Arn"
+              ]
+             }
+            ]
+           }
+          ]
+         },
+         ".dkr.ecr.",
+         {
+          "Fn::Select": [
+           3,
+           {
+            "Fn::Split": [
+             ":",
+             {
+              "Fn::GetAtt": [
+               "EcrMarketDataCollector47972A37",
+               "Arn"
+              ]
+             }
+            ]
+           }
+          ]
+         },
+         ".",
+         {
+          "Ref": "AWS::URLSuffix"
+         },
+         "/",
+         {
+          "Ref": "EcrMarketDataCollector47972A37"
+         },
+         ":latest"
+        ]
+       ]
+      },
+      "LogConfiguration": {
+       "LogDriver": "awslogs",
+       "Options": {
+        "awslogs-group": {
+         "Ref": "LogsMarketDataCollector233C3F73"
+        },
+        "awslogs-stream-prefix": "market-data-collector",
+        "awslogs-region": "ap-south-1"
+       }
+      },
+      "Name": "market-data-collector-container",
+      "PortMappings": [
+       {
+        "ContainerPort": 8004,
+        "Protocol": "tcp"
+       }
+      ]
+     }
+    ],
+    "Cpu": "256",
+    "ExecutionRoleArn": {
+     "Fn::GetAtt": [
+      "EcsTaskExecutionRoleC0B6A84D",
+      "Arn"
+     ]
+    },
+    "Family": "LoHiTradeEcsTaskDefMarketDataCollector17D0DE00",
+    "Memory": "512",
+    "NetworkMode": "awsvpc",
+    "RequiresCompatibilities": [
+     "FARGATE"
+    ],
+    "TaskRoleArn": {
+     "Fn::GetAtt": [
+      "EcsTaskRole8DFA0181",
+      "Arn"
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/TaskDefMarketDataCollector/Resource"
+   }
+  },
+  "SvcMarketDataCollectorServiceD47F6457": {
+   "Type": "AWS::ECS::Service",
+   "Properties": {
+    "Cluster": {
+     "Ref": "LoHiTradeCluster8EA56130"
+    },
+    "DeploymentConfiguration": {
+     "Alarms": {
+      "AlarmNames": [],
+      "Enable": false,
+      "Rollback": false
+     },
+     "MaximumPercent": 200,
+     "MinimumHealthyPercent": 50
+    },
+    "DesiredCount": 1,
+    "EnableECSManagedTags": false,
+    "LaunchType": "FARGATE",
+    "NetworkConfiguration": {
+     "AwsvpcConfiguration": {
+      "AssignPublicIp": "DISABLED",
+      "SecurityGroups": [
+       {
+        "Fn::ImportValue": "LoHiTradeVpc:ExportsOutputFnGetAttEcsSecurityGroup44008BF1GroupIdDE2CA5C5"
+       }
+      ],
+      "Subnets": [
+       {
+        "Fn::ImportValue": "LoHiTradeVpc:ExportsOutputRefLoHiTradeVpcPrivateSubnet1SubnetFFBB083D27B2E795"
+       },
+       {
+        "Fn::ImportValue": "LoHiTradeVpc:ExportsOutputRefLoHiTradeVpcPrivateSubnet2SubnetD5F3E8EE53634E8D"
+       }
+      ]
+     }
+    },
+    "TaskDefinition": {
+     "Ref": "TaskDefMarketDataCollector4C7D69A2"
+    }
+   },
+   "DependsOn": [
+    "EcsTaskRole8DFA0181"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/SvcMarketDataCollector/Service"
+   }
+  },
+  "LogsVerification428CA712": {
+   "Type": "AWS::Logs::LogGroup",
+   "Properties": {
+    "LogGroupName": "/ecs/lohi-trade/verification",
+    "RetentionInDays": 30
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/LogsVerification/Resource"
+   }
+  },
+  "TaskDefVerificationFDF71168": {
+   "Type": "AWS::ECS::TaskDefinition",
+   "Properties": {
+    "ContainerDefinitions": [
+     {
+      "Environment": [
+       {
+        "Name": "SERVICE_NAME",
+        "Value": "verification"
+       }
+      ],
+      "Essential": true,
+      "Image": {
+       "Fn::Join": [
+        "",
+        [
+         {
+          "Fn::Select": [
+           4,
+           {
+            "Fn::Split": [
+             ":",
+             {
+              "Fn::GetAtt": [
+               "EcrVerification0869EFA9",
+               "Arn"
+              ]
+             }
+            ]
+           }
+          ]
+         },
+         ".dkr.ecr.",
+         {
+          "Fn::Select": [
+           3,
+           {
+            "Fn::Split": [
+             ":",
+             {
+              "Fn::GetAtt": [
+               "EcrVerification0869EFA9",
+               "Arn"
+              ]
+             }
+            ]
+           }
+          ]
+         },
+         ".",
+         {
+          "Ref": "AWS::URLSuffix"
+         },
+         "/",
+         {
+          "Ref": "EcrVerification0869EFA9"
+         },
+         ":latest"
+        ]
+       ]
+      },
+      "LogConfiguration": {
+       "LogDriver": "awslogs",
+       "Options": {
+        "awslogs-group": {
+         "Ref": "LogsVerification428CA712"
+        },
+        "awslogs-stream-prefix": "verification",
+        "awslogs-region": "ap-south-1"
+       }
+      },
+      "Name": "verification-container",
+      "PortMappings": [
+       {
+        "ContainerPort": 8005,
+        "Protocol": "tcp"
+       }
+      ]
+     }
+    ],
+    "Cpu": "256",
+    "ExecutionRoleArn": {
+     "Fn::GetAtt": [
+      "EcsTaskExecutionRoleC0B6A84D",
+      "Arn"
+     ]
+    },
+    "Family": "LoHiTradeEcsTaskDefVerification01E092D2",
+    "Memory": "512",
+    "NetworkMode": "awsvpc",
+    "RequiresCompatibilities": [
+     "FARGATE"
+    ],
+    "TaskRoleArn": {
+     "Fn::GetAtt": [
+      "EcsTaskRole8DFA0181",
+      "Arn"
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/TaskDefVerification/Resource"
+   }
+  },
+  "SvcVerificationService8CEB70C0": {
+   "Type": "AWS::ECS::Service",
+   "Properties": {
+    "Cluster": {
+     "Ref": "LoHiTradeCluster8EA56130"
+    },
+    "DeploymentConfiguration": {
+     "Alarms": {
+      "AlarmNames": [],
+      "Enable": false,
+      "Rollback": false
+     },
+     "MaximumPercent": 200,
+     "MinimumHealthyPercent": 50
+    },
+    "DesiredCount": 1,
+    "EnableECSManagedTags": false,
+    "LaunchType": "FARGATE",
+    "NetworkConfiguration": {
+     "AwsvpcConfiguration": {
+      "AssignPublicIp": "DISABLED",
+      "SecurityGroups": [
+       {
+        "Fn::ImportValue": "LoHiTradeVpc:ExportsOutputFnGetAttEcsSecurityGroup44008BF1GroupIdDE2CA5C5"
+       }
+      ],
+      "Subnets": [
+       {
+        "Fn::ImportValue": "LoHiTradeVpc:ExportsOutputRefLoHiTradeVpcPrivateSubnet1SubnetFFBB083D27B2E795"
+       },
+       {
+        "Fn::ImportValue": "LoHiTradeVpc:ExportsOutputRefLoHiTradeVpcPrivateSubnet2SubnetD5F3E8EE53634E8D"
+       }
+      ]
+     }
+    },
+    "TaskDefinition": {
+     "Ref": "TaskDefVerificationFDF71168"
+    }
+   },
+   "DependsOn": [
+    "EcsTaskRole8DFA0181"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/SvcVerification/Service"
+   }
+  },
+  "LogsChatbot45D06FC8": {
+   "Type": "AWS::Logs::LogGroup",
+   "Properties": {
+    "LogGroupName": "/ecs/lohi-trade/chatbot",
+    "RetentionInDays": 30
+   },
+   "UpdateReplacePolicy": "Delete",
+   "DeletionPolicy": "Delete",
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/LogsChatbot/Resource"
+   }
+  },
+  "TaskDefChatbot8949E65B": {
+   "Type": "AWS::ECS::TaskDefinition",
+   "Properties": {
+    "ContainerDefinitions": [
+     {
+      "Environment": [
+       {
+        "Name": "SERVICE_NAME",
+        "Value": "chatbot"
+       }
+      ],
+      "Essential": true,
+      "Image": {
+       "Fn::Join": [
+        "",
+        [
+         {
+          "Fn::Select": [
+           4,
+           {
+            "Fn::Split": [
+             ":",
+             {
+              "Fn::GetAtt": [
+               "EcrChatbot124AF5E0",
+               "Arn"
+              ]
+             }
+            ]
+           }
+          ]
+         },
+         ".dkr.ecr.",
+         {
+          "Fn::Select": [
+           3,
+           {
+            "Fn::Split": [
+             ":",
+             {
+              "Fn::GetAtt": [
+               "EcrChatbot124AF5E0",
+               "Arn"
+              ]
+             }
+            ]
+           }
+          ]
+         },
+         ".",
+         {
+          "Ref": "AWS::URLSuffix"
+         },
+         "/",
+         {
+          "Ref": "EcrChatbot124AF5E0"
+         },
+         ":latest"
+        ]
+       ]
+      },
+      "LogConfiguration": {
+       "LogDriver": "awslogs",
+       "Options": {
+        "awslogs-group": {
+         "Ref": "LogsChatbot45D06FC8"
+        },
+        "awslogs-stream-prefix": "chatbot",
+        "awslogs-region": "ap-south-1"
+       }
+      },
+      "Name": "chatbot-container",
+      "PortMappings": [
+       {
+        "ContainerPort": 8006,
+        "Protocol": "tcp"
+       }
+      ]
+     }
+    ],
+    "Cpu": "512",
+    "ExecutionRoleArn": {
+     "Fn::GetAtt": [
+      "EcsTaskExecutionRoleC0B6A84D",
+      "Arn"
+     ]
+    },
+    "Family": "LoHiTradeEcsTaskDefChatbot8448886D",
+    "Memory": "1024",
+    "NetworkMode": "awsvpc",
+    "RequiresCompatibilities": [
+     "FARGATE"
+    ],
+    "TaskRoleArn": {
+     "Fn::GetAtt": [
+      "EcsTaskRole8DFA0181",
+      "Arn"
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/TaskDefChatbot/Resource"
+   }
+  },
+  "SvcChatbotServiceC165481A": {
+   "Type": "AWS::ECS::Service",
+   "Properties": {
+    "Cluster": {
+     "Ref": "LoHiTradeCluster8EA56130"
+    },
+    "DeploymentConfiguration": {
+     "Alarms": {
+      "AlarmNames": [],
+      "Enable": false,
+      "Rollback": false
+     },
+     "MaximumPercent": 200,
+     "MinimumHealthyPercent": 50
+    },
+    "DesiredCount": 1,
+    "EnableECSManagedTags": false,
+    "LaunchType": "FARGATE",
+    "NetworkConfiguration": {
+     "AwsvpcConfiguration": {
+      "AssignPublicIp": "DISABLED",
+      "SecurityGroups": [
+       {
+        "Fn::ImportValue": "LoHiTradeVpc:ExportsOutputFnGetAttEcsSecurityGroup44008BF1GroupIdDE2CA5C5"
+       }
+      ],
+      "Subnets": [
+       {
+        "Fn::ImportValue": "LoHiTradeVpc:ExportsOutputRefLoHiTradeVpcPrivateSubnet1SubnetFFBB083D27B2E795"
+       },
+       {
+        "Fn::ImportValue": "LoHiTradeVpc:ExportsOutputRefLoHiTradeVpcPrivateSubnet2SubnetD5F3E8EE53634E8D"
+       }
+      ]
+     }
+    },
+    "TaskDefinition": {
+     "Ref": "TaskDefChatbot8949E65B"
+    }
+   },
+   "DependsOn": [
+    "EcsTaskRole8DFA0181"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/SvcChatbot/Service"
+   }
+  },
+  "GatewayTargetGroup1DB55352": {
+   "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+   "Properties": {
+    "HealthCheckIntervalSeconds": 30,
+    "HealthCheckPath": "/api/health",
+    "HealthCheckTimeoutSeconds": 5,
+    "HealthyThresholdCount": 2,
+    "Matcher": {
+     "HttpCode": "200"
+    },
+    "Port": 8000,
+    "Protocol": "HTTP",
+    "TargetGroupAttributes": [
+     {
+      "Key": "stickiness.enabled",
+      "Value": "false"
+     }
+    ],
+    "TargetType": "ip",
+    "UnhealthyThresholdCount": 3,
+    "VpcId": {
+     "Fn::ImportValue": "LoHiTradeVpc:ExportsOutputRefLoHiTradeVpcC9675F9DD6A87155"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/GatewayTargetGroup/Resource"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/11QwW7CMAz9Fu4h2zp+YGPaLkhDLffJhJCZhrhKHBCK8u9TG0phJz8/P/vZrmS1WMjnGZzDXO3aucWtTA2DagWcw0/SKsi0tDGw9mK5dyP8BG+A9QZC+6H36JCRXC/4z5BjQKf9HXftbbQ/odJ90wgbBRa2dhi7pOg4C628TLXuKCCTv/TqKctCWwiMyhLstmDBKXTmVMn01nUWFfR+K4Ld+1ArJzzk9zoMrN1VM+K7+ga80fzlKXbl0FuaBcJRpprscM0Q12RRDesWlIUlE2RakbmNGHEWMNlAZAoKLDoj0/SQ3mx41SNTwsaDatGZpvRN3g9EzqLWgaIvT/+O3EXOYn3hX3JPr/JlIavZISDOfXSMRy3rEv8A/O9DaSUCAAA="
+   },
+   "Metadata": {
+    "aws:cdk:path": "LoHiTradeEcs/CDKMetadata/Default"
+   }
+  }
+ },
+ "Outputs": {
+  "ClusterArn": {
+   "Value": {
+    "Fn::GetAtt": [
+     "LoHiTradeCluster8EA56130",
+     "Arn"
+    ]
+   }
+  },
+  "AlbDnsName": {
+   "Value": {
+    "Fn::GetAtt": [
+     "LoHiTradeAlb2EF60F72",
+     "DNSName"
+    ]
+   }
+  },
+  "EcrUriGateway": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      {
+       "Fn::Select": [
+        4,
+        {
+         "Fn::Split": [
+          ":",
+          {
+           "Fn::GetAtt": [
+            "EcrGateway4FD2E918",
+            "Arn"
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      ".dkr.ecr.",
+      {
+       "Fn::Select": [
+        3,
+        {
+         "Fn::Split": [
+          ":",
+          {
+           "Fn::GetAtt": [
+            "EcrGateway4FD2E918",
+            "Arn"
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      ".",
+      {
+       "Ref": "AWS::URLSuffix"
+      },
+      "/",
+      {
+       "Ref": "EcrGateway4FD2E918"
+      }
+     ]
+    ]
+   }
+  },
+  "EcrUriSoldier": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      {
+       "Fn::Select": [
+        4,
+        {
+         "Fn::Split": [
+          ":",
+          {
+           "Fn::GetAtt": [
+            "EcrSoldierB4842672",
+            "Arn"
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      ".dkr.ecr.",
+      {
+       "Fn::Select": [
+        3,
+        {
+         "Fn::Split": [
+          ":",
+          {
+           "Fn::GetAtt": [
+            "EcrSoldierB4842672",
+            "Arn"
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      ".",
+      {
+       "Ref": "AWS::URLSuffix"
+      },
+      "/",
+      {
+       "Ref": "EcrSoldierB4842672"
+      }
+     ]
+    ]
+   }
+  },
+  "EcrUriCommander": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      {
+       "Fn::Select": [
+        4,
+        {
+         "Fn::Split": [
+          ":",
+          {
+           "Fn::GetAtt": [
+            "EcrCommanderC37C00E5",
+            "Arn"
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      ".dkr.ecr.",
+      {
+       "Fn::Select": [
+        3,
+        {
+         "Fn::Split": [
+          ":",
+          {
+           "Fn::GetAtt": [
+            "EcrCommanderC37C00E5",
+            "Arn"
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      ".",
+      {
+       "Ref": "AWS::URLSuffix"
+      },
+      "/",
+      {
+       "Ref": "EcrCommanderC37C00E5"
+      }
+     ]
+    ]
+   }
+  },
+  "EcrUriRmsOms": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      {
+       "Fn::Select": [
+        4,
+        {
+         "Fn::Split": [
+          ":",
+          {
+           "Fn::GetAtt": [
+            "EcrRmsOmsB199BC9E",
+            "Arn"
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      ".dkr.ecr.",
+      {
+       "Fn::Select": [
+        3,
+        {
+         "Fn::Split": [
+          ":",
+          {
+           "Fn::GetAtt": [
+            "EcrRmsOmsB199BC9E",
+            "Arn"
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      ".",
+      {
+       "Ref": "AWS::URLSuffix"
+      },
+      "/",
+      {
+       "Ref": "EcrRmsOmsB199BC9E"
+      }
+     ]
+    ]
+   }
+  },
+  "EcrUriMarketDataCollector": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      {
+       "Fn::Select": [
+        4,
+        {
+         "Fn::Split": [
+          ":",
+          {
+           "Fn::GetAtt": [
+            "EcrMarketDataCollector47972A37",
+            "Arn"
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      ".dkr.ecr.",
+      {
+       "Fn::Select": [
+        3,
+        {
+         "Fn::Split": [
+          ":",
+          {
+           "Fn::GetAtt": [
+            "EcrMarketDataCollector47972A37",
+            "Arn"
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      ".",
+      {
+       "Ref": "AWS::URLSuffix"
+      },
+      "/",
+      {
+       "Ref": "EcrMarketDataCollector47972A37"
+      }
+     ]
+    ]
+   }
+  },
+  "EcrUriVerification": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      {
+       "Fn::Select": [
+        4,
+        {
+         "Fn::Split": [
+          ":",
+          {
+           "Fn::GetAtt": [
+            "EcrVerification0869EFA9",
+            "Arn"
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      ".dkr.ecr.",
+      {
+       "Fn::Select": [
+        3,
+        {
+         "Fn::Split": [
+          ":",
+          {
+           "Fn::GetAtt": [
+            "EcrVerification0869EFA9",
+            "Arn"
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      ".",
+      {
+       "Ref": "AWS::URLSuffix"
+      },
+      "/",
+      {
+       "Ref": "EcrVerification0869EFA9"
+      }
+     ]
+    ]
+   }
+  },
+  "EcrUriChatbot": {
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      {
+       "Fn::Select": [
+        4,
+        {
+         "Fn::Split": [
+          ":",
+          {
+           "Fn::GetAtt": [
+            "EcrChatbot124AF5E0",
+            "Arn"
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      ".dkr.ecr.",
+      {
+       "Fn::Select": [
+        3,
+        {
+         "Fn::Split": [
+          ":",
+          {
+           "Fn::GetAtt": [
+            "EcrChatbot124AF5E0",
+            "Arn"
+           ]
+          }
+         ]
+        }
+       ]
+      },
+      ".",
+      {
+       "Ref": "AWS::URLSuffix"
+      },
+      "/",
+      {
+       "Ref": "EcrChatbot124AF5E0"
+      }
+     ]
+    ]
+   }
+  },
+  "ExportsOutputFnGetAttLoHiTradeAlb2EF60F72CanonicalHostedZoneID0D134F58": {
+   "Value": {
+    "Fn::GetAtt": [
+     "LoHiTradeAlb2EF60F72",
+     "CanonicalHostedZoneID"
+    ]
+   },
+   "Export": {
+    "Name": "LoHiTradeEcs:ExportsOutputFnGetAttLoHiTradeAlb2EF60F72CanonicalHostedZoneID0D134F58"
+   }
+  },
+  "ExportsOutputFnGetAttLoHiTradeAlb2EF60F72DNSNameE446581A": {
+   "Value": {
+    "Fn::GetAtt": [
+     "LoHiTradeAlb2EF60F72",
+     "DNSName"
+    ]
+   },
+   "Export": {
+    "Name": "LoHiTradeEcs:ExportsOutputFnGetAttLoHiTradeAlb2EF60F72DNSNameE446581A"
+   }
+  },
+  "ExportsOutputRefLoHiTradeCluster8EA56130F575F5B5": {
+   "Value": {
+    "Ref": "LoHiTradeCluster8EA56130"
+   },
+   "Export": {
+    "Name": "LoHiTradeEcs:ExportsOutputRefLoHiTradeCluster8EA56130F575F5B5"
+   }
+  },
+  "ExportsOutputFnGetAttSvcGatewayService4A1DECE5Name231B0E01": {
+   "Value": {
+    "Fn::GetAtt": [
+     "SvcGatewayService4A1DECE5",
+     "Name"
+    ]
+   },
+   "Export": {
+    "Name": "LoHiTradeEcs:ExportsOutputFnGetAttSvcGatewayService4A1DECE5Name231B0E01"
+   }
+  },
+  "ExportsOutputFnGetAttSvcSoldierService82D16F65Name8250B044": {
+   "Value": {
+    "Fn::GetAtt": [
+     "SvcSoldierService82D16F65",
+     "Name"
+    ]
+   },
+   "Export": {
+    "Name": "LoHiTradeEcs:ExportsOutputFnGetAttSvcSoldierService82D16F65Name8250B044"
+   }
+  },
+  "ExportsOutputFnGetAttSvcCommanderServiceE0CA40A5Name003691ED": {
+   "Value": {
+    "Fn::GetAtt": [
+     "SvcCommanderServiceE0CA40A5",
+     "Name"
+    ]
+   },
+   "Export": {
+    "Name": "LoHiTradeEcs:ExportsOutputFnGetAttSvcCommanderServiceE0CA40A5Name003691ED"
+   }
+  },
+  "ExportsOutputFnGetAttSvcRmsOmsService691DF647NameF9594488": {
+   "Value": {
+    "Fn::GetAtt": [
+     "SvcRmsOmsService691DF647",
+     "Name"
+    ]
+   },
+   "Export": {
+    "Name": "LoHiTradeEcs:ExportsOutputFnGetAttSvcRmsOmsService691DF647NameF9594488"
+   }
+  },
+  "ExportsOutputFnGetAttSvcMarketDataCollectorServiceD47F6457Name3312A1E2": {
+   "Value": {
+    "Fn::GetAtt": [
+     "SvcMarketDataCollectorServiceD47F6457",
+     "Name"
+    ]
+   },
+   "Export": {
+    "Name": "LoHiTradeEcs:ExportsOutputFnGetAttSvcMarketDataCollectorServiceD47F6457Name3312A1E2"
+   }
+  },
+  "ExportsOutputFnGetAttSvcVerificationService8CEB70C0Name059ECDC9": {
+   "Value": {
+    "Fn::GetAtt": [
+     "SvcVerificationService8CEB70C0",
+     "Name"
+    ]
+   },
+   "Export": {
+    "Name": "LoHiTradeEcs:ExportsOutputFnGetAttSvcVerificationService8CEB70C0Name059ECDC9"
+   }
+  },
+  "ExportsOutputFnGetAttSvcChatbotServiceC165481ANameA2F06296": {
+   "Value": {
+    "Fn::GetAtt": [
+     "SvcChatbotServiceC165481A",
+     "Name"
+    ]
+   },
+   "Export": {
+    "Name": "LoHiTradeEcs:ExportsOutputFnGetAttSvcChatbotServiceC165481ANameA2F06296"
+   }
+  },
+  "ExportsOutputFnGetAttLoHiTradeAlb2EF60F72LoadBalancerFullNameA80C56E0": {
+   "Value": {
+    "Fn::GetAtt": [
+     "LoHiTradeAlb2EF60F72",
+     "LoadBalancerFullName"
+    ]
+   },
+   "Export": {
+    "Name": "LoHiTradeEcs:ExportsOutputFnGetAttLoHiTradeAlb2EF60F72LoadBalancerFullNameA80C56E0"
+   }
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

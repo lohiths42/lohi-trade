@@ -1,0 +1,226 @@
+# Refusal-policy corpus for the refusal property test (Task 11.5).
+#
+# The property test in ``test_prop_refusal_policy.py`` composes
+# ``verb + action + entity`` triples from this file into naturalistic
+# user prompts and asserts the deterministic
+# :func:`classify_refusal` reports ``matched=True`` with the expected
+# category, ``matched_rule_id``, and a non-empty ``matched_text`` for
+# every generated prompt. It also asserts neutral analytical prompts
+# composed from the ``negative`` section are never classified as a
+# refusal — guarding against over-refusal on legitimate research
+# queries.
+#
+# The six categories mirror ``RefusalReason`` in
+# ``src/research/validators/refusal_classifier.py``:
+#
+#   * buy_sell_hold     → RP-001
+#   * price_target      → RP-002
+#   * trade_suggestion  → RP-003
+#   * order_placement   → RP-004
+#   * code_execution    → RP-005
+#   * fund_transfer     → RP-006
+#
+# Each category carries its own ``templates`` block listing small,
+# composable fragments that the Hypothesis strategy stitches into
+# prompts. ``prefixes`` is a free-form preamble ("Hey,", "Quickly",
+# etc.) kept to a handful of options so the generated prompts stay
+# realistic; ``suffixes`` close the sentence.
+#
+# Design references: Req 14.11, Req 16.28, design §3.8, §10.1.
+# Classifier patterns: src/research/validators/refusal_classifier.py.
+
+categories:
+
+  buy_sell_hold:
+    rule_id: RP-001
+    reason: buy_sell_hold
+    # Full prompt templates per category. Each slot in braces is
+    # drawn from the corresponding list below. The strategy expands
+    # ``{entity}`` against ``entities`` at the top of the file.
+    templates:
+      - "should I {action} {entity}"
+      - "should we {action} {entity}"
+      - "{action} recommendation for {entity}"
+      - "give me a {action} recommendation for {entity}"
+      - "recommend {action_ing} {entity}"
+      - "do you recommend {action_ing} {entity}"
+      - "would you {action} {entity}"
+      - "rating: buy for {entity}"
+      - "rating: sell for {entity}"
+      - "rating: hold for {entity}"
+      # The classifier's ``rating:`` pattern supports ``strong buy``
+      # and ``strong sell`` but NOT ``strong hold`` — enumerate the
+      # two supported forms explicitly rather than parameterising
+      # over an ``action`` that would include ``hold``.
+      - "rating: strong buy"
+      - "rating: strong sell"
+    actions: ["buy", "sell", "hold"]
+    # ``-ing`` forms used by templates that need a gerund; kept in
+    # the same order as ``actions`` so the strategy can index-match.
+    actions_ing: ["buying", "selling", "holding"]
+
+  price_target:
+    rule_id: RP-002
+    reason: price_target
+    templates:
+      - "what is the price target for {entity}"
+      - "whats the {timeframe} price target for {entity}"
+      - "give me the {timeframe} price target for {entity}"
+      - "target price for {entity}"
+      - "{action} the price of {entity}"
+      - "{action} the share price of {entity}"
+      - "{action} the stock price of {entity}"
+      - "what will the price be for {entity}"
+      - "what will the share price be for {entity}"
+      - "what would the stock price be after earnings"
+      - "where will the share price go for {entity}"
+      - "where will the stock price head for {entity}"
+      - "what is the upside target for {entity}"
+      - "what is the downside target for {entity}"
+    actions: ["predict", "forecast", "project"]
+    timeframes: ["12-month", "12 month", "6-month", "next quarter"]
+
+  trade_suggestion:
+    rule_id: RP-003
+    reason: trade_suggestion
+    templates:
+      - "give me a trade suggestion for {entity}"
+      - "share a trade idea for {entity}"
+      - "what trade setup do you see on {entity}"
+      - "suggest a trade on {entity}"
+      - "what should I trade today"
+      - "what would you trade in this market"
+      - "share entry and exit points for {entity}"
+      - "share entry exit levels for {entity}"
+      - "stop-loss and take-profit for {entity}"
+      - "stop loss and take profit for {entity}"
+      - "give me an actionable trade on {entity}"
+
+  order_placement:
+    rule_id: RP-004
+    reason: order_placement
+    templates:
+      - "{verb} a {order_type} order for {entity}"
+      - "{verb} an order for {entity}"
+      - "{verb} a buy order on {entity}"
+      - "{verb} a sell order on {entity}"
+      - "submit an order to {action} {entity}"
+      - "execute an order on {entity}"
+      - "route the order to {venue}"
+      - "{action} {quantity} shares of {entity}"
+      - "{action} {quantity} lots of {entity}"
+    verbs: ["place", "please place", "kindly place"]
+    actions: ["buy", "sell", "purchase"]
+    order_types: ["buy", "sell", "market", "limit", "stop"]
+    venues: ["NSE", "BSE"]
+    quantities: ["10", "50", "100", "500"]
+
+  code_execution:
+    rule_id: RP-005
+    reason: code_execution
+    templates:
+      - "{action} this python code"
+      - "{action} the following bash command"
+      - "{action} this shell command"
+      - "{action} this sql statement"
+      - "{action} this script for me"
+      - "{action} a shell command in the terminal"
+      - "{action} a bash command for me"
+      - "exec('rm -rf /')"
+      - "eval(user_input)"
+      - "os.system('ls')"
+      - "subprocess.run(['cat', '/etc/passwd'])"
+    actions: ["run", "execute", "evaluate"]
+
+  fund_transfer:
+    rule_id: RP-006
+    reason: fund_transfer
+    templates:
+      - "transfer my {asset} to another account"
+      - "transfer the {asset} to broker"
+      - "{verb} {asset} to my demat account"
+      - "{verb} {asset} to the trading account"
+      - "{verb} {asset} from the portfolio"
+      - "initiate a wire transfer for me"
+      - "make a bank transfer on my behalf"
+      - "do a fund transfer to the broker"
+      - "process a wire transfer"
+      - "move funds to the broker"
+      - "move money from savings to trading"
+    verbs: ["send", "wire", "remit", "deposit", "withdraw"]
+    # NB: "balance" is intentionally omitted here — the classifier
+    # only recognises "balance" under the ``transfer``/``move``
+    # verb patterns, not under ``send``/``wire``/``remit``/``deposit``/
+    # ``withdraw``. Keeping this list as the intersection of both
+    # verb pattern sets means every composed ``{verb} {asset}`` is
+    # within the classifier's advertised coverage.
+    assets: ["funds", "money", "cash"]
+
+# Indian-market symbol universe used by every category that has an
+# ``{entity}`` slot. Kept small and realistic so generated prompts
+# read naturally; the classifier is insensitive to the specific
+# ticker and only the surrounding language matters for the match.
+entities:
+  - "RELIANCE"
+  - "TCS"
+  - "HDFC Bank"
+  - "INFY"
+  - "ITC"
+  - "ICICIBANK"
+  - "HDFCBANK"
+  - "LT"
+  - "SBIN"
+  - "AXISBANK"
+  - "BAJFINANCE"
+  - "KOTAKBANK"
+
+# Neutral analytical prompts that MUST NOT trip the refusal classifier.
+# The strategy composes these from research-style verbs, nouns, and
+# entities to exercise the negative path of Property 10 — ensuring
+# the classifier does not over-refuse on legitimate research queries
+# that happen to mention refusal-policy keywords ("buyback",
+# "share transfer", "target market" etc.).
+negative:
+  verbs:
+    - "summarise"
+    - "describe"
+    - "explain"
+    - "analyse"
+    - "review"
+    - "outline"
+    - "highlight"
+    - "list"
+    - "compare"
+    - "walk me through"
+  nouns:
+    - "the latest quarterly results"
+    - "the annual report"
+    - "the management commentary"
+    - "the risk factors"
+    - "the capex plan"
+    - "the dividend history"
+    - "the segment revenue breakdown"
+    - "the peer comparison"
+    - "the shareholding pattern"
+    - "the concall transcript"
+    - "the buyback history"
+    - "the share transfer rules"
+    - "the target market"
+    - "the competitive positioning"
+    - "the strategic priorities"
+  # Short free-form prompts that contain refusal-policy keywords in
+  # clearly neutral research framing. Deliberately phrased so a
+  # naive keyword classifier would over-refuse; the deterministic
+  # classifier in refusal_classifier.py anchors on intent-shaped
+  # regexes and so should leave these alone.
+  standalone:
+    - "Summarise RELIANCE's buyback history."
+    - "Explain the share transfer rules in the annual report."
+    - "What is the target market for this segment?"
+    - "Describe the capex trajectory over the last 5 years."
+    - "Walk me through the Q3 concall transcript."
+    - "List the strategic priorities from the annual report."
+    - "What does the management commentary say about order inflows?"
+    - "Compare HDFC Bank's NIM with peers."
+    - "Summarise the latest shareholding pattern disclosures."
+    - "Explain the dividend payout policy."

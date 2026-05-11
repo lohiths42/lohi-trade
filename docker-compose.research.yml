@@ -1,0 +1,86 @@
+# ──────────────────────────────────────────────────────────────────────────
+# Lohi-Research — Optional Services Overlay (Task 18.2, design §16.2)
+#
+# This overlay declares the *optional* services that certain Lohi-Research
+# configurations need. Both services are profile-gated so running a plain
+# ``docker compose -f docker-compose.research.yml up`` starts nothing.
+# Operators opt in per deployment mode:
+#
+#   • Qdrant backend (research.vector_store.backend: qdrant) →
+#       docker compose -f docker-compose.research.yml --profile qdrant up
+#
+#   • Offline mode (LOHI_RESEARCH_OFFLINE=true) →
+#       docker compose -f docker-compose.research.yml --profile offline up
+#
+# Both profiles can be combined with the existing ``docker-compose.yml``
+# by listing both files (``-f docker-compose.yml -f docker-compose.research.yml``).
+#
+# What is *deliberately not* here:
+#
+#   • **Chroma** runs *embedded* in the gateway / worker process and
+#     writes to ``./data/research/chroma`` on the host. It has no
+#     service entry because design §16.2 ("Chroma runs embedded, no
+#     container") makes the zero-external-process path the default.
+#   • **pgvector** reuses the existing Postgres from the root
+#     ``docker-compose.yml`` — no separate service.
+#   • **LanceDB** is embedded like Chroma when enabled.
+#
+# Satisfies: Req 7.2, Req 9.1 | Design: §16.2, §16.3
+# ──────────────────────────────────────────────────────────────────────────
+
+services:
+  # ─── Qdrant (profile: qdrant) ──────────────────────────────────────
+  # Pluggable VectorStore backend. Selected when operators set
+  # ``research.vector_store.backend: qdrant`` in config/settings.yaml
+  # and want a standalone vector DB rather than the embedded Chroma
+  # default.
+  qdrant:
+    image: qdrant/qdrant:latest
+    profiles: ["qdrant"]
+    container_name: lohi-research-qdrant
+    ports:
+      # 6333 — HTTP API (used by the qdrant-client adapter).
+      # 6334 — gRPC; not used by the adapter but exposed for
+      # observability tools.
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - ./data/research/qdrant:/qdrant/storage
+    environment:
+      # Logging verbosity — WARN keeps the container quiet under
+      # normal load; operators flip to DEBUG when diagnosing.
+      QDRANT__LOG_LEVEL: INFO
+    healthcheck:
+      # Qdrant's readiness endpoint returns 200 when the collection
+      # storage has finished loading on boot.
+      test: ["CMD", "curl", "-fsS", "http://localhost:6333/readyz"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  # ─── Ollama (profile: offline) ─────────────────────────────────────
+  # Local LLM runtime used when ``LOHI_RESEARCH_OFFLINE=true`` (Req 7.5,
+  # design §2.2). Hosts chat + summarisation + embeddings models
+  # without any outbound network call.
+  #
+  # The worker side (src/research/workers/orchestrator.py) and
+  # ``start-research.sh`` handle ``ollama pull`` on boot — this
+  # container only exposes the runtime.
+  ollama:
+    image: ollama/ollama:latest
+    profiles: ["offline"]
+    container_name: lohi-research-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./data/research/ollama:/root/.ollama
+    environment:
+      # By default Ollama listens on 0.0.0.0 inside the container;
+      # this is explicit so ``docker compose up`` accepts connections
+      # from the host's gateway process.
+      OLLAMA_HOST: 0.0.0.0
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 15s
+      timeout: 5s
+      retries: 3

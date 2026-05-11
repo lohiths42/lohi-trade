@@ -1,0 +1,105 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+lohi_trade_venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# Type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Data files
+data/*.db
+data/*.duckdb
+data/*.parquet
+data/backups/*.db
+data/logs/*.log
+data/models/*.onnx
+data/historical/
+
+# Configuration and credentials
+.env
+.env.local
+config/settings.yaml
+config/credentials.yaml
+*.key
+*.pem
+
+# Broker-specific
+nifty50_tokens.json
+ticker_map.json
+
+# Notebooks
+notebooks/.ipynb_checkpoints/
+*.ipynb
+
+# Redis
+dump.rdb
+appendonly.aof
+
+# Docker
+.docker/
+
+# OS
+Thumbs.db
+
+# Local virtualenvs and environment folders
+lohi_trade_venv/
+backend-gateway/venv/
+*/venv/
+venv/
+
+# Mobile build artifacts (ignore only build outputs, not source)
+mobile/**/.build/
+mobile/**/artifacts/
+
+# Node
+node_modules/
+
+# Backup git directories created during cleanup
+.git.broken*/
+
+# Keep large data and caches out of repo
+data/*.duckdb
+data/redis/
+data/backups/
+logs/

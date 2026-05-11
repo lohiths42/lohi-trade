@@ -1,0 +1,140 @@
+{
+  "/LoHiTradeMonitoring/AlarmTopicArn": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "AlarmTopicArn"
+    }
+  ],
+  "/LoHiTradeMonitoring/AlarmNames": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "AlarmNames"
+    }
+  ],
+  "/LoHiTradeMonitoring/BootstrapVersion": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BootstrapVersion"
+    }
+  ],
+  "/LoHiTradeMonitoring/CheckBootstrapVersion": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CheckBootstrapVersion"
+    }
+  ],
+  "/LoHiTradeMonitoring/AlarmNotificationTopic/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "AlarmNotificationTopic58BFACC9"
+    }
+  ],
+  "/LoHiTradeMonitoring/EcsCpuGateway/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcsCpuGateway3230F2DB"
+    }
+  ],
+  "/LoHiTradeMonitoring/EcsMemGateway/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcsMemGateway73DFE0D7"
+    }
+  ],
+  "/LoHiTradeMonitoring/EcsCpuSoldier/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcsCpuSoldier2856CE90"
+    }
+  ],
+  "/LoHiTradeMonitoring/EcsMemSoldier/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcsMemSoldier38125093"
+    }
+  ],
+  "/LoHiTradeMonitoring/EcsCpuCommander/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcsCpuCommander0DCA863F"
+    }
+  ],
+  "/LoHiTradeMonitoring/EcsMemCommander/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcsMemCommanderCE5D5591"
+    }
+  ],
+  "/LoHiTradeMonitoring/EcsCpuRmsOms/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcsCpuRmsOmsB57F0730"
+    }
+  ],
+  "/LoHiTradeMonitoring/EcsMemRmsOms/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcsMemRmsOms6EE6D59B"
+    }
+  ],
+  "/LoHiTradeMonitoring/EcsCpuMarketDataCollector/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcsCpuMarketDataCollectorBCCCFECD"
+    }
+  ],
+  "/LoHiTradeMonitoring/EcsMemMarketDataCollector/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcsMemMarketDataCollector626B4A29"
+    }
+  ],
+  "/LoHiTradeMonitoring/EcsCpuVerification/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcsCpuVerificationFE24F6AB"
+    }
+  ],
+  "/LoHiTradeMonitoring/EcsMemVerification/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcsMemVerificationCEEB7BD1"
+    }
+  ],
+  "/LoHiTradeMonitoring/EcsCpuChatbot/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcsCpuChatbotF09BBE9F"
+    }
+  ],
+  "/LoHiTradeMonitoring/EcsMemChatbot/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcsMemChatbot032097EB"
+    }
+  ],
+  "/LoHiTradeMonitoring/Alb5xxAlarm/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "Alb5xxAlarm99BFF946"
+    }
+  ],
+  "/LoHiTradeMonitoring/RdsCpuAlarm/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "RdsCpuAlarm29EF1690"
+    }
+  ],
+  "/LoHiTradeMonitoring/RedisMemoryAlarm/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "RedisMemoryAlarmE1DCE7EB"
+    }
+  ],
+  "/LoHiTradeMonitoring/CDKMetadata/Default": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CDKMetadata"
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "setup_complete": false,
+  "completed_at": null,
+  "services": {
+    "nvidia_nim": { "status": "unconfigured", "updated_at": null },
+    "nubra": { "status": "unconfigured", "updated_at": null },
+    "broker_shoonya": { "status": "unconfigured", "updated_at": null },
+    "broker_angelone": { "status": "unconfigured", "updated_at": null },
+    "telegram": { "status": "unconfigured", "updated_at": null },
+    "ollama": { "status": "unconfigured", "updated_at": null }
+  }
+}

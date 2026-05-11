@@ -1,0 +1,113 @@
+# LOHI-TRADE Configuration Template
+# Copy this file to settings.yaml and update with your values
+
+capital:
+  total: 200000  # Total capital in INR
+  risk_per_trade_pct: 1.0  # Risk per trade as percentage of capital
+  max_position_size_pct: 20.0  # Maximum position size as percentage of capital
+  max_daily_loss_pct: 2.0  # Maximum daily loss as percentage of capital
+
+risk_limits:
+  max_open_positions: 5  # Maximum number of concurrent positions
+  max_orders_per_day: 20  # Maximum orders per trading day
+  cooldown_after_loss_minutes: 5  # Cooldown period after losing trade
+  volatility_guard_threshold_pct: 2.0  # Nifty drop threshold for volatility guard
+  volatility_guard_window_minutes: 10  # Time window for volatility guard
+
+trading_hours:
+  market_open: "09:15"  # Market open time IST
+  trading_start: "09:30"  # Start generating signals
+  trading_end: "15:10"  # Stop generating signals
+  square_off_time: "15:15"  # Force close all positions
+  market_close: "15:30"  # Market close time
+
+broker:
+  primary: "shoonya"  # Primary broker: shoonya or angelone
+  backup: "angelone"  # Backup broker
+  shoonya:
+    api_key: "${SHOONYA_API_KEY}"
+    client_id: "${SHOONYA_CLIENT_ID}"
+    password: "${SHOONYA_PASSWORD}"
+  angelone:
+    api_key: "${ANGELONE_API_KEY}"
+    client_id: "${ANGELONE_CLIENT_ID}"
+    password: "${ANGELONE_PASSWORD}"
+
+strategies:
+  mean_reversion:
+    enabled: true
+    rsi_oversold: 30
+    rsi_overbought: 65
+    volume_multiplier: 1.5
+    stop_loss_atr_multiplier: 1.5
+  
+  trend_following:
+    enabled: true
+    ema_fast: 9
+    ema_slow: 21
+    stop_loss_atr_multiplier: 2.0
+    target_atr_multiplier: 3.0
+  
+  opening_range_breakout:
+    enabled: true
+    range_start: "09:15"
+    range_end: "09:30"
+    trade_window_start: "09:30"
+    trade_window_end: "10:30"
+    volume_multiplier: 2.0
+    target_multiplier: 1.5
+
+sentiment:
+  bias_bullish_threshold: 0.2  # Score above this is BULLISH
+  bias_bearish_threshold: -0.2  # Score below this is BEARISH
+  time_decay_half_life_hours: 4.0  # Half-life for time decay
+  lookback_hours: 24  # Look back period for sentiment aggregation
+  recalculation_interval_minutes: 5  # Bias recalculation interval
+
+telegram:
+  bot_token: "${TELEGRAM_BOT_TOKEN}"
+  chat_id: "${TELEGRAM_CHAT_ID}"
+  rate_limit_messages_per_hour: 20
+
+redis:
+  host: "localhost"
+  port: 6379
+  db: 0
+
+database:
+  sqlite_path: "data/lohi_trade.db"
+  duckdb_path: "data/historical.duckdb"
+  backup_path: "data/backups"
+  backup_time: "16:00"  # Daily backup time IST
+
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  log_dir: "data/logs"
+  max_file_size_mb: 100
+  backup_count: 10
+
+paper_trading:
+  enabled: false  # Set to true for paper trading mode
+  simulated_fill_delay_ms: [100, 500]  # Random delay range
+  simulated_slippage_pct: 0.05
+
+ml_strategy:
+  enabled: true  # Enable ML-enhanced signal filtering
+  confidence_threshold: 0.55  # Minimum ML confidence to approve a signal
+  min_training_samples: 30  # Minimum trades before model trains
+  retrain_threshold: 20  # Retrain after this many new trade outcomes
+  passthrough_when_untrained: true  # Pass signals through before model is trained
+  model_dir: "data/ml_models"  # Directory for persisted model files
+
+symbols:
+  # Nifty 50 constituents (add your preferred symbols)
+  - "RELIANCE"
+  - "TCS"
+  - "HDFCBANK"
+  - "INFY"
+  - "ICICIBANK"
+  - "HINDUNILVR"
+  - "ITC"
+  - "SBIN"
+  - "BHARTIARTL"
+  - "KOTAKBANK"

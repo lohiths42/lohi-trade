@@ -1,0 +1,327 @@
+/* ==========================================================================
+   LOHI-TRADE · 2026 Design Tokens
+   Premium dark-first FinTech palette. Tokens are data-attribute scoped so
+   the ThemeStore can flip via `document.documentElement.dataset.theme`.
+   ========================================================================== */
+
+:root,
+:root[data-theme='dark'] {
+  /* ── Surface · OLED-leaning hierarchy ──────────────────────────── */
+  --surface-0: #000000;          /* pure OLED black, body */
+  --surface-1: #0a0a0b;          /* app shell */
+  --surface-2: #0f1012;          /* cards */
+  --surface-3: #15171a;          /* raised (popovers, menus) */
+  --surface-4: #1c1f24;          /* hover / pressed */
+
+  /* ── Hairlines & scrims ───────────────────────────────────────── */
+  --line-1: rgba(255, 255, 255, 0.04);
+  --line-2: rgba(255, 255, 255, 0.08);
+  --line-3: rgba(255, 255, 255, 0.14);
+  --scrim: rgba(0, 0, 0, 0.65);
+
+  /* ── Text ─────────────────────────────────────────────────────── */
+  --fg-primary: #f5f7fa;
+  --fg-secondary: #c2c8d1;
+  --fg-muted: #7b828d;
+  --fg-subtle: #4b515a;
+
+  /* ── Semantic · Bull / Bear (WCAG AA on surface-2) ────────────── */
+  --bull: #00e38c;               /* neon emerald */
+  --bull-glow: rgba(0, 227, 140, 0.35);
+  --bull-soft: rgba(0, 227, 140, 0.08);
+  --bear: #ff4d6d;               /* neon coral-red */
+  --bear-glow: rgba(255, 77, 109, 0.35);
+  --bear-soft: rgba(255, 77, 109, 0.08);
+  --warn: #ffb020;
+  --warn-soft: rgba(255, 176, 32, 0.08);
+
+  /* ── Brand & accent ───────────────────────────────────────────── */
+  --accent: #6366f1;             /* indigo */
+  --accent-2: #22d3ee;           /* cyan */
+  --accent-gradient: linear-gradient(135deg, #6366f1 0%, #22d3ee 100%);
+  --accent-glow: rgba(99, 102, 241, 0.45);
+
+  /* ── Radii · compact but soft ─────────────────────────────────── */
+  --r-xs: 6px;
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 18px;
+  --r-xl: 22px;
+  --r-pill: 999px;
+
+  /* ── Elevation ────────────────────────────────────────────────── */
+  --elev-1: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 1px 2px rgba(0, 0, 0, 0.4);
+  --elev-2: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 8px 24px rgba(0, 0, 0, 0.55);
+  --elev-3: 0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 20px 48px rgba(0, 0, 0, 0.7);
+
+  /* ── Motion ───────────────────────────────────────────────────── */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-1: 120ms;
+  --dur-2: 220ms;
+  --dur-3: 360ms;
+
+  /* ── Density (8pt grid) ───────────────────────────────────────── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+}
+
+:root[data-theme='light'] {
+  --surface-0: #ffffff;
+  --surface-1: #f7f8fa;
+  --surface-2: #ffffff;
+  --surface-3: #ffffff;
+  --surface-4: #f1f3f7;
+  --line-1: rgba(15, 23, 42, 0.04);
+  --line-2: rgba(15, 23, 42, 0.08);
+  --line-3: rgba(15, 23, 42, 0.14);
+  --scrim: rgba(255, 255, 255, 0.7);
+  --fg-primary: #0b1020;
+  --fg-secondary: #374151;
+  --fg-muted: #6b7280;
+  --fg-subtle: #9ca3af;
+  --bull: #00a76a;
+  --bear: #e11d48;
+}
+
+/* ==========================================================================
+   Primitives — glass, bento cards, flashers, scrollbars
+   ========================================================================== */
+
+.lt-glass {
+  background: color-mix(in srgb, var(--surface-2) 72%, transparent);
+  backdrop-filter: saturate(140%) blur(14px);
+  -webkit-backdrop-filter: saturate(140%) blur(14px);
+  border: 1px solid var(--line-2);
+}
+
+.lt-bento {
+  position: relative;
+  background:
+    radial-gradient(120% 120% at 100% 0%, color-mix(in srgb, var(--accent) 7%, transparent) 0%, transparent 55%),
+    var(--surface-2);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-lg);
+  box-shadow: var(--elev-1);
+  transition: border-color var(--dur-2) var(--ease-out), transform var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out);
+  overflow: hidden;
+}
+.lt-bento::before {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(180deg, var(--line-3), transparent 40%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  pointer-events: none; opacity: 0.6;
+}
+.lt-bento:hover {
+  border-color: color-mix(in srgb, var(--accent) 32%, var(--line-2));
+  box-shadow: var(--elev-2);
+}
+
+.lt-tabular { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum' 1, 'cv11' 1; }
+
+/* P&L flash on change (respects reduced motion) */
+@keyframes lt-flash-up   { 0% { background: var(--bull-soft); } 100% { background: transparent; } }
+@keyframes lt-flash-down { 0% { background: var(--bear-soft); } 100% { background: transparent; } }
+.lt-flash-up   { animation: lt-flash-up 520ms var(--ease-out); }
+.lt-flash-down { animation: lt-flash-down 520ms var(--ease-out); }
+
+@media (prefers-reduced-motion: reduce) {
+  .lt-flash-up, .lt-flash-down { animation: none !important; }
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* Glow text for hero P&L */
+.lt-glow-bull { color: var(--bull); text-shadow: 0 0 18px var(--bull-glow); }
+.lt-glow-bear { color: var(--bear); text-shadow: 0 0 18px var(--bear-glow); }
+
+/* Scrollbar — subtle, persistent */
+.lt-scroll::-webkit-scrollbar { width: 10px; height: 10px; }
+.lt-scroll::-webkit-scrollbar-thumb { background: var(--line-3); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+.lt-scroll::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--fg-muted) 45%, transparent); background-clip: padding-box; }
+
+/* Focus ring */
+.lt-focus { outline: 2px solid color-mix(in srgb, var(--accent) 60%, transparent); outline-offset: 2px; border-radius: var(--r-sm); }
+
+/* ==========================================================================
+   shadcn/ui token bridge
+   Remap the Tailwind-variable names shadcn primitives use (bg-primary,
+   bg-popover, border, etc.) onto our LOHI-TRADE design tokens so every
+   shadcn component — Button, Dialog, Dropdown, Popover, Sheet, Tabs —
+   inherits the new look with zero file edits.
+   ========================================================================== */
+
+:root,
+:root[data-theme='dark'] {
+  --background: var(--surface-1);
+  --foreground: var(--fg-primary);
+
+  --card: var(--surface-2);
+  --card-foreground: var(--fg-primary);
+
+  --popover: var(--surface-3);
+  --popover-foreground: var(--fg-primary);
+
+  --primary: var(--accent);
+  --primary-foreground: #ffffff;
+
+  --secondary: var(--surface-4);
+  --secondary-foreground: var(--fg-primary);
+
+  --muted: var(--surface-4);
+  --muted-foreground: var(--fg-muted);
+
+  --accent: var(--surface-4);
+  --accent-foreground: var(--fg-primary);
+
+  --destructive: var(--bear);
+  --destructive-foreground: #ffffff;
+
+  --border: var(--line-2);
+  --input: var(--surface-4);
+  --ring: color-mix(in srgb, var(--accent) 60%, transparent);
+
+  --radius: var(--r-md);
+}
+
+/* Popover / Dropdown / Context menu — glass + deep shadow */
+[data-slot='dropdown-menu-content'],
+[data-slot='dropdown-menu-sub-content'],
+[data-slot='popover-content'],
+[data-slot='context-menu-content'],
+[data-slot='select-content'],
+[data-slot='menubar-content'] {
+  background: color-mix(in srgb, var(--surface-3) 88%, transparent) !important;
+  backdrop-filter: saturate(140%) blur(14px);
+  -webkit-backdrop-filter: saturate(140%) blur(14px);
+  border: 1px solid var(--line-2) !important;
+  box-shadow: var(--elev-3) !important;
+  border-radius: var(--r-md) !important;
+}
+
+/* Dialog surface — glass, accent halo */
+[data-slot='dialog-content'],
+[data-slot='alert-dialog-content'] {
+  background: color-mix(in srgb, var(--surface-3) 92%, transparent) !important;
+  backdrop-filter: saturate(140%) blur(18px);
+  -webkit-backdrop-filter: saturate(140%) blur(18px);
+  border: 1px solid var(--line-2) !important;
+  border-radius: var(--r-lg) !important;
+  box-shadow: var(--elev-3), 0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent) !important;
+}
+
+/* Dialog overlay — deeper scrim + blur */
+[data-slot='dialog-overlay'],
+[data-slot='alert-dialog-overlay'] {
+  background: var(--scrim) !important;
+  backdrop-filter: saturate(140%) blur(8px);
+  -webkit-backdrop-filter: saturate(140%) blur(8px);
+}
+
+/* Primary button — gradient fill + indigo glow (no "default look") */
+[data-slot='button'].bg-primary,
+[data-slot='button'][class*='bg-primary'] {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 95%, white 5%), var(--accent)) !important;
+  color: #ffffff !important;
+  border: 1px solid color-mix(in srgb, var(--accent) 60%, transparent) !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.15) inset,
+    0 4px 14px color-mix(in srgb, var(--accent) 30%, transparent) !important;
+  transition: transform var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out);
+}
+[data-slot='button'].bg-primary:hover,
+[data-slot='button'][class*='bg-primary']:hover {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.15) inset,
+    0 6px 22px color-mix(in srgb, var(--accent) 45%, transparent) !important;
+  transform: translateY(-1px);
+}
+
+/* Destructive button — red with glow (kill-switch vibes) */
+[data-slot='button'].bg-destructive,
+[data-slot='button'][class*='bg-destructive'] {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bear) 95%, white 5%), var(--bear)) !important;
+  color: #ffffff !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.15) inset,
+    0 4px 14px color-mix(in srgb, var(--bear) 35%, transparent) !important;
+}
+
+/* Inputs — ghost surface, accent ring on focus */
+[data-slot='input'],
+[data-slot='textarea'],
+[data-slot='select-trigger'] {
+  background: var(--surface-2) !important;
+  border: 1px solid var(--line-2) !important;
+  color: var(--fg-primary) !important;
+  border-radius: var(--r-sm) !important;
+  transition: border-color var(--dur-2) var(--ease-out), box-shadow var(--dur-2) var(--ease-out);
+}
+[data-slot='input']:focus,
+[data-slot='input']:focus-visible,
+[data-slot='textarea']:focus,
+[data-slot='textarea']:focus-visible,
+[data-slot='select-trigger']:focus,
+[data-slot='select-trigger']:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line-3)) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent) !important;
+  outline: none !important;
+}
+
+/* Separators */
+[data-slot='separator'] {
+  background: var(--line-2) !important;
+}
+
+/* ==========================================================================
+   Focus-visible ring (global a11y polish, step 6)
+   ========================================================================== */
+:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 65%, transparent);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+/* Except nav links which already have their own active state */
+a:focus-visible,
+button:focus-visible {
+  outline-color: color-mix(in srgb, var(--accent) 65%, transparent);
+}
+
+/* ==========================================================================
+   Modernized skeleton shimmer (step 6)
+   ========================================================================== */
+@keyframes lt-shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+[data-slot='skeleton'],
+.lt-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-4) !important;
+  border-radius: var(--r-sm);
+}
+[data-slot='skeleton']::after,
+.lt-skeleton::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--fg-primary) 5%, transparent) 50%,
+    transparent 100%
+  );
+  animation: lt-shimmer 1.6s var(--ease-in-out) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-slot='skeleton']::after,
+  .lt-skeleton::after { animation: none; }
+}

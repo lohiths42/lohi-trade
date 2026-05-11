@@ -1,0 +1,145 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-south-1
+  CDK_DEFAULT_ACCOUNT: ${{ secrets.AWS_ACCOUNT_ID }}
+
+jobs:
+  # ── Build ─────────────────────────────────────────────────────
+  build:
+    name: Build & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: "Lohi-TRADE Web App Design/package-lock.json"
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt -r infra/requirements.txt
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: "Lohi-TRADE Web App Design"
+
+      - name: Lint Python (ruff)
+        run: ruff check src/ backend-gateway/ infra/ --ignore E501
+        continue-on-error: true
+
+      - name: Type-check frontend
+        run: npx tsc --noEmit
+        working-directory: "Lohi-TRADE Web App Design"
+        continue-on-error: true
+
+  # ── Test ──────────────────────────────────────────────────────
+  test:
+    name: Test
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: "Lohi-TRADE Web App Design/package-lock.json"
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt -r infra/requirements.txt
+
+      - name: Run backend tests
+        run: python -m pytest tests/ backend-gateway/tests/ infra/tests/ -x -q --tb=short
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: "Lohi-TRADE Web App Design"
+
+      - name: Run frontend tests
+        run: npx vitest --run
+        working-directory: "Lohi-TRADE Web App Design"
+
+  # ── Deploy Staging ────────────────────────────────────────────
+  deploy-staging:
+    name: Deploy to Staging
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt -r infra/requirements.txt
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_STAGING }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: CDK deploy to staging
+        run: npx cdk deploy --all --require-approval never -c environment=staging
+        working-directory: infra
+
+  # ── Deploy Production ─────────────────────────────────────────
+  deploy-production:
+    name: Deploy to Production
+    needs: deploy-staging
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt -r infra/requirements.txt
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_PRODUCTION }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: CDK deploy to production
+        run: npx cdk deploy --all --require-approval never -c environment=production
+        working-directory: infra

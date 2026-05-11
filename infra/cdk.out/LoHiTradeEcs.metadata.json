@@ -1,0 +1,495 @@
+{
+  "/LoHiTradeEcs/SvcGateway": [
+    {
+      "type": "aws:cdk:warning",
+      "data": "minHealthyPercent has not been configured so the default value of 50% is used. The number of running tasks will decrease below the desired count during deployments etc. See https://github.com/aws/aws-cdk/issues/31705 [ack: @aws-cdk/aws-ecs:minHealthyPercent]",
+      "trace": [
+        "Annotations.addMessage (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/core/lib/annotations.js:1:2270)",
+        "Annotations.addWarningV2 (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/core/lib/annotations.js:1:984)",
+        "new BaseService2 (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/aws-ecs/lib/base/base-service.js:1:12546)",
+        "new FargateService2 (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/aws-ecs/lib/fargate/fargate-service.js:1:6556)",
+        "new FargateService2 (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/core/lib/prop-injectable.js:1:726)",
+        "Kernel._Kernel_create (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:4012:25)",
+        "Kernel.create (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:3682:93)",
+        "KernelHost.processRequest (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:17342:36)",
+        "KernelHost.run (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:17302:22)",
+        "Immediate._onImmediate (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:17303:45)",
+        "process.processImmediate (node:internal/timers:483:21)"
+      ]
+    }
+  ],
+  "/LoHiTradeEcs/SvcSoldier": [
+    {
+      "type": "aws:cdk:warning",
+      "data": "minHealthyPercent has not been configured so the default value of 50% is used. The number of running tasks will decrease below the desired count during deployments etc. See https://github.com/aws/aws-cdk/issues/31705 [ack: @aws-cdk/aws-ecs:minHealthyPercent]",
+      "trace": [
+        "Annotations.addMessage (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/core/lib/annotations.js:1:2270)",
+        "Annotations.addWarningV2 (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/core/lib/annotations.js:1:984)",
+        "new BaseService2 (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/aws-ecs/lib/base/base-service.js:1:12546)",
+        "new FargateService2 (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/aws-ecs/lib/fargate/fargate-service.js:1:6556)",
+        "new FargateService2 (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/core/lib/prop-injectable.js:1:726)",
+        "Kernel._Kernel_create (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:4012:25)",
+        "Kernel.create (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:3682:93)",
+        "KernelHost.processRequest (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:17342:36)",
+        "KernelHost.run (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:17302:22)",
+        "Immediate._onImmediate (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:17303:45)",
+        "process.processImmediate (node:internal/timers:483:21)"
+      ]
+    }
+  ],
+  "/LoHiTradeEcs/SvcCommander": [
+    {
+      "type": "aws:cdk:warning",
+      "data": "minHealthyPercent has not been configured so the default value of 50% is used. The number of running tasks will decrease below the desired count during deployments etc. See https://github.com/aws/aws-cdk/issues/31705 [ack: @aws-cdk/aws-ecs:minHealthyPercent]",
+      "trace": [
+        "Annotations.addMessage (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/core/lib/annotations.js:1:2270)",
+        "Annotations.addWarningV2 (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/core/lib/annotations.js:1:984)",
+        "new BaseService2 (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/aws-ecs/lib/base/base-service.js:1:12546)",
+        "new FargateService2 (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/aws-ecs/lib/fargate/fargate-service.js:1:6556)",
+        "new FargateService2 (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/core/lib/prop-injectable.js:1:726)",
+        "Kernel._Kernel_create (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:4012:25)",
+        "Kernel.create (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:3682:93)",
+        "KernelHost.processRequest (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:17342:36)",
+        "KernelHost.run (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:17302:22)",
+        "Immediate._onImmediate (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:17303:45)",
+        "process.processImmediate (node:internal/timers:483:21)"
+      ]
+    }
+  ],
+  "/LoHiTradeEcs/SvcRmsOms": [
+    {
+      "type": "aws:cdk:warning",
+      "data": "minHealthyPercent has not been configured so the default value of 50% is used. The number of running tasks will decrease below the desired count during deployments etc. See https://github.com/aws/aws-cdk/issues/31705 [ack: @aws-cdk/aws-ecs:minHealthyPercent]",
+      "trace": [
+        "Annotations.addMessage (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/core/lib/annotations.js:1:2270)",
+        "Annotations.addWarningV2 (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/core/lib/annotations.js:1:984)",
+        "new BaseService2 (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/aws-ecs/lib/base/base-service.js:1:12546)",
+        "new FargateService2 (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/aws-ecs/lib/fargate/fargate-service.js:1:6556)",
+        "new FargateService2 (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/core/lib/prop-injectable.js:1:726)",
+        "Kernel._Kernel_create (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:4012:25)",
+        "Kernel.create (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:3682:93)",
+        "KernelHost.processRequest (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:17342:36)",
+        "KernelHost.run (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:17302:22)",
+        "Immediate._onImmediate (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:17303:45)",
+        "process.processImmediate (node:internal/timers:483:21)"
+      ]
+    }
+  ],
+  "/LoHiTradeEcs/SvcMarketDataCollector": [
+    {
+      "type": "aws:cdk:warning",
+      "data": "minHealthyPercent has not been configured so the default value of 50% is used. The number of running tasks will decrease below the desired count during deployments etc. See https://github.com/aws/aws-cdk/issues/31705 [ack: @aws-cdk/aws-ecs:minHealthyPercent]",
+      "trace": [
+        "Annotations.addMessage (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/core/lib/annotations.js:1:2270)",
+        "Annotations.addWarningV2 (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/core/lib/annotations.js:1:984)",
+        "new BaseService2 (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/aws-ecs/lib/base/base-service.js:1:12546)",
+        "new FargateService2 (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/aws-ecs/lib/fargate/fargate-service.js:1:6556)",
+        "new FargateService2 (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/core/lib/prop-injectable.js:1:726)",
+        "Kernel._Kernel_create (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:4012:25)",
+        "Kernel.create (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:3682:93)",
+        "KernelHost.processRequest (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:17342:36)",
+        "KernelHost.run (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:17302:22)",
+        "Immediate._onImmediate (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:17303:45)",
+        "process.processImmediate (node:internal/timers:483:21)"
+      ]
+    }
+  ],
+  "/LoHiTradeEcs/SvcVerification": [
+    {
+      "type": "aws:cdk:warning",
+      "data": "minHealthyPercent has not been configured so the default value of 50% is used. The number of running tasks will decrease below the desired count during deployments etc. See https://github.com/aws/aws-cdk/issues/31705 [ack: @aws-cdk/aws-ecs:minHealthyPercent]",
+      "trace": [
+        "Annotations.addMessage (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/core/lib/annotations.js:1:2270)",
+        "Annotations.addWarningV2 (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/core/lib/annotations.js:1:984)",
+        "new BaseService2 (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/aws-ecs/lib/base/base-service.js:1:12546)",
+        "new FargateService2 (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/aws-ecs/lib/fargate/fargate-service.js:1:6556)",
+        "new FargateService2 (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/core/lib/prop-injectable.js:1:726)",
+        "Kernel._Kernel_create (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:4012:25)",
+        "Kernel.create (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:3682:93)",
+        "KernelHost.processRequest (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:17342:36)",
+        "KernelHost.run (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:17302:22)",
+        "Immediate._onImmediate (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:17303:45)",
+        "process.processImmediate (node:internal/timers:483:21)"
+      ]
+    }
+  ],
+  "/LoHiTradeEcs/SvcChatbot": [
+    {
+      "type": "aws:cdk:warning",
+      "data": "minHealthyPercent has not been configured so the default value of 50% is used. The number of running tasks will decrease below the desired count during deployments etc. See https://github.com/aws/aws-cdk/issues/31705 [ack: @aws-cdk/aws-ecs:minHealthyPercent]",
+      "trace": [
+        "Annotations.addMessage (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/core/lib/annotations.js:1:2270)",
+        "Annotations.addWarningV2 (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/core/lib/annotations.js:1:984)",
+        "new BaseService2 (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/aws-ecs/lib/base/base-service.js:1:12546)",
+        "new FargateService2 (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/aws-ecs/lib/fargate/fargate-service.js:1:6556)",
+        "new FargateService2 (/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/jsii-kernel-wLdabw/node_modules/aws-cdk-lib/core/lib/prop-injectable.js:1:726)",
+        "Kernel._Kernel_create (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:4012:25)",
+        "Kernel.create (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:3682:93)",
+        "KernelHost.processRequest (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:17342:36)",
+        "KernelHost.run (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:17302:22)",
+        "Immediate._onImmediate (/private/var/folders/mz/w5j9t5390077gq96pl__js100000gp/T/tmpjjd86fbk/lib/program.js:17303:45)",
+        "process.processImmediate (node:internal/timers:483:21)"
+      ]
+    }
+  ],
+  "/LoHiTradeEcs/ClusterArn": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ClusterArn"
+    }
+  ],
+  "/LoHiTradeEcs/AlbDnsName": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "AlbDnsName"
+    }
+  ],
+  "/LoHiTradeEcs/EcrUriGateway": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcrUriGateway"
+    }
+  ],
+  "/LoHiTradeEcs/EcrUriSoldier": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcrUriSoldier"
+    }
+  ],
+  "/LoHiTradeEcs/EcrUriCommander": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcrUriCommander"
+    }
+  ],
+  "/LoHiTradeEcs/EcrUriRmsOms": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcrUriRmsOms"
+    }
+  ],
+  "/LoHiTradeEcs/EcrUriMarketDataCollector": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcrUriMarketDataCollector"
+    }
+  ],
+  "/LoHiTradeEcs/EcrUriVerification": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcrUriVerification"
+    }
+  ],
+  "/LoHiTradeEcs/EcrUriChatbot": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcrUriChatbot"
+    }
+  ],
+  "/LoHiTradeEcs/BootstrapVersion": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "BootstrapVersion"
+    }
+  ],
+  "/LoHiTradeEcs/CheckBootstrapVersion": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CheckBootstrapVersion"
+    }
+  ],
+  "/LoHiTradeEcs/LoHiTradeCluster/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LoHiTradeCluster8EA56130"
+    }
+  ],
+  "/LoHiTradeEcs/EcrGateway/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcrGateway4FD2E918"
+    }
+  ],
+  "/LoHiTradeEcs/EcrSoldier/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcrSoldierB4842672"
+    }
+  ],
+  "/LoHiTradeEcs/EcrCommander/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcrCommanderC37C00E5"
+    }
+  ],
+  "/LoHiTradeEcs/EcrRmsOms/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcrRmsOmsB199BC9E"
+    }
+  ],
+  "/LoHiTradeEcs/EcrMarketDataCollector/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcrMarketDataCollector47972A37"
+    }
+  ],
+  "/LoHiTradeEcs/EcrVerification/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcrVerification0869EFA9"
+    }
+  ],
+  "/LoHiTradeEcs/EcrChatbot/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcrChatbot124AF5E0"
+    }
+  ],
+  "/LoHiTradeEcs/LoHiTradeAlb/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LoHiTradeAlb2EF60F72"
+    }
+  ],
+  "/LoHiTradeEcs/EcsTaskExecutionRole/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcsTaskExecutionRoleC0B6A84D"
+    }
+  ],
+  "/LoHiTradeEcs/EcsTaskRole/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcsTaskRole8DFA0181"
+    }
+  ],
+  "/LoHiTradeEcs/LogsGateway/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LogsGatewayAC85C117"
+    }
+  ],
+  "/LoHiTradeEcs/TaskDefGateway/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "TaskDefGateway6DE280BD"
+    }
+  ],
+  "/LoHiTradeEcs/SvcGateway/Service": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "SvcGatewayService4A1DECE5"
+    }
+  ],
+  "/LoHiTradeEcs/LogsSoldier/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LogsSoldierAF07C267"
+    }
+  ],
+  "/LoHiTradeEcs/TaskDefSoldier/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "TaskDefSoldierBB435FD9"
+    }
+  ],
+  "/LoHiTradeEcs/SvcSoldier/Service": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "SvcSoldierService82D16F65"
+    }
+  ],
+  "/LoHiTradeEcs/LogsCommander/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LogsCommanderDDB93BD6"
+    }
+  ],
+  "/LoHiTradeEcs/TaskDefCommander/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "TaskDefCommander51B2C935"
+    }
+  ],
+  "/LoHiTradeEcs/SvcCommander/Service": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "SvcCommanderServiceE0CA40A5"
+    }
+  ],
+  "/LoHiTradeEcs/LogsRmsOms/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LogsRmsOms20C0983B"
+    }
+  ],
+  "/LoHiTradeEcs/TaskDefRmsOms/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "TaskDefRmsOms0C7857AB"
+    }
+  ],
+  "/LoHiTradeEcs/SvcRmsOms/Service": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "SvcRmsOmsService691DF647"
+    }
+  ],
+  "/LoHiTradeEcs/LogsMarketDataCollector/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LogsMarketDataCollector233C3F73"
+    }
+  ],
+  "/LoHiTradeEcs/TaskDefMarketDataCollector/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "TaskDefMarketDataCollector4C7D69A2"
+    }
+  ],
+  "/LoHiTradeEcs/SvcMarketDataCollector/Service": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "SvcMarketDataCollectorServiceD47F6457"
+    }
+  ],
+  "/LoHiTradeEcs/LogsVerification/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LogsVerification428CA712"
+    }
+  ],
+  "/LoHiTradeEcs/TaskDefVerification/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "TaskDefVerificationFDF71168"
+    }
+  ],
+  "/LoHiTradeEcs/SvcVerification/Service": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "SvcVerificationService8CEB70C0"
+    }
+  ],
+  "/LoHiTradeEcs/LogsChatbot/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LogsChatbot45D06FC8"
+    }
+  ],
+  "/LoHiTradeEcs/TaskDefChatbot/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "TaskDefChatbot8949E65B"
+    }
+  ],
+  "/LoHiTradeEcs/SvcChatbot/Service": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "SvcChatbotServiceC165481A"
+    }
+  ],
+  "/LoHiTradeEcs/GatewayTargetGroup/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "GatewayTargetGroup1DB55352"
+    }
+  ],
+  "/LoHiTradeEcs/CDKMetadata/Default": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "CDKMetadata"
+    }
+  ],
+  "/LoHiTradeEcs/Exports/Output{\"Fn::GetAtt\":[\"LoHiTradeAlb2EF60F72\",\"CanonicalHostedZoneID\"]}": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ExportsOutputFnGetAttLoHiTradeAlb2EF60F72CanonicalHostedZoneID0D134F58"
+    }
+  ],
+  "/LoHiTradeEcs/Exports/Output{\"Fn::GetAtt\":[\"LoHiTradeAlb2EF60F72\",\"DNSName\"]}": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ExportsOutputFnGetAttLoHiTradeAlb2EF60F72DNSNameE446581A"
+    }
+  ],
+  "/LoHiTradeEcs/Exports/Output{\"Ref\":\"LoHiTradeCluster8EA56130\"}": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ExportsOutputRefLoHiTradeCluster8EA56130F575F5B5"
+    }
+  ],
+  "/LoHiTradeEcs/Exports/Output{\"Fn::GetAtt\":[\"SvcGatewayService4A1DECE5\",\"Name\"]}": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ExportsOutputFnGetAttSvcGatewayService4A1DECE5Name231B0E01"
+    }
+  ],
+  "/LoHiTradeEcs/Exports/Output{\"Fn::GetAtt\":[\"SvcSoldierService82D16F65\",\"Name\"]}": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ExportsOutputFnGetAttSvcSoldierService82D16F65Name8250B044"
+    }
+  ],
+  "/LoHiTradeEcs/Exports/Output{\"Fn::GetAtt\":[\"SvcCommanderServiceE0CA40A5\",\"Name\"]}": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ExportsOutputFnGetAttSvcCommanderServiceE0CA40A5Name003691ED"
+    }
+  ],
+  "/LoHiTradeEcs/Exports/Output{\"Fn::GetAtt\":[\"SvcRmsOmsService691DF647\",\"Name\"]}": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ExportsOutputFnGetAttSvcRmsOmsService691DF647NameF9594488"
+    }
+  ],
+  "/LoHiTradeEcs/Exports/Output{\"Fn::GetAtt\":[\"SvcMarketDataCollectorServiceD47F6457\",\"Name\"]}": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ExportsOutputFnGetAttSvcMarketDataCollectorServiceD47F6457Name3312A1E2"
+    }
+  ],
+  "/LoHiTradeEcs/Exports/Output{\"Fn::GetAtt\":[\"SvcVerificationService8CEB70C0\",\"Name\"]}": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ExportsOutputFnGetAttSvcVerificationService8CEB70C0Name059ECDC9"
+    }
+  ],
+  "/LoHiTradeEcs/Exports/Output{\"Fn::GetAtt\":[\"SvcChatbotServiceC165481A\",\"Name\"]}": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ExportsOutputFnGetAttSvcChatbotServiceC165481ANameA2F06296"
+    }
+  ],
+  "/LoHiTradeEcs/Exports/Output{\"Fn::GetAtt\":[\"LoHiTradeAlb2EF60F72\",\"LoadBalancerFullName\"]}": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "ExportsOutputFnGetAttLoHiTradeAlb2EF60F72LoadBalancerFullNameA80C56E0"
+    }
+  ],
+  "/LoHiTradeEcs/LoHiTradeAlb/HttpListener/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "LoHiTradeAlbHttpListener285F038F"
+    }
+  ],
+  "/LoHiTradeEcs/EcsTaskExecutionRole/DefaultPolicy/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "EcsTaskExecutionRoleDefaultPolicyDCEEFDC3"
+    }
+  ],
+  "/LoHiTradeEcs/SvcGateway/TaskCount/Target/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "SvcGatewayTaskCountTargetB40D4D43"
+    }
+  ],
+  "/LoHiTradeEcs/SvcGateway/TaskCount/Target/GatewayCpuScaling/Resource": [
+    {
+      "type": "aws:cdk:logicalId",
+      "data": "SvcGatewayTaskCountTargetGatewayCpuScalingAF6FC1DB"
+    }
+  ]
+}
