@@ -1,3 +1,36 @@
+# Contributing to LoHi-Trade
+
+Thanks for your interest in contributing! We welcome improvements, bug fixes, and new strategies.
+
+Quickstart
+- Fork the repository and open a feature branch from `main`.
+- Run tests locally:
+
+```bash
+source lohi_trade_venv/bin/activate
+pip install -e .[dev]
+pytest -q
+```
+
+Code style
+- Use `ruff` for linting and formatting.
+- Follow existing project conventions for type hints and logging.
+
+Pull requests
+- Keep PRs small and focused.
+- Target the `main` branch and describe the change in the PR body.
+- Include tests for new behavior or bug fixes.
+
+Issue reporting
+- Search existing issues before opening a new one.
+- Provide reproducible steps and any logs or test failures.
+
+Security
+- Do not commit secrets or credentials. Use environment variables and `.env.*` templates.
+- If you find a security issue, please open a private issue or contact the maintainers.
+
+Maintainers
+- The core maintainers will review incoming PRs and merge when ready.
 # Contributing to LOHI-TRADE
 
 Thank you for your interest in contributing to LOHI-TRADE! This document provides guidelines and instructions for contributing to the project.
