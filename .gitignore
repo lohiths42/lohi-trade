@@ -59,6 +59,7 @@ data/historical/
 # Configuration and credentials
 .env
 .env.local
+.env.research
 config/settings.yaml
 config/credentials.yaml
 *.key
