@@ -12,6 +12,12 @@ REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
 REDIS_DB = int(os.getenv("REDIS_DB", "0"))
 
+_cors_origins_env = os.getenv("CORS_ORIGINS")
+if _cors_origins_env:
+    CORS_ORIGINS = [origin.strip() for origin in _cors_origins_env.split(",") if origin.strip()]
+else:
+    CORS_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"]
+
 
 def _docker_running() -> bool:
     try:
@@ -22,6 +28,8 @@ def _docker_running() -> bool:
 
 
 _project_root = Path(__file__).resolve().parents[2]
+DB_PATH = os.getenv("DB_PATH", str(_project_root / "data" / "lohi_trade.db"))
+CONFIG_PATH = os.getenv("CONFIG_PATH", str(_project_root / "config" / "settings.yaml"))
 _sqlite_path = _project_root / "data" / "lohi_trade.sqlite"
 _default_db = "postgresql://localhost:5432/lohi_trade"
 

@@ -195,13 +195,13 @@ def run_setup(args: Namespace) -> int:
             lock_file = frontend_dir / "package-lock.json"
             if lock_file.exists():
                 _run(
-                    ["npm", "ci"],
+                    ["npm", "ci", "--legacy-peer-deps"],
                     "Installing frontend packages (strict)",
                     cwd=str(frontend_dir),
                 )
             else:
                 _run(
-                    ["npm", "install"],
+                    ["npm", "install", "--legacy-peer-deps"],
                     "Installing frontend packages (fallback)",
                     cwd=str(frontend_dir),
                 )
