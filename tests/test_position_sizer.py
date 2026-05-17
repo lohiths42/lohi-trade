@@ -18,6 +18,7 @@ from src.utils.config import CapitalConfig, Config
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_indicator_set(symbol: str = "RELIANCE") -> IndicatorSet:
     return IndicatorSet(
         symbol=symbol,
@@ -79,6 +80,7 @@ def _make_config(
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 class TestPositionSizerNormalCalculation:
     """Test the basic position sizing formula."""
@@ -284,7 +286,9 @@ class TestEdgeCases:
         sizer = PositionSizer(config)
         # SELL: entry 1000, stop 1020 → risk/share = |1000-1020| = 20
         signal = _make_signal(
-            side="SELL", entry_price=1000.0, stop_loss=1020.0,
+            side="SELL",
+            entry_price=1000.0,
+            stop_loss=1020.0,
         )
 
         result = sizer.calculate_quantity(signal)

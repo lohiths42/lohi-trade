@@ -118,9 +118,9 @@ messages = event_bus.consume(
 for message in messages:
     print(f"Message ID: {message['message_id']}")
     print(f"Data: {message['data']}")
-    
+
     # Process message...
-    
+
     # Acknowledge message
     event_bus.acknowledge(
         "stream:ticks:RELIANCE",

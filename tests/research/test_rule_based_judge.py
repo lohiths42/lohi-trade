@@ -289,9 +289,7 @@ class TestNumericFindings:
             numeric_findings=[],
         )
         # No numeric claims — caller asserted none.
-        assert all(
-            c.reason != "numeric_drift" for c in report.unsupported_claims
-        )
+        assert all(c.reason != "numeric_drift" for c in report.unsupported_claims)
 
 
 # --------------------------------------------------------------------------- #

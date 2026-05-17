@@ -57,7 +57,10 @@ class NewsArticle:
 # Default RSS feed sources for Indian financial news
 DEFAULT_RSS_SOURCES = [
     RSSSource(name="MoneyControl", url="https://www.moneycontrol.com/rss/latestnews.xml"),
-    RSSSource(name="EconomicTimes", url="https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms"),
+    RSSSource(
+        name="EconomicTimes",
+        url="https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms",
+    ),
     RSSSource(name="LiveMint", url="https://www.livemint.com/rss/markets"),
 ]
 
@@ -106,14 +109,16 @@ def parse_entry(entry: dict, source_name: str) -> NewsArticle:
     if entry.get("published_parsed"):
         try:
             published_at = datetime.fromtimestamp(
-                mktime(entry["published_parsed"]), tz=UTC,
+                mktime(entry["published_parsed"]),
+                tz=UTC,
             )
         except (ValueError, OverflowError, OSError):
             pass
     elif entry.get("updated_parsed"):
         try:
             published_at = datetime.fromtimestamp(
-                mktime(entry["updated_parsed"]), tz=UTC,
+                mktime(entry["updated_parsed"]),
+                tz=UTC,
             )
         except (ValueError, OverflowError, OSError):
             pass

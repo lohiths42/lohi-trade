@@ -21,6 +21,7 @@ from src.soldier.indicator_engine import IndicatorEngine
 # Composite strategy: generate a list of realistic candles via random walk
 # ---------------------------------------------------------------------------
 
+
 @st.composite
 def candle_series_strategy(draw):
     """Generate a series of 50+ candles with realistic OHLCV data.
@@ -31,7 +32,9 @@ def candle_series_strategy(draw):
     timestamps increment by 1 minute.
     """
     num_candles = draw(st.integers(min_value=50, max_value=100))
-    base_price = draw(st.floats(min_value=50.0, max_value=5000.0, allow_nan=False, allow_infinity=False))
+    base_price = draw(
+        st.floats(min_value=50.0, max_value=5000.0, allow_nan=False, allow_infinity=False)
+    )
 
     candles: list[Candle] = []
     price = base_price
@@ -43,13 +46,19 @@ def candle_series_strategy(draw):
         price = max(1.0, price + step)  # keep price positive
 
         # Open deviates slightly from previous close
-        open_delta = draw(st.floats(min_value=-1.0, max_value=1.0, allow_nan=False, allow_infinity=False))
+        open_delta = draw(
+            st.floats(min_value=-1.0, max_value=1.0, allow_nan=False, allow_infinity=False)
+        )
         open_price = max(0.5, price + open_delta)
         close_price = max(0.5, price)
 
         # High >= max(open, close), Low <= min(open, close)
-        high_extra = draw(st.floats(min_value=0.0, max_value=5.0, allow_nan=False, allow_infinity=False))
-        low_extra = draw(st.floats(min_value=0.0, max_value=5.0, allow_nan=False, allow_infinity=False))
+        high_extra = draw(
+            st.floats(min_value=0.0, max_value=5.0, allow_nan=False, allow_infinity=False)
+        )
+        low_extra = draw(
+            st.floats(min_value=0.0, max_value=5.0, allow_nan=False, allow_infinity=False)
+        )
         high_price = max(open_price, close_price) + high_extra
         low_price = min(open_price, close_price) - low_extra
         low_price = max(0.01, low_price)  # keep low positive
@@ -95,21 +104,22 @@ def test_property_indicator_calculation_completeness(candles):
     # With 50+ candles (well above MIN_CANDLES_REQUIRED=26), the last
     # add_candle call should produce a non-None IndicatorSet.
     assert result is not None, (
-        f"Expected indicators after {len(candles)} candles "
-        f"(min required: 26), got None"
+        f"Expected indicators after {len(candles)} candles " f"(min required: 26), got None"
     )
 
     # --- All indicator fields must be finite (not NaN, not inf) ---
 
     # RSI should be in [0, 100]
-    assert 0 <= result.rsi_14 <= 100, (
-        f"RSI should be in [0, 100], got {result.rsi_14}"
-    )
+    assert 0 <= result.rsi_14 <= 100, f"RSI should be in [0, 100], got {result.rsi_14}"
 
     # MACD, MACD signal, MACD histogram should be finite
     assert math.isfinite(result.macd), f"MACD should be finite, got {result.macd}"
-    assert math.isfinite(result.macd_signal), f"MACD signal should be finite, got {result.macd_signal}"
-    assert math.isfinite(result.macd_hist), f"MACD histogram should be finite, got {result.macd_hist}"
+    assert math.isfinite(
+        result.macd_signal
+    ), f"MACD signal should be finite, got {result.macd_signal}"
+    assert math.isfinite(
+        result.macd_hist
+    ), f"MACD histogram should be finite, got {result.macd_hist}"
 
     # Bollinger Bands: lower < middle < upper
     assert math.isfinite(result.bb_lower), f"BB lower should be finite, got {result.bb_lower}"
@@ -131,9 +141,10 @@ def test_property_indicator_calculation_completeness(candles):
     assert result.supertrend > 0, f"Supertrend should be > 0, got {result.supertrend}"
 
     # Supertrend direction should be 1 (bullish) or -1 (bearish)
-    assert result.supertrend_direction in (1, -1), (
-        f"Supertrend direction should be 1 or -1, got {result.supertrend_direction}"
-    )
+    assert result.supertrend_direction in (
+        1,
+        -1,
+    ), f"Supertrend direction should be 1 or -1, got {result.supertrend_direction}"
 
     # ATR should be non-negative
     assert result.atr_14 >= 0, f"ATR should be >= 0, got {result.atr_14}"

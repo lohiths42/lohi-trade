@@ -1,7 +1,6 @@
 """Unit tests for the Market Trend Predictor.
 """
 
-
 import numpy as np
 
 from src.ml.market_predictor import (
@@ -183,8 +182,10 @@ class TestMarketPredictor:
 
         # Predict with too few candles
         regime = mp.predict(
-            np.array([100.0]), np.array([101.0]),
-            np.array([99.0]), np.array([1000.0]),
+            np.array([100.0]),
+            np.array([101.0]),
+            np.array([99.0]),
+            np.array([1000.0]),
         )
         assert regime.regime == REGIME_SIDEWAYS
 

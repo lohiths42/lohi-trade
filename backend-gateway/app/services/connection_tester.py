@@ -142,9 +142,7 @@ class ConnectionTester:
                 suggestion="Check your internet connection and try again.",
             )
 
-    async def test_nubra(
-        self, phone: str, mpin: str, totp_secret: str
-    ) -> TestResult:
+    async def test_nubra(self, phone: str, mpin: str, totp_secret: str) -> TestResult:
         """Validate Nubra.io credentials by checking format and structure.
 
         Since the Nubra.io login handshake requires a live TOTP code
@@ -194,9 +192,7 @@ class ConnectionTester:
             response_time_ms=round(elapsed_ms, 1),
         )
 
-    async def test_broker_shoonya(
-        self, api_key: str, client_id: str
-    ) -> TestResult:
+    async def test_broker_shoonya(self, api_key: str, client_id: str) -> TestResult:
         """Validate Shoonya broker credentials by checking format.
 
         Validates that the API key and client ID match expected formats.
@@ -263,9 +259,7 @@ class ConnectionTester:
             if response.status_code == 200:
                 data = response.json()
                 if data.get("ok"):
-                    return TestResult(
-                        success=True, response_time_ms=round(elapsed_ms, 1)
-                    )
+                    return TestResult(success=True, response_time_ms=round(elapsed_ms, 1))
 
             if response.status_code == 401:
                 return TestResult(

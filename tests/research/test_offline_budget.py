@@ -68,7 +68,8 @@ def test_budget_for_mode_env_offline(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.mark.parametrize("value", ["true", "True", "1", "yes", "YES"])
 def test_budget_for_mode_env_truthy_variants(
-    monkeypatch: pytest.MonkeyPatch, value: str,
+    monkeypatch: pytest.MonkeyPatch,
+    value: str,
 ) -> None:
     """Any truthy env value activates the offline budget.
 
@@ -82,7 +83,8 @@ def test_budget_for_mode_env_truthy_variants(
 
 @pytest.mark.parametrize("value", ["", "false", "0", "no", "maybe"])
 def test_budget_for_mode_env_falsy_variants(
-    monkeypatch: pytest.MonkeyPatch, value: str,
+    monkeypatch: pytest.MonkeyPatch,
+    value: str,
 ) -> None:
     """Falsy / unknown env values leave the online budget in play."""
     monkeypatch.setenv("LOHI_RESEARCH_OFFLINE", value)

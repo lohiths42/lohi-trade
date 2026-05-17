@@ -4,7 +4,6 @@ Provides start/stop/status for the paper trading simulation.
 The simulation runs as a background subprocess so the gateway stays responsive.
 """
 
-import asyncio
 import logging
 import os
 import signal
@@ -14,7 +13,7 @@ from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
@@ -28,20 +27,24 @@ _sim_config: Optional[dict] = None
 
 
 class PaperTradingStartRequest(BaseModel):
+    model_config = {"populate_by_name": True}
+
     capital: float = 200000
     days: int = 5
     speed: float = 50
-    useRealData: bool = True  # Default to real data from Yahoo Finance
+    use_real_data: bool = Field(default=True, alias="useRealData")  # Default to real data from Yahoo Finance
 
 
 class PaperTradingStatus(BaseModel):
+    model_config = {"populate_by_name": True}
+
     running: bool
-    startedAt: Optional[str] = None
+    started_at: Optional[str] = Field(default=None, alias="startedAt")
     capital: Optional[float] = None
     days: Optional[int] = None
     speed: Optional[float] = None
     pid: Optional[int] = None
-    useRealData: Optional[bool] = None
+    use_real_data: Optional[bool] = Field(default=None, alias="useRealData")
 
 
 @router.get("/paper-trading/status")
@@ -53,12 +56,12 @@ def get_status() -> PaperTradingStatus:
         _sim_process = None
     return PaperTradingStatus(
         running=running,
-        startedAt=_sim_started_at if running else None,
+        started_at=_sim_started_at if running else None,
         capital=_sim_config.get("capital") if _sim_config and running else None,
         days=_sim_config.get("days") if _sim_config and running else None,
         speed=_sim_config.get("speed") if _sim_config and running else None,
         pid=_sim_process.pid if _sim_process and running else None,
-        useRealData=_sim_config.get("useRealData") if _sim_config and running else None,
+        use_real_data=_sim_config.get("useRealData") if _sim_config and running else None,
     )
 
 
@@ -84,12 +87,16 @@ def start_simulation(req: PaperTradingStartRequest) -> PaperTradingStatus:
     cmd = [
         sys.executable,
         script_path,
-        "--speed", str(req.speed),
-        "--days", str(req.days),
-        "--capital", str(req.capital),
-        "--db", db_path,
+        "--speed",
+        str(req.speed),
+        "--days",
+        str(req.days),
+        "--capital",
+        str(req.capital),
+        "--db",
+        db_path,
     ]
-    if req.useRealData:
+    if req.use_real_data:
         cmd.append("--real-data")
 
     logger.info(f"Starting paper simulation: {' '.join(cmd)}")
@@ -104,19 +111,23 @@ def start_simulation(req: PaperTradingStartRequest) -> PaperTradingStatus:
             preexec_fn=os.setsid,  # Create new process group for clean kill
         )
         _sim_started_at = datetime.now().isoformat()
-        _sim_config = {"capital": req.capital, "days": req.days, "speed": req.speed,
-                       "useRealData": req.useRealData}
+        _sim_config = {
+            "capital": req.capital,
+            "days": req.days,
+            "speed": req.speed,
+            "useRealData": req.use_real_data,
+        }
 
         logger.info(f"Paper simulation started, PID={_sim_process.pid}")
 
         return PaperTradingStatus(
             running=True,
-            startedAt=_sim_started_at,
+            started_at=_sim_started_at,
             capital=req.capital,
             days=req.days,
             speed=req.speed,
             pid=_sim_process.pid,
-            useRealData=req.useRealData,
+            use_real_data=req.use_real_data,
         )
     except Exception as e:
         logger.error(f"Failed to start simulation: {e}")

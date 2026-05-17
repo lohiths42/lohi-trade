@@ -2,19 +2,19 @@
  * about keys in global memory, and relies on the enhanced data type callbacks to
  * get key name and dbid on various operations.
  *
- * it simulates a simple memory allocator. The smallest allocation unit of 
- * the allocator is a mem block with a size of 4KB. Multiple mem blocks are combined 
+ * it simulates a simple memory allocator. The smallest allocation unit of
+ * the allocator is a mem block with a size of 4KB. Multiple mem blocks are combined
  * using a linked list. These linked lists are placed in a global dict named 'mem_pool'.
- * Each db has a 'mem_pool'. You can use the 'mem.alloc' command to allocate a specified 
+ * Each db has a 'mem_pool'. You can use the 'mem.alloc' command to allocate a specified
  * number of mem blocks, and use 'mem.free' to release the memory. Use 'mem.write', 'mem.read'
  * to write and read the specified mem block (note that each mem block can only be written once).
- * Use 'mem.usage' to get the memory usage under different dbs, and it will return the size 
+ * Use 'mem.usage' to get the memory usage under different dbs, and it will return the size
  * mem blocks and used mem blocks under the db.
  * The specific structure diagram is as follows:
- * 
- * 
+ *
+ *
  * Global variables of the module:
- * 
+ *
  *                                           mem blocks link
  *                          ┌─────┬─────┐
  *                          │     │     │    ┌───┐    ┌───┐    ┌───┐
@@ -43,10 +43,10 @@
  *                          │     │     │    └───┘    └───┘
  *                          └─────┴─────┘
  *                               dict
- * 
- * 
+ *
+ *
  * Keys in redis database:
- * 
+ *
  *                                ┌───────┐
  *                                │ size  │
  *                   ┌───────────►│ used  │
@@ -237,7 +237,7 @@ void flushdbCallback(RedisModuleCtx *ctx, RedisModuleEvent e, uint64_t sub, void
 
 /* MEM.ALLOC key block_num */
 int MemAlloc_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
-    RedisModule_AutoMemory(ctx);  
+    RedisModule_AutoMemory(ctx);
 
     if (argc != 3) {
         return RedisModule_WrongArity(ctx);
@@ -276,7 +276,7 @@ int MemAlloc_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
 
 /* MEM.FREE key */
 int MemFree_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
-    RedisModule_AutoMemory(ctx);  
+    RedisModule_AutoMemory(ctx);
 
     if (argc != 2) {
         return RedisModule_WrongArity(ctx);
@@ -315,7 +315,7 @@ int MemFree_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc
 
 /* MEM.WRITE key block_index data */
 int MemWrite_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
-    RedisModule_AutoMemory(ctx);  
+    RedisModule_AutoMemory(ctx);
 
     if (argc != 4) {
         return RedisModule_WrongArity(ctx);
@@ -361,7 +361,7 @@ int MemWrite_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
 
 /* MEM.READ key block_index */
 int MemRead_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
-    RedisModule_AutoMemory(ctx);  
+    RedisModule_AutoMemory(ctx);
 
     if (argc != 3) {
         return RedisModule_WrongArity(ctx);
@@ -392,10 +392,10 @@ int MemRead_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc
     int nokey;
     struct MemBlock *mem = (struct MemBlock *)RedisModule_DictGet(mem_pool[RedisModule_GetSelectedDb(ctx)], argv[1], &nokey);
     RedisModule_Assert(nokey == 0 && mem != NULL);
-     
+
     char buf[BLOCK_SIZE];
     MemBlockRead(mem, block_index, buf, sizeof(buf));
-    
+
     /* Assuming that the contents are all c-style strings */
     RedisModule_ReplyWithStringBuffer(ctx, buf, strlen(buf));
     return REDISMODULE_OK;
@@ -403,7 +403,7 @@ int MemRead_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc
 
 /* MEM.USAGE dbid */
 int MemUsage_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
-    RedisModule_AutoMemory(ctx);  
+    RedisModule_AutoMemory(ctx);
 
     if (argc != 2) {
         return RedisModule_WrongArity(ctx);
@@ -448,7 +448,7 @@ int MemUsage_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
 
 /* MEM.ALLOCANDWRITE key block_num block_index data block_index data ... */
 int MemAllocAndWrite_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
-    RedisModule_AutoMemory(ctx);  
+    RedisModule_AutoMemory(ctx);
 
     if (argc < 3) {
         return RedisModule_WrongArity(ctx);
@@ -532,7 +532,7 @@ void *MemAllocRdbLoad(RedisModuleIO *rdb, int encver) {
 
         RedisModule_DictSet(mem_pool[dbid], (RedisModuleString *)key, head);
     }
-     
+
     return o;
 }
 
@@ -550,7 +550,7 @@ void MemAllocRdbSave(RedisModuleIO *rdb, void *value) {
         struct MemBlock *mem = (struct MemBlock *)RedisModule_DictGet(mem_pool[dbid], (RedisModuleString *)key, &nokey);
         RedisModule_Assert(nokey == 0 && mem != NULL);
 
-        struct MemBlock *block = mem; 
+        struct MemBlock *block = mem;
         while (block) {
             RedisModule_SaveStringBuffer(rdb, block->block, BLOCK_SIZE);
             block = block->next;
@@ -602,7 +602,7 @@ void MemAllocUnlink2(RedisModuleKeyOptCtx *ctx, const void *value) {
 
     const RedisModuleString *key = RedisModule_GetKeyNameFromOptCtx(ctx);
     int dbid = RedisModule_GetDbIdFromOptCtx(ctx);
-    
+
     if (o->size) {
         void *oldval;
         RedisModule_DictDel(mem_pool[dbid], (RedisModuleString *)key, &oldval);
@@ -619,7 +619,7 @@ void MemAllocDigest(RedisModuleDigest *md, void *value) {
 
     int dbid = RedisModule_GetDbIdFromDigest(md);
     const RedisModuleString *key = RedisModule_GetKeyNameFromDigest(md);
-    
+
     if (o->size) {
         int nokey;
         struct MemBlock *mem = (struct MemBlock *)RedisModule_DictGet(mem_pool[dbid], (RedisModuleString *)key, &nokey);
@@ -652,7 +652,7 @@ void *MemAllocCopy2(RedisModuleKeyOptCtx *ctx, const void *value) {
         struct MemBlock *newmem = MemBlockClone(oldmem);
         RedisModule_Assert(newmem != NULL);
         RedisModule_DictSet(mem_pool[to_dbid], (RedisModuleString *)tokey, newmem);
-    }   
+    }
 
     return new;
 }
@@ -734,6 +734,6 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
 
     RedisModule_SubscribeToServerEvent(ctx, RedisModuleEvent_FlushDB, flushdbCallback);
     RedisModule_SubscribeToServerEvent(ctx, RedisModuleEvent_SwapDB, swapDbCallback);
-  
+
     return REDISMODULE_OK;
 }

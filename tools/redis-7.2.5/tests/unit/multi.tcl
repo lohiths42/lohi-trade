@@ -894,7 +894,7 @@ start_server {tags {"multi"}} {
         r readraw 0
         set _ $res
     } {*CONFIG SET failed*}
-    
+
     test "Flushall while watching several keys by one client" {
         r flushall
         r mset a{t} a b{t} b

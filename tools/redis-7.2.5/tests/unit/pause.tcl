@@ -76,7 +76,7 @@ start_server {tags {"pause network"}} {
         $rd2 publish foo bar
         wait_for_blocked_clients_count 2 50 100
 
-        r client unpause 
+        r client unpause
         assert_match "1" [$rd read]
         assert_match "0" [$rd2 read]
         $rd close
@@ -92,7 +92,7 @@ start_server {tags {"pause network"}} {
         assert_equal [$rr GET FOO] "QUEUED"
         assert_match "PONG BAR" [$rr EXEC]
         assert_equal [s 0 blocked_clients] 0
-        r client unpause 
+        r client unpause
         $rr close
     }
 
@@ -105,7 +105,7 @@ start_server {tags {"pause network"}} {
         r client PAUSE 60000 WRITE
         $rd EXEC
         wait_for_blocked_clients_count 1 50 100
-        r client unpause 
+        r client unpause
         assert_match "OK" [$rd read]
         $rd close
     }
@@ -122,7 +122,7 @@ start_server {tags {"pause network"}} {
         } 0
 
         wait_for_blocked_clients_count 2 50 100
-        r client unpause 
+        r client unpause
         assert_match "1" [$rd read]
         assert_match "1" [$rd2 read]
         $rd close
@@ -284,7 +284,7 @@ start_server {tags {"pause network"}} {
         r get bar{t}
 
         # Now that clients have been unpaused, expires should go through
-        assert_match [expr $expired_keys + 2] [s 0 expired_keys]   
+        assert_match [expr $expired_keys + 2] [s 0 expired_keys]
     }
 
     test "Test that client pause starts at the end of a transaction" {
@@ -303,7 +303,7 @@ start_server {tags {"pause network"}} {
         assert_match "BAR" [r GET FOO2{t}]
         assert_match "" [r GET FOO3{t}]
 
-        r client unpause 
+        r client unpause
         assert_match "OK" [$rd read]
         $rd close
     }

@@ -29,7 +29,7 @@ start_server {overrides {save {900 1}} tags {"modules"}} {
         set ld [r test.ld_conversion]
         assert {[string match $ld "0.00000000000000001"]}
     }
-    
+
     test {test unsigned long long conversions} {
         set ret [r test.ull_conversion]
         assert {[string match $ret "ok"]}

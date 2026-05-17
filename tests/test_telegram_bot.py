@@ -121,7 +121,13 @@ class TestTradeExitNotification:
         mock_post.return_value = MagicMock(status_code=200)
         n = _make_notifier()
         result = n.send_trade_exit(
-            "RELIANCE", "BUY", 40, 2500.0, 2550.0, 2000.0, "45m",
+            "RELIANCE",
+            "BUY",
+            40,
+            2500.0,
+            2550.0,
+            2000.0,
+            "45m",
         )
         assert result is True
         text = mock_post.call_args[1]["json"]["text"]
@@ -137,7 +143,13 @@ class TestTradeExitNotification:
         mock_post.return_value = MagicMock(status_code=200)
         n = _make_notifier()
         result = n.send_trade_exit(
-            "INFY", "BUY", 50, 1500.0, 1470.0, -1500.0, "30m",
+            "INFY",
+            "BUY",
+            50,
+            1500.0,
+            1470.0,
+            -1500.0,
+            "30m",
         )
         assert result is True
         text = mock_post.call_args[1]["json"]["text"]
@@ -267,6 +279,7 @@ class TestHTTPErrorHandling:
     @patch("src.ui.telegram_bot.requests.post")
     def test_network_error_returns_false(self, mock_post):
         import requests as req
+
         mock_post.side_effect = req.ConnectionError("timeout")
         n = _make_notifier()
         assert n._send_message("test") is False
@@ -350,7 +363,8 @@ class TestCommandHandler:
         conn = MagicMock()
         row = MagicMock()
         row.__getitem__ = lambda self, key: {
-            "total": 5000.0, "trades": 8,
+            "total": 5000.0,
+            "trades": 8,
         }.get(key, 0)
         cursor = MagicMock()
         cursor.fetchone.return_value = row

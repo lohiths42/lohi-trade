@@ -263,7 +263,7 @@ int test_redisversion(RedisModuleCtx *ctx, RedisModuleString **argv, int argc){
     RedisModuleString* vStr = RedisModule_CreateStringPrintf(ctx, "%d.%d.%d", major, minor, patch);
     RedisModule_ReplyWithString(ctx, vStr);
     RedisModule_FreeString(ctx, vStr);
-  
+
     return REDISMODULE_OK;
 }
 
@@ -474,7 +474,7 @@ int test_ull_conv(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
         RedisModule_ReplyWithError(ctx, err);
         goto final;
     }
-    
+
     /* Make sure we can't convert a string more than ULLONG_MAX or less than 0 */
     ullstr = "18446744073709551616";
     RedisModuleString *s3 = RedisModule_CreateString(ctx, ullstr, strlen(ullstr));
@@ -494,7 +494,7 @@ int test_ull_conv(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
         goto final;
     }
     RedisModule_FreeString(ctx, s4);
-   
+
     RedisModule_ReplyWithSimpleString(ctx, "ok");
 
 final:

@@ -112,7 +112,9 @@ class NewsPublisher:
             "content_hash": article.content_hash,
         }
         return self._event_bus.publish(
-            NEWS_STREAM_NAME, message, maxlen=NEWS_STREAM_MAXLEN,
+            NEWS_STREAM_NAME,
+            message,
+            maxlen=NEWS_STREAM_MAXLEN,
         )
 
     def _store_in_sqlite(self, article: NewsArticle) -> None:

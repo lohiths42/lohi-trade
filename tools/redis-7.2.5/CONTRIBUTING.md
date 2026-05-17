@@ -9,7 +9,7 @@ each source file that you contribute.
 
 Github issues SHOULD ONLY BE USED to report bugs, and for DETAILED feature
 requests. Everything else belongs to the Redis Google Group:
-      
+
     https://groups.google.com/forum/m/#!forum/Redis-db
 
 PLEASE DO NOT POST GENERAL QUESTIONS that are not about bugs or suspected

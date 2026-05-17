@@ -115,8 +115,7 @@ _rls_path = (
 )
 _spec = _ilu.spec_from_file_location("_lohi_research_rls", str(_rls_path))
 assert _spec is not None and _spec.loader is not None, (
-    f"Could not locate the RLS helper module at {_rls_path}; Task 4.3 "
-    f"should have landed it."
+    f"Could not locate the RLS helper module at {_rls_path}; Task 4.3 " f"should have landed it."
 )
 _rls_mod = _ilu.module_from_spec(_spec)
 _spec.loader.exec_module(_rls_mod)

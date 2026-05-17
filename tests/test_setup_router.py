@@ -273,7 +273,9 @@ class TestSkipFlow:
     """Requirement 3.1: Skip optional groups and update registry."""
 
     def test_skip_telegram_updates_registry(
-        self, app_client: TestClient, setup_service: SetupService,
+        self,
+        app_client: TestClient,
+        setup_service: SetupService,
     ):
         """POST /api/setup/skip/telegram → 200, registry shows SKIPPED."""
         app_client.app.dependency_overrides[require_localhost] = lambda: True
@@ -290,7 +292,9 @@ class TestSkipFlow:
         assert status == ServiceStatus.SKIPPED
 
     def test_skip_nvidia_nim_updates_registry(
-        self, app_client: TestClient, setup_service: SetupService,
+        self,
+        app_client: TestClient,
+        setup_service: SetupService,
     ):
         """POST /api/setup/skip/nvidia_nim → 200, registry shows SKIPPED."""
         app_client.app.dependency_overrides[require_localhost] = lambda: True
@@ -309,7 +313,9 @@ class TestSkipFlow:
         assert response.status_code == 422
 
     def test_skip_multiple_groups(
-        self, app_client: TestClient, setup_service: SetupService,
+        self,
+        app_client: TestClient,
+        setup_service: SetupService,
     ):
         """Skipping multiple groups updates each independently."""
         app_client.app.dependency_overrides[require_localhost] = lambda: True
@@ -322,10 +328,7 @@ class TestSkipFlow:
         assert setup_service.registry.get_status("nvidia_nim") == ServiceStatus.SKIPPED
         assert setup_service.registry.get_status("ollama") == ServiceStatus.SKIPPED
         # Unskipped groups remain unconfigured
-        assert (
-            setup_service.registry.get_status("broker_shoonya")
-            == ServiceStatus.UNCONFIGURED
-        )
+        assert setup_service.registry.get_status("broker_shoonya") == ServiceStatus.UNCONFIGURED
 
 
 # ---------------------------------------------------------------------------
@@ -337,7 +340,9 @@ class TestCompleteSetup:
     """Requirement 8.3: Complete endpoint sets setup_complete flag."""
 
     def test_complete_setup_sets_flag(
-        self, app_client: TestClient, setup_service: SetupService,
+        self,
+        app_client: TestClient,
+        setup_service: SetupService,
     ):
         """POST /api/setup/complete → 200, setup_complete=True."""
         app_client.app.dependency_overrides[require_localhost] = lambda: True
@@ -355,7 +360,10 @@ class TestCompleteSetup:
         assert setup_service.registry.setup_complete is True
 
     def test_complete_setup_persists_across_reload(
-        self, tmp_dir: Path, app_client: TestClient, setup_service: SetupService,
+        self,
+        tmp_dir: Path,
+        app_client: TestClient,
+        setup_service: SetupService,
     ):
         """setup_complete flag persists when registry is reloaded."""
         app_client.app.dependency_overrides[require_localhost] = lambda: True
@@ -368,7 +376,9 @@ class TestCompleteSetup:
         assert new_registry.setup_complete is True
 
     def test_status_reflects_complete(
-        self, app_client: TestClient, setup_service: SetupService,
+        self,
+        app_client: TestClient,
+        setup_service: SetupService,
     ):
         """GET /api/setup/status shows setup_complete=True after completion."""
         app_client.app.dependency_overrides[require_localhost] = lambda: True
@@ -392,7 +402,9 @@ class TestSetupStatus:
     """Additional tests for the GET /api/setup/status endpoint."""
 
     def test_status_returns_all_services(
-        self, app_client: TestClient, setup_service: SetupService,
+        self,
+        app_client: TestClient,
+        setup_service: SetupService,
     ):
         """GET /api/setup/status returns entries for all credential groups."""
         app_client.app.dependency_overrides[require_localhost] = lambda: True
@@ -411,7 +423,9 @@ class TestSetupStatus:
         assert group_ids == expected_ids
 
     def test_status_reflects_configured_service(
-        self, app_client: TestClient, setup_service: SetupService,
+        self,
+        app_client: TestClient,
+        setup_service: SetupService,
     ):
         """Status shows 'configured' after credentials are submitted."""
         app_client.app.dependency_overrides[require_localhost] = lambda: True
@@ -431,9 +445,7 @@ class TestSetupStatus:
         # Check status
         response = app_client.get("/api/setup/status")
         data = response.json()
-        shoonya_svc = next(
-            s for s in data["services"] if s["group_id"] == "broker_shoonya"
-        )
+        shoonya_svc = next(s for s in data["services"] if s["group_id"] == "broker_shoonya")
         assert shoonya_svc["status"] == "configured"
 
 
@@ -447,7 +459,9 @@ class TestHotReload:
 
     @patch("app.routers.setup.reload_registry")
     def test_submit_credentials_triggers_reload(
-        self, mock_reload, app_client: TestClient,
+        self,
+        mock_reload,
+        app_client: TestClient,
     ):
         """POST /api/setup/credentials/{group_id} calls reload_registry on success."""
         app_client.app.dependency_overrides[require_localhost] = lambda: True
@@ -467,7 +481,9 @@ class TestHotReload:
 
     @patch("app.routers.setup.reload_registry")
     def test_submit_invalid_credentials_does_not_trigger_reload(
-        self, mock_reload, app_client: TestClient,
+        self,
+        mock_reload,
+        app_client: TestClient,
     ):
         """POST /api/setup/credentials/{group_id} does NOT call reload_registry on validation failure."""
         app_client.app.dependency_overrides[require_localhost] = lambda: True
@@ -510,7 +526,9 @@ class TestHotReload:
 
     @patch("app.routers.setup.reload_registry")
     def test_reset_unknown_group_does_not_trigger_reload(
-        self, mock_reload, app_client: TestClient,
+        self,
+        mock_reload,
+        app_client: TestClient,
     ):
         """POST /api/setup/reset/nonexistent does NOT call reload_registry."""
         app_client.app.dependency_overrides[require_localhost] = lambda: True

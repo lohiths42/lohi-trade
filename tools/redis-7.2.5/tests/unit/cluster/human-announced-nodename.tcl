@@ -23,7 +23,7 @@ start_cluster 3 0 {tags {external:skip cluster}} {
         # since it includes the other node gossiping.
         wait_for_log_messages -1 {"*Node * (nodename-2) reported node * (nodename-0) as not reachable*"} 0 20 500
         wait_for_log_messages -2 {"*Node * (nodename-1) reported node * (nodename-0) as not reachable*"} 0 20 500
-        
+
         resume_process [srv 0 pid]
     }
 }

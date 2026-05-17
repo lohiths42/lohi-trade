@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class RedisClient:
     """Redis client wrapper with connection management and automatic reconnection.
-    
+
     Provides methods for:
     - Connection management with automatic reconnection
     - Stream publishing and consuming
@@ -30,7 +30,7 @@ class RedisClient:
         socket_connect_timeout: float = 5.0,
     ):
         """Initialize Redis client with connection parameters.
-        
+
         Args:
             host: Redis server host
             port: Redis server port
@@ -54,7 +54,7 @@ class RedisClient:
 
     def connect(self) -> None:
         """Establish connection to Redis server with automatic retry.
-        
+
         Raises:
             ConnectionError: If connection fails after all retry attempts
 
@@ -124,7 +124,7 @@ class RedisClient:
 
     def ping(self) -> bool:
         """Health check - ping Redis server.
-        
+
         Returns:
             True if Redis is reachable, False otherwise
 
@@ -140,7 +140,7 @@ class RedisClient:
 
     def _ensure_connected(self) -> None:
         """Ensure Redis connection is active, reconnect if necessary.
-        
+
         Raises:
             ConnectionError: If reconnection fails
 
@@ -157,16 +157,16 @@ class RedisClient:
         approximate: bool = True,
     ) -> str:
         """Add message to Redis Stream.
-        
+
         Args:
             stream_name: Name of the stream
             fields: Dictionary of field-value pairs to add
             maxlen: Maximum stream length (circular buffer)
             approximate: Use approximate trimming (~) for better performance
-            
+
         Returns:
             Message ID
-            
+
         Raises:
             RedisError: If operation fails
 
@@ -192,15 +192,15 @@ class RedisClient:
         block: int | None = None,
     ) -> list:
         """Read messages from Redis Streams.
-        
+
         Args:
             streams: Dictionary mapping stream names to message IDs (use '>' for new messages)
             count: Maximum number of messages to read
             block: Block for specified milliseconds (None = non-blocking)
-            
+
         Returns:
             List of messages from streams
-            
+
         Raises:
             RedisError: If operation fails
 
@@ -221,16 +221,16 @@ class RedisClient:
         mkstream: bool = True,
     ) -> bool:
         """Create consumer group for a stream.
-        
+
         Args:
             stream_name: Name of the stream
             group_name: Name of the consumer group
             id: Starting message ID ('0' = from beginning, '$' = from end)
             mkstream: Create stream if it doesn't exist
-            
+
         Returns:
             True if group created successfully
-            
+
         Raises:
             RedisError: If operation fails (except BUSYGROUP error)
 
@@ -266,17 +266,17 @@ class RedisClient:
         block: int | None = None,
     ) -> list:
         """Read messages from streams as part of a consumer group.
-        
+
         Args:
             group_name: Name of the consumer group
             consumer_name: Name of this consumer
             streams: Dictionary mapping stream names to message IDs (use '>' for new messages)
             count: Maximum number of messages to read
             block: Block for specified milliseconds (None = non-blocking)
-            
+
         Returns:
             List of messages from streams
-            
+
         Raises:
             RedisError: If operation fails
 
@@ -297,15 +297,15 @@ class RedisClient:
 
     def xack(self, stream_name: str, group_name: str, *message_ids: str) -> int:
         """Acknowledge messages in a consumer group.
-        
+
         Args:
             stream_name: Name of the stream
             group_name: Name of the consumer group
             message_ids: Message IDs to acknowledge
-            
+
         Returns:
             Number of messages acknowledged
-            
+
         Raises:
             RedisError: If operation fails
 
@@ -320,10 +320,10 @@ class RedisClient:
 
     def get(self, key: str) -> str | None:
         """Get value for a key.
-        
+
         Args:
             key: Redis key
-            
+
         Returns:
             Value or None if key doesn't exist
 
@@ -346,7 +346,7 @@ class RedisClient:
         xx: bool = False,
     ) -> bool:
         """Set key to value with optional expiration.
-        
+
         Args:
             key: Redis key
             value: Value to set
@@ -354,7 +354,7 @@ class RedisClient:
             px: Expiration in milliseconds
             nx: Only set if key doesn't exist
             xx: Only set if key exists
-            
+
         Returns:
             True if set successfully
 
@@ -369,10 +369,10 @@ class RedisClient:
 
     def delete(self, *keys: str) -> int:
         """Delete one or more keys.
-        
+
         Args:
             keys: Keys to delete
-            
+
         Returns:
             Number of keys deleted
 
@@ -387,11 +387,11 @@ class RedisClient:
 
     def sadd(self, key: str, *values: Any) -> int:
         """Add members to a set.
-        
+
         Args:
             key: Set key
             values: Values to add
-            
+
         Returns:
             Number of elements added
 
@@ -406,11 +406,11 @@ class RedisClient:
 
     def sismember(self, key: str, value: Any) -> bool:
         """Check if value is member of set.
-        
+
         Args:
             key: Set key
             value: Value to check
-            
+
         Returns:
             True if value is in set
 
@@ -425,11 +425,11 @@ class RedisClient:
 
     def expire(self, key: str, seconds: int) -> bool:
         """Set expiration on a key.
-        
+
         Args:
             key: Redis key
             seconds: Expiration time in seconds
-            
+
         Returns:
             True if expiration was set
 

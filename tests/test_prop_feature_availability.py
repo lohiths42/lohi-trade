@@ -58,7 +58,8 @@ configured_subset_strategy = st.frozensets(
 
 
 def expected_feature_available(
-    feature: str, configured_groups: frozenset[str],
+    feature: str,
+    configured_groups: frozenset[str],
 ) -> bool:
     """Independent reference implementation of feature availability logic.
 
@@ -88,7 +89,8 @@ class TestFeatureAvailabilityCorrectness:
     @given(configured_groups=configured_subset_strategy)
     @settings(max_examples=200)
     def test_feature_available_iff_dependency_configured(
-        self, configured_groups: frozenset[str],
+        self,
+        configured_groups: frozenset[str],
     ) -> None:
         """For any subset of configured services, the feature availability
         map SHALL mark a feature as available if and only if at least one
@@ -123,7 +125,8 @@ class TestFeatureAvailabilityCorrectness:
     @given(configured_groups=configured_subset_strategy)
     @settings(max_examples=200)
     def test_is_feature_available_matches_map(
-        self, configured_groups: frozenset[str],
+        self,
+        configured_groups: frozenset[str],
     ) -> None:
         """The is_feature_available() method SHALL return the same result
         as the corresponding entry in get_available_features() for every

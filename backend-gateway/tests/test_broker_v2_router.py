@@ -2,17 +2,14 @@
 
 from unittest.mock import AsyncMock
 
-import pytest
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-
+from app.routers.auth_v2 import get_current_user_id, get_current_user_payload
 from app.routers.broker_v2 import (
     BrokerManagementService,
-    router,
     get_broker_service,
+    router,
 )
-from app.routers.auth_v2 import get_current_user_id, get_current_user_payload
-
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -51,18 +48,23 @@ def _mock_service() -> AsyncMock:
 class TestConnectBroker:
     def test_connect_success(self):
         svc = _mock_service()
-        svc.connect_broker = AsyncMock(return_value={
-            "broker_name": "kite",
-            "status": "connected",
-            "message": "Broker 'kite' connected successfully",
-        })
+        svc.connect_broker = AsyncMock(
+            return_value={
+                "broker_name": "kite",
+                "status": "connected",
+                "message": "Broker 'kite' connected successfully",
+            }
+        )
 
         app = _create_test_app(broker_svc=svc)
         client = TestClient(app)
-        resp = client.post("/api/v2/brokers/connect", json={
-            "broker_name": "kite",
-            "credentials": {"api_key": "test123"},
-        })
+        resp = client.post(
+            "/api/v2/brokers/connect",
+            json={
+                "broker_name": "kite",
+                "credentials": {"api_key": "test123"},
+            },
+        )
 
         assert resp.status_code == 200
         data = resp.json()
@@ -74,9 +76,12 @@ class TestConnectBroker:
         svc = _mock_service()
         app = _create_test_app(broker_svc=svc)
         client = TestClient(app)
-        resp = client.post("/api/v2/brokers/connect", json={
-            "broker_name": "unknown_broker",
-        })
+        resp = client.post(
+            "/api/v2/brokers/connect",
+            json={
+                "broker_name": "unknown_broker",
+            },
+        )
 
         assert resp.status_code == 400
         assert "unsupported" in resp.json()["detail"].lower()
@@ -101,11 +106,13 @@ class TestConnectBroker:
 
     def test_connect_case_insensitive(self):
         svc = _mock_service()
-        svc.connect_broker = AsyncMock(return_value={
-            "broker_name": "angelone",
-            "status": "connected",
-            "message": "Connected",
-        })
+        svc.connect_broker = AsyncMock(
+            return_value={
+                "broker_name": "angelone",
+                "status": "connected",
+                "message": "Connected",
+            }
+        )
 
         app = _create_test_app(broker_svc=svc)
         client = TestClient(app)
@@ -158,12 +165,14 @@ class TestDisconnectBroker:
 class TestGetBrokerStatus:
     def test_get_all_statuses(self):
         svc = _mock_service()
-        svc.get_all_statuses = AsyncMock(return_value=[
-            {"name": "shoonya", "status": "connected"},
-            {"name": "angelone", "status": "disconnected"},
-            {"name": "kite", "status": "token_expired"},
-            {"name": "groww", "status": "disconnected"},
-        ])
+        svc.get_all_statuses = AsyncMock(
+            return_value=[
+                {"name": "shoonya", "status": "connected"},
+                {"name": "angelone", "status": "disconnected"},
+                {"name": "kite", "status": "token_expired"},
+                {"name": "groww", "status": "disconnected"},
+            ]
+        )
 
         app = _create_test_app(broker_svc=svc)
         client = TestClient(app)
@@ -196,10 +205,12 @@ class TestGetBrokerStatus:
 class TestSetPrimaryBroker:
     def test_set_primary_success(self):
         svc = _mock_service()
-        svc.set_primary_broker = AsyncMock(return_value={
-            "primary_broker": "kite",
-            "backup_broker": "groww",
-        })
+        svc.set_primary_broker = AsyncMock(
+            return_value={
+                "primary_broker": "kite",
+                "backup_broker": "groww",
+            }
+        )
 
         app = _create_test_app(broker_svc=svc)
         client = TestClient(app)
@@ -244,10 +255,12 @@ class TestSetPrimaryBroker:
 class TestSetBackupBroker:
     def test_set_backup_success(self):
         svc = _mock_service()
-        svc.set_backup_broker = AsyncMock(return_value={
-            "primary_broker": "shoonya",
-            "backup_broker": "angelone",
-        })
+        svc.set_backup_broker = AsyncMock(
+            return_value={
+                "primary_broker": "shoonya",
+                "backup_broker": "angelone",
+            }
+        )
 
         app = _create_test_app(broker_svc=svc)
         client = TestClient(app)
@@ -288,7 +301,10 @@ class TestServiceNotInitialized:
         app.include_router(router, prefix="/api/v2")
         app.dependency_overrides[get_current_user_id] = lambda: TEST_USER_ID
         app.dependency_overrides[get_current_user_payload] = lambda: {
-            "sub": TEST_USER_ID, "email": "t@t.com", "role": "TRADER", "type": "access",
+            "sub": TEST_USER_ID,
+            "email": "t@t.com",
+            "role": "TRADER",
+            "type": "access",
         }
         client = TestClient(app)
         resp = client.post("/api/v2/brokers/connect", json={"broker_name": "kite"})
@@ -299,7 +315,10 @@ class TestServiceNotInitialized:
         app.include_router(router, prefix="/api/v2")
         app.dependency_overrides[get_current_user_id] = lambda: TEST_USER_ID
         app.dependency_overrides[get_current_user_payload] = lambda: {
-            "sub": TEST_USER_ID, "email": "t@t.com", "role": "TRADER", "type": "access",
+            "sub": TEST_USER_ID,
+            "email": "t@t.com",
+            "role": "TRADER",
+            "type": "access",
         }
         client = TestClient(app)
         resp = client.get("/api/v2/brokers/status")
@@ -347,9 +366,13 @@ class TestBrokerRBACEnforcement:
 
     def test_admin_allowed_connect(self):
         svc = _mock_service()
-        svc.connect_broker = AsyncMock(return_value={
-            "broker_name": "kite", "status": "connected", "message": "OK",
-        })
+        svc.connect_broker = AsyncMock(
+            return_value={
+                "broker_name": "kite",
+                "status": "connected",
+                "message": "OK",
+            }
+        )
         app = _create_test_app(broker_svc=svc, role="ADMIN")
         client = TestClient(app)
         resp = client.post("/api/v2/brokers/connect", json={"broker_name": "kite"})

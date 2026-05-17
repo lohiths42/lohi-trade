@@ -17,8 +17,8 @@ for x in $(seq 1 $nsamples)
     sleep $sleeptime
   done | \
 awk '
-  BEGIN { s = ""; } 
-  /Thread/ { print s; s = ""; } 
-  /^\#/ { if (s != "" ) { s = s "," $4} else { s = $4 } } 
+  BEGIN { s = ""; }
+  /Thread/ { print s; s = ""; }
+  /^\#/ { if (s != "" ) { s = s "," $4} else { s = $4 } }
   END { print s }' | \
 sort | uniq -c | sort -r -n -k 1,1

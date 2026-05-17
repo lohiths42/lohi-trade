@@ -4,27 +4,24 @@ from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-
 from app.services.watchlist_service import (
-    WatchlistService,
-    Watchlist,
-    WatchlistItem,
-    WatchlistWithPrices,
-    SecurityPrice,
-    WatchlistError,
-    MAX_WATCHLISTS_PER_USER,
     MAX_SECURITIES_PER_WATCHLIST,
+    MAX_WATCHLISTS_PER_USER,
     PREBUILT_WATCHLISTS,
-    REASON_MAX_WATCHLISTS,
-    REASON_MAX_SECURITIES,
-    REASON_SECURITY_NOT_FOUND,
-    REASON_SECURITY_NOT_ACTIVE,
-    REASON_WATCHLIST_NOT_FOUND,
     REASON_DUPLICATE_SECURITY,
-    REASON_SECURITY_NOT_IN_WATCHLIST,
     REASON_EMPTY_NAME,
+    REASON_MAX_SECURITIES,
+    REASON_MAX_WATCHLISTS,
+    REASON_SECURITY_NOT_ACTIVE,
+    REASON_SECURITY_NOT_FOUND,
+    REASON_SECURITY_NOT_IN_WATCHLIST,
+    REASON_WATCHLIST_NOT_FOUND,
+    Watchlist,
+    WatchlistError,
+    WatchlistItem,
+    WatchlistService,
+    WatchlistWithPrices,
 )
-
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -63,14 +60,16 @@ def _watchlist_row(
     sort_order=0,
     created_at=None,
 ):
-    return _make_mock_row({
-        "id": id,
-        "user_id": user_id,
-        "name": name,
-        "is_prebuilt": is_prebuilt,
-        "sort_order": sort_order,
-        "created_at": created_at or datetime.now(timezone.utc),
-    })
+    return _make_mock_row(
+        {
+            "id": id,
+            "user_id": user_id,
+            "name": name,
+            "is_prebuilt": is_prebuilt,
+            "sort_order": sort_order,
+            "created_at": created_at or datetime.now(timezone.utc),
+        }
+    )
 
 
 def _security_row(id=1, symbol="RELIANCE", status="ACTIVE"):
@@ -88,13 +87,15 @@ def _item_row(
     sort_order=0,
     added_at=None,
 ):
-    return _make_mock_row({
-        "id": id,
-        "watchlist_id": watchlist_id,
-        "security_id": security_id,
-        "sort_order": sort_order,
-        "added_at": added_at or datetime.now(timezone.utc),
-    })
+    return _make_mock_row(
+        {
+            "id": id,
+            "watchlist_id": watchlist_id,
+            "security_id": security_id,
+            "sort_order": sort_order,
+            "added_at": added_at or datetime.now(timezone.utc),
+        }
+    )
 
 
 # ── Create watchlist tests ───────────────────────────────────────────────────
@@ -104,10 +105,12 @@ class TestCreateWatchlist:
     @pytest.mark.asyncio
     async def test_create_success(self):
         pool, conn = _make_mock_pool()
-        conn.fetchrow = AsyncMock(side_effect=[
-            _count_row(0),  # _get_watchlist_count
-            _watchlist_row(name="Tech Stocks"),  # INSERT RETURNING
-        ])
+        conn.fetchrow = AsyncMock(
+            side_effect=[
+                _count_row(0),  # _get_watchlist_count
+                _watchlist_row(name="Tech Stocks"),  # INSERT RETURNING
+            ]
+        )
 
         svc = _make_service(db_pool=pool)
         result = await svc.create_watchlist(USER_ID, "Tech Stocks")
@@ -227,13 +230,15 @@ class TestAddSecurity:
     @pytest.mark.asyncio
     async def test_add_success(self):
         pool, conn = _make_mock_pool()
-        conn.fetchrow = AsyncMock(side_effect=[
-            _make_mock_row({"id": WATCHLIST_ID}),  # watchlist ownership
-            _security_row(),  # security lookup
-            _count_row(5),  # item count
-            None,  # duplicate check (no existing)
-            _item_row(),  # INSERT RETURNING
-        ])
+        conn.fetchrow = AsyncMock(
+            side_effect=[
+                _make_mock_row({"id": WATCHLIST_ID}),  # watchlist ownership
+                _security_row(),  # security lookup
+                _count_row(5),  # item count
+                None,  # duplicate check (no existing)
+                _item_row(),  # INSERT RETURNING
+            ]
+        )
 
         svc = _make_service(db_pool=pool)
         result = await svc.add_security(USER_ID, WATCHLIST_ID, "RELIANCE")
@@ -255,10 +260,12 @@ class TestAddSecurity:
     @pytest.mark.asyncio
     async def test_add_security_not_found_raises(self):
         pool, conn = _make_mock_pool()
-        conn.fetchrow = AsyncMock(side_effect=[
-            _make_mock_row({"id": WATCHLIST_ID}),  # watchlist found
-            None,  # security not found
-        ])
+        conn.fetchrow = AsyncMock(
+            side_effect=[
+                _make_mock_row({"id": WATCHLIST_ID}),  # watchlist found
+                None,  # security not found
+            ]
+        )
 
         svc = _make_service(db_pool=pool)
 
@@ -269,10 +276,12 @@ class TestAddSecurity:
     @pytest.mark.asyncio
     async def test_add_inactive_security_raises(self):
         pool, conn = _make_mock_pool()
-        conn.fetchrow = AsyncMock(side_effect=[
-            _make_mock_row({"id": WATCHLIST_ID}),  # watchlist found
-            _security_row(status="INACTIVE"),  # security inactive
-        ])
+        conn.fetchrow = AsyncMock(
+            side_effect=[
+                _make_mock_row({"id": WATCHLIST_ID}),  # watchlist found
+                _security_row(status="INACTIVE"),  # security inactive
+            ]
+        )
 
         svc = _make_service(db_pool=pool)
 
@@ -283,11 +292,13 @@ class TestAddSecurity:
     @pytest.mark.asyncio
     async def test_add_max_securities_raises(self):
         pool, conn = _make_mock_pool()
-        conn.fetchrow = AsyncMock(side_effect=[
-            _make_mock_row({"id": WATCHLIST_ID}),  # watchlist found
-            _security_row(),  # security found
-            _count_row(MAX_SECURITIES_PER_WATCHLIST),  # at limit
-        ])
+        conn.fetchrow = AsyncMock(
+            side_effect=[
+                _make_mock_row({"id": WATCHLIST_ID}),  # watchlist found
+                _security_row(),  # security found
+                _count_row(MAX_SECURITIES_PER_WATCHLIST),  # at limit
+            ]
+        )
 
         svc = _make_service(db_pool=pool)
 
@@ -298,12 +309,14 @@ class TestAddSecurity:
     @pytest.mark.asyncio
     async def test_add_duplicate_security_raises(self):
         pool, conn = _make_mock_pool()
-        conn.fetchrow = AsyncMock(side_effect=[
-            _make_mock_row({"id": WATCHLIST_ID}),  # watchlist found
-            _security_row(),  # security found
-            _count_row(5),  # under limit
-            _make_mock_row({"id": "existing-item"}),  # duplicate exists
-        ])
+        conn.fetchrow = AsyncMock(
+            side_effect=[
+                _make_mock_row({"id": WATCHLIST_ID}),  # watchlist found
+                _security_row(),  # security found
+                _count_row(5),  # under limit
+                _make_mock_row({"id": "existing-item"}),  # duplicate exists
+            ]
+        )
 
         svc = _make_service(db_pool=pool)
 
@@ -326,10 +339,12 @@ class TestRemoveSecurity:
     @pytest.mark.asyncio
     async def test_remove_success(self):
         pool, conn = _make_mock_pool()
-        conn.fetchrow = AsyncMock(side_effect=[
-            _make_mock_row({"id": WATCHLIST_ID}),  # watchlist found
-            _security_row(),  # security found
-        ])
+        conn.fetchrow = AsyncMock(
+            side_effect=[
+                _make_mock_row({"id": WATCHLIST_ID}),  # watchlist found
+                _security_row(),  # security found
+            ]
+        )
         conn.execute = AsyncMock(return_value="DELETE 1")
 
         svc = _make_service(db_pool=pool)
@@ -350,10 +365,12 @@ class TestRemoveSecurity:
     @pytest.mark.asyncio
     async def test_remove_security_not_found_raises(self):
         pool, conn = _make_mock_pool()
-        conn.fetchrow = AsyncMock(side_effect=[
-            _make_mock_row({"id": WATCHLIST_ID}),  # watchlist found
-            None,  # security not found
-        ])
+        conn.fetchrow = AsyncMock(
+            side_effect=[
+                _make_mock_row({"id": WATCHLIST_ID}),  # watchlist found
+                None,  # security not found
+            ]
+        )
 
         svc = _make_service(db_pool=pool)
 
@@ -364,10 +381,12 @@ class TestRemoveSecurity:
     @pytest.mark.asyncio
     async def test_remove_not_in_watchlist_raises(self):
         pool, conn = _make_mock_pool()
-        conn.fetchrow = AsyncMock(side_effect=[
-            _make_mock_row({"id": WATCHLIST_ID}),  # watchlist found
-            _security_row(),  # security found
-        ])
+        conn.fetchrow = AsyncMock(
+            side_effect=[
+                _make_mock_row({"id": WATCHLIST_ID}),  # watchlist found
+                _security_row(),  # security found
+            ]
+        )
         conn.execute = AsyncMock(return_value="DELETE 0")
 
         svc = _make_service(db_pool=pool)
@@ -411,10 +430,12 @@ class TestGetUserWatchlists:
     @pytest.mark.asyncio
     async def test_returns_watchlists(self):
         pool, conn = _make_mock_pool()
-        conn.fetch = AsyncMock(return_value=[
-            _watchlist_row(name="WL1", sort_order=0),
-            _watchlist_row(name="WL2", sort_order=1),
-        ])
+        conn.fetch = AsyncMock(
+            return_value=[
+                _watchlist_row(name="WL1", sort_order=0),
+                _watchlist_row(name="WL2", sort_order=1),
+            ]
+        )
 
         svc = _make_service(db_pool=pool)
         result = await svc.get_user_watchlists(USER_ID)
@@ -446,15 +467,23 @@ class TestGetWatchlistWithPrices:
     @pytest.mark.asyncio
     async def test_returns_prices_from_redis_hash(self):
         pool, conn = _make_mock_pool()
-        conn.fetchrow = AsyncMock(return_value=_make_mock_row({
-            "id": WATCHLIST_ID,
-            "name": "My WL",
-            "is_prebuilt": False,
-        }))
-        conn.fetch = AsyncMock(return_value=[
-            _make_mock_row({"sort_order": 0, "symbol": "RELIANCE", "company_name": "Reliance Industries"}),
-            _make_mock_row({"sort_order": 1, "symbol": "TCS", "company_name": "TCS Ltd"}),
-        ])
+        conn.fetchrow = AsyncMock(
+            return_value=_make_mock_row(
+                {
+                    "id": WATCHLIST_ID,
+                    "name": "My WL",
+                    "is_prebuilt": False,
+                }
+            )
+        )
+        conn.fetch = AsyncMock(
+            return_value=[
+                _make_mock_row(
+                    {"sort_order": 0, "symbol": "RELIANCE", "company_name": "Reliance Industries"}
+                ),
+                _make_mock_row({"sort_order": 1, "symbol": "TCS", "company_name": "TCS Ltd"}),
+            ]
+        )
 
         redis = MagicMock()
         redis.hgetall.side_effect = [
@@ -477,14 +506,20 @@ class TestGetWatchlistWithPrices:
     @pytest.mark.asyncio
     async def test_returns_prices_from_redis_string_fallback(self):
         pool, conn = _make_mock_pool()
-        conn.fetchrow = AsyncMock(return_value=_make_mock_row({
-            "id": WATCHLIST_ID,
-            "name": "My WL",
-            "is_prebuilt": False,
-        }))
-        conn.fetch = AsyncMock(return_value=[
-            _make_mock_row({"sort_order": 0, "symbol": "INFY", "company_name": "Infosys"}),
-        ])
+        conn.fetchrow = AsyncMock(
+            return_value=_make_mock_row(
+                {
+                    "id": WATCHLIST_ID,
+                    "name": "My WL",
+                    "is_prebuilt": False,
+                }
+            )
+        )
+        conn.fetch = AsyncMock(
+            return_value=[
+                _make_mock_row({"sort_order": 0, "symbol": "INFY", "company_name": "Infosys"}),
+            ]
+        )
 
         redis = MagicMock()
         redis.hgetall.return_value = {}  # No hash data
@@ -500,14 +535,20 @@ class TestGetWatchlistWithPrices:
     @pytest.mark.asyncio
     async def test_no_redis_returns_zero_prices(self):
         pool, conn = _make_mock_pool()
-        conn.fetchrow = AsyncMock(return_value=_make_mock_row({
-            "id": WATCHLIST_ID,
-            "name": "My WL",
-            "is_prebuilt": False,
-        }))
-        conn.fetch = AsyncMock(return_value=[
-            _make_mock_row({"sort_order": 0, "symbol": "RELIANCE", "company_name": "Reliance"}),
-        ])
+        conn.fetchrow = AsyncMock(
+            return_value=_make_mock_row(
+                {
+                    "id": WATCHLIST_ID,
+                    "name": "My WL",
+                    "is_prebuilt": False,
+                }
+            )
+        )
+        conn.fetch = AsyncMock(
+            return_value=[
+                _make_mock_row({"sort_order": 0, "symbol": "RELIANCE", "company_name": "Reliance"}),
+            ]
+        )
 
         svc = _make_service(db_pool=pool, redis_client=None)
         result = await svc.get_watchlist_with_prices(USER_ID, WATCHLIST_ID)
@@ -541,10 +582,12 @@ class TestPrebuiltWatchlists:
     @pytest.mark.asyncio
     async def test_get_prebuilt_returns_list(self):
         pool, conn = _make_mock_pool()
-        conn.fetch = AsyncMock(return_value=[
-            _watchlist_row(name="Nifty 50", is_prebuilt=True, user_id=None),
-            _watchlist_row(name="Nifty Bank", is_prebuilt=True, user_id=None),
-        ])
+        conn.fetch = AsyncMock(
+            return_value=[
+                _watchlist_row(name="Nifty 50", is_prebuilt=True, user_id=None),
+                _watchlist_row(name="Nifty Bank", is_prebuilt=True, user_id=None),
+            ]
+        )
 
         svc = _make_service(db_pool=pool)
         result = await svc.get_prebuilt_watchlists()

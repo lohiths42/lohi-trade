@@ -9,15 +9,29 @@ Requirements covered:
 """
 
 from aws_cdk import (
-    Stack,
-    Duration,
     CfnOutput,
+    Duration,
+    Stack,
+)
+from aws_cdk import (
     aws_cloudwatch as cloudwatch,
+)
+from aws_cdk import (
     aws_cloudwatch_actions as cw_actions,
+)
+from aws_cdk import (
     aws_ecs as ecs,
-    aws_elasticloadbalancingv2 as elbv2,
-    aws_rds as rds,
+)
+from aws_cdk import (
     aws_elasticache as elasticache,
+)
+from aws_cdk import (
+    aws_elasticloadbalancingv2 as elbv2,
+)
+from aws_cdk import (
+    aws_rds as rds,
+)
+from aws_cdk import (
     aws_sns as sns,
 )
 from constructs import Construct

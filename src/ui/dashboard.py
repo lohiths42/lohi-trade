@@ -48,7 +48,11 @@ def _get_redis():
         import redis
 
         client = redis.Redis(
-            host="localhost", port=6379, db=0, decode_responses=True, socket_timeout=2,
+            host="localhost",
+            port=6379,
+            db=0,
+            decode_responses=True,
+            socket_timeout=2,
         )
         client.ping()
         return client
@@ -389,6 +393,7 @@ def render_system_health():
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+
 
 def main():
     st.title("LOHI-TRADE Dashboard")

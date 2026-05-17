@@ -320,19 +320,19 @@ start_server {tags {"geo"}} {
     test {GEORADIUSBYMEMBER_RO simple (sorted)} {
         r georadiusbymember_ro nyc "wtc one" 7 km
     } {{wtc one} {union square} {central park n/q/r} 4545 {lic market}}
-    
+
     test {GEORADIUSBYMEMBER search areas contain satisfied points in oblique direction} {
         r del k1
-        
+
         r geoadd k1 -0.15307903289794921875 85 n1 0.3515625 85.00019260486917005437 n2
         set ret1 [r GEORADIUSBYMEMBER k1 n1 4891.94 m]
         assert_equal $ret1 {n1 n2}
-        
+
         r zrem k1 n1 n2
         r geoadd k1 -4.95211958885192871094 85 n3 11.25 85.0511 n4
         set ret2 [r GEORADIUSBYMEMBER k1 n3 156544 m]
         assert_equal $ret2 {n3 n4}
-        
+
         r zrem k1 n3 n4
         r geoadd k1 -45 65.50900022111811438208 n5 90 85.0511 n6
         set ret3 [r GEORADIUSBYMEMBER k1 n5 5009431 m]
@@ -398,7 +398,7 @@ start_server {tags {"geo"}} {
         r geoadd points 10 20 a 30 40 b
         set result [r geohash points]
         assert {$result eq {}}
-    } 
+    }
 
     test {GEOPOS simple} {
         r del points

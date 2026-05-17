@@ -69,6 +69,7 @@ Revision ID: research_tables_shell
 Revises: 001
 Create Date: 2025-01-01 00:00:00.000000
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -88,7 +89,8 @@ def upgrade() -> None:
     # ═══════════════════════════════════════════════════════════════
     # 1. research_documents — parsed source documents (Req 3.4, 8.5)
     # ═══════════════════════════════════════════════════════════════
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE research_documents (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         user_id UUID NOT NULL,
@@ -103,19 +105,24 @@ def upgrade() -> None:
         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         UNIQUE (user_id, sha256)
     );
-    """)
+    """
+    )
     op.execute("ALTER TABLE research_documents ENABLE ROW LEVEL SECURITY;")
-    op.execute("""
+    op.execute(
+        """
     CREATE POLICY rls_research_documents ON research_documents
         USING (user_id = current_setting('app.user_id')::uuid);
-    """)
+    """
+    )
     # Lookup index for the common "list a user's documents for a symbol" path
     # (watchlist snapshot refresh, document-type filters). The UNIQUE
     # (user_id, sha256) constraint already covers dedup lookups.
-    op.execute("""
+    op.execute(
+        """
     CREATE INDEX research_documents_user_symbol_idx
         ON research_documents (user_id, symbol);
-    """)
+    """
+    )
 
     # ═══════════════════════════════════════════════════════════════
     # 2. research_chunks — chunked text + optional embedding (Req 3.6, 3.7)
@@ -124,7 +131,8 @@ def upgrade() -> None:
     # ``research_documents`` so the pgvector adapter (Task 2.16) can filter
     # by tenant/symbol without a join. See module docstring for rationale.
     # ═══════════════════════════════════════════════════════════════
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE research_chunks (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         document_id UUID NOT NULL REFERENCES research_documents(id) ON DELETE CASCADE,
@@ -141,31 +149,39 @@ def upgrade() -> None:
         embedding_dim INT NOT NULL,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
-    """)
+    """
+    )
     op.execute("ALTER TABLE research_chunks ENABLE ROW LEVEL SECURITY;")
-    op.execute("""
+    op.execute(
+        """
     CREATE POLICY rls_research_chunks ON research_chunks
         USING (user_id = current_setting('app.user_id')::uuid);
-    """)
+    """
+    )
     # FK-side index (explicit — Postgres does not auto-index foreign keys):
     # the indexer deletes chunks by document_id on re-parse, and the ORM
     # relationship loads chunks for a document by this column.
-    op.execute("""
+    op.execute(
+        """
     CREATE INDEX research_chunks_document_id_idx
         ON research_chunks (document_id);
-    """)
+    """
+    )
     # Tenant/symbol filter path used by the pgvector adapter's non-vector
     # queries (count, delete_by_filter) and by the hybrid retriever's BM25
     # pre-filter.
-    op.execute("""
+    op.execute(
+        """
     CREATE INDEX research_chunks_user_symbol_idx
         ON research_chunks (user_id, symbol);
-    """)
+    """
+    )
 
     # ═══════════════════════════════════════════════════════════════
     # 3. research_runs — one agent execution (Req 1.*, 13.3)
     # ═══════════════════════════════════════════════════════════════
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE research_runs (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         user_id UUID NOT NULL,
@@ -179,25 +195,31 @@ def upgrade() -> None:
         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         finished_at TIMESTAMPTZ
     );
-    """)
+    """
+    )
     op.execute("ALTER TABLE research_runs ENABLE ROW LEVEL SECURITY;")
-    op.execute("""
+    op.execute(
+        """
     CREATE POLICY rls_research_runs ON research_runs
         USING (user_id = current_setting('app.user_id')::uuid);
-    """)
+    """
+    )
     # "Latest runs for a user" is the primary list query (dashboard home,
     # run history pane). DESC on created_at matches the default sort so
     # the planner can use the index without a reverse scan.
-    op.execute("""
+    op.execute(
+        """
     CREATE INDEX research_runs_user_created_idx
         ON research_runs (user_id, created_at DESC);
-    """)
+    """
+    )
 
     # ═══════════════════════════════════════════════════════════════
     # 4. research_brief_sections — per-section markdown + citations (Req 1.5)
     #    (RLS inherited transitively via run_id -> research_runs)
     # ═══════════════════════════════════════════════════════════════
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE research_brief_sections (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         run_id UUID NOT NULL REFERENCES research_runs(id) ON DELETE CASCADE,
@@ -206,13 +228,15 @@ def upgrade() -> None:
         citations_json JSONB NOT NULL DEFAULT '[]',
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
-    """)
+    """
+    )
 
     # ═══════════════════════════════════════════════════════════════
     # 5. research_provenance — per-agent LLM usage per run (Req 1.8)
     #    (RLS inherited transitively via run_id -> research_runs)
     # ═══════════════════════════════════════════════════════════════
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE research_provenance (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         run_id UUID NOT NULL REFERENCES research_runs(id) ON DELETE CASCADE,
@@ -223,12 +247,14 @@ def upgrade() -> None:
         output_tokens INT NOT NULL,
         wall_time_ms INT NOT NULL
     );
-    """)
+    """
+    )
 
     # ═══════════════════════════════════════════════════════════════
     # 6. research_guardrail_decisions — input/output guardrail log (Req 16.11)
     # ═══════════════════════════════════════════════════════════════
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE research_guardrail_decisions (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         run_id UUID REFERENCES research_runs(id) ON DELETE CASCADE,
@@ -238,13 +264,15 @@ def upgrade() -> None:
         reason TEXT,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
-    """)
+    """
+    )
 
     # ═══════════════════════════════════════════════════════════════
     # 7. research_judge_reports — groundedness + safe-to-display (Req 16.17)
     #    (RLS inherited transitively via run_id -> research_runs)
     # ═══════════════════════════════════════════════════════════════
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE research_judge_reports (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         run_id UUID NOT NULL REFERENCES research_runs(id) ON DELETE CASCADE,
@@ -254,12 +282,14 @@ def upgrade() -> None:
         retry_count INT NOT NULL DEFAULT 0,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
-    """)
+    """
+    )
 
     # ═══════════════════════════════════════════════════════════════
     # 8. research_semantic_memory — user preferences/facts (Req 4.3, 4.5, 4.6)
     # ═══════════════════════════════════════════════════════════════
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE research_semantic_memory (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         user_id UUID NOT NULL,
@@ -267,17 +297,21 @@ def upgrade() -> None:
         content TEXT NOT NULL,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
-    """)
+    """
+    )
     op.execute("ALTER TABLE research_semantic_memory ENABLE ROW LEVEL SECURITY;")
-    op.execute("""
+    op.execute(
+        """
     CREATE POLICY rls_semantic_memory ON research_semantic_memory
         USING (user_id = current_setting('app.user_id')::uuid);
-    """)
+    """
+    )
 
     # ═══════════════════════════════════════════════════════════════
     # 9. research_episodic_memory — past-run summaries (Req 4.4)
     # ═══════════════════════════════════════════════════════════════
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE research_episodic_memory (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         user_id UUID NOT NULL,
@@ -286,23 +320,29 @@ def upgrade() -> None:
         summary TEXT NOT NULL,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
-    """)
+    """
+    )
     op.execute("ALTER TABLE research_episodic_memory ENABLE ROW LEVEL SECURITY;")
-    op.execute("""
+    op.execute(
+        """
     CREATE POLICY rls_episodic_memory ON research_episodic_memory
         USING (user_id = current_setting('app.user_id')::uuid);
-    """)
+    """
+    )
     # "Most recent run summaries for a (user, symbol)" is the hot path the
     # orchestrator hits when priming context for a new run.
-    op.execute("""
+    op.execute(
+        """
     CREATE INDEX research_episodic_memory_user_symbol_created_idx
         ON research_episodic_memory (user_id, symbol, created_at DESC);
-    """)
+    """
+    )
 
     # ═══════════════════════════════════════════════════════════════
     # 10. research_snapshots — pre-computed watchlist brief cache (Req 11.5)
     # ═══════════════════════════════════════════════════════════════
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE research_snapshots (
         user_id UUID NOT NULL,
         symbol VARCHAR(32) NOT NULL,
@@ -312,17 +352,21 @@ def upgrade() -> None:
         stale BOOLEAN NOT NULL DEFAULT FALSE,
         PRIMARY KEY (user_id, symbol)
     );
-    """)
+    """
+    )
     op.execute("ALTER TABLE research_snapshots ENABLE ROW LEVEL SECURITY;")
-    op.execute("""
+    op.execute(
+        """
     CREATE POLICY rls_snapshots ON research_snapshots
         USING (user_id = current_setting('app.user_id')::uuid);
-    """)
+    """
+    )
 
     # ═══════════════════════════════════════════════════════════════
     # 11. llm_usage — per-call LLM cost telemetry (Req 12.5)
     # ═══════════════════════════════════════════════════════════════
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE llm_usage (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         user_id UUID NOT NULL,
@@ -334,17 +378,21 @@ def upgrade() -> None:
         cost_estimate_usd NUMERIC(12,6) NOT NULL DEFAULT 0,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
-    """)
+    """
+    )
     op.execute("ALTER TABLE llm_usage ENABLE ROW LEVEL SECURITY;")
-    op.execute("""
+    op.execute(
+        """
     CREATE POLICY rls_llm_usage ON llm_usage
         USING (user_id = current_setting('app.user_id')::uuid);
-    """)
+    """
+    )
 
     # ═══════════════════════════════════════════════════════════════
     # 12. research_audit_log — append-only audit trail (Req 4.9)
     # ═══════════════════════════════════════════════════════════════
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE research_audit_log (
         id BIGSERIAL PRIMARY KEY,
         user_id UUID,
@@ -353,16 +401,21 @@ def upgrade() -> None:
         payload_json JSONB NOT NULL DEFAULT '{}',
         created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
-    """)
+    """
+    )
     # Append-only rules: silently drop any DELETE/UPDATE.
-    op.execute("""
+    op.execute(
+        """
     CREATE RULE research_audit_log_no_delete AS
         ON DELETE TO research_audit_log DO INSTEAD NOTHING;
-    """)
-    op.execute("""
+    """
+    )
+    op.execute(
+        """
     CREATE RULE research_audit_log_no_update AS
         ON UPDATE TO research_audit_log DO INSTEAD NOTHING;
-    """)
+    """
+    )
 
     # ═══════════════════════════════════════════════════════════════
     # pgvector-conditional ``embedding`` columns and HNSW index
@@ -374,7 +427,8 @@ def upgrade() -> None:
     # the Chroma backend is active, pgvector may not be installed and all
     # three DDL statements are simply skipped.
     # ═══════════════════════════════════════════════════════════════
-    op.execute(f"""
+    op.execute(
+        f"""
     DO $$
     BEGIN
         IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'vector') THEN
@@ -388,7 +442,8 @@ def upgrade() -> None:
                 ON research_chunks USING hnsw (embedding vector_cosine_ops);
         END IF;
     END$$;
-    """)
+    """
+    )
 
 
 def downgrade() -> None:
@@ -398,7 +453,8 @@ def downgrade() -> None:
     # pgvector-conditional column removal: only run the ALTER TABLE DROP
     # COLUMN if pgvector is installed AND the column exists. Using IF EXISTS
     # keeps this idempotent even if the column was never created.
-    op.execute("""
+    op.execute(
+        """
     DO $$
     BEGIN
         IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'vector') THEN
@@ -408,7 +464,8 @@ def downgrade() -> None:
                 DROP COLUMN IF EXISTS embedding;
         END IF;
     END$$;
-    """)
+    """
+    )
 
     # Append-only rules must be dropped before the table.
     op.execute("DROP RULE IF EXISTS research_audit_log_no_update ON research_audit_log;")

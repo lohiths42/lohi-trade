@@ -20,25 +20,41 @@ from src.utils.config import Config, TelegramConfig
 # Hypothesis strategies
 # ---------------------------------------------------------------------------
 
-_symbol = st.sampled_from([
-    "RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK",
-    "SBIN", "BHARTIARTL", "ITC", "KOTAKBANK", "LT",
-    "HINDUNILVR", "BAJFINANCE", "MARUTI", "AXISBANK", "WIPRO",
-])
+_symbol = st.sampled_from(
+    [
+        "RELIANCE",
+        "TCS",
+        "INFY",
+        "HDFCBANK",
+        "ICICIBANK",
+        "SBIN",
+        "BHARTIARTL",
+        "ITC",
+        "KOTAKBANK",
+        "LT",
+        "HINDUNILVR",
+        "BAJFINANCE",
+        "MARUTI",
+        "AXISBANK",
+        "WIPRO",
+    ]
+)
 _side = st.sampled_from(["BUY", "SELL"])
 _quantity = st.integers(min_value=1, max_value=5000)
-_price = st.floats(min_value=10.0, max_value=100_000.0,
-                   allow_nan=False, allow_infinity=False)
-_pnl = st.floats(min_value=-500_000.0, max_value=500_000.0,
-                 allow_nan=False, allow_infinity=False)
-_strategy = st.sampled_from([
-    "Mean Reversion", "Trend Following", "Opening Range Breakout",
-])
+_price = st.floats(min_value=10.0, max_value=100_000.0, allow_nan=False, allow_infinity=False)
+_pnl = st.floats(min_value=-500_000.0, max_value=500_000.0, allow_nan=False, allow_infinity=False)
+_strategy = st.sampled_from(
+    [
+        "Mean Reversion",
+        "Trend Following",
+        "Opening Range Breakout",
+    ]
+)
 _holding = st.sampled_from(["5m", "15m", "30m", "45m", "1h", "2h", "3h"])
-_capital = st.floats(min_value=50_000.0, max_value=1_000_000.0,
-                     allow_nan=False, allow_infinity=False)
-_win_rate = st.floats(min_value=0.0, max_value=100.0,
-                      allow_nan=False, allow_infinity=False)
+_capital = st.floats(
+    min_value=50_000.0, max_value=1_000_000.0, allow_nan=False, allow_infinity=False
+)
+_win_rate = st.floats(min_value=0.0, max_value=100.0, allow_nan=False, allow_infinity=False)
 _num_trades = st.integers(min_value=0, max_value=100)
 
 
@@ -76,7 +92,12 @@ def _make_notifier(rate_limit: int = 1000) -> TelegramNotifier:
 @settings(max_examples=25)
 @patch("src.ui.telegram_bot.requests.post")
 def test_prop_69_trade_entry_contains_all_fields(
-    mock_post, symbol, side, quantity, price, strategy,
+    mock_post,
+    symbol,
+    side,
+    quantity,
+    price,
+    strategy,
 ):
     """Property 69: Trade entry notification contains symbol, side, qty, price, strategy."""
     mock_post.return_value = MagicMock(status_code=200)
@@ -104,7 +125,13 @@ def test_prop_69_trade_entry_contains_all_fields(
 @settings(max_examples=25)
 @patch("src.ui.telegram_bot.requests.post")
 def test_prop_69_trade_exit_contains_all_fields(
-    mock_post, symbol, side, quantity, entry_price, pnl, holding,
+    mock_post,
+    symbol,
+    side,
+    quantity,
+    entry_price,
+    pnl,
+    holding,
 ):
     """Property 69: Trade exit notification contains symbol, exit price, P&L, holding."""
     # Derive a valid exit price from entry + pnl/qty
@@ -117,7 +144,13 @@ def test_prop_69_trade_exit_contains_all_fields(
     n = _make_notifier()
 
     result = n.send_trade_exit(
-        symbol, side, quantity, entry_price, exit_price, pnl, holding,
+        symbol,
+        side,
+        quantity,
+        entry_price,
+        exit_price,
+        pnl,
+        holding,
     )
     assert result is True
 
@@ -167,7 +200,11 @@ def test_prop_69_rate_limit_enforced(mock_post, num_messages, rate_limit):
 @settings(max_examples=25)
 @patch("src.ui.telegram_bot.requests.post")
 def test_prop_69_daily_summary_contains_all_fields(
-    mock_post, total_pnl, num_trades, win_rate, capital,
+    mock_post,
+    total_pnl,
+    num_trades,
+    win_rate,
+    capital,
 ):
     """Property 69: Daily summary contains P&L, trade count, win rate."""
     mock_post.return_value = MagicMock(status_code=200)

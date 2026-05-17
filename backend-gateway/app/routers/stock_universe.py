@@ -14,7 +14,7 @@ from decimal import Decimal
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from app.middleware.rbac import require_role
 from app.routers.auth_v2 import get_current_user_id
@@ -131,6 +131,7 @@ def get_sector_service() -> SectorService:
 
 # ── Helper ───────────────────────────────────────────────────────────────────
 
+
 def _decimal_to_str(val) -> Optional[str]:
     """Convert a Decimal or numeric value to string, or None."""
     if val is None:
@@ -199,8 +200,12 @@ async def search_stocks(
 async def list_stocks(
     exchange: Optional[str] = Query(None, description="Filter by exchange: NSE, BSE, BOTH"),
     sector: Optional[str] = Query(None, description="Filter by sector"),
-    market_cap_category: Optional[str] = Query(None, description="Filter by market cap: large-cap, mid-cap, small-cap"),
-    status: Optional[str] = Query(None, description="Filter by status: ACTIVE, INACTIVE, SUSPENDED"),
+    market_cap_category: Optional[str] = Query(
+        None, description="Filter by market cap: large-cap, mid-cap, small-cap"
+    ),
+    status: Optional[str] = Query(
+        None, description="Filter by status: ACTIVE, INACTIVE, SUSPENDED"
+    ),
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(50, ge=1, le=100, description="Items per page"),
     user_id: str = Depends(get_current_user_id),
@@ -363,8 +368,12 @@ async def get_sector_stocks(
             market_cap_max=Decimal(str(market_cap_max)) if market_cap_max is not None else None,
             pe_ratio_min=Decimal(str(pe_ratio_min)) if pe_ratio_min is not None else None,
             pe_ratio_max=Decimal(str(pe_ratio_max)) if pe_ratio_max is not None else None,
-            dividend_yield_min=Decimal(str(dividend_yield_min)) if dividend_yield_min is not None else None,
-            dividend_yield_max=Decimal(str(dividend_yield_max)) if dividend_yield_max is not None else None,
+            dividend_yield_min=(
+                Decimal(str(dividend_yield_min)) if dividend_yield_min is not None else None
+            ),
+            dividend_yield_max=(
+                Decimal(str(dividend_yield_max)) if dividend_yield_max is not None else None
+            ),
         )
 
         items, total = await svc.filter_sector_securities(

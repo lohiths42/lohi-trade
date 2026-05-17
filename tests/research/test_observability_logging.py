@@ -49,7 +49,8 @@ class TestLogSubAgentInvocation:
     """One structured INFO line per Sub_Agent invocation (Req 13.5)."""
 
     def test_log_sub_agent_invocation_emits_structured_line(
-        self, caplog: pytest.LogCaptureFixture,
+        self,
+        caplog: pytest.LogCaptureFixture,
     ) -> None:
         run_id = uuid4()
         user_id = uuid4()
@@ -84,7 +85,8 @@ class TestLogSubAgentInvocation:
         assert rec.reason == ""
 
     def test_log_sub_agent_invocation_preserves_reason_text(
-        self, caplog: pytest.LogCaptureFixture,
+        self,
+        caplog: pytest.LogCaptureFixture,
     ) -> None:
         run_id = uuid4()
         user_id = uuid4()
@@ -107,7 +109,8 @@ class TestLogSubAgentInvocation:
         assert records[0].reason.startswith("no_data:")
 
     def test_log_sub_agent_invocation_redacts_secrets(
-        self, caplog: pytest.LogCaptureFixture,
+        self,
+        caplog: pytest.LogCaptureFixture,
     ) -> None:
         """The helper forwards only the named fields.
 
@@ -138,9 +141,9 @@ class TestLogSubAgentInvocation:
         assert records, "expected one sub_agent_invocation record"
         record = records[0]
         for sensitive in ("api_key", "secret", "token", "password", "totp"):
-            assert not hasattr(record, sensitive), (
-                f"sensitive field {sensitive!r} leaked into log record"
-            )
+            assert not hasattr(
+                record, sensitive
+            ), f"sensitive field {sensitive!r} leaked into log record"
 
 
 # --------------------------------------------------------------------------- #
@@ -150,7 +153,8 @@ class TestLogSubAgentInvocation:
 
 class TestLogRetrievalCall:
     def test_log_retrieval_call_emits_structured_line(
-        self, caplog: pytest.LogCaptureFixture,
+        self,
+        caplog: pytest.LogCaptureFixture,
     ) -> None:
         run_id = uuid4()
         user_id = uuid4()
@@ -178,7 +182,8 @@ class TestLogRetrievalCall:
         assert rec.run_id == str(run_id)
 
     def test_log_retrieval_call_accepts_null_symbol(
-        self, caplog: pytest.LogCaptureFixture,
+        self,
+        caplog: pytest.LogCaptureFixture,
     ) -> None:
         run_id = uuid4()
         user_id = uuid4()
@@ -204,7 +209,8 @@ class TestLogRetrievalCall:
 
 class TestLogOrchestratorEvent:
     def test_log_orchestrator_event_emits_structured_line(
-        self, caplog: pytest.LogCaptureFixture,
+        self,
+        caplog: pytest.LogCaptureFixture,
     ) -> None:
         run_id = uuid4()
         user_id = uuid4()
@@ -230,7 +236,9 @@ class TestLogOrchestratorEvent:
         ["plan_done", "fan_out_start", "fan_out_done", "synthesis_done", "judge_done"],
     )
     def test_log_orchestrator_event_supports_canonical_events(
-        self, caplog: pytest.LogCaptureFixture, event: str,
+        self,
+        caplog: pytest.LogCaptureFixture,
+        event: str,
     ) -> None:
         run_id = uuid4()
         user_id = uuid4()
@@ -252,7 +260,8 @@ class TestLogOrchestratorEvent:
 
 class TestLogJudgeCall:
     def test_log_judge_call_emits_structured_line(
-        self, caplog: pytest.LogCaptureFixture,
+        self,
+        caplog: pytest.LogCaptureFixture,
     ) -> None:
         run_id = uuid4()
 
@@ -284,7 +293,8 @@ class TestLogJudgeCall:
         assert rec.retry_count == 0
 
     def test_log_judge_call_stringifies_user_id(
-        self, caplog: pytest.LogCaptureFixture,
+        self,
+        caplog: pytest.LogCaptureFixture,
     ) -> None:
         """``user_id`` is optional but when supplied it is stringified."""
         run_id = uuid4()

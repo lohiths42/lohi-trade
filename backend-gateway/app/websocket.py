@@ -86,7 +86,6 @@ from src.research.constants import (
     RESEARCH_PARTIALS_STREAM,
 )
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -156,13 +155,17 @@ def register_events(sio) -> None:
         trade_id = data.get("trade_id")
         reason = data.get("reason", "manual_close")
         result = publish_command("close_position", {"trade_id": trade_id, "reason": reason})
-        await sio.emit("command_ack", {"command": "close_position", "success": result is not None}, to=sid)
+        await sio.emit(
+            "command_ack", {"command": "close_position", "success": result is not None}, to=sid
+        )
 
     @sio.event
     async def cancel_order(sid, data):
         order_id = data.get("order_id")
         result = publish_command("cancel_order", {"order_id": order_id})
-        await sio.emit("command_ack", {"command": "cancel_order", "success": result is not None}, to=sid)
+        await sio.emit(
+            "command_ack", {"command": "cancel_order", "success": result is not None}, to=sid
+        )
 
     @sio.event
     async def toggle_kill_switch(sid, data=None):
@@ -284,9 +287,7 @@ async def _consume_partials_stream(sio) -> None:
             logger.info("Research partials bridge started on %s", stream)
             break
         except (redis.exceptions.ConnectionError, redis.exceptions.TimeoutError):
-            logger.warning(
-                "Redis not available for research bridge, retrying in 5s..."
-            )
+            logger.warning("Redis not available for research bridge, retrying in 5s...")
             await asyncio.sleep(5)
         except Exception:
             logger.exception("Research bridge setup failed; retrying in 5s")
@@ -299,7 +300,7 @@ async def _consume_partials_stream(sio) -> None:
                 group,
                 consumer,
                 {stream: ">"},
-                50,    # count per batch
+                50,  # count per batch
                 1000,  # block ms
             )
             if not result:
@@ -311,9 +312,7 @@ async def _consume_partials_stream(sio) -> None:
                     finally:
                         r.xack(stream, group, msg_id)
         except (redis.exceptions.ConnectionError, redis.exceptions.TimeoutError):
-            logger.warning(
-                "Research partials bridge lost Redis, retrying in 2s..."
-            )
+            logger.warning("Research partials bridge lost Redis, retrying in 2s...")
             await asyncio.sleep(2)
         except Exception:
             logger.exception("Research partials bridge error")
@@ -334,9 +333,7 @@ async def _dispatch_partial(sio, fields: Mapping[str, Any]) -> None:
     # redis-py returns ``bytes`` keys by default (``decode_responses=False``).
     # Normalise to ``str`` keys first so the ``event`` / ``run_id`` lookups
     # hit regardless of the client's decode mode.
-    normalised: dict[str, Any] = {
-        _decode_field(k): v for k, v in fields.items()
-    }
+    normalised: dict[str, Any] = {_decode_field(k): v for k, v in fields.items()}
     event = _decode_field(normalised.get("event"))
     run_id = _decode_field(normalised.get("run_id"))
     if not event or not run_id:
@@ -381,9 +378,7 @@ async def _consume_pubsub_channels(sio) -> None:
             )
             break
         except (redis.exceptions.ConnectionError, redis.exceptions.TimeoutError):
-            logger.warning(
-                "Research pubsub bridge waiting on Redis; retrying in 5s"
-            )
+            logger.warning("Research pubsub bridge waiting on Redis; retrying in 5s")
             await asyncio.sleep(5)
         except Exception:
             logger.exception("Research pubsub bridge setup failed; retrying")
@@ -487,7 +482,7 @@ def _maybe_parse_json(value: str) -> Any:
     # like JSON. Re-parsing ``"abc"`` as JSON would raise on every
     # call; the ``startswith`` check keeps the hot path cheap.
     head = value[0]
-    if head not in "{[tfn-0123456789\"":
+    if head not in '{[tfn-0123456789"':
         return value
     try:
         return json.loads(value)

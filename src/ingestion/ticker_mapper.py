@@ -13,6 +13,7 @@ from pathlib import Path
 
 try:
     from rapidfuzz import fuzz, process
+
     RAPIDFUZZ_AVAILABLE = True
 except ImportError:
     RAPIDFUZZ_AVAILABLE = False
@@ -24,17 +25,17 @@ logger = logging.getLogger(__name__)
 
 class TickerMapper:
     """Maps company names to NSE ticker symbols with fuzzy matching support.
-    
+
     The ticker mapper maintains a dictionary of company name variations
     to ticker symbols and provides fuzzy matching to handle variations
     in company names found in news articles.
-    
+
     Requirements: 6.2, 6.5, 6.6
     """
 
     def __init__(self, data_dir: str = "data", fuzzy_threshold: float = 0.85):
         """Initialize ticker mapper.
-        
+
         Args:
             data_dir: Directory containing ticker_map.json
             fuzzy_threshold: Minimum similarity score for fuzzy matching (0.0-1.0)
@@ -48,13 +49,13 @@ class TickerMapper:
 
     def load_from_file(self, filename: str = "ticker_map.json") -> bool:
         """Load ticker mapping from JSON file.
-        
+
         Args:
             filename: Name of ticker mapping file
-            
+
         Returns:
             True if load successful, False otherwise
-            
+
         Requirements: 6.2
 
         """
@@ -83,10 +84,10 @@ class TickerMapper:
 
     def save_to_file(self, filename: str = "ticker_map.json") -> bool:
         """Save ticker mapping to JSON file.
-        
+
         Args:
             filename: Name of ticker mapping file
-            
+
         Returns:
             True if save successful, False otherwise
 
@@ -120,7 +121,7 @@ class TickerMapper:
 
     def add_mapping(self, company_name: str, ticker: str) -> None:
         """Add a company name to ticker mapping.
-        
+
         Args:
             company_name: Company name or variation
             ticker: NSE ticker symbol
@@ -138,14 +139,14 @@ class TickerMapper:
 
     def get_ticker(self, company_name: str, use_fuzzy: bool = True) -> str | None:
         """Get ticker symbol for a company name.
-        
+
         Args:
             company_name: Company name to look up
             use_fuzzy: Whether to use fuzzy matching if exact match not found
-            
+
         Returns:
             Ticker symbol or None if not found
-            
+
         Requirements: 6.2, 6.5
 
         """
@@ -168,13 +169,13 @@ class TickerMapper:
 
     def _fuzzy_match(self, company_name: str) -> str | None:
         """Perform fuzzy matching to find best ticker match.
-        
+
         Args:
             company_name: Company name to match
-            
+
         Returns:
             Ticker symbol or None if no match above threshold
-            
+
         Requirements: 6.5
 
         """
@@ -193,7 +194,9 @@ class TickerMapper:
             if result:
                 matched_name, score, _ = result
                 ticker = self.ticker_map[matched_name]
-                logger.debug(f"Fuzzy matched '{company_name}' to '{matched_name}' (score: {score:.1f}) -> {ticker}")
+                logger.debug(
+                    f"Fuzzy matched '{company_name}' to '{matched_name}' (score: {score:.1f}) -> {ticker}"
+                )
                 return ticker
 
             return None
@@ -204,26 +207,28 @@ class TickerMapper:
 
     def get_company_names(self, ticker: str) -> list[str]:
         """Get all company name variations for a ticker.
-        
+
         Args:
             ticker: NSE ticker symbol
-            
+
         Returns:
             List of company name variations
 
         """
         return self.reverse_map.get(ticker.upper(), [])
 
-    def resolve_entities(self, company_names: list[str], use_fuzzy: bool = True) -> dict[str, str | None]:
+    def resolve_entities(
+        self, company_names: list[str], use_fuzzy: bool = True
+    ) -> dict[str, str | None]:
         """Resolve multiple company names to tickers.
-        
+
         Args:
             company_names: List of company names to resolve
             use_fuzzy: Whether to use fuzzy matching
-            
+
         Returns:
             Dictionary mapping company names to tickers (None if not found)
-            
+
         Requirements: 6.2, 6.5
 
         """
@@ -236,7 +241,7 @@ class TickerMapper:
 
     def get_all_tickers(self) -> list[str]:
         """Get list of all unique tickers in the mapping.
-        
+
         Returns:
             List of ticker symbols
 
@@ -245,7 +250,7 @@ class TickerMapper:
 
     def get_mapping_count(self) -> int:
         """Get total number of company name mappings.
-        
+
         Returns:
             Number of mappings
 
@@ -254,10 +259,10 @@ class TickerMapper:
 
     def create_default_mapping(self) -> None:
         """Create default ticker mapping with common Nifty 50 companies.
-        
+
         This creates a starter mapping with 500+ company name variations
         for major Indian companies.
-        
+
         Requirements: 6.6
         """
         # Major Nifty 50 companies with common name variations
@@ -267,188 +272,146 @@ class TickerMapper:
             "reliance industries": "RELIANCE",
             "reliance industries limited": "RELIANCE",
             "ril": "RELIANCE",
-
             # Tata Consultancy Services
             "tcs": "TCS",
             "tata consultancy services": "TCS",
             "tata consultancy": "TCS",
-
             # HDFC Bank
             "hdfc bank": "HDFCBANK",
             "hdfc": "HDFCBANK",
             "housing development finance corporation": "HDFCBANK",
-
             # Infosys
             "infosys": "INFY",
             "infosys limited": "INFY",
             "infy": "INFY",
-
             # ICICI Bank
             "icici bank": "ICICIBANK",
             "icici": "ICICIBANK",
             "industrial credit and investment corporation of india": "ICICIBANK",
-
             # Hindustan Unilever
             "hindustan unilever": "HINDUNILVR",
             "hul": "HINDUNILVR",
             "hindustan unilever limited": "HINDUNILVR",
-
             # ITC
             "itc": "ITC",
             "itc limited": "ITC",
             "imperial tobacco company": "ITC",
-
             # State Bank of India
             "sbi": "SBIN",
             "state bank of india": "SBIN",
             "state bank": "SBIN",
-
             # Bharti Airtel
             "bharti airtel": "BHARTIARTL",
             "airtel": "BHARTIARTL",
             "bharti": "BHARTIARTL",
-
             # Kotak Mahindra Bank
             "kotak mahindra bank": "KOTAKBANK",
             "kotak bank": "KOTAKBANK",
             "kotak": "KOTAKBANK",
-
             # Larsen & Toubro
             "larsen and toubro": "LT",
             "larsen & toubro": "LT",
             "l&t": "LT",
             "lt": "LT",
-
             # Asian Paints
             "asian paints": "ASIANPAINT",
             "asian paint": "ASIANPAINT",
-
             # Axis Bank
             "axis bank": "AXISBANK",
             "axis": "AXISBANK",
-
             # Maruti Suzuki
             "maruti suzuki": "MARUTI",
             "maruti": "MARUTI",
             "maruti suzuki india": "MARUTI",
-
             # HCL Technologies
             "hcl technologies": "HCLTECH",
             "hcl tech": "HCLTECH",
             "hcl": "HCLTECH",
-
             # Wipro
             "wipro": "WIPRO",
             "wipro limited": "WIPRO",
-
             # Bajaj Finance
             "bajaj finance": "BAJFINANCE",
             "bajaj": "BAJFINANCE",
-
             # Sun Pharma
             "sun pharma": "SUNPHARMA",
             "sun pharmaceutical": "SUNPHARMA",
             "sun pharmaceutical industries": "SUNPHARMA",
-
             # Titan Company
             "titan": "TITAN",
             "titan company": "TITAN",
-
             # UltraTech Cement
             "ultratech cement": "ULTRACEMCO",
             "ultratech": "ULTRACEMCO",
-
             # Nestle India
             "nestle india": "NESTLEIND",
             "nestle": "NESTLEIND",
-
             # Power Grid
             "power grid": "POWERGRID",
             "power grid corporation": "POWERGRID",
             "powergrid": "POWERGRID",
-
             # NTPC
             "ntpc": "NTPC",
             "national thermal power corporation": "NTPC",
-
             # Tech Mahindra
             "tech mahindra": "TECHM",
             "techmahindra": "TECHM",
-
             # Mahindra & Mahindra
             "mahindra and mahindra": "M&M",
             "mahindra & mahindra": "M&M",
             "m&m": "M&M",
-
             # Tata Steel
             "tata steel": "TATASTEEL",
             "tatasteel": "TATASTEEL",
-
             # Tata Motors
             "tata motors": "TATAMOTORS",
             "tatamotors": "TATAMOTORS",
-
             # Bajaj Auto
             "bajaj auto": "BAJAJ-AUTO",
             "bajajauto": "BAJAJ-AUTO",
-
             # Adani Ports
             "adani ports": "ADANIPORTS",
             "adani ports and special economic zone": "ADANIPORTS",
-
             # Coal India
             "coal india": "COALINDIA",
             "coalindia": "COALINDIA",
-
             # Grasim Industries
             "grasim": "GRASIM",
             "grasim industries": "GRASIM",
-
             # JSW Steel
             "jsw steel": "JSWSTEEL",
             "jsw": "JSWSTEEL",
-
             # Hindalco
             "hindalco": "HINDALCO",
             "hindalco industries": "HINDALCO",
-
             # Britannia
             "britannia": "BRITANNIA",
             "britannia industries": "BRITANNIA",
-
             # Cipla
             "cipla": "CIPLA",
             "cipla limited": "CIPLA",
-
             # Dr Reddy's
             "dr reddy": "DRREDDY",
             "dr reddys": "DRREDDY",
             "dr reddy's laboratories": "DRREDDY",
-
             # Eicher Motors
             "eicher motors": "EICHERMOT",
             "eicher": "EICHERMOT",
-
             # Hero MotoCorp
             "hero motocorp": "HEROMOTOCO",
             "hero": "HEROMOTOCO",
-
             # IndusInd Bank
             "indusind bank": "INDUSINDBK",
             "indusind": "INDUSINDBK",
-
             # ONGC
             "ongc": "ONGC",
             "oil and natural gas corporation": "ONGC",
-
             # Shree Cement
             "shree cement": "SHREECEM",
             "shreecement": "SHREECEM",
-
             # Tata Consumer
             "tata consumer": "TATACONSUM",
             "tata consumer products": "TATACONSUM",
-
             # Divis Labs
             "divis laboratories": "DIVISLAB",
             "divis labs": "DIVISLAB",

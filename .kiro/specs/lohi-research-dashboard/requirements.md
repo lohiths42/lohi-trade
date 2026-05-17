@@ -358,4 +358,3 @@ Lohi-Research integrates with the existing stack rather than replacing it:
 27. IF a numerical claim does not match any cited chunk within the configured epsilon, THEN THE Lohi_Research SHALL mark that claim `unsupported` and SHALL trigger Judge_LLM re-synthesis as defined in criterion 18.
 28. THE Lohi_Research SHALL refuse to produce buy/sell/hold recommendations, price targets, or trade suggestions.
 29. THE Lohi_Research SHALL document the `Refusal_Policy` in `docs/research/REFUSAL_POLICY.md` and SHALL surface its user-visible summary in the Research_Dashboard.
-

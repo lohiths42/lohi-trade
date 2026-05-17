@@ -387,7 +387,10 @@ class TestStreamIntake:
         orch = _FakeOrchestrator()
         clock = _ManualClock()
         worker = _build_worker(
-            reader=reader, store=store, orchestrator=orch, clock=clock,
+            reader=reader,
+            store=store,
+            orchestrator=orch,
+            clock=clock,
         )
 
         user = uuid4()
@@ -408,7 +411,10 @@ class TestStreamIntake:
         orch = _FakeOrchestrator()
         clock = _ManualClock()
         worker = _build_worker(
-            reader=reader, store=store, orchestrator=orch, clock=clock,
+            reader=reader,
+            store=store,
+            orchestrator=orch,
+            clock=clock,
         )
 
         await worker.poll_once()
@@ -422,7 +428,10 @@ class TestStreamIntake:
         orch = _FakeOrchestrator()
         clock = _ManualClock()
         worker = _build_worker(
-            reader=reader, store=store, orchestrator=orch, clock=clock,
+            reader=reader,
+            store=store,
+            orchestrator=orch,
+            clock=clock,
         )
         # Must not raise.
         folded = await worker.poll_once()
@@ -435,7 +444,10 @@ class TestStreamIntake:
         orch = _FakeOrchestrator()
         clock = _ManualClock()
         worker = _build_worker(
-            reader=reader, store=store, orchestrator=orch, clock=clock,
+            reader=reader,
+            store=store,
+            orchestrator=orch,
+            clock=clock,
         )
         await worker.poll_once()
         assert reader.calls[-1]["name"] == RESEARCH_SNAPSHOT_INVALIDATIONS_STREAM

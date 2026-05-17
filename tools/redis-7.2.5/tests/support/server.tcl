@@ -138,7 +138,7 @@ proc ping_server {host port} {
     set retval 0
     if {[catch {
         if {$::tls} {
-            set fd [::tls::socket $host $port] 
+            set fd [::tls::socket $host $port]
         } else {
             set fd [socket $host $port]
         }
@@ -401,7 +401,7 @@ proc run_external_server_test {code overrides} {
     }
 
     set srv [lpop ::servers]
-    
+
     if {[dict exists $srv "client"]} {
         [dict get $srv "client"] close
     }

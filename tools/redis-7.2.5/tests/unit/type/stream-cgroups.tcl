@@ -429,30 +429,30 @@ start_server {
      test {Blocking XREADGROUP for stream key that has clients blocked on list} {
         set rd [redis_deferring_client]
         set rd2 [redis_deferring_client]
-        
+
         # First delete the stream
         r DEL mystream
-        
+
         # now place a client blocked on non-existing key as list
         $rd2 BLPOP mystream 0
-        
+
         # wait until we verify the client is blocked
         wait_for_blocked_clients_count 1
-        
+
         # verify we only have 1 regular blocking key
         assert_equal 1 [getInfoProperty [r info clients] total_blocking_keys]
         assert_equal 0 [getInfoProperty [r info clients] total_blocking_keys_on_nokey]
-        
+
         # now write mystream as stream
         r XADD mystream 666 key value
         r XGROUP CREATE mystream mygroup $ MKSTREAM
-        
-        # block another client on xreadgroup 
+
+        # block another client on xreadgroup
         $rd XREADGROUP GROUP mygroup myconsumer BLOCK 0 STREAMS mystream ">"
-        
+
         # wait until we verify we have 2 blocked clients (one for the list and one for the stream)
         wait_for_blocked_clients_count 2
-        
+
         # verify we have 1 blocking key which also have clients blocked on nokey condition
         assert_equal 1 [getInfoProperty [r info clients] total_blocking_keys]
         assert_equal 1 [getInfoProperty [r info clients] total_blocking_keys_on_nokey]
@@ -462,17 +462,17 @@ start_server {
         assert_error "NOGROUP*" {$rd read}
         assert_equal 1 [getInfoProperty [r info clients] total_blocking_keys]
         assert_equal 0 [getInfoProperty [r info clients] total_blocking_keys_on_nokey]
-        
+
         # close the only left client and make sure we have no more blocking keys
         $rd2 close
-        
+
         # wait until we verify we have no more blocked clients
         wait_for_blocked_clients_count 0
-        
+
         assert_equal 0 [getInfoProperty [r info clients] total_blocking_keys]
         assert_equal 0 [getInfoProperty [r info clients] total_blocking_keys_on_nokey]
-        
-        $rd close 
+
+        $rd close
     }
 
     test {Blocking XREADGROUP for stream key that has clients blocked on stream - avoid endless loop} {

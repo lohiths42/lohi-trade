@@ -176,4 +176,3 @@ sds sparklineRender(sds output, struct sequence *seq, int columns, int rows, int
     }
     return output;
 }
-

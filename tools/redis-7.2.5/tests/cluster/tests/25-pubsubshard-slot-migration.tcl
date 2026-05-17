@@ -32,7 +32,7 @@ test "Migrate a slot, verify client receives sunsubscribe on primary serving the
     assert_equal {smessage mychannel hello} [$subscribeclient read]
 
     assert_equal {OK} [$nodefrom(link) cluster setslot $slot node $nodeto(id)]
-   
+
     set msg [$subscribeclient read]
     assert {"sunsubscribe" eq [lindex $msg 0]}
     assert {$channelname eq [lindex $msg 1]}
@@ -144,7 +144,7 @@ test "Delete a slot, verify sunsubscribe message" {
     assert {"sunsubscribe" eq [lindex $msg 0]}
     assert {$channelname eq [lindex $msg 1]}
     assert {"0" eq [lindex $msg 2]}
-    
+
     $subscribeclient close
 }
 
@@ -165,7 +165,7 @@ test "Reset cluster, verify sunsubscribe message" {
     assert {"sunsubscribe" eq [lindex $msg 0]}
     assert {$channelname eq [lindex $msg 1]}
     assert {"0" eq [lindex $msg 2]}
-    
+
     $cluster close
     $subscribeclient close
 }

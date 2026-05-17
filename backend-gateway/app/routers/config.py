@@ -1,7 +1,7 @@
 """Config endpoints — read/write settings.yaml."""
 
-from fastapi import APIRouter, HTTPException
 import yaml
+from fastapi import APIRouter, HTTPException
 
 from app.config import CONFIG_PATH
 

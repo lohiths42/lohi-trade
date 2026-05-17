@@ -138,9 +138,11 @@ class TestConnect:
     def test_connect_success(self, mock_post):
         mock_post.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={
-                "data": {"access_token": "groww_tok_123"},
-            }),
+            json=MagicMock(
+                return_value={
+                    "data": {"access_token": "groww_tok_123"},
+                }
+            ),
         )
         broker = GrowwBroker()
         result = broker.connect(_make_credentials())
@@ -159,11 +161,13 @@ class TestConnect:
     def test_connect_api_error(self, mock_post):
         mock_post.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={
-                "success": False,
-                "error_code": "AUTH_FAILED",
-                "message": "Invalid auth code",
-            }),
+            json=MagicMock(
+                return_value={
+                    "success": False,
+                    "error_code": "AUTH_FAILED",
+                    "message": "Invalid auth code",
+                }
+            ),
         )
         broker = GrowwBroker()
         with pytest.raises(AuthenticationError):
@@ -172,6 +176,7 @@ class TestConnect:
     @patch("src.ingestion.groww_broker.requests.post")
     def test_connect_network_error(self, mock_post):
         import requests as req
+
         mock_post.side_effect = req.exceptions.ConnectionError("timeout")
         broker = GrowwBroker()
         with pytest.raises(ConnectionError):
@@ -196,9 +201,11 @@ class TestPlaceOrder:
     def test_place_limit_order(self, mock_post):
         mock_post.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={
-                "data": {"order_id": "GRW-001"},
-            }),
+            json=MagicMock(
+                return_value={
+                    "data": {"order_id": "GRW-001"},
+                }
+            ),
         )
         broker = _connected_broker()
         order = _make_order()
@@ -218,9 +225,11 @@ class TestPlaceOrder:
     def test_place_market_order(self, mock_post):
         mock_post.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={
-                "data": {"order_id": "GRW-002"},
-            }),
+            json=MagicMock(
+                return_value={
+                    "data": {"order_id": "GRW-002"},
+                }
+            ),
         )
         broker = _connected_broker()
         order = _make_order(order_type=OrderType.MARKET, price=None)
@@ -235,9 +244,11 @@ class TestPlaceOrder:
     def test_place_sl_order(self, mock_post):
         mock_post.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={
-                "data": {"order_id": "GRW-003"},
-            }),
+            json=MagicMock(
+                return_value={
+                    "data": {"order_id": "GRW-003"},
+                }
+            ),
         )
         broker = _connected_broker()
         order = _make_order(
@@ -261,11 +272,13 @@ class TestPlaceOrder:
     def test_place_order_rejected(self, mock_post):
         mock_post.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={
-                "success": False,
-                "error_code": "ORDER_REJECTED",
-                "message": "Insufficient funds",
-            }),
+            json=MagicMock(
+                return_value={
+                    "success": False,
+                    "error_code": "ORDER_REJECTED",
+                    "message": "Insufficient funds",
+                }
+            ),
         )
         broker = _connected_broker()
         with pytest.raises(OrderRejectionError, match="Insufficient funds"):
@@ -280,21 +293,23 @@ class TestGetOrderStatus:
     def test_get_order_status_executed(self, mock_get):
         mock_get.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={
-                "data": {
-                    "symbol": "RELIANCE",
-                    "transaction_type": "BUY",
-                    "order_type": "LIMIT",
-                    "product": "DELIVERY",
-                    "quantity": 10,
-                    "filled_quantity": 10,
-                    "average_price": 2500.5,
-                    "price": 2500.0,
-                    "trigger_price": 0,
-                    "status": "EXECUTED",
-                    "rejection_reason": None,
-                },
-            }),
+            json=MagicMock(
+                return_value={
+                    "data": {
+                        "symbol": "RELIANCE",
+                        "transaction_type": "BUY",
+                        "order_type": "LIMIT",
+                        "product": "DELIVERY",
+                        "quantity": 10,
+                        "filled_quantity": 10,
+                        "average_price": 2500.5,
+                        "price": 2500.0,
+                        "trigger_price": 0,
+                        "status": "EXECUTED",
+                        "rejection_reason": None,
+                    },
+                }
+            ),
         )
         broker = _connected_broker()
         order = broker.get_order_status("GRW-001")
@@ -307,21 +322,23 @@ class TestGetOrderStatus:
     def test_get_order_status_rejected(self, mock_get):
         mock_get.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={
-                "data": {
-                    "symbol": "INFY",
-                    "transaction_type": "SELL",
-                    "order_type": "MARKET",
-                    "product": "INTRADAY",
-                    "quantity": 5,
-                    "filled_quantity": 0,
-                    "average_price": 0,
-                    "price": 0,
-                    "trigger_price": 0,
-                    "status": "REJECTED",
-                    "rejection_reason": "Insufficient margin",
-                },
-            }),
+            json=MagicMock(
+                return_value={
+                    "data": {
+                        "symbol": "INFY",
+                        "transaction_type": "SELL",
+                        "order_type": "MARKET",
+                        "product": "INTRADAY",
+                        "quantity": 5,
+                        "filled_quantity": 0,
+                        "average_price": 0,
+                        "price": 0,
+                        "trigger_price": 0,
+                        "status": "REJECTED",
+                        "rejection_reason": "Insufficient margin",
+                    },
+                }
+            ),
         )
         broker = _connected_broker()
         order = broker.get_order_status("GRW-002")
@@ -333,11 +350,13 @@ class TestGetOrderStatus:
     def test_get_order_status_not_found(self, mock_get):
         mock_get.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={
-                "success": False,
-                "error_code": "ORDER_NOT_FOUND",
-                "message": "No order found",
-            }),
+            json=MagicMock(
+                return_value={
+                    "success": False,
+                    "error_code": "ORDER_NOT_FOUND",
+                    "message": "No order found",
+                }
+            ),
         )
         broker = _connected_broker()
         with pytest.raises(OrderNotFoundError):
@@ -357,14 +376,22 @@ class TestPollOrderStatus:
     @patch.object(GrowwBroker, "get_order_status")
     def test_poll_reaches_terminal(self, mock_status, mock_sleep):
         pending = Order(
-            order_id="", symbol="X", side=OrderSide.BUY,
-            order_type=OrderType.MARKET, quantity=1,
-            product_type=ProductType.MIS, status=OrderStatus.PENDING,
+            order_id="",
+            symbol="X",
+            side=OrderSide.BUY,
+            order_type=OrderType.MARKET,
+            quantity=1,
+            product_type=ProductType.MIS,
+            status=OrderStatus.PENDING,
         )
         filled = Order(
-            order_id="", symbol="X", side=OrderSide.BUY,
-            order_type=OrderType.MARKET, quantity=1,
-            product_type=ProductType.MIS, status=OrderStatus.FILLED,
+            order_id="",
+            symbol="X",
+            side=OrderSide.BUY,
+            order_type=OrderType.MARKET,
+            quantity=1,
+            product_type=ProductType.MIS,
+            status=OrderStatus.FILLED,
         )
         mock_status.side_effect = [pending, pending, filled]
 
@@ -377,9 +404,13 @@ class TestPollOrderStatus:
     @patch.object(GrowwBroker, "get_order_status")
     def test_poll_cancelled(self, mock_status, mock_sleep):
         cancelled = Order(
-            order_id="", symbol="X", side=OrderSide.BUY,
-            order_type=OrderType.MARKET, quantity=1,
-            product_type=ProductType.MIS, status=OrderStatus.CANCELLED,
+            order_id="",
+            symbol="X",
+            side=OrderSide.BUY,
+            order_type=OrderType.MARKET,
+            quantity=1,
+            product_type=ProductType.MIS,
+            status=OrderStatus.CANCELLED,
         )
         mock_status.return_value = cancelled
 
@@ -391,9 +422,13 @@ class TestPollOrderStatus:
     @patch.object(GrowwBroker, "get_order_status")
     def test_poll_max_polls_exceeded(self, mock_status, mock_sleep):
         pending = Order(
-            order_id="", symbol="X", side=OrderSide.BUY,
-            order_type=OrderType.MARKET, quantity=1,
-            product_type=ProductType.MIS, status=OrderStatus.PENDING,
+            order_id="",
+            symbol="X",
+            side=OrderSide.BUY,
+            order_type=OrderType.MARKET,
+            quantity=1,
+            product_type=ProductType.MIS,
+            status=OrderStatus.PENDING,
         )
         mock_status.return_value = pending
 
@@ -412,9 +447,11 @@ class TestCancelOrder:
     def test_cancel_success(self, mock_delete):
         mock_delete.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={
-                "data": {"order_id": "GRW-001"},
-            }),
+            json=MagicMock(
+                return_value={
+                    "data": {"order_id": "GRW-001"},
+                }
+            ),
         )
         broker = _connected_broker()
         assert broker.cancel_order("GRW-001") is True
@@ -423,11 +460,13 @@ class TestCancelOrder:
     def test_cancel_failure(self, mock_delete):
         mock_delete.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={
-                "success": False,
-                "error_code": "UNKNOWN",
-                "message": "Something went wrong",
-            }),
+            json=MagicMock(
+                return_value={
+                    "success": False,
+                    "error_code": "UNKNOWN",
+                    "message": "Something went wrong",
+                }
+            ),
         )
         broker = _connected_broker()
         assert broker.cancel_order("GRW-001") is False
@@ -446,19 +485,21 @@ class TestGetPositions:
     def test_get_positions_success(self, mock_get):
         mock_get.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={
-                "data": {
-                    "positions": [
-                        {
-                            "symbol": "RELIANCE",
-                            "quantity": 10,
-                            "average_price": 2500.0,
-                            "ltp": 2520.0,
-                            "pnl": 200.0,
-                        },
-                    ],
-                },
-            }),
+            json=MagicMock(
+                return_value={
+                    "data": {
+                        "positions": [
+                            {
+                                "symbol": "RELIANCE",
+                                "quantity": 10,
+                                "average_price": 2500.0,
+                                "ltp": 2520.0,
+                                "pnl": 200.0,
+                            },
+                        ],
+                    },
+                }
+            ),
         )
         broker = _connected_broker()
         positions = broker.get_positions()
@@ -470,9 +511,11 @@ class TestGetPositions:
     def test_get_positions_empty(self, mock_get):
         mock_get.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={
-                "data": {"positions": []},
-            }),
+            json=MagicMock(
+                return_value={
+                    "data": {"positions": []},
+                }
+            ),
         )
         broker = _connected_broker()
         assert broker.get_positions() == []
@@ -491,20 +534,22 @@ class TestGetHoldings:
     def test_get_holdings_success(self, mock_get):
         mock_get.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={
-                "data": {
-                    "holdings": [
-                        {
-                            "symbol": "TCS",
-                            "quantity": 5,
-                            "average_price": 3400.0,
-                            "ltp": 3450.0,
-                            "pnl": 250.0,
-                            "isin": "INE467B01029",
-                        },
-                    ],
-                },
-            }),
+            json=MagicMock(
+                return_value={
+                    "data": {
+                        "holdings": [
+                            {
+                                "symbol": "TCS",
+                                "quantity": 5,
+                                "average_price": 3400.0,
+                                "ltp": 3450.0,
+                                "pnl": 250.0,
+                                "isin": "INE467B01029",
+                            },
+                        ],
+                    },
+                }
+            ),
         )
         broker = _connected_broker()
         holdings = broker.get_holdings()
@@ -517,9 +562,11 @@ class TestGetHoldings:
     def test_get_holdings_empty(self, mock_get):
         mock_get.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={
-                "data": {"holdings": []},
-            }),
+            json=MagicMock(
+                return_value={
+                    "data": {"holdings": []},
+                }
+            ),
         )
         broker = _connected_broker()
         assert broker.get_holdings() == []
@@ -556,6 +603,7 @@ class TestRetryLogic:
     @patch("src.ingestion.groww_broker.requests.get")
     def test_get_retries_on_network_error(self, mock_get, mock_sleep):
         import requests as req
+
         mock_get.side_effect = [
             req.exceptions.ConnectionError("timeout"),
             MagicMock(
@@ -572,6 +620,7 @@ class TestRetryLogic:
     @patch("src.ingestion.groww_broker.requests.post")
     def test_post_exhausts_retries(self, mock_post, mock_sleep):
         import requests as req
+
         mock_post.side_effect = req.exceptions.ConnectionError("down")
 
         broker = _connected_broker()
@@ -619,23 +668,25 @@ class TestInstrumentMaster:
     def test_get_instrument_master_success(self, mock_get):
         mock_get.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={
-                "data": {
-                    "instruments": [
-                        {
-                            "symbol": "RELIANCE",
-                            "token": 738561,
-                            "exchange": "NSE",
-                            "lot_size": 1,
-                            "tick_size": 0.05,
-                            "trading_symbol": "RELIANCE",
-                            "instrument_type": "EQ",
-                            "name": "Reliance Industries",
-                            "isin": "INE002A01018",
-                        },
-                    ],
-                },
-            }),
+            json=MagicMock(
+                return_value={
+                    "data": {
+                        "instruments": [
+                            {
+                                "symbol": "RELIANCE",
+                                "token": 738561,
+                                "exchange": "NSE",
+                                "lot_size": 1,
+                                "tick_size": 0.05,
+                                "trading_symbol": "RELIANCE",
+                                "instrument_type": "EQ",
+                                "name": "Reliance Industries",
+                                "isin": "INE002A01018",
+                            },
+                        ],
+                    },
+                }
+            ),
         )
         broker = _connected_broker()
         instruments = broker.get_instrument_master()
@@ -648,11 +699,13 @@ class TestInstrumentMaster:
     def test_get_instrument_master_failure(self, mock_get):
         mock_get.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={
-                "success": False,
-                "error_code": "UNKNOWN",
-                "error": "Server error",
-            }),
+            json=MagicMock(
+                return_value={
+                    "success": False,
+                    "error_code": "UNKNOWN",
+                    "error": "Server error",
+                }
+            ),
         )
         broker = _connected_broker()
         assert broker.get_instrument_master() == []

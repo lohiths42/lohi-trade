@@ -615,11 +615,7 @@ def _coerce_brief_sections(
     cite sections the Judge did not score.
     """
     if isinstance(brief, Mapping):
-        return {
-            str(name): str(content)
-            for name, content in brief.items()
-            if content is not None
-        }
+        return {str(name): str(content) for name, content in brief.items() if content is not None}
     coerced: dict[str, str] = {}
     for name in _BRIEF_SECTION_NAMES:
         value = getattr(brief, name, None)
@@ -759,9 +755,7 @@ def _report_from_parsed(
         raise TypeError(
             f"groundedness_score must be an object, got {type(raw_scores).__name__}",
         )
-    scores: dict[str, float] = {
-        str(section): float(value) for section, value in raw_scores.items()
-    }
+    scores: dict[str, float] = {str(section): float(value) for section, value in raw_scores.items()}
 
     # Unsupported claims from the Judge — each item must validate as
     # an :class:`UnsupportedClaim`. Validation failures propagate to
@@ -817,15 +811,10 @@ def _report_from_parsed(
     # finding in the merged list also forces ``False`` because the
     # deterministic validator's verdict is authoritative (Req 16.27).
     model_says_safe = bool(parsed.get("safe_to_display", False))
-    numeric_drift_present = any(
-        claim.reason == "numeric_drift" for claim in merged_claims
-    )
+    numeric_drift_present = any(claim.reason == "numeric_drift" for claim in merged_claims)
     all_scores_pass = all(score >= min_score for score in scores.values()) if scores else False
     safe_to_display = (
-        model_says_safe
-        and not off_policy
-        and not numeric_drift_present
-        and all_scores_pass
+        model_says_safe and not off_policy and not numeric_drift_present and all_scores_pass
     )
 
     return JudgeReport(
@@ -919,9 +908,9 @@ def _safe_log_judge_call(*, report: JudgeReport, min_score: float) -> None:
         log_judge_call(
             run_id=report.run_id,
             user_id=None,  # scoped at the Orchestrator level; not
-                          # available in this module (see design
-                          # §3.7 — the Judge receives the brief +
-                          # chunks, not the user id).
+            # available in this module (see design
+            # §3.7 — the Judge receives the brief +
+            # chunks, not the user id).
             model_id=report.model_id,
             elapsed_ms=report.elapsed_ms,
             safe_to_display=report.safe_to_display,

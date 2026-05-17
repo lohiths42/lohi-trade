@@ -123,7 +123,7 @@ int registerBlockCheck(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
 
     result = RedisModule_LoadConfigs(ctx);
     response_ok |= (result == REDISMODULE_OK);
-    
+
     /* This validates that it's not possible to register/load configs outside OnLoad,
      * thus returns an error if they succeed. */
     if (response_ok) {
@@ -181,7 +181,7 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
     /* Creates a command which registers configs outside OnLoad() function. */
     if (RedisModule_CreateCommand(ctx,"block.register.configs.outside.onload", registerBlockCheck, "write", 0, 0, 0) == REDISMODULE_ERR)
         return REDISMODULE_ERR;
-  
+
     return REDISMODULE_OK;
 }
 

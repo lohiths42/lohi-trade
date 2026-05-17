@@ -95,12 +95,14 @@ class TaxEngine:
         for rule in self._tax.transaction_taxes:
             amount = self._apply_rule(rule, trade_value, side, is_intraday, brokerage_amount)
             if amount > 0:
-                charges.append(ChargeItem(
-                    name=rule.name,
-                    amount=round(amount, 4),
-                    rate_pct=rule.rate_pct,
-                    description=rule.description,
-                ))
+                charges.append(
+                    ChargeItem(
+                        name=rule.name,
+                        amount=round(amount, 4),
+                        rate_pct=rule.rate_pct,
+                        description=rule.description,
+                    )
+                )
                 total += amount
 
         total = round(total, 2)

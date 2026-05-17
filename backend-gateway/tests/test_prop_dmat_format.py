@@ -16,10 +16,9 @@ from cryptography.fernet import Fernet
 _TEST_KEY = Fernet.generate_key().decode()
 os.environ["PAN_ENCRYPTION_KEY"] = _TEST_KEY
 
-from hypothesis import given, settings, assume
-from hypothesis import strategies as st
-
 from app.services.verification_service import DMATService
+from hypothesis import assume, given, settings
+from hypothesis import strategies as st
 
 CDSL_REGEX = re.compile(r"^\d{16}$")
 NSDL_REGEX = re.compile(r"^IN[A-Za-z0-9]{14}$")
@@ -31,9 +30,7 @@ valid_cdsl = st.text(alphabet=string.digits, min_size=16, max_size=16)
 
 # Strategy: generate valid NSDL strings ("IN" + 14 alphanumeric characters)
 _alphanum = string.ascii_letters + string.digits
-valid_nsdl = st.text(alphabet=_alphanum, min_size=14, max_size=14).map(
-    lambda suffix: "IN" + suffix
-)
+valid_nsdl = st.text(alphabet=_alphanum, min_size=14, max_size=14).map(lambda suffix: "IN" + suffix)
 
 # Strategy: arbitrary text strings
 any_string = st.text(min_size=0, max_size=50)

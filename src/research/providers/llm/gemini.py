@@ -273,7 +273,9 @@ class GeminiLLM:
     # ------------------------------------------------------------------ #
 
     async def complete(
-        self, messages: list[Message], params: LLMParams,
+        self,
+        messages: list[Message],
+        params: LLMParams,
     ) -> Completion:
         """Single non-streamed ``generateContent`` call (Req 2.11)."""
         payload = self._build_payload(messages, params)
@@ -314,7 +316,9 @@ class GeminiLLM:
         )
 
     async def stream(
-        self, messages: list[Message], params: LLMParams,
+        self,
+        messages: list[Message],
+        params: LLMParams,
     ) -> AsyncIterator[CompletionChunk]:
         """Async iterator over ``:streamGenerateContent`` SSE deltas (design §3.1).
 

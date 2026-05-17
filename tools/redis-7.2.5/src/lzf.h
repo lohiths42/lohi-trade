@@ -97,4 +97,3 @@ lzf_decompress (const void *const in_data,  size_t in_len,
                 void             *out_data, size_t out_len);
 
 #endif
-

@@ -121,8 +121,8 @@ static inline int defaultClientPort(void) {
 
 /* When a cluster command is called, we need to decide whether to return TLS info or
  * non-TLS info by the client's connection type. However if the command is called by
- * a Lua script or RM_call, there is no connection in the fake client, so we use 
- * server.current_client here to get the real client if available. And if it is not 
+ * a Lua script or RM_call, there is no connection in the fake client, so we use
+ * server.current_client here to get the real client if available. And if it is not
  * available (modules may call commands without a real client), we return the default
  * info, which is determined by server.tls_cluster. */
 static int shouldReturnTlsInfo(void) {
@@ -850,9 +850,9 @@ int clusterLockConfig(char *filename) {
 void deriveAnnouncedPorts(int *announced_tcp_port, int *announced_tls_port,
                           int *announced_cport) {
     /* Config overriding announced ports. */
-    *announced_tcp_port = server.cluster_announce_port ? 
+    *announced_tcp_port = server.cluster_announce_port ?
                           server.cluster_announce_port : server.port;
-    *announced_tls_port = server.cluster_announce_tls_port ? 
+    *announced_tls_port = server.cluster_announce_tls_port ?
                           server.cluster_announce_tls_port : server.tls_port;
     /* Derive cluster bus port. */
     if (server.cluster_announce_bus_port) {
@@ -941,7 +941,7 @@ static void updateAnnouncedHumanNodename(clusterNode *node, char *new) {
     } else if (!new && (sdslen(node->human_nodename) == 0)) {
         return;
     }
-    
+
     if (new) {
         node->human_nodename = sdscpy(node->human_nodename, new);
     } else if (sdslen(node->human_nodename) != 0) {
@@ -1087,7 +1087,7 @@ void clusterInitListeners(void) {
         serverLog(LL_WARNING, "Failed listening on port %u (cluster), aborting.", listener->port);
         exit(1);
     }
-    
+
     if (createSocketAcceptHandler(&server.clistener, clusterAcceptHandler) != C_OK) {
         serverPanic("Unrecoverable error creating Redis Cluster socket accept handler.");
     }
@@ -2306,7 +2306,7 @@ int nodeUpdateAddressIfNeeded(clusterNode *node, clusterLink *link,
     if (node->link) freeClusterLink(node->link);
     node->flags &= ~CLUSTER_NODE_NOADDR;
     serverLog(LL_NOTICE,"Address updated for node %.40s (%s), now %s:%d",
-        node->name, node->human_nodename, node->ip, getNodeDefaultClientPort(node)); 
+        node->name, node->human_nodename, node->ip, getNodeDefaultClientPort(node));
 
     /* Check if this is our master and we have to change the
      * replication target as well. */
@@ -2487,7 +2487,7 @@ void clusterUpdateSlotsConfigWith(clusterNode *sender, uint64_t senderConfigEpoc
  * The ping/pong/meet messages support arbitrary extensions to add additional
  * metadata to the messages that are sent between the various nodes in the
  * cluster. The extensions take the form:
- * [ Header length + type (8 bytes) ] 
+ * [ Header length + type (8 bytes) ]
  * [ Extension information (Arbitrary length, but must be 8 byte padded) ]
  */
 
@@ -2502,7 +2502,7 @@ static uint32_t getPingExtLength(clusterMsgPingExt *ext) {
 static clusterMsgPingExt *getInitialPingExt(clusterMsg *hdr, int count) {
     clusterMsgPingExt *initial = (clusterMsgPingExt*) &(hdr->data.ping.gossip[count]);
     return initial;
-} 
+}
 
 /* Given a current ping extension, returns the start of the next extension. May return
  * an invalid address if there are no further ping extensions. */
@@ -2584,7 +2584,7 @@ uint32_t writePingExt(clusterMsg *hdr, int gossipcount)  {
             /* Populate human_nodename */
             clusterMsgPingExtHumanNodename *ext = preparePingExt(cursor, CLUSTERMSG_EXT_TYPE_HUMAN_NODENAME, getHumanNodenamePingExtSize());
             memcpy(ext->human_nodename, myself->human_nodename, sdslen(myself->human_nodename));
-        
+
 	    /* Move the write cursor */
             cursor = nextPingExt(cursor);
         }
@@ -3766,7 +3766,7 @@ clusterMsgSendBlock *clusterCreatePublishMsgBlock(robj *channel, robj *message, 
 
     decrRefCount(channel);
     decrRefCount(message);
-    
+
     return msgblock;
 }
 
@@ -4127,13 +4127,13 @@ void clusterLogCantFailover(int reason) {
     }
     lastlog_time = time(NULL);
     serverLog(LL_NOTICE,"Currently unable to failover: %s", msg);
-    
+
     int cur_vote = server.cluster->failover_auth_count;
     int cur_quorum = (server.cluster->size / 2) + 1;
     /* Emits a log when an election is in progress and waiting for votes or when the failover attempt expired. */
     if (reason == CLUSTER_CANT_FAILOVER_WAITING_VOTES || reason == CLUSTER_CANT_FAILOVER_EXPIRED) {
         serverLog(LL_NOTICE, "Needed quorum: %d. Number of votes received so far: %d", cur_quorum, cur_vote);
-    } 
+    }
 }
 
 /* This function implements the final part of automatic and manual failovers,
@@ -4646,7 +4646,7 @@ void clusterCron(void) {
          */
         if(clusterNodeCronHandleReconnect(node, handshake_timeout, now)) continue;
     }
-    dictReleaseIterator(di); 
+    dictReleaseIterator(di);
 
     /* Ping some random node 1 time every 10 iterations, so that we usually ping
      * one random node every second. */
@@ -4732,7 +4732,7 @@ void clusterCron(void) {
          * received PONG is older than half the cluster timeout, send
          * a new ping now, to ensure all the nodes are pinged without
          * a too big delay. */
-        mstime_t ping_interval = server.cluster_ping_interval ? 
+        mstime_t ping_interval = server.cluster_ping_interval ?
             server.cluster_ping_interval : server.cluster_node_timeout/2;
         if (node->link &&
             node->ping_sent == 0 &&
@@ -5397,7 +5397,7 @@ void clusterFreeNodesSlotsInfo(clusterNode *n) {
  * include all the known nodes in the representation, including nodes in
  * the HANDSHAKE state.
  *
- * Setting tls_primary to 1 to put TLS port in the main <ip>:<port> 
+ * Setting tls_primary to 1 to put TLS port in the main <ip>:<port>
  * field and put TCP port in aux field, instead of the opposite way.
  *
  * The representation obtained using this function is used for the output
@@ -5536,8 +5536,8 @@ int getSlotOrReply(client *c, robj *o) {
 
 /* Returns an indication if the replica node is fully available
  * and should be listed in CLUSTER SLOTS response.
- * Returns 1 for available nodes, 0 for nodes that have 
- * not finished their initial sync, in failed state, or are 
+ * Returns 1 for available nodes, 0 for nodes that have
+ * not finished their initial sync, in failed state, or are
  * otherwise considered not available to serve read commands. */
 static int isReplicaAvailable(clusterNode *node) {
     if (nodeFailed(node)) {
@@ -5575,7 +5575,7 @@ void clusterUpdateSlots(client *c, unsigned char *slots, int del) {
     for (j = 0; j < CLUSTER_SLOTS; j++) {
         if (slots[j]) {
             int retval;
-                
+
             /* If this slot was set as importing we can clear this
              * state as now we are the real owner of the slot. */
             if (server.cluster->importing_slots_from[j])
@@ -6030,7 +6030,7 @@ NULL
                 return;
             }
         }
-        clusterUpdateSlots(c, slots, del);    
+        clusterUpdateSlots(c, slots, del);
         zfree(slots);
         clusterDoBeforeSleep(CLUSTER_TODO_UPDATE_STATE|CLUSTER_TODO_SAVE_CONFIG);
         addReply(c,shared.ok);
@@ -6213,7 +6213,7 @@ NULL
         addReplySds(c,reply);
     } else if (!strcasecmp(c->argv[1]->ptr,"info") && c->argc == 2) {
         /* CLUSTER INFO */
-       
+
         sds info = genClusterInfoString();
 
         /* Produce the reply protocol. */
@@ -7338,7 +7338,7 @@ clusterNode *getNodeByQuery(client *c, struct redisCommand *cmd, robj **argv, in
                     getKeysFreeResult(&result);
                     if (error_code)
                         *error_code = CLUSTER_REDIR_CROSS_SLOT;
-                    return NULL;                  
+                    return NULL;
                 }
                 if (importing_slot && !multiple_keys && !equalStringObjects(firstkey,thiskey)) {
                     /* Flag this request as one with multiple different

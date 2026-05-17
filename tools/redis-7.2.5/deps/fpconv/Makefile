@@ -18,10 +18,8 @@ libfpconv.a: fpconv_dtoa.o
 fpconv_dtoa.o: fpconv_dtoa.h fpconv_dtoa.c
 
 .c.o:
-	$(R_CC) -c  $< 
+	$(R_CC) -c  $<
 
 clean:
 	rm -f *.o
 	rm -f *.a
-
-

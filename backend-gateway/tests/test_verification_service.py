@@ -1,9 +1,6 @@
 """Unit tests for PANVerificationService — format validation, masking, encryption, verification."""
 
-import asyncio
 import os
-import uuid
-from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
@@ -15,14 +12,11 @@ _TEST_KEY = Fernet.generate_key().decode()
 os.environ["PAN_ENCRYPTION_KEY"] = _TEST_KEY
 
 from app.services.verification_service import (
-    PANVerificationService,
-    PANVerificationResult,
-    PANStatus,
-    PANRejectionReason,
-    PAN_REGEX,
     MAX_RETRIES,
+    PANRejectionReason,
+    PANStatus,
+    PANVerificationService,
 )
-
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -175,6 +169,7 @@ class TestEncryptDecrypt:
         # Temporarily swap key
         other_key = Fernet.generate_key().decode()
         import app.services.verification_service as vs
+
         original_key = vs._ENCRYPTION_KEY
         vs._ENCRYPTION_KEY = other_key
         try:
@@ -185,6 +180,7 @@ class TestEncryptDecrypt:
 
     def test_missing_key_raises(self):
         import app.services.verification_service as vs
+
         original_key = vs._ENCRYPTION_KEY
         vs._ENCRYPTION_KEY = ""
         try:
@@ -318,7 +314,9 @@ class TestVerifyPan:
             mock_client.post = AsyncMock(side_effect=httpx.TimeoutException("timeout"))
             mock_cls.return_value = mock_client
 
-            with patch("app.services.verification_service.asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+            with patch(
+                "app.services.verification_service.asyncio.sleep", new_callable=AsyncMock
+            ) as mock_sleep:
                 result = await svc.verify_pan("user-1", "ABCDE1234Z")
 
         assert result.status == PANStatus.REJECTED
@@ -359,7 +357,9 @@ class TestVerifyPan:
             mock_client.post = AsyncMock(side_effect=httpx.TimeoutException("timeout"))
             mock_cls.return_value = mock_client
 
-            with patch("app.services.verification_service.asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+            with patch(
+                "app.services.verification_service.asyncio.sleep", new_callable=AsyncMock
+            ) as mock_sleep:
                 await svc.verify_pan("user-1", "ABCDE1234Z")
 
         # Backoff: 1s after 1st fail, 2s after 2nd fail

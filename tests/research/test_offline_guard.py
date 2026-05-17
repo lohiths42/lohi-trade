@@ -218,8 +218,7 @@ def test_ollama_embeddings_allowed_when_offline(
         get_embeddings({"provider": "ollama", "model": "nomic-embed-text"})
     except CloudProviderForbiddenError:
         pytest.fail(
-            "ollama is a non-cloud embeddings provider; "
-            "the offline guard must not fire.",
+            "ollama is a non-cloud embeddings provider; " "the offline guard must not fire.",
         )
     except Exception:
         pass

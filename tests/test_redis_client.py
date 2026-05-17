@@ -195,14 +195,18 @@ class TestRedisClientPropertyBased:
     @patch("src.state.redis_client.redis.Redis")
     @patch("src.state.redis_client.redis.ConnectionPool")
     def test_property_reconnection_on_failure(
-        self, mock_pool, mock_redis, max_retries, retry_delay,
+        self,
+        mock_pool,
+        mock_redis,
+        max_retries,
+        retry_delay,
     ):
         """Feature: lohi-trade, Property 79: WebSocket Reconnection on Failure
-        
+
         For any Redis connection failure, reconnection should be attempted
         without crashing other components. The client should retry up to
         max_retries times with exponential backoff.
-        
+
         Validates: Requirements 25.2
         """
         mock_redis_instance = Mock()
@@ -210,10 +214,12 @@ class TestRedisClientPropertyBased:
         # Simulate connection failures followed by success
         failure_count = min(max_retries - 1, 3)  # Fail a few times, then succeed
         # Create enough responses for connect() and subsequent ping() call
-        mock_redis_instance.ping.side_effect = (
-            [redis.exceptions.ConnectionError("Connection failed")] * failure_count
-            + [True, True]  # One for connect, one for the final ping check
-        )
+        mock_redis_instance.ping.side_effect = [
+            redis.exceptions.ConnectionError("Connection failed")
+        ] * failure_count + [
+            True,
+            True,
+        ]  # One for connect, one for the final ping check
         mock_redis.return_value = mock_redis_instance
 
         client = RedisClient(max_retries=max_retries, retry_delay=retry_delay)
@@ -231,16 +237,22 @@ class TestRedisClientPropertyBased:
 
     @settings(max_examples=5, deadline=5000)
     @given(
-        stream_name=st.text(min_size=1, max_size=50, alphabet=st.characters(blacklist_categories=("Cs",))),
+        stream_name=st.text(
+            min_size=1, max_size=50, alphabet=st.characters(blacklist_categories=("Cs",))
+        ),
         field_count=st.integers(min_value=1, max_value=10),
     )
     @patch("src.state.redis_client.redis.Redis")
     @patch("src.state.redis_client.redis.ConnectionPool")
     def test_property_stream_operations_after_reconnection(
-        self, mock_pool, mock_redis, stream_name, field_count,
+        self,
+        mock_pool,
+        mock_redis,
+        stream_name,
+        field_count,
     ):
         """Property: Stream operations should work correctly after reconnection.
-        
+
         For any stream name and field count, after a connection failure and
         reconnection, the client should be able to publish messages to streams.
         """
@@ -273,10 +285,13 @@ class TestRedisClientPropertyBased:
     @patch("src.state.redis_client.redis.Redis")
     @patch("src.state.redis_client.redis.ConnectionPool")
     def test_property_connection_failure_raises_after_max_retries(
-        self, mock_pool, mock_redis, max_retries,
+        self,
+        mock_pool,
+        mock_redis,
+        max_retries,
     ):
         """Property: Connection should fail after max_retries attempts.
-        
+
         For any max_retries value, if all connection attempts fail,
         a ConnectionError should be raised.
         """
@@ -297,13 +312,15 @@ class TestRedisClientPropertyBased:
     @settings(max_examples=5, deadline=5000)
     @given(
         key=st.text(min_size=1, max_size=50, alphabet=st.characters(blacklist_categories=("Cs",))),
-        value=st.text(min_size=0, max_size=100, alphabet=st.characters(blacklist_categories=("Cs",))),
+        value=st.text(
+            min_size=0, max_size=100, alphabet=st.characters(blacklist_categories=("Cs",))
+        ),
     )
     @patch("src.state.redis_client.redis.Redis")
     @patch("src.state.redis_client.redis.ConnectionPool")
     def test_property_get_set_operations(self, mock_pool, mock_redis, key, value):
         """Property: Get/Set operations should work correctly.
-        
+
         For any key-value pair, after setting a value, getting the key
         should return the same value.
         """

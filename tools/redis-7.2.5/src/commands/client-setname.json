@@ -16,7 +16,7 @@
         "command_tips": [
           "REQUEST_POLICY:ALL_NODES",
           "RESPONSE_POLICY:ALL_SUCCEEDED"
-        ],        
+        ],
         "acl_categories": [
             "CONNECTION"
         ],

@@ -22,35 +22,35 @@ logger = logging.getLogger(__name__)
 # Feature names in fixed order for model input
 FEATURE_NAMES: list[str] = [
     "rsi_14",
-    "rsi_zone",           # -1=oversold, 0=neutral, 1=overbought
+    "rsi_zone",  # -1=oversold, 0=neutral, 1=overbought
     "macd_hist",
-    "macd_crossover",     # 1=bullish, -1=bearish, 0=flat
-    "bb_percent_b",       # (close - lower) / (upper - lower)
-    "bb_width",           # (upper - lower) / middle
-    "ema_crossover",      # (ema_9 - ema_21) / ema_21
-    "supertrend_dir",     # 1=bullish, -1=bearish
-    "atr_ratio",          # atr / close price
-    "volume_ratio",       # current volume / avg volume
-    "momentum",           # (close - vwap) / vwap
-    "trend_strength",     # abs(ema_9 - ema_21) / atr
+    "macd_crossover",  # 1=bullish, -1=bearish, 0=flat
+    "bb_percent_b",  # (close - lower) / (upper - lower)
+    "bb_width",  # (upper - lower) / middle
+    "ema_crossover",  # (ema_9 - ema_21) / ema_21
+    "supertrend_dir",  # 1=bullish, -1=bearish
+    "atr_ratio",  # atr / close price
+    "volume_ratio",  # current volume / avg volume
+    "momentum",  # (close - vwap) / vwap
+    "trend_strength",  # abs(ema_9 - ema_21) / atr
     "volatility_regime",  # bb_width z-score proxy
-    "sentiment_score",    # bias score from Commander (-1 to 1)
+    "sentiment_score",  # bias score from Commander (-1 to 1)
     "sentiment_confidence",
     "sentiment_article_count",
     # Extended TA features
-    "stoch_k",            # Stochastic %K normalized
-    "stoch_zone",         # -1=oversold, 0=neutral, 1=overbought
-    "adx_strength",       # ADX / 100 (0-1 range)
-    "di_crossover",       # (+DI - -DI) / 100
-    "williams_r_zone",    # -1=oversold, 0=neutral, 1=overbought
-    "cci_zone",           # -1=oversold, 0=neutral, 1=overbought
-    "mfi_zone",           # -1=oversold, 0=neutral, 1=overbought
-    "psar_direction",     # 1=bullish, -1=bearish
-    "ema_trend_alignment",# 1 if ema9>ema21>ema50, -1 if reversed, 0 otherwise
-    "ichimoku_cloud_pos", # 1=above cloud, -1=below, 0=inside
+    "stoch_k",  # Stochastic %K normalized
+    "stoch_zone",  # -1=oversold, 0=neutral, 1=overbought
+    "adx_strength",  # ADX / 100 (0-1 range)
+    "di_crossover",  # (+DI - -DI) / 100
+    "williams_r_zone",  # -1=oversold, 0=neutral, 1=overbought
+    "cci_zone",  # -1=oversold, 0=neutral, 1=overbought
+    "mfi_zone",  # -1=oversold, 0=neutral, 1=overbought
+    "psar_direction",  # 1=bullish, -1=bearish
+    "ema_trend_alignment",  # 1 if ema9>ema21>ema50, -1 if reversed, 0 otherwise
+    "ichimoku_cloud_pos",  # 1=above cloud, -1=below, 0=inside
     "ichimoku_tk_cross",  # 1=tenkan>kijun, -1=tenkan<kijun
-    "pivot_position",     # (close - pivot) / atr
-    "confluence_score",   # count of bullish indicators / total
+    "pivot_position",  # (close - pivot) / atr
+    "confluence_score",  # count of bullish indicators / total
 ]
 
 NUM_FEATURES = len(FEATURE_NAMES)
@@ -60,8 +60,8 @@ NUM_FEATURES = len(FEATURE_NAMES)
 class SentimentFeatures:
     """Sentiment data to merge with technical features."""
 
-    score: float = 0.0          # -1.0 (bearish) to 1.0 (bullish)
-    confidence: float = 0.0     # 0.0 to 1.0
+    score: float = 0.0  # -1.0 (bearish) to 1.0 (bullish)
+    confidence: float = 0.0  # 0.0 to 1.0
     article_count: int = 0
 
 
@@ -71,9 +71,9 @@ class FeatureVector:
 
     symbol: str
     timestamp: datetime
-    features: np.ndarray        # shape (NUM_FEATURES,)
+    features: np.ndarray  # shape (NUM_FEATURES,)
     feature_names: list[str] = field(default_factory=lambda: list(FEATURE_NAMES))
-    close_price: float = 0.0    # for reference, not a feature
+    close_price: float = 0.0  # for reference, not a feature
 
     def to_dict(self) -> dict[str, float]:
         """Return features as name→value dict."""
@@ -211,51 +211,62 @@ def extract_features(
     bb_percent_b = _safe_div(close_price - indicators.bb_lower, bb_range, 0.5)
     bb_width = _safe_div(bb_range, indicators.bb_middle, 0.0)
     ema_cross = _safe_div(
-        indicators.ema_9 - indicators.ema_21, indicators.ema_21, 0.0,
+        indicators.ema_9 - indicators.ema_21,
+        indicators.ema_21,
+        0.0,
     )
     atr_ratio = _safe_div(indicators.atr_14, close_price, 0.0)
     volume_ratio = _safe_div(
-        indicators.volume_avg_20, indicators.volume_avg_20, 1.0,
+        indicators.volume_avg_20,
+        indicators.volume_avg_20,
+        1.0,
     )
     momentum = _safe_div(close_price - indicators.vwap, indicators.vwap, 0.0)
     trend_strength = _safe_div(
-        abs(indicators.ema_9 - indicators.ema_21), indicators.atr_14, 0.0,
+        abs(indicators.ema_9 - indicators.ema_21),
+        indicators.atr_14,
+        0.0,
     )
 
-    features = np.array([
-        indicators.rsi_14,
-        _rsi_zone(indicators.rsi_14),
-        indicators.macd_hist,
-        _macd_crossover(indicators.macd, indicators.macd_signal),
-        bb_percent_b,
-        bb_width,
-        ema_cross,
-        float(indicators.supertrend_direction),
-        atr_ratio,
-        volume_ratio,
-        momentum,
-        trend_strength,
-        bb_width,  # volatility_regime (same as bb_width, acts as proxy)
-        sentiment.score,
-        sentiment.confidence,
-        float(sentiment.article_count),
-        # Extended TA features
-        indicators.stoch_k / 100.0,  # normalize to 0-1
-        _stoch_zone(indicators.stoch_k),
-        indicators.adx / 100.0,  # normalize to 0-1
-        (indicators.plus_di - indicators.minus_di) / 100.0,
-        _williams_r_zone(indicators.williams_r),
-        _cci_zone(indicators.cci),
-        _mfi_zone(indicators.mfi),
-        float(indicators.psar_direction),
-        _ema_trend_alignment(indicators.ema_9, indicators.ema_21, indicators.ema_50),
-        _ichimoku_cloud_position(
-            close_price, indicators.ichimoku_senkou_a, indicators.ichimoku_senkou_b,
-        ),
-        1.0 if indicators.ichimoku_tenkan > indicators.ichimoku_kijun else -1.0,
-        _safe_div(close_price - indicators.pivot, indicators.atr_14, 0.0),
-        _confluence_score(indicators, close_price),
-    ], dtype=np.float64)
+    features = np.array(
+        [
+            indicators.rsi_14,
+            _rsi_zone(indicators.rsi_14),
+            indicators.macd_hist,
+            _macd_crossover(indicators.macd, indicators.macd_signal),
+            bb_percent_b,
+            bb_width,
+            ema_cross,
+            float(indicators.supertrend_direction),
+            atr_ratio,
+            volume_ratio,
+            momentum,
+            trend_strength,
+            bb_width,  # volatility_regime (same as bb_width, acts as proxy)
+            sentiment.score,
+            sentiment.confidence,
+            float(sentiment.article_count),
+            # Extended TA features
+            indicators.stoch_k / 100.0,  # normalize to 0-1
+            _stoch_zone(indicators.stoch_k),
+            indicators.adx / 100.0,  # normalize to 0-1
+            (indicators.plus_di - indicators.minus_di) / 100.0,
+            _williams_r_zone(indicators.williams_r),
+            _cci_zone(indicators.cci),
+            _mfi_zone(indicators.mfi),
+            float(indicators.psar_direction),
+            _ema_trend_alignment(indicators.ema_9, indicators.ema_21, indicators.ema_50),
+            _ichimoku_cloud_position(
+                close_price,
+                indicators.ichimoku_senkou_a,
+                indicators.ichimoku_senkou_b,
+            ),
+            1.0 if indicators.ichimoku_tenkan > indicators.ichimoku_kijun else -1.0,
+            _safe_div(close_price - indicators.pivot, indicators.atr_14, 0.0),
+            _confluence_score(indicators, close_price),
+        ],
+        dtype=np.float64,
+    )
 
     # Clamp any NaN/Inf to 0
     features = np.nan_to_num(features, nan=0.0, posinf=0.0, neginf=0.0)

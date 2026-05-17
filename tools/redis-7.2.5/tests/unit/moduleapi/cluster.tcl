@@ -53,7 +53,7 @@ start_cluster 3 0 [list config_lines $modules] {
         # verify there are blocked clients on node2
         assert_equal [s -1 blocked_clients]  {1}
 
-        #release client 
+        #release client
         $node2 block.release 0
     }
 
@@ -170,14 +170,14 @@ start_cluster 2 2 [list config_lines $modules] {
     set master2 [srv -1 client]
     set replica1 [srv -2 client]
     set replica2 [srv -3 client]
-    
+
     test "Verify keys deletion and notification effects happened on cluster slots change are replicated inside multi exec" {
         $master2 set count_dels_{4oi} 1
         $master2 del count_dels_{4oi}
         assert_equal 1 [$master2 keyspace.get_dels]
         assert_equal 1 [$replica2 keyspace.get_dels]
         $master2 set count_dels_{4oi} 1
-        
+
         set repl [attach_to_replication_stream_on_connection -3]
 
         $master1 cluster bumpepoch

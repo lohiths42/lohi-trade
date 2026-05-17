@@ -7,16 +7,15 @@ Covers requirements:
   24.2 — ECR repositories for all service Docker images
 """
 
-import sys
 import os
+import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import aws_cdk as cdk
-from aws_cdk.assertions import Template, Match
-
-from stacks.vpc_stack import VpcStack
+from aws_cdk.assertions import Match, Template
 from stacks.ecs_stack import EcsStack
+from stacks.vpc_stack import VpcStack
 
 
 def _get_template() -> Template:
@@ -116,10 +115,7 @@ class TestTaskDefinitions:
     def test_all_task_defs_use_fargate(self):
         template = _get_template()
         resources = template.to_json()["Resources"]
-        task_defs = [
-            r for r in resources.values()
-            if r.get("Type") == "AWS::ECS::TaskDefinition"
-        ]
+        task_defs = [r for r in resources.values() if r.get("Type") == "AWS::ECS::TaskDefinition"]
         for td in task_defs:
             assert td["Properties"]["RequiresCompatibilities"] == ["FARGATE"]
 
@@ -152,7 +148,8 @@ class TestFargateServices:
         template = _get_template()
         resources = template.to_json()["Resources"]
         gateway_svcs = [
-            r for r in resources.values()
+            r
+            for r in resources.values()
             if r.get("Type") == "AWS::ECS::Service"
             and r.get("Properties", {}).get("DesiredCount") == 2
         ]
@@ -162,19 +159,19 @@ class TestFargateServices:
         template = _get_template()
         resources = template.to_json()["Resources"]
         single_svcs = [
-            r for r in resources.values()
+            r
+            for r in resources.values()
             if r.get("Type") == "AWS::ECS::Service"
             and r.get("Properties", {}).get("DesiredCount") == 1
         ]
-        assert len(single_svcs) == 6, f"Expected 6 services with DesiredCount=1, got {len(single_svcs)}"
+        assert (
+            len(single_svcs) == 6
+        ), f"Expected 6 services with DesiredCount=1, got {len(single_svcs)}"
 
     def test_all_services_use_fargate_launch_type(self):
         template = _get_template()
         resources = template.to_json()["Resources"]
-        ecs_services = [
-            r for r in resources.values()
-            if r.get("Type") == "AWS::ECS::Service"
-        ]
+        ecs_services = [r for r in resources.values() if r.get("Type") == "AWS::ECS::Service"]
         for svc in ecs_services:
             assert svc["Properties"]["LaunchType"] == "FARGATE"
 

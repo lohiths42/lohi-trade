@@ -41,7 +41,8 @@ class InMemoryDBManager:
         if self._sqlite_conn is None:
             self._sqlite_conn = sqlite3.connect(":memory:")
             self._sqlite_conn.row_factory = sqlite3.Row
-            self._sqlite_conn.executescript("""
+            self._sqlite_conn.executescript(
+                """
                 CREATE TABLE IF NOT EXISTS bias_log (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     ticker TEXT NOT NULL,
@@ -51,7 +52,8 @@ class InMemoryDBManager:
                     article_count INTEGER NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
-            """)
+            """
+            )
         return self._sqlite_conn
 
     def get_all_rows(self):
@@ -71,10 +73,20 @@ def _make_scheduler(db: InMemoryDBManager) -> BiasScheduler:
 # Hypothesis Strategies
 # ---------------------------------------------------------------------------
 
-_ticker = st.sampled_from([
-    "RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK",
-    "SBIN", "BHARTIARTL", "ITC", "KOTAKBANK", "LT",
-])
+_ticker = st.sampled_from(
+    [
+        "RELIANCE",
+        "TCS",
+        "INFY",
+        "HDFCBANK",
+        "ICICIBANK",
+        "SBIN",
+        "BHARTIARTL",
+        "ITC",
+        "KOTAKBANK",
+        "LT",
+    ]
+)
 _bias = st.sampled_from(["BULLISH", "BEARISH", "NEUTRAL"])
 _score = st.floats(min_value=-1.0, max_value=1.0, allow_nan=False, allow_infinity=False)
 _confidence = st.floats(min_value=0.0, max_value=1.0, allow_nan=False, allow_infinity=False)
@@ -100,7 +112,12 @@ class TestBiasPersistenceProperties:
     )
     @settings(max_examples=25)
     def test_store_bias_persists_all_fields(
-        self, ticker, bias, score, confidence, article_count,
+        self,
+        ticker,
+        bias,
+        score,
+        confidence,
+        article_count,
     ):
         """For any BiasResult, store_bias() persists all fields correctly
         to the bias_log table.
@@ -127,12 +144,12 @@ class TestBiasPersistenceProperties:
         row = rows[0]
         assert row["ticker"] == ticker
         assert row["bias"] == bias
-        assert abs(row["score"] - score) < 1e-6, (
-            f"Score mismatch: stored={row['score']}, expected={score}"
-        )
-        assert abs(row["confidence"] - confidence) < 1e-6, (
-            f"Confidence mismatch: stored={row['confidence']}, expected={confidence}"
-        )
+        assert (
+            abs(row["score"] - score) < 1e-6
+        ), f"Score mismatch: stored={row['score']}, expected={score}"
+        assert (
+            abs(row["confidence"] - confidence) < 1e-6
+        ), f"Confidence mismatch: stored={row['confidence']}, expected={confidence}"
         assert row["article_count"] == article_count
 
     @given(
@@ -142,7 +159,10 @@ class TestBiasPersistenceProperties:
     )
     @settings(max_examples=25)
     def test_multiple_results_same_ticker_all_stored(
-        self, ticker, biases, scores,
+        self,
+        ticker,
+        biases,
+        scores,
     ):
         """Multiple bias results for the same ticker are all stored
         (no overwrites). Each store_bias call appends a new row.
@@ -169,9 +189,7 @@ class TestBiasPersistenceProperties:
             scheduler.store_bias(result)
 
         rows = db.get_all_rows()
-        assert len(rows) == n, (
-            f"Expected {n} rows for {n} store_bias calls, got {len(rows)}"
-        )
+        assert len(rows) == n, f"Expected {n} rows for {n} store_bias calls, got {len(rows)}"
 
         # Verify each row matches the corresponding input
         for i, (bias_val, score_val) in enumerate(zip(biases, scores)):
@@ -206,12 +224,12 @@ class TestBiasPersistenceProperties:
 
         rows = db.get_all_rows()
         row = rows[0]
-        assert abs(row["score"] - score) < 1e-6, (
-            f"Score precision lost: stored={row['score']}, original={score}"
-        )
-        assert abs(row["confidence"] - confidence) < 1e-6, (
-            f"Confidence precision lost: stored={row['confidence']}, original={confidence}"
-        )
+        assert (
+            abs(row["score"] - score) < 1e-6
+        ), f"Score precision lost: stored={row['score']}, original={score}"
+        assert (
+            abs(row["confidence"] - confidence) < 1e-6
+        ), f"Confidence precision lost: stored={row['confidence']}, original={confidence}"
 
     @given(
         ticker=_ticker,
@@ -222,7 +240,12 @@ class TestBiasPersistenceProperties:
     )
     @settings(max_examples=25)
     def test_stored_data_retrievable_and_matches(
-        self, ticker, bias, score, confidence, article_count,
+        self,
+        ticker,
+        bias,
+        score,
+        confidence,
+        article_count,
     ):
         """Stored data can be retrieved from the bias_log table and all
         fields match the original BiasResult.
@@ -246,7 +269,8 @@ class TestBiasPersistenceProperties:
         # Retrieve by ticker
         conn = db.connect_sqlite()
         row = conn.execute(
-            "SELECT * FROM bias_log WHERE ticker = ?", (ticker,),
+            "SELECT * FROM bias_log WHERE ticker = ?",
+            (ticker,),
         ).fetchone()
 
         assert row is not None, f"No row found for ticker {ticker}"

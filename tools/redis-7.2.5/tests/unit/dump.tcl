@@ -25,7 +25,7 @@ start_server {tags {"dump"}} {
         assert_range $ttl (2569591501-3000) 2569591501
         r get foo
     } {bar}
-    
+
     test {RESTORE can set an absolute expire} {
         r set foo bar
         set encoded [r dump foo]
@@ -59,7 +59,7 @@ start_server {tags {"dump"}} {
         assert_equal [r get foo] {bar}
         r config set maxmemory-policy noeviction
     } {OK} {needs:config-maxmemory}
-    
+
     test {RESTORE can set LFU} {
         r set foo bar
         set encoded [r dump foo]

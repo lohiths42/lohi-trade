@@ -23,4 +23,3 @@ main(void) {
 	return test(
 	    test_realloc_abort);
 }
-

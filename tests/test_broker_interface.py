@@ -678,7 +678,9 @@ class TestBrokerReconnection:
 
         # Test backoff calculation
         with patch("src.ingestion.shoonya_broker.time.sleep") as mock_sleep:
-            with patch.object(shoonya_broker, "_init_websocket", side_effect=Exception("Connection failed")):
+            with patch.object(
+                shoonya_broker, "_init_websocket", side_effect=Exception("Connection failed")
+            ):
                 shoonya_broker._handle_ws_disconnect()
 
                 # First attempt: 2^1 = 2 seconds

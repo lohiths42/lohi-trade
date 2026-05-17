@@ -17,23 +17,22 @@ from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from hypothesis import given, settings, assume
+from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
 # Ensure encryption key is set before importing service
 if "PAN_ENCRYPTION_KEY" not in os.environ:
     from cryptography.fernet import Fernet
+
     os.environ["PAN_ENCRYPTION_KEY"] = Fernet.generate_key().decode()
 
 from app.services.fund_service import (
-    FundService,
-    TransactionStatus,
-    MIN_DEPOSIT,
-    MAX_DEPOSIT,
-    MIN_WITHDRAWAL,
     DAILY_MAX_WITHDRAWAL,
+    MAX_DEPOSIT,
+    MIN_DEPOSIT,
+    MIN_WITHDRAWAL,
+    FundService,
 )
-
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -126,10 +125,12 @@ class TestWithdrawableBalanceInvariantProperty:
         """For any (available_balance, blocked_margin) pair, withdrawable balance
         must equal max(available_balance - blocked_margin, 0)."""
         pool, conn = _make_mock_pool()
-        conn.fetchrow = AsyncMock(return_value={
-            "available_balance": available_balance,
-            "blocked_margin": blocked_margin,
-        })
+        conn.fetchrow = AsyncMock(
+            return_value={
+                "available_balance": available_balance,
+                "blocked_margin": blocked_margin,
+            }
+        )
         svc = _make_service(db_pool=pool)
 
         result = await svc.get_withdrawable_balance("user-test")
@@ -152,10 +153,12 @@ class TestWithdrawableBalanceInvariantProperty:
         """Withdrawable balance must never be negative, regardless of
         available_balance and blocked_margin values."""
         pool, conn = _make_mock_pool()
-        conn.fetchrow = AsyncMock(return_value={
-            "available_balance": available_balance,
-            "blocked_margin": blocked_margin,
-        })
+        conn.fetchrow = AsyncMock(
+            return_value={
+                "available_balance": available_balance,
+                "blocked_margin": blocked_margin,
+            }
+        )
         svc = _make_service(db_pool=pool)
 
         result = await svc.get_withdrawable_balance("user-test")
@@ -168,35 +171,33 @@ class TestWithdrawableBalanceInvariantProperty:
     @given(balance=positive_balances)
     @settings(max_examples=50)
     @pytest.mark.asyncio
-    async def test_zero_margin_means_full_balance_withdrawable(
-        self, balance: Decimal
-    ):
+    async def test_zero_margin_means_full_balance_withdrawable(self, balance: Decimal):
         """When blocked_margin is zero, withdrawable balance equals
         the full available_balance."""
         pool, conn = _make_mock_pool()
-        conn.fetchrow = AsyncMock(return_value={
-            "available_balance": balance,
-            "blocked_margin": Decimal("0"),
-        })
+        conn.fetchrow = AsyncMock(
+            return_value={
+                "available_balance": balance,
+                "blocked_margin": Decimal("0"),
+            }
+        )
         svc = _make_service(db_pool=pool)
 
         result = await svc.get_withdrawable_balance("user-test")
-        assert result == balance, (
-            f"With zero margin, expected {balance}, got {result}"
-        )
+        assert result == balance, f"With zero margin, expected {balance}, got {result}"
 
-    @given(margin=st.decimals(
-        min_value=Decimal("0.01"),
-        max_value=Decimal("99999999.99"),
-        places=2,
-        allow_nan=False,
-        allow_infinity=False,
-    ))
+    @given(
+        margin=st.decimals(
+            min_value=Decimal("0.01"),
+            max_value=Decimal("99999999.99"),
+            places=2,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
     @settings(max_examples=50)
     @pytest.mark.asyncio
-    async def test_margin_exceeding_balance_returns_zero(
-        self, margin: Decimal
-    ):
+    async def test_margin_exceeding_balance_returns_zero(self, margin: Decimal):
         """When blocked_margin exceeds available_balance, withdrawable
         balance must be exactly zero."""
         balance = margin - Decimal("0.01")
@@ -204,16 +205,18 @@ class TestWithdrawableBalanceInvariantProperty:
             balance = Decimal("0")
 
         pool, conn = _make_mock_pool()
-        conn.fetchrow = AsyncMock(return_value={
-            "available_balance": balance,
-            "blocked_margin": margin,
-        })
+        conn.fetchrow = AsyncMock(
+            return_value={
+                "available_balance": balance,
+                "blocked_margin": margin,
+            }
+        )
         svc = _make_service(db_pool=pool)
 
         result = await svc.get_withdrawable_balance("user-test")
-        assert result == Decimal("0"), (
-            f"Expected 0 when margin ({margin}) > balance ({balance}), got {result}"
-        )
+        assert result == Decimal(
+            "0"
+        ), f"Expected 0 when margin ({margin}) > balance ({balance}), got {result}"
 
 
 # ── Property 10: Deposit/withdrawal limits ───────────────────────────────────
@@ -235,9 +238,7 @@ class TestDepositWithdrawalLimitsProperty:
         by validate_deposit_amount."""
         svc = _make_service()
         valid, error = svc.validate_deposit_amount(amount)
-        assert valid is True, (
-            f"Valid deposit ₹{amount} was rejected: {error}"
-        )
+        assert valid is True, f"Valid deposit ₹{amount} was rejected: {error}"
         assert error is None
 
     @given(amount=below_min_deposit_amounts)
@@ -246,9 +247,7 @@ class TestDepositWithdrawalLimitsProperty:
         """Any deposit amount below ₹100 must be rejected."""
         svc = _make_service()
         valid, error = svc.validate_deposit_amount(amount)
-        assert valid is False, (
-            f"Deposit ₹{amount} (below min ₹{MIN_DEPOSIT}) was accepted"
-        )
+        assert valid is False, f"Deposit ₹{amount} (below min ₹{MIN_DEPOSIT}) was accepted"
         assert error is not None
 
     @given(amount=above_max_deposit_amounts)
@@ -257,9 +256,7 @@ class TestDepositWithdrawalLimitsProperty:
         """Any deposit amount above ₹10,00,000 must be rejected."""
         svc = _make_service()
         valid, error = svc.validate_deposit_amount(amount)
-        assert valid is False, (
-            f"Deposit ₹{amount} (above max ₹{MAX_DEPOSIT}) was accepted"
-        )
+        assert valid is False, f"Deposit ₹{amount} (above max ₹{MAX_DEPOSIT}) was accepted"
         assert error is not None
 
     def test_deposit_boundary_minimum_accepted(self):
@@ -290,38 +287,38 @@ class TestDepositWithdrawalLimitsProperty:
 
     # ── Withdrawal limit tests ───────────────────────────────────────────
 
-    @given(amount=st.decimals(
-        min_value=MIN_WITHDRAWAL,
-        max_value=Decimal("9999999.99"),
-        places=2,
-        allow_nan=False,
-        allow_infinity=False,
-    ))
+    @given(
+        amount=st.decimals(
+            min_value=MIN_WITHDRAWAL,
+            max_value=Decimal("9999999.99"),
+            places=2,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
     @settings(max_examples=100)
     def test_withdrawals_at_or_above_minimum_accepted(self, amount: Decimal):
         """Any withdrawal amount >= ₹100 must pass validate_withdrawal_amount."""
         svc = _make_service()
         valid, error = svc.validate_withdrawal_amount(amount)
-        assert valid is True, (
-            f"Valid withdrawal ₹{amount} was rejected: {error}"
-        )
+        assert valid is True, f"Valid withdrawal ₹{amount} was rejected: {error}"
         assert error is None
 
-    @given(amount=st.decimals(
-        min_value=Decimal("-10000"),
-        max_value=MIN_WITHDRAWAL - Decimal("0.01"),
-        places=2,
-        allow_nan=False,
-        allow_infinity=False,
-    ))
+    @given(
+        amount=st.decimals(
+            min_value=Decimal("-10000"),
+            max_value=MIN_WITHDRAWAL - Decimal("0.01"),
+            places=2,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
     @settings(max_examples=100)
     def test_withdrawals_below_minimum_rejected(self, amount: Decimal):
         """Any withdrawal amount below ₹100 must be rejected."""
         svc = _make_service()
         valid, error = svc.validate_withdrawal_amount(amount)
-        assert valid is False, (
-            f"Withdrawal ₹{amount} (below min ₹{MIN_WITHDRAWAL}) was accepted"
-        )
+        assert valid is False, f"Withdrawal ₹{amount} (below min ₹{MIN_WITHDRAWAL}) was accepted"
         assert error is not None
 
     @given(
@@ -342,9 +339,7 @@ class TestDepositWithdrawalLimitsProperty:
     )
     @settings(max_examples=100)
     @pytest.mark.asyncio
-    async def test_daily_limit_enforcement(
-        self, daily_total: Decimal, excess: Decimal
-    ):
+    async def test_daily_limit_enforcement(self, daily_total: Decimal, excess: Decimal):
         """When daily_total + withdrawal_amount > DAILY_MAX_WITHDRAWAL,
         the withdrawal must be rejected with a daily limit error."""
         # Construct withdrawal_amount that always exceeds the remaining limit
@@ -361,12 +356,15 @@ class TestDepositWithdrawalLimitsProperty:
             call_count += 1
             if call_count == 1:
                 # _get_verified_bank_account
-                return {"id": "bank-1", "ifsc_code": "HDFC0001234",
-                        "bank_name": "HDFC", "account_holder_name": "Test User"}
+                return {
+                    "id": "bank-1",
+                    "ifsc_code": "HDFC0001234",
+                    "bank_name": "HDFC",
+                    "account_holder_name": "Test User",
+                }
             elif call_count == 2:
                 # get_withdrawable_balance — enough balance
-                return {"available_balance": Decimal("99999999"),
-                        "blocked_margin": Decimal("0")}
+                return {"available_balance": Decimal("99999999"), "blocked_margin": Decimal("0")}
             elif call_count == 3:
                 # _get_daily_withdrawal_total
                 return {"total": daily_total}
@@ -390,9 +388,7 @@ class TestDepositWithdrawalLimitsProperty:
     )
     @settings(max_examples=50)
     @pytest.mark.asyncio
-    async def test_daily_limit_within_range_passes_step4(
-        self, fraction: float
-    ):
+    async def test_daily_limit_within_range_passes_step4(self, fraction: float):
         """When daily_total + withdrawal_amount <= DAILY_MAX_WITHDRAWAL,
         the withdrawal must NOT be rejected at the daily limit step."""
         from unittest.mock import patch
@@ -410,12 +406,15 @@ class TestDepositWithdrawalLimitsProperty:
             call_count += 1
             if call_count == 1:
                 # _get_verified_bank_account
-                return {"id": "bank-1", "ifsc_code": "HDFC0001234",
-                        "bank_name": "HDFC", "account_holder_name": "Test User"}
+                return {
+                    "id": "bank-1",
+                    "ifsc_code": "HDFC0001234",
+                    "bank_name": "HDFC",
+                    "account_holder_name": "Test User",
+                }
             elif call_count == 2:
                 # get_withdrawable_balance — enough balance
-                return {"available_balance": Decimal("99999999"),
-                        "blocked_margin": Decimal("0")}
+                return {"available_balance": Decimal("99999999"), "blocked_margin": Decimal("0")}
             elif call_count == 3:
                 # _get_daily_withdrawal_total
                 return {"total": daily_total}

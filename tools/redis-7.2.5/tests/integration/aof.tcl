@@ -479,7 +479,7 @@ tags {"aof external:skip"} {
     }
 
     test {EVAL timeout with slow verbatim Lua script from AOF} {
-        start_server [list overrides [list dir $server_path appendonly yes lua-time-limit 1 aof-use-rdb-preamble no]] {  
+        start_server [list overrides [list dir $server_path appendonly yes lua-time-limit 1 aof-use-rdb-preamble no]] {
             # generate a long running script that is propagated to the AOF as script
             # make sure that the script times out during loading
             create_aof $aof_dirpath $aof_file {
@@ -566,7 +566,7 @@ tags {"aof external:skip"} {
 
         catch {
             exec src/redis-check-aof $aof_manifest_file
-        } result   
+        } result
         assert_match "*Start checking Multi Part AOF*Start to check BASE AOF (RESP format)*BASE AOF*is valid*Start to check INCR files*INCR AOF*is valid*All AOF files and manifest are valid*" $result
     }
 
@@ -620,12 +620,12 @@ tags {"aof external:skip"} {
         }
 
         catch {
-            exec src/redis-check-aof $aof_manifest_file 
+            exec src/redis-check-aof $aof_manifest_file
         } result
         assert_match "*not valid*" $result
 
         catch {
-            exec src/redis-check-aof --fix $aof_manifest_file 
+            exec src/redis-check-aof --fix $aof_manifest_file
         } result
         assert_match "*Failed to truncate AOF*because it is not the last file*" $result
     }
@@ -653,7 +653,7 @@ tags {"aof external:skip"} {
         }
 
         catch {
-            exec src/redis-check-aof --truncate-to-timestamp 1628217473 $aof_manifest_file 
+            exec src/redis-check-aof --truncate-to-timestamp 1628217473 $aof_manifest_file
         } result
         assert_match "*Failed to truncate AOF*to timestamp*because it is not the last file*" $result
     }

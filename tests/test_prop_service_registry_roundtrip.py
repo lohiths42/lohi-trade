@@ -69,7 +69,8 @@ class TestServiceRegistryRoundTrip:
     @given(state=registry_state_strategy)
     @settings(max_examples=100)
     def test_registry_state_survives_json_round_trip(
-        self, state: dict[str, ServiceStatus],
+        self,
+        state: dict[str, ServiceStatus],
     ) -> None:
         """For any valid registry state, serialize to JSON and deserialize
         back SHALL produce an equivalent state with all group statuses preserved.
@@ -108,7 +109,8 @@ class TestServiceRegistryRoundTrip:
     @given(state=registry_state_strategy)
     @settings(max_examples=100)
     def test_get_all_statuses_returns_all_groups(
-        self, state: dict[str, ServiceStatus],
+        self,
+        state: dict[str, ServiceStatus],
     ) -> None:
         """get_all_statuses() must return an entry for every registered
         credential group, regardless of what state was set.
@@ -126,9 +128,9 @@ class TestServiceRegistryRoundTrip:
 
             # Every known group must be present
             for group_id in VALID_GROUP_IDS:
-                assert group_id in all_statuses, (
-                    f"Group '{group_id}' missing from get_all_statuses()"
-                )
+                assert (
+                    group_id in all_statuses
+                ), f"Group '{group_id}' missing from get_all_statuses()"
 
             # The count must match
             assert len(all_statuses) == len(VALID_GROUP_IDS)

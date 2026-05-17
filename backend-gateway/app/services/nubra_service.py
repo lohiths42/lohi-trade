@@ -20,7 +20,7 @@ import logging
 import os
 import threading
 import time
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 logger = logging.getLogger(__name__)
@@ -42,6 +42,7 @@ def is_nubra_configured() -> bool:
 def _get_nubra_env():
     """Return the NubraEnv enum based on NUBRA_ENV env var."""
     from nubra_python_sdk.start_sdk import NubraEnv
+
     env_str = os.getenv("NUBRA_ENV", "PROD").upper()
     return NubraEnv.UAT if env_str == "UAT" else NubraEnv.PROD
 
@@ -86,15 +87,17 @@ def _init_nubra():
             if totp_secret:
                 os.environ["TOTP_SECRET"] = totp_secret
 
-            from nubra_python_sdk.start_sdk import InitNubraSdk
-            from nubra_python_sdk.refdata.instruments import InstrumentData
             from nubra_python_sdk.marketdata.market_data import MarketData
+            from nubra_python_sdk.refdata.instruments import InstrumentData
+            from nubra_python_sdk.start_sdk import InitNubraSdk
 
             nubra_env = _get_nubra_env()
 
             logger.info(
                 "Initializing Nubra SDK (env=%s, totp=%s, cached_session=%s)",
-                nubra_env, use_totp, not use_totp,
+                nubra_env,
+                use_totp,
+                not use_totp,
             )
             client = InitNubraSdk(nubra_env, totp_login=use_totp, env_creds=True)
 
@@ -128,8 +131,16 @@ def _get_ref_id(symbol: str, exchange: str = "NSE") -> Optional[int]:
 def _nubra_interval(interval: str) -> str:
     """Map our interval strings to Nubra interval format."""
     mapping = {
-        "1m": "1m", "2m": "2m", "5m": "5m", "15m": "15m", "30m": "30m",
-        "1h": "1h", "1d": "1d", "5d": "1d", "1wk": "1w", "1mo": "1mt",
+        "1m": "1m",
+        "2m": "2m",
+        "5m": "5m",
+        "15m": "15m",
+        "30m": "30m",
+        "1h": "1h",
+        "1d": "1d",
+        "5d": "1d",
+        "1wk": "1w",
+        "1mo": "1mt",
     }
     return mapping.get(interval, "1d")
 
@@ -182,17 +193,19 @@ def fetch_chart_nubra(symbol: str, period: str, interval: str) -> Optional[dict]
     # Try NSE first, then BSE
     for exchange in ("NSE", "BSE"):
         try:
-            resp = _market_data.historical_data({
-                "exchange": exchange,
-                "type": "STOCK",
-                "values": [symbol.upper()],
-                "fields": ["open", "high", "low", "close", "cumulative_volume"],
-                "interval": nubra_interval,
-                "startDate": start_date,
-                "endDate": end_date,
-                "intraDay": is_intraday,
-                "realTime": False,
-            })
+            resp = _market_data.historical_data(
+                {
+                    "exchange": exchange,
+                    "type": "STOCK",
+                    "values": [symbol.upper()],
+                    "fields": ["open", "high", "low", "close", "cumulative_volume"],
+                    "interval": nubra_interval,
+                    "startDate": start_date,
+                    "endDate": end_date,
+                    "intraDay": is_intraday,
+                    "realTime": False,
+                }
+            )
 
             if not resp or not hasattr(resp, "result") or not resp.result:
                 continue
@@ -203,30 +216,37 @@ def fetch_chart_nubra(symbol: str, period: str, interval: str) -> Optional[dict]
 
             bars = []
             import pandas as pd
+
             for i in range(len(chart.open)):
                 ts = chart.open[i].timestamp
                 # Nubra timestamps are in nanoseconds
                 dt = pd.to_datetime(ts, unit="ns")
 
-                o = chart.open[i].value / 100  # Nubra prices in paise
-                h = chart.high[i].value / 100
-                l = chart.low[i].value / 100
-                c = chart.close[i].value / 100
-                v = chart.cumulative_volume[i].value if hasattr(chart, "cumulative_volume") and i < len(chart.cumulative_volume) else 0
+                open_p = chart.open[i].value / 100  # Nubra prices in paise
+                high_p = chart.high[i].value / 100
+                low_p = chart.low[i].value / 100
+                close_p = chart.close[i].value / 100
+                v = (
+                    chart.cumulative_volume[i].value
+                    if hasattr(chart, "cumulative_volume") and i < len(chart.cumulative_volume)
+                    else 0
+                )
 
                 if interval in ("1d", "5d", "1wk", "1mo", "1mt"):
                     time_str = dt.strftime("%Y-%m-%d")
                 else:
                     time_str = dt.strftime("%Y-%m-%dT%H:%M:%S")
 
-                bars.append({
-                    "time": time_str,
-                    "open": round(float(o), 2),
-                    "high": round(float(h), 2),
-                    "low": round(float(l), 2),
-                    "close": round(float(c), 2),
-                    "volume": int(v),
-                })
+                bars.append(
+                    {
+                        "time": time_str,
+                        "open": round(float(open_p), 2),
+                        "high": round(float(high_p), 2),
+                        "low": round(float(low_p), 2),
+                        "close": round(float(close_p), 2),
+                        "volume": int(v),
+                    }
+                )
 
             if not bars:
                 continue
@@ -234,7 +254,9 @@ def fetch_chart_nubra(symbol: str, period: str, interval: str) -> Optional[dict]
             current_price = bars[-1]["close"]
             previous_close = bars[-2]["close"] if len(bars) > 1 else None
             change = round(current_price - previous_close, 2) if previous_close else None
-            change_pct = round((change / previous_close) * 100, 2) if change and previous_close else None
+            change_pct = (
+                round((change / previous_close) * 100, 2) if change and previous_close else None
+            )
 
             logger.info("Nubra chart OK: %s %s/%s (%d bars)", symbol, period, interval, len(bars))
             return {

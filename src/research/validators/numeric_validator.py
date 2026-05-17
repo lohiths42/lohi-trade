@@ -127,12 +127,12 @@ NumericUnit = Literal[
     "count_or_inr",  # lakh / crore suffixes
     "fiscal_year",
     "fiscal_quarter",
-    "number",        # bare decimals / integers
+    "number",  # bare decimals / integers
 ]
 
 
 # Multipliers for the lakh / crore suffixes.
-_LAKH_MULT: Final[Decimal] = Decimal(100000)     # 1 lakh = 1e5
+_LAKH_MULT: Final[Decimal] = Decimal(100000)  # 1 lakh = 1e5
 _CRORE_MULT: Final[Decimal] = Decimal(10000000)  # 1 crore = 1e7
 
 # Two-digit fiscal-year window. ``FY24`` → ``2024``, ``FY99`` → ``1999``.
@@ -248,13 +248,13 @@ _MASTER_PATTERN = re.compile(
         f"(?P<{name}>{pattern})"
         for name, pattern in (
             ("fiscal_quarter", _FQ_PATTERN),
-            ("fiscal_range",   _FY_RANGE_PATTERN),
-            ("fiscal_year",    _FY_PATTERN),
-            ("inr",            _INR_MULT_PATTERN),
-            ("usd",            _USD_MULT_PATTERN),
-            ("mult_only",      _MULT_ONLY_PATTERN),
-            ("percent",        _PERCENT_PATTERN),
-            ("bare",           _BARE_NUMBER_PATTERN),
+            ("fiscal_range", _FY_RANGE_PATTERN),
+            ("fiscal_year", _FY_PATTERN),
+            ("inr", _INR_MULT_PATTERN),
+            ("usd", _USD_MULT_PATTERN),
+            ("mult_only", _MULT_ONLY_PATTERN),
+            ("percent", _PERCENT_PATTERN),
+            ("bare", _BARE_NUMBER_PATTERN),
         )
     ),
     re.IGNORECASE,
@@ -336,7 +336,8 @@ def _parse_fiscal_quarter(raw: str) -> Decimal:
 
 
 def _parse_currency_or_mult(
-    raw: str, kind: Literal["inr", "usd", "mult_only"],
+    raw: str,
+    kind: Literal["inr", "usd", "mult_only"],
 ) -> tuple[Decimal, NumericUnit]:
     """Parse ``₹1,234.56 Cr`` / ``$1,234.56`` / ``1.2 Cr`` etc.
 
@@ -618,10 +619,7 @@ class NumericValidator:
             if not content:
                 continue
             for token in extract_numeric_tokens(content):
-                if any(
-                    _tokens_match(token, ct, epsilon=self._epsilon)
-                    for ct in chunk_tokens
-                ):
+                if any(_tokens_match(token, ct, epsilon=self._epsilon) for ct in chunk_tokens):
                     continue
                 violations.append(
                     UnsupportedClaim(
@@ -653,7 +651,8 @@ def validate_numeric_fidelity(
         )
     """
     return NumericValidator(epsilon=epsilon).validate(
-        brief=brief, cited_chunks=cited_chunks,
+        brief=brief,
+        cited_chunks=cited_chunks,
     )
 
 
@@ -693,11 +692,7 @@ def _coerce_brief_sections(
       ``partial=true`` run, Req 1.6) still validates cleanly.
     """
     if isinstance(brief, Mapping):
-        return {
-            str(name): str(content)
-            for name, content in brief.items()
-            if content is not None
-        }
+        return {str(name): str(content) for name, content in brief.items() if content is not None}
     coerced: dict[str, str] = {}
     for name in _BRIEF_SECTION_NAMES:
         value = getattr(brief, name, None)

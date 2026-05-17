@@ -14,12 +14,12 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Any
 
-from src.utils.config import Config
+from src.utils.config import Config, get_config
 
 
 class StructuredFormatter(logging.Formatter):
     """Custom formatter that outputs logs in structured JSON format.
-    
+
     Each log entry includes:
     - timestamp: ISO 8601 format with timezone
     - component: Name of the component generating the log
@@ -30,10 +30,10 @@ class StructuredFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         """Format a log record as a JSON string.
-        
+
         Args:
             record: The log record to format
-            
+
         Returns:
             JSON-formatted log string
 
@@ -56,11 +56,29 @@ class StructuredFormatter(logging.Formatter):
         # Add any extra fields from the record
         for key, value in record.__dict__.items():
             if key not in [
-                "name", "msg", "args", "created", "filename", "funcName",
-                "levelname", "levelno", "lineno", "module", "msecs",
-                "message", "pathname", "process", "processName",
-                "relativeCreated", "thread", "threadName", "exc_info",
-                "exc_text", "stack_info", "component", "correlation_id",
+                "name",
+                "msg",
+                "args",
+                "created",
+                "filename",
+                "funcName",
+                "levelname",
+                "levelno",
+                "lineno",
+                "module",
+                "msecs",
+                "message",
+                "pathname",
+                "process",
+                "processName",
+                "relativeCreated",
+                "thread",
+                "threadName",
+                "exc_info",
+                "exc_text",
+                "stack_info",
+                "component",
+                "correlation_id",
             ]:
                 log_data[key] = value
 
@@ -68,15 +86,14 @@ class StructuredFormatter(logging.Formatter):
 
 
 class ConsoleFormatter(logging.Formatter):
-    """Human-readable formatter for console output during development.
-    """
+    """Human-readable formatter for console output during development."""
 
     def format(self, record: logging.LogRecord) -> str:
         """Format a log record for console output.
-        
+
         Args:
             record: The log record to format
-            
+
         Returns:
             Formatted log string
 
@@ -102,25 +119,33 @@ class ConsoleFormatter(logging.Formatter):
 
 def setup_logging(config: Config | None = None) -> None:
     """Set up the logging system with structured JSON file logging and console output.
-    
+
     Creates:
     - Rotating file handler with JSON formatting (100MB max, 10 files)
     - Console handler with human-readable formatting for development
-    
+
     Args:
         config: Configuration object. If None, loads default config.
-        
+
     Requirements: 21.1, 21.2
 
     """
     if config is None:
-        config = Config()
+        config = get_config()
 
-    # Get logging configuration
-    log_level = config.get("logging.level", "INFO")
-    log_dir = Path(config.get("logging.log_dir", "data/logs"))
-    max_file_size_mb = config.get("logging.max_file_size_mb", 100)
-    backup_count = config.get("logging.backup_count", 10)
+    # Support both the typed Config object and the legacy test/mocking style
+    # that exposes configuration via get("logging.*").
+    if hasattr(config, "logging"):
+        logging_config = config.logging
+        log_level = logging_config.level
+        log_dir = Path(logging_config.log_dir)
+        max_file_size_mb = logging_config.max_file_size_mb
+        backup_count = logging_config.backup_count
+    else:
+        log_level = config.get("logging.level", "INFO")
+        log_dir = Path(config.get("logging.log_dir", "data/logs"))
+        max_file_size_mb = config.get("logging.max_file_size_mb", 100)
+        backup_count = config.get("logging.backup_count", 10)
 
     # Create log directory if it doesn't exist
     log_dir.mkdir(parents=True, exist_ok=True)
@@ -165,16 +190,16 @@ def setup_logging(config: Config | None = None) -> None:
 
 class ComponentLogger:
     """Logger wrapper that automatically injects component name and supports correlation IDs.
-    
+
     This class provides a convenient interface for component-specific logging
     with automatic component name injection and correlation ID support for tracing.
-    
+
     Requirements: 21.2
     """
 
     def __init__(self, component_name: str):
         """Initialize a component-specific logger.
-        
+
         Args:
             component_name: Name of the component (e.g., "WebSocketClient", "RMS")
 
@@ -185,7 +210,7 @@ class ComponentLogger:
 
     def set_correlation_id(self, correlation_id: str) -> None:
         """Set a correlation ID for tracing related log entries.
-        
+
         Args:
             correlation_id: Unique identifier for tracing (e.g., order_id, signal_id)
 
@@ -198,10 +223,10 @@ class ComponentLogger:
 
     def _add_context(self, extra: dict[str, Any] | None = None) -> dict[str, Any]:
         """Add component name and correlation ID to extra context.
-        
+
         Args:
             extra: Additional context fields
-            
+
         Returns:
             Context dictionary with component and correlation ID
 
@@ -233,7 +258,7 @@ class ComponentLogger:
         exc_info: bool = False,
     ) -> None:
         """Log an error message.
-        
+
         Args:
             message: Error message
             extra: Additional context fields
@@ -249,7 +274,7 @@ class ComponentLogger:
         exc_info: bool = False,
     ) -> None:
         """Log a critical message.
-        
+
         Args:
             message: Critical message
             extra: Additional context fields
@@ -261,23 +286,23 @@ class ComponentLogger:
 
 def get_logger(component_name: str) -> ComponentLogger:
     """Get a component-specific logger with automatic context injection.
-    
+
     This factory function creates a ComponentLogger instance that automatically
     injects the component name into all log entries and supports correlation IDs
     for tracing related events across the system.
-    
+
     Args:
         component_name: Name of the component (e.g., "WebSocketClient", "RMS")
-        
+
     Returns:
         ComponentLogger instance for the component
-        
+
     Example:
         >>> logger = get_logger("CandleBuilder")
         >>> logger.set_correlation_id("order-123")
         >>> logger.info("Candle completed", extra={"symbol": "RELIANCE"})
         >>> logger.clear_correlation_id()
-        
+
     Requirements: 21.2
 
     """

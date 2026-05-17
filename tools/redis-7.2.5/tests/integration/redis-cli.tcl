@@ -443,7 +443,7 @@ if {!$::tls} { ;# fake_redis_node doesn't support TLS
         assert_match "*SUCCESS*" $output
         r acl deluser clitest
     }
-    
+
     proc test_redis_cli_rdb_dump {functions_only} {
         r flushdb
         r function flush

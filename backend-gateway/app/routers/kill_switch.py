@@ -1,6 +1,6 @@
 """Kill switch endpoints."""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
 from app.services.redis_consumer import get_kill_switch_status, publish_command
 

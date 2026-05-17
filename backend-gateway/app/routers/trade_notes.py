@@ -1,8 +1,9 @@
 """Trade notes (journal) endpoints."""
 
+from typing import List
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from typing import List
 
 from app.models.base import CamelModel
 from app.services import db_service

@@ -130,7 +130,8 @@ def _make_rms(
 
     conn = sqlite3.connect(":memory:")
     conn.row_factory = sqlite3.Row
-    conn.executescript("""
+    conn.executescript(
+        """
         CREATE TABLE trades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             trade_id TEXT, symbol TEXT, side TEXT, strategy TEXT,
@@ -154,7 +155,8 @@ def _make_rms(
             event_type TEXT, component TEXT, message TEXT,
             metadata TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
-    """)
+    """
+    )
 
     today_str = now.strftime("%Y-%m-%d")
 
@@ -163,8 +165,20 @@ def _make_rms(
             "INSERT INTO trades (trade_id, symbol, side, strategy, entry_price, "
             "exit_price, quantity, entry_time, exit_time, realized_pnl, stop_loss, target) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            ("t1", "TEST", "BUY", "test", 100, 110, 10,
-             f"{today_str} 09:30:00", f"{today_str} 10:00:00", daily_pnl, 95, 115),
+            (
+                "t1",
+                "TEST",
+                "BUY",
+                "test",
+                100,
+                110,
+                10,
+                f"{today_str} 09:30:00",
+                f"{today_str} 10:00:00",
+                daily_pnl,
+                95,
+                115,
+            ),
         )
 
     for i in range(open_positions):
@@ -172,16 +186,14 @@ def _make_rms(
             "INSERT INTO trades (trade_id, symbol, side, strategy, entry_price, "
             "quantity, entry_time, stop_loss, target) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (f"open-{i}", f"SYM{i}", "BUY", "test", 100, 10,
-             f"{today_str} 09:30:00", 95, 115),
+            (f"open-{i}", f"SYM{i}", "BUY", "test", 100, 10, f"{today_str} 09:30:00", 95, 115),
         )
 
     for i in range(orders_today):
         conn.execute(
             "INSERT INTO orders (order_id, symbol, side, order_type, quantity, "
             "status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (f"ord-{i}", "TEST", "BUY", "MARKET", 10, "PLACED",
-             f"{today_str} 10:00:00"),
+            (f"ord-{i}", "TEST", "BUY", "MARKET", 10, "PLACED", f"{today_str} 10:00:00"),
         )
 
     if last_trade is not None:
@@ -189,9 +201,20 @@ def _make_rms(
             "INSERT INTO trades (trade_id, symbol, side, strategy, entry_price, "
             "exit_price, quantity, entry_time, exit_time, realized_pnl, stop_loss, target) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            ("last-trade", "TEST", "BUY", "test", 100, 95, 10,
-             f"{today_str} 09:30:00", last_trade["exit_time"],
-             last_trade["realized_pnl"], 90, 115),
+            (
+                "last-trade",
+                "TEST",
+                "BUY",
+                "test",
+                100,
+                95,
+                10,
+                f"{today_str} 09:30:00",
+                last_trade["exit_time"],
+                last_trade["realized_pnl"],
+                90,
+                115,
+            ),
         )
 
     conn.commit()
@@ -258,7 +281,9 @@ class TestRejectionLoggingKillSwitch:
     @given(
         symbol=st.sampled_from(["RELIANCE", "TCS", "HDFCBANK", "INFY"]),
         side=st.sampled_from(["BUY", "SELL"]),
-        entry_price=st.floats(min_value=100.0, max_value=5000.0, allow_nan=False, allow_infinity=False),
+        entry_price=st.floats(
+            min_value=100.0, max_value=5000.0, allow_nan=False, allow_infinity=False
+        ),
     )
     @settings(max_examples=100)
     def test_kill_switch_rejection_publishes_and_logs(self, symbol, side, entry_price):
@@ -280,9 +305,9 @@ class TestRejectionLoggingKillSwitch:
         # Verify event_bus.publish was called with stream:rejections
         rms._event_bus.publish.assert_called_once()
         call_args = rms._event_bus.publish.call_args
-        assert call_args[0][0] == REJECTION_STREAM, (
-            f"Expected publish to '{REJECTION_STREAM}', got '{call_args[0][0]}'"
-        )
+        assert (
+            call_args[0][0] == REJECTION_STREAM
+        ), f"Expected publish to '{REJECTION_STREAM}', got '{call_args[0][0]}'"
         published_msg = call_args[0][1]
         assert published_msg["symbol"] == symbol
         assert published_msg["side"] == side
@@ -351,7 +376,9 @@ class TestRejectionLoggingMetadataCompleteness:
     @given(
         symbol=st.sampled_from(["RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK"]),
         side=st.sampled_from(["BUY", "SELL"]),
-        entry_price=st.floats(min_value=100.0, max_value=5000.0, allow_nan=False, allow_infinity=False),
+        entry_price=st.floats(
+            min_value=100.0, max_value=5000.0, allow_nan=False, allow_infinity=False
+        ),
     )
     @settings(max_examples=100)
     def test_rejection_metadata_contains_signal_details(self, symbol, side, entry_price):
@@ -391,7 +418,9 @@ class TestValidOrdersDoNotTriggerRejectionLogging:
     @given(
         symbol=st.sampled_from(["RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK"]),
         side=st.sampled_from(["BUY", "SELL"]),
-        entry_price=st.floats(min_value=100.0, max_value=2000.0, allow_nan=False, allow_infinity=False),
+        entry_price=st.floats(
+            min_value=100.0, max_value=2000.0, allow_nan=False, allow_infinity=False
+        ),
     )
     @settings(max_examples=100)
     def test_valid_orders_skip_rejection_logging(self, symbol, side, entry_price):
@@ -411,9 +440,7 @@ class TestValidOrdersDoNotTriggerRejectionLogging:
         signal = _make_signal(symbol=symbol, side=side, entry_price=entry_price)
         result = rms.validate_order(signal)
 
-        assert result.is_valid, (
-            f"Expected valid order but got rejection: {result.rejection_reason}"
-        )
+        assert result.is_valid, f"Expected valid order but got rejection: {result.rejection_reason}"
 
         # Call log_rejection with a valid result – should be a no-op
         rms.log_rejection(signal, result)

@@ -258,7 +258,7 @@ class PositionManager:
                 timestamp=self._now_fn(),
             )
 
-            result = self._oms.place_order(close_order)
+            self._oms.place_order(close_order)
 
             # Close position at current price (market order)
             exit_price = position.current_price
@@ -284,9 +284,7 @@ class PositionManager:
         square_off_minutes = SQUARE_OFF_HOUR * 60 + SQUARE_OFF_MINUTE
 
         if current_minutes >= square_off_minutes:
-            open_positions = [
-                p for p in self._positions.values() if p.status == "OPEN"
-            ]
+            open_positions = [p for p in self._positions.values() if p.status == "OPEN"]
             if open_positions:
                 logger.info(
                     f"Square-off time reached ({now.strftime('%H:%M')}), "
@@ -415,7 +413,10 @@ class PositionManager:
     # ------------------------------------------------------------------
 
     def _close_position(
-        self, position: Position, exit_price: float, exit_reason: str,
+        self,
+        position: Position,
+        exit_price: float,
+        exit_reason: str,
     ) -> Position:
         """Close a position, calculate P&L, cancel remaining orders, persist, publish."""
         position.status = "CLOSED"

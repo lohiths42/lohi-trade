@@ -118,7 +118,8 @@ def _make_rms(
 
     conn = sqlite3.connect(":memory:")
     conn.row_factory = sqlite3.Row
-    conn.executescript("""
+    conn.executescript(
+        """
         CREATE TABLE trades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             trade_id TEXT, symbol TEXT, side TEXT, strategy TEXT,
@@ -142,7 +143,8 @@ def _make_rms(
             event_type TEXT, component TEXT, message TEXT,
             metadata TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
-    """)
+    """
+    )
     conn.commit()
     db_manager.connect_sqlite.return_value = conn
     db_manager.execute_with_retry = MagicMock()
@@ -188,8 +190,10 @@ class TestOrderValidationLatency:
         symbol=st.sampled_from(["RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK"]),
         side=st.sampled_from(["BUY", "SELL"]),
         entry_price=st.floats(
-            min_value=100.0, max_value=5000.0,
-            allow_nan=False, allow_infinity=False,
+            min_value=100.0,
+            max_value=5000.0,
+            allow_nan=False,
+            allow_infinity=False,
         ),
     )
     @settings(max_examples=25)
@@ -204,19 +208,19 @@ class TestOrderValidationLatency:
         result = rms.validate_order(signal)
 
         assert isinstance(result, ValidationResult)
-        assert isinstance(result.latency_ms, float), (
-            f"latency_ms should be a float, got {type(result.latency_ms)}"
-        )
-        assert result.latency_ms >= 0, (
-            f"latency_ms should be non-negative, got {result.latency_ms}"
-        )
+        assert isinstance(
+            result.latency_ms, float
+        ), f"latency_ms should be a float, got {type(result.latency_ms)}"
+        assert result.latency_ms >= 0, f"latency_ms should be non-negative, got {result.latency_ms}"
 
     @given(
         symbol=st.sampled_from(["RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK"]),
         side=st.sampled_from(["BUY", "SELL"]),
         entry_price=st.floats(
-            min_value=100.0, max_value=5000.0,
-            allow_nan=False, allow_infinity=False,
+            min_value=100.0,
+            max_value=5000.0,
+            allow_nan=False,
+            allow_infinity=False,
         ),
     )
     @settings(max_examples=25)
@@ -251,9 +255,7 @@ class TestOrderValidationLatency:
         signal = _make_signal(symbol="RELIANCE", side="BUY")
         result = rms.validate_order(signal)
 
-        assert isinstance(result.latency_ms, float), (
-            f"latency_ms should be a float, got {type(result.latency_ms)}"
-        )
-        assert result.latency_ms >= 0, (
-            f"latency_ms should be non-negative, got {result.latency_ms}"
-        )
+        assert isinstance(
+            result.latency_ms, float
+        ), f"latency_ms should be a float, got {type(result.latency_ms)}"
+        assert result.latency_ms >= 0, f"latency_ms should be non-negative, got {result.latency_ms}"

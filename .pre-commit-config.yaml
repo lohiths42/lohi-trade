@@ -1,0 +1,37 @@
+exclude: '^(tools/|mobile/|data/|logs/|lohi_trade_venv/|\.venv/)'
+
+repos:
+  # ── Formatting & Hygiene (Hard Blockers) ────────────────────────────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ["--maxkb=500"]
+
+  - repo: https://github.com/psf/black
+    rev: 24.1.1
+    hooks:
+      - id: black
+
+  # ── Linting (Hard Blocker — auto-fixes safe issues) ─────────────────────────
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: v0.2.0
+    hooks:
+      - id: ruff
+        args: ["--fix", "--exclude", "tests/"]
+
+  # ── Type Checking (Advisory — verbose_exit prevents blocking) ───────────────
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.8.0
+    hooks:
+      - id: mypy
+        additional_dependencies: ["pydantic", "fastapi"]
+        files: '^(src/|backend-gateway/app/)'
+        exclude: '(tests/|test_)'
+        verbose: true
+        # Mark as advisory-only so it does not block commits yet.
+        # Remove this once the codebase is fully annotated.
+        args: ["--ignore-missing-imports", "--no-strict-optional"]

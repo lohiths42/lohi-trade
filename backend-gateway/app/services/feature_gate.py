@@ -100,7 +100,6 @@ def require_feature(feature_name: str):
 
     def _check() -> bool:
         if not is_feature_available(feature_name):
-            registry = get_registry()
             raise HTTPException(
                 status_code=503,
                 detail={

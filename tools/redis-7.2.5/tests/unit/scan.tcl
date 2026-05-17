@@ -139,11 +139,11 @@ start_server {tags {"scan network"}} {
         populate 1000
         r set foo bar
         r pexpire foo 1
-        
+
         # add a hash type key
         r hset hash f v
         r pexpire hash 1
-        
+
         after 2
 
         set cur 0

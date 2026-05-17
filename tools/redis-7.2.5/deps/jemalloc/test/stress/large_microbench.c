@@ -30,4 +30,3 @@ main(void) {
 	return test_no_reentrancy(
 	    test_large_vs_small);
 }
-

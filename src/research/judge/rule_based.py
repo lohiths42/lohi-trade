@@ -243,7 +243,8 @@ async def invoke_rule_based(
     # fallback can stand alone.
     if numeric_findings is None:
         numeric_claims = validate_numeric_fidelity(
-            brief=sections, cited_chunks=list(chunks),
+            brief=sections,
+            cited_chunks=list(chunks),
         )
     else:
         numeric_claims = list(numeric_findings)
@@ -266,14 +267,8 @@ async def invoke_rule_based(
     # ``all()`` over an empty iterable returns ``True`` which is
     # what we want (an empty brief with no off-policy and no numeric
     # findings is trivially safe).
-    all_scores_pass = all(
-        score >= min_score for score in groundedness_score.values()
-    )
-    safe_to_display = (
-        not off_policy
-        and not unsupported_claims
-        and all_scores_pass
-    )
+    all_scores_pass = all(score >= min_score for score in groundedness_score.values())
+    safe_to_display = not off_policy and not unsupported_claims and all_scores_pass
 
     elapsed_ms = int((time.perf_counter() - start) * 1000)
 
@@ -497,11 +492,7 @@ def _coerce_brief_sections(
     see.
     """
     if isinstance(brief, Mapping):
-        return {
-            str(name): str(content)
-            for name, content in brief.items()
-            if content is not None
-        }
+        return {str(name): str(content) for name, content in brief.items() if content is not None}
     coerced: dict[str, str] = {}
     for name in _BRIEF_SECTION_NAMES:
         value = getattr(brief, name, None)

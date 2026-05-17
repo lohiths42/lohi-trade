@@ -6,17 +6,16 @@ Covers requirements:
   24.9 — ACM certificates for TLS on ALB and CloudFront
 """
 
-import sys
 import os
+import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import aws_cdk as cdk
-from aws_cdk.assertions import Template, Match
-
-from stacks.vpc_stack import VpcStack
-from stacks.ecs_stack import EcsStack
+from aws_cdk.assertions import Match, Template
 from stacks.cdn_stack import CdnStack
+from stacks.ecs_stack import EcsStack
+from stacks.vpc_stack import VpcStack
 
 TEST_DOMAIN = "lohitrade.example.com"
 
@@ -96,9 +95,7 @@ class TestCloudFrontOAI:
 
     def test_oai_exists(self):
         template = _get_template()
-        template.resource_count_is(
-            "AWS::CloudFront::CloudFrontOriginAccessIdentity", 1
-        )
+        template.resource_count_is("AWS::CloudFront::CloudFrontOriginAccessIdentity", 1)
 
     def test_s3_bucket_policy_grants_oai_read(self):
         template = _get_template()
@@ -139,9 +136,7 @@ class TestCloudFrontDistribution:
         template.has_resource_properties(
             "AWS::CloudFront::Distribution",
             {
-                "DistributionConfig": Match.object_like(
-                    {"DefaultRootObject": "index.html"}
-                ),
+                "DistributionConfig": Match.object_like({"DefaultRootObject": "index.html"}),
             },
         )
 
@@ -152,9 +147,7 @@ class TestCloudFrontDistribution:
             {
                 "DistributionConfig": Match.object_like(
                     {
-                        "Aliases": Match.array_with(
-                            [TEST_DOMAIN, f"www.{TEST_DOMAIN}"]
-                        ),
+                        "Aliases": Match.array_with([TEST_DOMAIN, f"www.{TEST_DOMAIN}"]),
                     }
                 ),
             },
@@ -282,9 +275,7 @@ class TestAcmCertificates:
         template = _get_template()
         resources = template.to_json()["Resources"]
         acm_certs = [
-            r
-            for r in resources.values()
-            if r.get("Type") == "AWS::CertificateManager::Certificate"
+            r for r in resources.values() if r.get("Type") == "AWS::CertificateManager::Certificate"
         ]
         assert len(acm_certs) >= 1, f"Expected >=1 ACM certificate, got {len(acm_certs)}"
 

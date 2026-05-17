@@ -1,7 +1,9 @@
 """Health check endpoint."""
 
 import os
+
 from fastapi import APIRouter
+
 from app.config import DB_PATH
 from app.services.redis_consumer import redis_ping
 

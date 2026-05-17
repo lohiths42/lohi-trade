@@ -209,7 +209,9 @@ class TestHappyPath:
         agent = FilingsAgent(llm=llm)
 
         context = _build_context(
-            user_id=user_id, symbol="RELIANCE", retriever=retriever,
+            user_id=user_id,
+            symbol="RELIANCE",
+            retriever=retriever,
         )
         result = await agent.invoke(context)
 
@@ -243,11 +245,14 @@ class TestHappyPath:
         retriever = _RecordingRetriever(canned=chunks)
         llm = FakeLLMProvider()
         agent = FilingsAgent(
-            llm=llm, config=AgentConfig(final_k=2),
+            llm=llm,
+            config=AgentConfig(final_k=2),
         )
 
         context = _build_context(
-            user_id=user_id, symbol="RELIANCE", retriever=retriever,
+            user_id=user_id,
+            symbol="RELIANCE",
+            retriever=retriever,
         )
         result = await agent.invoke(context)
         assert len(result.chunks) == 2
@@ -267,7 +272,8 @@ class TestHappyPath:
             ],
         )
         agent = FilingsAgent(
-            llm=FakeLLMProvider(), config=AgentConfig(retrieval_k=17),
+            llm=FakeLLMProvider(),
+            config=AgentConfig(retrieval_k=17),
         )
         await agent.invoke(
             _build_context(user_id=user_id, symbol="X", retriever=retriever),
@@ -299,7 +305,9 @@ class TestRetrievalFilter:
         agent = FilingsAgent(llm=FakeLLMProvider())
         await agent.invoke(
             _build_context(
-                user_id=user_id, symbol="RELIANCE", retriever=retriever,
+                user_id=user_id,
+                symbol="RELIANCE",
+                retriever=retriever,
             ),
         )
         filter_used: RetrievalFilter = retriever.calls[0]["filter"]
@@ -326,7 +334,9 @@ class TestNoData:
 
         result = await agent.invoke(
             _build_context(
-                user_id=user_id, symbol="RELIANCE", retriever=retriever,
+                user_id=user_id,
+                symbol="RELIANCE",
+                retriever=retriever,
             ),
         )
         assert result.kind == "no_data"
@@ -348,7 +358,9 @@ class TestNoData:
 
         result = await agent.invoke(
             _build_context(
-                user_id=user_id, symbol=None, retriever=retriever,
+                user_id=user_id,
+                symbol=None,
+                retriever=retriever,
             ),
         )
         assert result.kind == "no_data"
@@ -383,7 +395,9 @@ class TestErrorPath:
         with pytest.raises(RuntimeError, match="llm provider exploded"):
             await agent.invoke(
                 _build_context(
-                    user_id=user_id, symbol="RELIANCE", retriever=retriever,
+                    user_id=user_id,
+                    symbol="RELIANCE",
+                    retriever=retriever,
                 ),
             )
 
@@ -405,7 +419,9 @@ class TestErrorPath:
         with pytest.raises(ValueError, match="LLMProvider"):
             await agent.invoke(
                 _build_context(
-                    user_id=user_id, symbol="X", retriever=retriever,
+                    user_id=user_id,
+                    symbol="X",
+                    retriever=retriever,
                 ),
             )
 
@@ -436,7 +452,9 @@ class TestPromptRendering:
 
         await agent.invoke(
             _build_context(
-                user_id=user_id, symbol="TCS", retriever=retriever,
+                user_id=user_id,
+                symbol="TCS",
+                retriever=retriever,
             ),
         )
 

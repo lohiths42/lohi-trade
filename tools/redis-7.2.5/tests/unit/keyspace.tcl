@@ -191,7 +191,7 @@ start_server {tags {"keyspace"}} {
             r select 9
             assert_equal [list foobar 2 foobar 1] [format $res]
         }
-    } 
+    }
 
     test {COPY for string does not replace an existing key without REPLACE option} {
         r set mykey2{t} hello

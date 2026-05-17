@@ -59,6 +59,50 @@ def run_setup(args: Namespace) -> int:
     _kill_port(8000, "Backend gateway")
     _kill_port(3000, "Frontend dev server")
 
+    # ── Phase 1.5: Configuration ─────────────────────────────────────────────
+    console.phase("Validating configuration...")
+
+    # Check .env
+    env_file = Path(".env")
+    env_template = Path(".env.template")
+    if not env_file.exists():
+        if env_template.exists():
+            console.info("Creating .env from template...")
+            import shutil
+
+            shutil.copy(env_template, env_file)
+            console.success("Created .env")
+        else:
+            console.warn(".env not found and no template available.")
+
+    # Validate .env keys
+    from dotenv import dotenv_values
+
+    env_vars = dotenv_values(".env")
+    required_keys = ["JWT_SECRET", "ADMIN_USERNAME", "ADMIN_PASSWORD"]
+    missing_keys = [k for k in required_keys if not env_vars.get(k)]
+    if missing_keys:
+        console.error(f"Missing required environment variables in .env: {', '.join(missing_keys)}")
+        console.info("Please set them and run lohi setup again.")
+        return 1
+    console.success(".env is valid")
+
+    # Check settings.yaml
+    settings_file = Path("config/settings.yaml")
+    settings_template = Path("config/settings.yaml.template")
+    if not settings_file.exists():
+        if settings_template.exists():
+            console.info("Creating settings.yaml from template...")
+            settings_file.parent.mkdir(parents=True, exist_ok=True)
+            import shutil
+
+            shutil.copy(settings_template, settings_file)
+            console.success("Created config/settings.yaml")
+        else:
+            console.warn("config/settings.yaml not found and no template available.")
+    else:
+        console.success("config/settings.yaml is valid")
+
     # ── Phase 2: Check ports ─────────────────────────────────────────────────
     console.phase("Checking port availability...")
 
@@ -100,54 +144,70 @@ def run_setup(args: Namespace) -> int:
     # Determine pip/python path — use venv if it exists, otherwise current env
     if venv_path.exists():
         if sys.platform == "win32":
-            pip_path = str(venv_path.resolve() / "Scripts" / "pip")
             python_path = str(venv_path.resolve() / "Scripts" / "python")
         else:
-            pip_path = str(venv_path.resolve() / "bin" / "pip")
             python_path = str(venv_path.resolve() / "bin" / "python")
         console.success("Using backend venv")
     else:
         # No separate venv — use the current Python environment
         python_path = sys.executable
-        pip_path = python_path.replace("python", "pip")
         console.success("Using current environment")
 
-    _run([python_path, "-m", "pip", "install", "--quiet", "--upgrade", "pip"], "Upgrading pip")
-    _run([python_path, "-m", "pip", "install", "--quiet", "-e", "."], "Installing project dependencies")
-
-    try:
-        result = subprocess.run(
-            [python_path, "-m", "spacy", "download", "en_core_web_sm"],
-            capture_output=True,
-            text=True,
-            timeout=300,
+    if not args.offline:
+        _run([python_path, "-m", "pip", "install", "--quiet", "--upgrade", "pip"], "Upgrading pip")
+        _run(
+            [python_path, "-m", "pip", "install", "--quiet", "-e", "."],
+            "Installing project dependencies",
         )
-        if result.returncode == 0:
-            console.success("spaCy model downloaded: en_core_web_sm")
-        else:
-            console.warn("spaCy model download skipped or failed; NER features will degrade gracefully")
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        console.warn("spaCy model download skipped or failed; NER features will degrade gracefully")
 
-    console.success("Project dependencies installed")
+        try:
+            result = subprocess.run(
+                [python_path, "-m", "spacy", "download", "en_core_web_sm"],
+                capture_output=True,
+                text=True,
+                timeout=300,
+            )
+            if result.returncode == 0:
+                console.success("spaCy model downloaded: en_core_web_sm")
+            else:
+                console.warn(
+                    "spaCy model download skipped or failed; NER features will degrade gracefully"
+                )
+        except (subprocess.TimeoutExpired, FileNotFoundError):
+            console.warn(
+                "spaCy model download skipped or failed; NER features will degrade gracefully"
+            )
+
+        console.success("Project dependencies installed")
+    else:
+        console.info("Running offline: skipped Python dependencies installation")
 
     # ── Phase 4: Frontend dependencies ───────────────────────────────────────
     if not args.skip_frontend:
-        console.phase("Installing frontend dependencies...")
+        if not args.offline:
+            console.phase("Installing frontend dependencies...")
 
-        frontend_dir = Path("Lohi-TRADE Web App Design")
-        if not frontend_dir.exists():
-            console.error("Frontend directory not found: Lohi-TRADE Web App Design/")
-            return 1
+            frontend_dir = Path("Lohi-TRADE Web App Design")
+            if not frontend_dir.exists():
+                console.error("Frontend directory not found: Lohi-TRADE Web App Design/")
+                return 1
 
-        lock_file = frontend_dir / "package-lock.json"
-        npm_cmd = "ci" if lock_file.exists() else "install"
-        _run(
-            ["npm", npm_cmd, "--legacy-peer-deps"],
-            "Installing frontend packages",
-            cwd=str(frontend_dir),
-        )
-        console.success("Frontend dependencies installed")
+            lock_file = frontend_dir / "package-lock.json"
+            if lock_file.exists():
+                _run(
+                    ["npm", "ci"],
+                    "Installing frontend packages (strict)",
+                    cwd=str(frontend_dir),
+                )
+            else:
+                _run(
+                    ["npm", "install"],
+                    "Installing frontend packages (fallback)",
+                    cwd=str(frontend_dir),
+                )
+            console.success("Frontend dependencies installed")
+        else:
+            console.info("Running offline: skipped Frontend dependencies installation")
 
     # ── Phase 5: Docker infrastructure ───────────────────────────────────────
     if not args.skip_docker:
@@ -182,7 +242,17 @@ def run_setup(args: Namespace) -> int:
 
     backend_port = args.backend_port
     _start_background(
-        [python_path, "-m", "uvicorn", "app.main:socket_app", "--host", "0.0.0.0", "--port", str(backend_port), "--reload"],
+        [
+            python_path,
+            "-m",
+            "uvicorn",
+            "app.main:socket_app",
+            "--host",
+            "0.0.0.0",
+            "--port",
+            str(backend_port),
+            "--reload",
+        ],
         cwd="backend-gateway",
         label="Backend gateway",
     )
@@ -191,7 +261,9 @@ def run_setup(args: Namespace) -> int:
     if _wait_for_url(f"http://localhost:{backend_port}/api/health", timeout=30):
         console.success(f"Backend gateway: running on http://localhost:{backend_port}")
     else:
-        console.warn(f"Backend may still be starting. Check: http://localhost:{backend_port}/api/health")
+        console.warn(
+            f"Backend may still be starting. Check: http://localhost:{backend_port}/api/health"
+        )
 
     # ── Phase 7: Start frontend ──────────────────────────────────────────────
     if not args.skip_frontend:
@@ -368,7 +440,9 @@ def _check_docker_running() -> bool:
     try:
         result = subprocess.run(
             ["docker", "compose", "ps", "--format", "json"],
-            capture_output=True, text=True, timeout=10,
+            capture_output=True,
+            text=True,
+            timeout=10,
         )
         if result.returncode == 0 and "running" in result.stdout.lower():
             return True

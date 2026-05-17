@@ -62,7 +62,7 @@ Runtime options can be set via
     Enable dynamic thread to arena association based on running CPU.  This has
     the potential to improve locality, e.g. when thread to CPU affinity is
     present.
-    
+
     Suggested: try `percpu_arena:percpu` or `percpu_arena:phycpu` if
     thread migration between processors is expected to be infrequent.
 

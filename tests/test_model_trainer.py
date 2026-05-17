@@ -23,7 +23,7 @@ def _make_sample(label: float, seed: int = 0) -> TrainingSample:
     # Make features correlate with label for learnable patterns
     if label > 0:
         features[0] = abs(features[0])  # RSI positive
-        features[3] = 1.0               # MACD bullish
+        features[3] = 1.0  # MACD bullish
     else:
         features[0] = -abs(features[0])
         features[3] = -1.0
@@ -77,7 +77,9 @@ class TestModelTrainer:
 
     def test_train_sufficient_samples(self, tmp_model_dir):
         trainer = ModelTrainer(
-            model_dir=tmp_model_dir, min_samples=20, retrain_threshold=9999,
+            model_dir=tmp_model_dir,
+            min_samples=20,
+            retrain_threshold=9999,
         )
         samples = _generate_samples(40)
         for s in samples:
@@ -97,7 +99,9 @@ class TestModelTrainer:
 
     def test_predict_trained(self, tmp_model_dir):
         trainer = ModelTrainer(
-            model_dir=tmp_model_dir, min_samples=20, retrain_threshold=9999,
+            model_dir=tmp_model_dir,
+            min_samples=20,
+            retrain_threshold=9999,
         )
         samples = _generate_samples(40)
         for s in samples:
@@ -105,14 +109,16 @@ class TestModelTrainer:
         trainer.train()
 
         features = np.zeros(NUM_FEATURES)
-        features[0] = 2.0   # strong positive RSI
-        features[3] = 1.0   # bullish MACD
+        features[0] = 2.0  # strong positive RSI
+        features[3] = 1.0  # bullish MACD
         prob, pred = trainer.predict(features)
         assert 0.0 <= prob <= 1.0
 
     def test_auto_retrain(self, tmp_model_dir):
         trainer = ModelTrainer(
-            model_dir=tmp_model_dir, min_samples=20, retrain_threshold=10,
+            model_dir=tmp_model_dir,
+            min_samples=20,
+            retrain_threshold=10,
         )
         # Add 20 samples (enough to train)
         samples = _generate_samples(20)
@@ -163,7 +169,9 @@ class TestModelTrainer:
 
     def test_feature_importances(self, tmp_model_dir):
         trainer = ModelTrainer(
-            model_dir=tmp_model_dir, min_samples=20, retrain_threshold=9999,
+            model_dir=tmp_model_dir,
+            min_samples=20,
+            retrain_threshold=9999,
         )
         samples = _generate_samples(40)
         for s in samples:

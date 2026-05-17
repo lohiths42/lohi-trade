@@ -64,4 +64,3 @@ main(void) {
 	return test(
 	    test_failing_alloc);
 }
-

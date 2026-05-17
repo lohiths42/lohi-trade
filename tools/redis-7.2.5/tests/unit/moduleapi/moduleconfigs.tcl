@@ -60,7 +60,7 @@ start_server {tags {"modules"}} {
         catch {[r config set moduleconfigs.string rejectisfreed]} e
         assert_match {*Cannot set string to 'rejectisfreed'*} $e
     }
-    
+
     test {Numeric limits work properly} {
         # Configs over/under the limit shouldn't be allowed, and memory configs should only take memory values
         catch {[r config set moduleconfigs.memory_numeric 200gb]} e
@@ -244,4 +244,3 @@ start_server {tags {"modules"}} {
         }
     }
 }
-

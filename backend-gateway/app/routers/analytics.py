@@ -1,9 +1,10 @@
 """Analytics endpoints — equity curve, daily P&L, strategy performance."""
 
-from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional
 
-from app.models.analytics import EquityCurvePoint, DailyPnL, StrategyMetrics
+from fastapi import APIRouter, HTTPException, Query
+
+from app.models.analytics import DailyPnL, EquityCurvePoint, StrategyMetrics
 from app.services import analytics_service
 
 router = APIRouter()

@@ -175,9 +175,7 @@ def test_chunking_is_idempotent(doc: CanonicalDoc) -> None:
 
     # Count must match: dropping or adding a chunk on the second call
     # is a bug even if the retained IDs happen to be identical.
-    assert len(first) == len(second), (
-        f"chunk count drift: first={len(first)}, second={len(second)}"
-    )
+    assert len(first) == len(second), f"chunk count drift: first={len(first)}, second={len(second)}"
 
     # Set equality is the formal Req 3.12 guarantee.
     assert {c.chunk_id for c in first} == {c.chunk_id for c in second}
@@ -263,6 +261,6 @@ def test_chunk_ids_are_sha256_hex(doc: CanonicalDoc) -> None:
     chunks = chunk_document(doc, user_id=user_id)
 
     for chunk in chunks:
-        assert _HEX64_RE.fullmatch(chunk.chunk_id), (
-            f"chunk_id {chunk.chunk_id!r} is not 64 lowercase hex chars"
-        )
+        assert _HEX64_RE.fullmatch(
+            chunk.chunk_id
+        ), f"chunk_id {chunk.chunk_id!r} is not 64 lowercase hex chars"

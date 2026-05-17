@@ -123,7 +123,8 @@ def _make_rms(
 
     conn = sqlite3.connect(":memory:")
     conn.row_factory = sqlite3.Row
-    conn.executescript("""
+    conn.executescript(
+        """
         CREATE TABLE trades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             trade_id TEXT, symbol TEXT, side TEXT, strategy TEXT,
@@ -147,7 +148,8 @@ def _make_rms(
             event_type TEXT, component TEXT, message TEXT,
             metadata TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
-    """)
+    """
+    )
 
     today_str = now.strftime("%Y-%m-%d")
 
@@ -156,8 +158,20 @@ def _make_rms(
             "INSERT INTO trades (trade_id, symbol, side, strategy, entry_price, "
             "exit_price, quantity, entry_time, exit_time, realized_pnl, stop_loss, target) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            ("t1", "TEST", "BUY", "test", 100, 110, 10,
-             f"{today_str} 09:30:00", f"{today_str} 10:00:00", daily_pnl, 95, 115),
+            (
+                "t1",
+                "TEST",
+                "BUY",
+                "test",
+                100,
+                110,
+                10,
+                f"{today_str} 09:30:00",
+                f"{today_str} 10:00:00",
+                daily_pnl,
+                95,
+                115,
+            ),
         )
 
     for i in range(open_positions):
@@ -165,16 +179,14 @@ def _make_rms(
             "INSERT INTO trades (trade_id, symbol, side, strategy, entry_price, "
             "quantity, entry_time, stop_loss, target) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (f"open-{i}", f"SYM{i}", "BUY", "test", 100, 10,
-             f"{today_str} 09:30:00", 95, 115),
+            (f"open-{i}", f"SYM{i}", "BUY", "test", 100, 10, f"{today_str} 09:30:00", 95, 115),
         )
 
     for i in range(orders_today):
         conn.execute(
             "INSERT INTO orders (order_id, symbol, side, order_type, quantity, "
             "status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (f"ord-{i}", "TEST", "BUY", "MARKET", 10, "PLACED",
-             f"{today_str} 10:00:00"),
+            (f"ord-{i}", "TEST", "BUY", "MARKET", 10, "PLACED", f"{today_str} 10:00:00"),
         )
 
     if last_trade is not None:
@@ -182,9 +194,20 @@ def _make_rms(
             "INSERT INTO trades (trade_id, symbol, side, strategy, entry_price, "
             "exit_price, quantity, entry_time, exit_time, realized_pnl, stop_loss, target) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            ("last-trade", "TEST", "BUY", "test", 100, 95, 10,
-             f"{today_str} 09:30:00", last_trade["exit_time"],
-             last_trade["realized_pnl"], 90, 115),
+            (
+                "last-trade",
+                "TEST",
+                "BUY",
+                "test",
+                100,
+                95,
+                10,
+                f"{today_str} 09:30:00",
+                last_trade["exit_time"],
+                last_trade["realized_pnl"],
+                90,
+                115,
+            ),
         )
 
     conn.commit()
@@ -214,7 +237,6 @@ def _make_rms(
     )
 
 
-
 # ---------------------------------------------------------------------------
 # Property 28: Daily Loss Limit Enforcement
 # ---------------------------------------------------------------------------
@@ -230,7 +252,9 @@ class TestDailyLossLimitEnforcement:
 
     @given(
         loss_pct=st.floats(min_value=2.01, max_value=50.0, allow_nan=False, allow_infinity=False),
-        capital=st.floats(min_value=50000.0, max_value=1000000.0, allow_nan=False, allow_infinity=False),
+        capital=st.floats(
+            min_value=50000.0, max_value=1000000.0, allow_nan=False, allow_infinity=False
+        ),
     )
     @settings(max_examples=25)
     def test_rejects_when_daily_loss_exceeds_limit(self, loss_pct, capital):
@@ -276,9 +300,9 @@ class TestPositionCountLimitEnforcement:
         signal = _make_signal()
         result = rms.validate_order(signal)
 
-        assert "position_limit" in result.checks_failed, (
-            f"position_limit should fail for {open_positions} open positions (limit=5)"
-        )
+        assert (
+            "position_limit" in result.checks_failed
+        ), f"position_limit should fail for {open_positions} open positions (limit=5)"
 
 
 # ---------------------------------------------------------------------------
@@ -295,7 +319,9 @@ class TestPositionSizeLimitEnforcement:
     """
 
     @given(
-        entry_price=st.floats(min_value=100.0, max_value=10000.0, allow_nan=False, allow_infinity=False),
+        entry_price=st.floats(
+            min_value=100.0, max_value=10000.0, allow_nan=False, allow_infinity=False
+        ),
         quantity=st.integers(min_value=1, max_value=500),
     )
     @settings(max_examples=25)
@@ -344,9 +370,9 @@ class TestOrderCountLimitEnforcement:
         signal = _make_signal()
         result = rms.validate_order(signal)
 
-        assert "order_count_limit" in result.checks_failed, (
-            f"order_count_limit should fail for {orders_today} orders (limit=20)"
-        )
+        assert (
+            "order_count_limit" in result.checks_failed
+        ), f"order_count_limit should fail for {orders_today} orders (limit=20)"
 
 
 # ---------------------------------------------------------------------------
@@ -364,7 +390,9 @@ class TestCooldownPeriodEnforcement:
 
     @given(
         seconds_ago=st.integers(min_value=0, max_value=299),
-        loss_amount=st.floats(min_value=0.01, max_value=5000.0, allow_nan=False, allow_infinity=False),
+        loss_amount=st.floats(
+            min_value=0.01, max_value=5000.0, allow_nan=False, allow_infinity=False
+        ),
     )
     @settings(max_examples=25)
     def test_rejects_during_cooldown_after_loss(self, seconds_ago, loss_amount):
@@ -387,10 +415,8 @@ class TestCooldownPeriodEnforcement:
         result = rms.validate_order(signal)
 
         assert "cooldown" in result.checks_failed, (
-            f"cooldown should fail for losing trade exited {seconds_ago}s ago "
-            f"(cooldown=300s)"
+            f"cooldown should fail for losing trade exited {seconds_ago}s ago " f"(cooldown=300s)"
         )
-
 
 
 # ---------------------------------------------------------------------------
@@ -407,7 +433,9 @@ class TestKillSwitchEnforcement:
 
     @given(
         side=st.sampled_from(["BUY", "SELL"]),
-        entry_price=st.floats(min_value=100.0, max_value=5000.0, allow_nan=False, allow_infinity=False),
+        entry_price=st.floats(
+            min_value=100.0, max_value=5000.0, allow_nan=False, allow_infinity=False
+        ),
         quantity=st.integers(min_value=0, max_value=100),
     )
     @settings(max_examples=25)
@@ -420,12 +448,10 @@ class TestKillSwitchEnforcement:
         signal = _make_signal(side=side, entry_price=entry_price, quantity=quantity)
         result = rms.validate_order(signal)
 
-        assert "kill_switch" in result.checks_failed, (
-            "kill_switch should fail when kill switch is active"
-        )
-        assert not result.is_valid, (
-            "Order should be rejected when kill switch is active"
-        )
+        assert (
+            "kill_switch" in result.checks_failed
+        ), "kill_switch should fail when kill switch is active"
+        assert not result.is_valid, "Order should be rejected when kill switch is active"
 
 
 # ---------------------------------------------------------------------------
@@ -443,7 +469,9 @@ class TestVolatilityGuardEnforcement:
 
     @given(
         drop_pct=st.floats(min_value=2.01, max_value=20.0, allow_nan=False, allow_infinity=False),
-        window_start_price=st.floats(min_value=15000.0, max_value=25000.0, allow_nan=False, allow_infinity=False),
+        window_start_price=st.floats(
+            min_value=15000.0, max_value=25000.0, allow_nan=False, allow_infinity=False
+        ),
     )
     @settings(max_examples=25)
     def test_rejects_when_nifty_drops_over_threshold(self, drop_pct, window_start_price):
@@ -461,8 +489,7 @@ class TestVolatilityGuardEnforcement:
         result = rms.validate_order(signal)
 
         assert "volatility_guard" in result.checks_failed, (
-            f"volatility_guard should fail for Nifty drop of {drop_pct:.2f}% "
-            f"(threshold=2%)"
+            f"volatility_guard should fail for Nifty drop of {drop_pct:.2f}% " f"(threshold=2%)"
         )
 
 
@@ -498,9 +525,9 @@ class TestTradingHoursEnforcement:
         signal = _make_signal()
         result = rms.validate_order(signal)
 
-        assert "trading_hours" in result.checks_failed, (
-            f"trading_hours should fail at {hour:02d}:{minute:02d} (before 09:30)"
-        )
+        assert (
+            "trading_hours" in result.checks_failed
+        ), f"trading_hours should fail at {hour:02d}:{minute:02d} (before 09:30)"
 
     @given(
         hour=st.integers(min_value=15, max_value=23),
@@ -520,9 +547,9 @@ class TestTradingHoursEnforcement:
         signal = _make_signal()
         result = rms.validate_order(signal)
 
-        assert "trading_hours" in result.checks_failed, (
-            f"trading_hours should fail at {hour:02d}:{minute:02d} (after 15:10)"
-        )
+        assert (
+            "trading_hours" in result.checks_failed
+        ), f"trading_hours should fail at {hour:02d}:{minute:02d} (after 15:10)"
 
 
 # ---------------------------------------------------------------------------
@@ -539,7 +566,9 @@ class TestBiasFilterBuySignals:
 
     @given(
         symbol=st.sampled_from(["RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK"]),
-        entry_price=st.floats(min_value=100.0, max_value=5000.0, allow_nan=False, allow_infinity=False),
+        entry_price=st.floats(
+            min_value=100.0, max_value=5000.0, allow_nan=False, allow_infinity=False
+        ),
     )
     @settings(max_examples=25)
     def test_rejects_buy_when_bearish(self, symbol, entry_price):
@@ -551,6 +580,6 @@ class TestBiasFilterBuySignals:
         signal = _make_signal(symbol=symbol, side="BUY", entry_price=entry_price)
         result = rms.validate_order(signal)
 
-        assert "bias_filter" in result.checks_failed, (
-            f"bias_filter should fail for BUY signal on {symbol} with BEARISH bias"
-        )
+        assert (
+            "bias_filter" in result.checks_failed
+        ), f"bias_filter should fail for BUY signal on {symbol} with BEARISH bias"

@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class EventBus:
     """Event Bus abstraction for Redis Streams.
-    
+
     Provides high-level methods for:
     - Publishing messages to streams
     - Creating and managing consumer groups
@@ -22,7 +22,7 @@ class EventBus:
 
     def __init__(self, redis_client: RedisClient):
         """Initialize Event Bus with Redis client.
-        
+
         Args:
             redis_client: Connected Redis client instance
 
@@ -37,18 +37,18 @@ class EventBus:
         maxlen: int | None = None,
     ) -> str:
         """Publish message to a stream.
-        
+
         Args:
             stream_name: Name of the stream (e.g., "stream:ticks:RELIANCE")
             message: Dictionary of field-value pairs to publish
             maxlen: Maximum stream length (circular buffer), None for unlimited
-            
+
         Returns:
             Message ID
-            
+
         Raises:
             Exception: If publish fails
-            
+
         Example:
             >>> event_bus.publish(
             ...     "stream:ticks:RELIANCE",
@@ -89,7 +89,7 @@ class EventBus:
         start_id: str = "$",
     ) -> bool:
         """Create consumer group for a stream.
-        
+
         Args:
             stream_name: Name of the stream
             group_name: Name of the consumer group
@@ -97,13 +97,13 @@ class EventBus:
                 - '0' = read from beginning
                 - '$' = read only new messages (default)
                 - specific ID = read from that message
-                
+
         Returns:
             True if group created or already exists
-            
+
         Raises:
             Exception: If creation fails (except BUSYGROUP)
-            
+
         Example:
             >>> event_bus.create_consumer_group(
             ...     "stream:ticks:RELIANCE",
@@ -141,23 +141,23 @@ class EventBus:
         block: int | None = None,
     ) -> list[dict[str, Any]]:
         """Consume messages from a stream as part of a consumer group.
-        
+
         Args:
             stream_name: Name of the stream
             group_name: Name of the consumer group
             consumer_name: Name of this consumer (unique within group)
             count: Maximum number of messages to read
             block: Block for specified milliseconds (None = non-blocking)
-            
+
         Returns:
             List of messages, each containing:
                 - message_id: Redis message ID
                 - stream: Stream name
                 - data: Dictionary of message fields
-                
+
         Raises:
             Exception: If consume fails
-            
+
         Example:
             >>> messages = event_bus.consume(
             ...     "stream:ticks:RELIANCE",
@@ -198,11 +198,13 @@ class EventBus:
                                 # Keep as string if not JSON
                                 deserialized_fields[key] = value
 
-                        messages.append({
-                            "message_id": message_id,
-                            "stream": stream,
-                            "data": deserialized_fields,
-                        })
+                        messages.append(
+                            {
+                                "message_id": message_id,
+                                "stream": stream,
+                                "data": deserialized_fields,
+                            }
+                        )
 
             logger.debug(
                 f"Consumed {len(messages)} messages from {stream_name} "
@@ -224,21 +226,21 @@ class EventBus:
         *message_ids: str,
     ) -> int:
         """Acknowledge messages in a consumer group.
-        
+
         Messages must be acknowledged after processing to remove them
         from the pending entries list (PEL).
-        
+
         Args:
             stream_name: Name of the stream
             group_name: Name of the consumer group
             message_ids: One or more message IDs to acknowledge
-            
+
         Returns:
             Number of messages acknowledged
-            
+
         Raises:
             Exception: If acknowledgment fails
-            
+
         Example:
             >>> event_bus.acknowledge(
             ...     "stream:ticks:RELIANCE",
@@ -273,9 +275,9 @@ class EventBus:
         auto_ack: bool = True,
     ) -> int:
         """Consume messages and process them with a callback function.
-        
+
         This is a convenience method that combines consume, process, and acknowledge.
-        
+
         Args:
             stream_name: Name of the stream
             group_name: Name of the consumer group
@@ -284,13 +286,13 @@ class EventBus:
             count: Maximum number of messages to read
             block: Block for specified milliseconds (None = non-blocking)
             auto_ack: Automatically acknowledge messages after successful processing
-            
+
         Returns:
             Number of messages processed
-            
+
         Raises:
             Exception: If consume or process fails
-            
+
         Example:
             >>> def process_tick(message):
             ...     print(f"Processing tick: {message['data']}")
@@ -351,16 +353,16 @@ class EventBus:
         count: int = 1,
     ) -> list[dict[str, Any]]:
         """Read latest messages from a stream without consumer group.
-        
+
         This is useful for reading current state without joining a consumer group.
-        
+
         Args:
             stream_name: Name of the stream
             count: Number of latest messages to read
-            
+
         Returns:
             List of messages (newest first)
-            
+
         Example:
             >>> latest = event_bus.read_latest("stream:bias:RELIANCE", count=1)
             >>> if latest:
@@ -391,11 +393,13 @@ class EventBus:
                             except (json.JSONDecodeError, TypeError):
                                 deserialized_fields[key] = value
 
-                        messages.append({
-                            "message_id": message_id,
-                            "stream": stream,
-                            "data": deserialized_fields,
-                        })
+                        messages.append(
+                            {
+                                "message_id": message_id,
+                                "stream": stream,
+                                "data": deserialized_fields,
+                            }
+                        )
 
             return messages
 
@@ -405,10 +409,10 @@ class EventBus:
 
     def get_stream_info(self, stream_name: str) -> dict[str, Any]:
         """Get information about a stream.
-        
+
         Args:
             stream_name: Name of the stream
-            
+
         Returns:
             Dictionary with stream information (length, first/last entry, etc.)
 
@@ -422,10 +426,10 @@ class EventBus:
 
     def get_consumer_groups(self, stream_name: str) -> list[str]:
         """Get list of consumer groups for a stream.
-        
+
         Args:
             stream_name: Name of the stream
-            
+
         Returns:
             List of consumer group names
 

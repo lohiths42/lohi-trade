@@ -1,23 +1,18 @@
 """Unit tests for StockUniverseService — search, listing, refresh, new listings, delistings."""
 
-import asyncio
 from datetime import date, datetime, timezone
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 import pytest
-
 from app.services.stock_universe_service import (
-    StockUniverseService,
-    Security,
-    SecurityStatus,
+    SECTORS,
     PaginatedResult,
+    StockUniverseService,
     _parse_date,
     _parse_decimal,
-    SECTORS,
 )
-
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -157,7 +152,9 @@ class TestSearchSecurities:
     async def test_search_fallback_to_ilike(self):
         """When tsquery returns no results, falls back to ILIKE."""
         pool, conn = _make_mock_pool()
-        row = _make_security_row(symbol="TCS", isin="INE467B01029", company_name="Tata Consultancy Services")
+        row = _make_security_row(
+            symbol="TCS", isin="INE467B01029", company_name="Tata Consultancy Services"
+        )
         # First call (tsquery) returns empty, second call (ILIKE) returns result
         conn.fetch = AsyncMock(side_effect=[[], [row]])
 
@@ -341,7 +338,6 @@ class TestGetSecurityBySymbol:
         assert result is None
 
 
-
 # ── Refresh catalog tests ────────────────────────────────────────────────────
 
 
@@ -360,11 +356,26 @@ class TestRefreshCatalog:
         svc = _make_service(db_pool=pool)
 
         nse_data = [
-            {"symbol": "RELIANCE", "isin": "INE002A01018", "company_name": "Reliance Industries", "exchange": "NSE"},
-            {"symbol": "TCS", "isin": "INE467B01029", "company_name": "Tata Consultancy Services", "exchange": "NSE"},
+            {
+                "symbol": "RELIANCE",
+                "isin": "INE002A01018",
+                "company_name": "Reliance Industries",
+                "exchange": "NSE",
+            },
+            {
+                "symbol": "TCS",
+                "isin": "INE467B01029",
+                "company_name": "Tata Consultancy Services",
+                "exchange": "NSE",
+            },
         ]
         bse_data = [
-            {"symbol": "RELIANCE", "isin": "INE002A01018", "company_name": "Reliance Industries", "exchange": "BSE"},
+            {
+                "symbol": "RELIANCE",
+                "isin": "INE002A01018",
+                "company_name": "Reliance Industries",
+                "exchange": "BSE",
+            },
         ]
 
         with patch.object(svc, "_fetch_nse_listings", return_value=nse_data):
@@ -414,9 +425,13 @@ class TestRefreshCatalog:
 
         svc = _make_service(db_pool=pool)
 
-        with patch.object(svc, "_fetch_nse_listings", return_value=[
-            {"symbol": "TCS", "isin": "INE467B01029", "company_name": "TCS", "exchange": "NSE"},
-        ]):
+        with patch.object(
+            svc,
+            "_fetch_nse_listings",
+            return_value=[
+                {"symbol": "TCS", "isin": "INE467B01029", "company_name": "TCS", "exchange": "NSE"},
+            ],
+        ):
             with patch.object(svc, "_fetch_bse_listings", return_value=[]):
                 count = await svc.refresh_catalog()
 
@@ -474,7 +489,9 @@ class TestAddNewListing:
     @pytest.mark.asyncio
     async def test_no_db_pool_returns_none(self):
         svc = _make_service(db_pool=None)
-        result = await svc.add_new_listing({"isin": "INE123", "symbol": "TEST", "company_name": "Test Co"})
+        result = await svc.add_new_listing(
+            {"isin": "INE123", "symbol": "TEST", "company_name": "Test Co"}
+        )
         assert result is None
 
     @pytest.mark.asyncio
@@ -501,17 +518,21 @@ class TestAddNewListing:
     @pytest.mark.asyncio
     async def test_successful_add(self):
         pool, conn = _make_mock_pool()
-        row = _make_security_row(symbol="NEWCO", isin="INE999Z01010", company_name="New Company Ltd")
+        row = _make_security_row(
+            symbol="NEWCO", isin="INE999Z01010", company_name="New Company Ltd"
+        )
         conn.fetchrow = AsyncMock(return_value=row)
 
         svc = _make_service(db_pool=pool)
-        result = await svc.add_new_listing({
-            "isin": "INE999Z01010",
-            "symbol": "NEWCO",
-            "company_name": "New Company Ltd",
-            "exchange": "NSE",
-            "sector": "IT/Technology",
-        })
+        result = await svc.add_new_listing(
+            {
+                "isin": "INE999Z01010",
+                "symbol": "NEWCO",
+                "company_name": "New Company Ltd",
+                "exchange": "NSE",
+                "sector": "IT/Technology",
+            }
+        )
 
         assert result is not None
         assert result.symbol == "NEWCO"
@@ -522,11 +543,13 @@ class TestAddNewListing:
         conn.fetchrow = AsyncMock(side_effect=Exception("DB error"))
 
         svc = _make_service(db_pool=pool)
-        result = await svc.add_new_listing({
-            "isin": "INE999Z01010",
-            "symbol": "NEWCO",
-            "company_name": "New Company Ltd",
-        })
+        result = await svc.add_new_listing(
+            {
+                "isin": "INE999Z01010",
+                "symbol": "NEWCO",
+                "company_name": "New Company Ltd",
+            }
+        )
         assert result is None
 
 
@@ -568,7 +591,12 @@ class TestParseExchangeResponse:
     def test_parse_nse_format(self):
         data = {
             "data": [
-                {"symbol": "RELIANCE", "isin": "INE002A01018", "companyName": "Reliance Industries", "sector": "Energy"},
+                {
+                    "symbol": "RELIANCE",
+                    "isin": "INE002A01018",
+                    "companyName": "Reliance Industries",
+                    "sector": "Energy",
+                },
                 {"symbol": "TCS", "isin": "INE467B01029", "companyName": "TCS Ltd"},
             ]
         }

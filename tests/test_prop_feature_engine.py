@@ -29,10 +29,16 @@ from src.soldier.indicator_engine import IndicatorSet
 # --- Custom Hypothesis strategies ---
 
 finite_float = st.floats(
-    min_value=-1e6, max_value=1e6, allow_nan=False, allow_infinity=False,
+    min_value=-1e6,
+    max_value=1e6,
+    allow_nan=False,
+    allow_infinity=False,
 )
 positive_float = st.floats(
-    min_value=0.01, max_value=1e6, allow_nan=False, allow_infinity=False,
+    min_value=0.01,
+    max_value=1e6,
+    allow_nan=False,
+    allow_infinity=False,
 )
 rsi_float = st.floats(min_value=0.0, max_value=100.0, allow_nan=False, allow_infinity=False)
 price_float = st.floats(min_value=0.01, max_value=1e5, allow_nan=False, allow_infinity=False)
@@ -45,8 +51,12 @@ side_str = st.sampled_from(["BUY", "SELL"])
 def indicator_sets(draw):
     """Generate random but valid IndicatorSet instances."""
     bb_lower = draw(price_float)
-    bb_middle = bb_lower + draw(st.floats(min_value=0.01, max_value=100.0, allow_nan=False, allow_infinity=False))
-    bb_upper = bb_middle + draw(st.floats(min_value=0.01, max_value=100.0, allow_nan=False, allow_infinity=False))
+    bb_middle = bb_lower + draw(
+        st.floats(min_value=0.01, max_value=100.0, allow_nan=False, allow_infinity=False)
+    )
+    bb_upper = bb_middle + draw(
+        st.floats(min_value=0.01, max_value=100.0, allow_nan=False, allow_infinity=False)
+    )
     return IndicatorSet(
         symbol="TEST",
         timeframe="1m",
@@ -73,12 +83,15 @@ def sentiment_features(draw):
     """Generate random SentimentFeatures."""
     return SentimentFeatures(
         score=draw(st.floats(min_value=-1.0, max_value=1.0, allow_nan=False, allow_infinity=False)),
-        confidence=draw(st.floats(min_value=0.0, max_value=1.0, allow_nan=False, allow_infinity=False)),
+        confidence=draw(
+            st.floats(min_value=0.0, max_value=1.0, allow_nan=False, allow_infinity=False)
+        ),
         article_count=draw(st.integers(min_value=0, max_value=100)),
     )
 
 
 # --- Property tests for _safe_div ---
+
 
 class TestSafeDivProperties:
     @given(
@@ -110,6 +123,7 @@ class TestSafeDivProperties:
 
 # --- Property tests for _rsi_zone ---
 
+
 class TestRSIZoneProperties:
     @given(rsi=st.floats(min_value=0.0, max_value=29.99, allow_nan=False, allow_infinity=False))
     def test_oversold_zone(self, rsi):
@@ -133,6 +147,7 @@ class TestRSIZoneProperties:
 
 
 # --- Property tests for _macd_crossover ---
+
 
 class TestMACDCrossoverProperties:
     @given(macd=finite_float, signal=finite_float)
@@ -158,6 +173,7 @@ class TestMACDCrossoverProperties:
 
 
 # --- Property tests for extract_features ---
+
 
 class TestExtractFeaturesProperties:
     @given(indicators=indicator_sets(), close_price=price_float)
@@ -223,6 +239,7 @@ class TestExtractFeaturesProperties:
 
 
 # --- Property tests for extract_label ---
+
 
 class TestExtractLabelProperties:
     @given(

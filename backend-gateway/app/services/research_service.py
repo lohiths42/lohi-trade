@@ -111,10 +111,10 @@ if TYPE_CHECKING:  # pragma: no cover - typing only
     import asyncpg
 
     from src.research.agents.orchestrator import ResearchOrchestrator
-    from src.research.snapshot.store import SnapshotRecord, SnapshotStore
     from src.research.memory.episodic import EpisodicMemory
     from src.research.memory.semantic import SemanticMemory
     from src.research.memory.working import WorkingMemory
+    from src.research.snapshot.store import SnapshotRecord, SnapshotStore
 
 
 logger = logging.getLogger(__name__)
@@ -227,9 +227,7 @@ class ResearchService(ChatbotService):
         chart_gen: Any = None,
         orchestrator_factory: OrchestratorFactory | None = None,
         snapshot_store: "SnapshotStore | None" = None,
-        memory_stack: Optional[
-            tuple["WorkingMemory", "SemanticMemory", "EpisodicMemory"]
-        ] = None,
+        memory_stack: Optional[tuple["WorkingMemory", "SemanticMemory", "EpisodicMemory"]] = None,
         audit_log_writer: Callable[[UUID, str, dict], Awaitable[None]] | None = None,
         # ── Task 18.4 health-probe collaborators ──────────────────────
         # Each provider is optional — when ``None`` the corresponding
@@ -408,9 +406,7 @@ class ResearchService(ChatbotService):
         # and also mirrors them into the brief's ``guardrail_decisions``
         # block when Task 13.8 lands. Until then we expose an empty
         # list so the response shape is stable.
-        trace.setdefault(
-            "guardrail_decisions", list(brief.get("guardrail_decisions", []))
-        )
+        trace.setdefault("guardrail_decisions", list(brief.get("guardrail_decisions", [])))
 
         # ``judge_reports`` — the Orchestrator writes a single
         # :class:`JudgeReport` per run (design §3.7). Expose it as a
@@ -815,9 +811,7 @@ class ResearchService(ChatbotService):
                 format_done(run_id, quality=quality),
             )
         except Exception:
-            logger.exception(
-                "Failed to publish terminal done marker for run %s", run_id
-            )
+            logger.exception("Failed to publish terminal done marker for run %s", run_id)
 
 
 # --------------------------------------------------------------------------- #
@@ -1118,6 +1112,7 @@ async def _probe_postgres(pool: Any) -> str | dict[str, str]:
     if effective_pool is None:
         return "pending"
     try:
+
         async def _query() -> None:
             async with effective_pool.acquire() as conn:
                 await conn.fetchval("SELECT 1")

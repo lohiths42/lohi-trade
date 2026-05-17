@@ -8,9 +8,8 @@ import asyncio
 import logging
 import os
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
-from decimal import Decimal
 from enum import Enum
 from typing import Optional
 
@@ -72,6 +71,7 @@ VALID_ACCOUNT_TYPES = {"savings", "current"}
 @dataclass
 class BankAccountDetails:
     """Details required for bank account registration."""
+
     account_holder_name: str
     account_number: str
     ifsc_code: str
@@ -82,6 +82,7 @@ class BankAccountDetails:
 @dataclass
 class BankAccount:
     """Registered bank account record."""
+
     id: Optional[str] = None
     user_id: Optional[str] = None
     account_number_encrypted: Optional[bytes] = None
@@ -110,9 +111,7 @@ class BankAccountService:
         payment_api_key: str = "",
     ):
         self.db_pool = db_pool
-        self.ifsc_api_url = ifsc_api_url or os.getenv(
-            "IFSC_API_URL", "https://ifsc.razorpay.com"
-        )
+        self.ifsc_api_url = ifsc_api_url or os.getenv("IFSC_API_URL", "https://ifsc.razorpay.com")
         self.payment_api_url = payment_api_url or os.getenv(
             "PAYMENT_API_URL", "https://api.payment-gateway.co.in"
         )
@@ -162,7 +161,7 @@ class BankAccountService:
                 )
 
             if attempt < MAX_RETRIES - 1:
-                backoff = BASE_BACKOFF_SECONDS * (2 ** attempt)
+                backoff = BASE_BACKOFF_SECONDS * (2**attempt)
                 await asyncio.sleep(backoff)
 
         logger.error(
@@ -292,7 +291,7 @@ class BankAccountService:
                 )
 
             if attempt < MAX_RETRIES - 1:
-                backoff = BASE_BACKOFF_SECONDS * (2 ** attempt)
+                backoff = BASE_BACKOFF_SECONDS * (2**attempt)
                 await asyncio.sleep(backoff)
 
         logger.error(
@@ -304,9 +303,7 @@ class BankAccountService:
 
     # ── Register bank account ────────────────────────────────────────────
 
-    async def register_bank_account(
-        self, user_id: str, details: BankAccountDetails
-    ) -> BankAccount:
+    async def register_bank_account(self, user_id: str, details: BankAccountDetails) -> BankAccount:
         """Register a bank account. Validates IFSC, initiates penny drop.
 
         Steps:
@@ -475,8 +472,7 @@ class BankAccountService:
         try:
             async with self.db_pool.acquire() as conn:
                 row = await conn.fetchrow(
-                    "SELECT id, status FROM bank_accounts "
-                    "WHERE id = $1 AND user_id = $2",
+                    "SELECT id, status FROM bank_accounts " "WHERE id = $1 AND user_id = $2",
                     bank_id,
                     user_id,
                 )
@@ -501,9 +497,7 @@ class BankAccountService:
                     return True
                 return False
         except Exception:
-            logger.exception(
-                "Failed to verify penny drop for bank %s, user %s", bank_id, user_id
-            )
+            logger.exception("Failed to verify penny drop for bank %s, user %s", bank_id, user_id)
             return False
 
     async def _check_penny_drop_status(self, bank_id: str) -> Optional[dict]:

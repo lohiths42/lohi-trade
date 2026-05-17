@@ -23,9 +23,7 @@ from pydantic import BaseModel
 from app.services.credential_store import CredentialStore
 from app.services.feature_gate import reload_registry
 from app.services.service_registry import (
-    CREDENTIAL_GROUPS,
     ServiceRegistry,
-    ServiceStatus as ServiceStatusEnum,
 )
 from app.services.setup_service import SetupService
 

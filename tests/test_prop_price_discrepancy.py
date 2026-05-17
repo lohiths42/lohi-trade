@@ -26,8 +26,16 @@ THRESHOLD = 0.005  # 0.5%
 _MARGIN = 1e-9
 
 NSE_SYMBOLS = [
-    "RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK",
-    "SBIN", "BHARTIARTL", "KOTAKBANK", "LT", "WIPRO",
+    "RELIANCE",
+    "TCS",
+    "HDFCBANK",
+    "INFY",
+    "ICICIBANK",
+    "SBIN",
+    "BHARTIARTL",
+    "KOTAKBANK",
+    "LT",
+    "WIPRO",
 ]
 
 symbol_strategy = st.sampled_from(NSE_SYMBOLS)
@@ -53,12 +61,14 @@ def large_discrepancy_prices(draw):
     """Generate (nse_price, bse_price) where abs(nse-bse)/nse > 0.5%."""
     nse = draw(base_price)
     # offset > THRESHOLD guarantees discrepancy > 0.5%
-    offset = draw(st.floats(
-        min_value=THRESHOLD + _MARGIN,
-        max_value=2.0,
-        allow_nan=False,
-        allow_infinity=False,
-    ))
+    offset = draw(
+        st.floats(
+            min_value=THRESHOLD + _MARGIN,
+            max_value=2.0,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
     above = draw(st.booleans())
     bse = nse * (1.0 + offset) if above else nse * (1.0 - offset)
     assume(bse > 0)
@@ -72,12 +82,14 @@ def small_discrepancy_prices(draw):
     """Generate (nse_price, bse_price) where abs(nse-bse)/nse <= 0.5%."""
     nse = draw(base_price)
     # offset in [0, THRESHOLD - margin] keeps difference within threshold
-    offset = draw(st.floats(
-        min_value=0.0,
-        max_value=THRESHOLD - _MARGIN,
-        allow_nan=False,
-        allow_infinity=False,
-    ))
+    offset = draw(
+        st.floats(
+            min_value=0.0,
+            max_value=THRESHOLD - _MARGIN,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
     above = draw(st.booleans())
     bse = nse * (1.0 + offset) if above else nse * (1.0 - offset)
     assume(bse > 0)
@@ -143,9 +155,7 @@ def test_zero_or_negative_nse_price_returns_false(symbol, nse_price, bse_price):
     collector = _make_collector()
     result = collector.detect_price_discrepancy(symbol, nse_price, bse_price)
 
-    assert result is False, (
-        f"Expected False for non-positive NSE price: {nse_price}"
-    )
+    assert result is False, f"Expected False for non-positive NSE price: {nse_price}"
 
 
 @given(
@@ -162,6 +172,4 @@ def test_zero_or_negative_bse_price_returns_false(symbol, nse_price, bse_price):
     collector = _make_collector()
     result = collector.detect_price_discrepancy(symbol, nse_price, bse_price)
 
-    assert result is False, (
-        f"Expected False for non-positive BSE price: {bse_price}"
-    )
+    assert result is False, f"Expected False for non-positive BSE price: {bse_price}"

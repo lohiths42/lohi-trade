@@ -33,7 +33,7 @@ tags "modules" {
             assert_equal {} [r get lua]
             r get x
         } {3}
-        
+
         test {Nested multi due to RM_Call, with client MULTI} {
             r del multi
             r del lua
@@ -50,7 +50,7 @@ tags "modules" {
             assert_equal {} [r get lua]
             r get x
         } {3}
-        
+
         test {Nested multi due to RM_Call, with EVAL} {
             r del multi
             r del lua

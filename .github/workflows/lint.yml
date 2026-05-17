@@ -13,29 +13,29 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
-      
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -e .[dev]
-      
+
       - name: Check formatting with black
         run: |
           black --check src/ tests/ scripts/ --diff || true
-      
+
       - name: Lint with ruff
         run: |
           ruff check src/ tests/ scripts/ --output-format=github || true
-      
+
       - name: Type check with mypy
         run: |
           mypy src/ --ignore-missing-imports || true
@@ -44,29 +44,29 @@ jobs:
     name: Formatting Check
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-    
+
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.13"
           cache: 'pip'
-      
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install black ruff
-      
+
       - name: Check if code is formatted
         run: |
           black --check src/ tests/ scripts/
           echo "✓ Code is properly formatted"
         continue-on-error: true
-      
+
       - name: Check imports
         run: |
           ruff check src/ tests/ scripts/ --select=I

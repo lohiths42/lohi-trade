@@ -352,7 +352,10 @@ class GrowwBroker(BrokerInterface):
         )
 
     def poll_order_status(
-        self, broker_order_id: str, interval: float = 1.0, max_polls: int = 300,
+        self,
+        broker_order_id: str,
+        interval: float = 1.0,
+        max_polls: int = 300,
     ) -> Order:
         """Poll order status every *interval* seconds until a terminal state.
 
@@ -381,15 +384,21 @@ class GrowwBroker(BrokerInterface):
         try:
             data = self._groww_get("/portfolio/positions")
             positions = []
-            items = data if isinstance(data, list) else data.get("positions", []) if isinstance(data, dict) else []
+            items = (
+                data
+                if isinstance(data, list)
+                else data.get("positions", []) if isinstance(data, dict) else []
+            )
             for pos in items:
-                positions.append({
-                    "symbol": pos.get("symbol"),
-                    "quantity": int(pos.get("quantity", 0)),
-                    "avg_price": float(pos.get("average_price", 0)),
-                    "ltp": float(pos.get("ltp", 0)),
-                    "pnl": float(pos.get("pnl", 0)),
-                })
+                positions.append(
+                    {
+                        "symbol": pos.get("symbol"),
+                        "quantity": int(pos.get("quantity", 0)),
+                        "avg_price": float(pos.get("average_price", 0)),
+                        "ltp": float(pos.get("ltp", 0)),
+                        "pnl": float(pos.get("pnl", 0)),
+                    }
+                )
             return positions
         except Exception as exc:
             logger.error(f"Error fetching positions: {exc}")
@@ -406,16 +415,22 @@ class GrowwBroker(BrokerInterface):
         try:
             data = self._groww_get("/portfolio/holdings")
             holdings = []
-            items = data if isinstance(data, list) else data.get("holdings", []) if isinstance(data, dict) else []
+            items = (
+                data
+                if isinstance(data, list)
+                else data.get("holdings", []) if isinstance(data, dict) else []
+            )
             for h in items:
-                holdings.append({
-                    "symbol": h.get("symbol"),
-                    "quantity": int(h.get("quantity", 0)),
-                    "avg_price": float(h.get("average_price", 0)),
-                    "ltp": float(h.get("ltp", 0)),
-                    "pnl": float(h.get("pnl", 0)),
-                    "isin": h.get("isin", ""),
-                })
+                holdings.append(
+                    {
+                        "symbol": h.get("symbol"),
+                        "quantity": int(h.get("quantity", 0)),
+                        "avg_price": float(h.get("average_price", 0)),
+                        "ltp": float(h.get("ltp", 0)),
+                        "pnl": float(h.get("pnl", 0)),
+                        "isin": h.get("isin", ""),
+                    }
+                )
             return holdings
         except Exception as exc:
             logger.error(f"Error fetching holdings: {exc}")
@@ -432,20 +447,28 @@ class GrowwBroker(BrokerInterface):
         try:
             data = self._groww_get("/instruments")
             instruments: list[dict] = []
-            items = data if isinstance(data, list) else data.get("instruments", []) if isinstance(data, dict) else []
+            items = (
+                data
+                if isinstance(data, list)
+                else data.get("instruments", []) if isinstance(data, dict) else []
+            )
             for row in items:
                 try:
-                    instruments.append({
-                        "symbol": row.get("symbol", "").strip(),
-                        "token": int(row.get("token", 0)),
-                        "exchange": row.get("exchange", "NSE").strip(),
-                        "lot_size": int(row.get("lot_size", 1)),
-                        "tick_size": float(row.get("tick_size", 0.05)),
-                        "trading_symbol": row.get("trading_symbol", row.get("symbol", "")).strip(),
-                        "instrument": row.get("instrument_type", "").strip(),
-                        "name": row.get("name", "").strip(),
-                        "isin": row.get("isin", "").strip(),
-                    })
+                    instruments.append(
+                        {
+                            "symbol": row.get("symbol", "").strip(),
+                            "token": int(row.get("token", 0)),
+                            "exchange": row.get("exchange", "NSE").strip(),
+                            "lot_size": int(row.get("lot_size", 1)),
+                            "tick_size": float(row.get("tick_size", 0.05)),
+                            "trading_symbol": row.get(
+                                "trading_symbol", row.get("symbol", "")
+                            ).strip(),
+                            "instrument": row.get("instrument_type", "").strip(),
+                            "name": row.get("name", "").strip(),
+                            "isin": row.get("isin", "").strip(),
+                        }
+                    )
                 except (ValueError, KeyError):
                     continue
             logger.info(f"Downloaded {len(instruments)} instruments from Groww")

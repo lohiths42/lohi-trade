@@ -92,7 +92,9 @@ class TestFailedReconnectionRollback:
     )
     @settings(max_examples=100)
     def test_failed_connection_retains_original_credentials(
-        self, initial_creds: dict[str, str], new_creds: dict[str, str],
+        self,
+        initial_creds: dict[str, str],
+        new_creds: dict[str, str],
     ) -> None:
         """For any credential update where the subsequent connection test
         fails, the credential store SHALL retain the previous credential
@@ -119,9 +121,9 @@ class TestFailedReconnectionRollback:
             # Verify initial credentials are written
             stored = credential_store.read_raw_credentials("broker_shoonya")
             for key, value in initial_creds.items():
-                assert stored.get(key) == value, (
-                    f"Initial write failed for {key}: expected {value!r}, got {stored.get(key)!r}"
-                )
+                assert (
+                    stored.get(key) == value
+                ), f"Initial write failed for {key}: expected {value!r}, got {stored.get(key)!r}"
 
             # Create SetupService with a mocked ConnectionTester that always fails
             setup_service = SetupService(

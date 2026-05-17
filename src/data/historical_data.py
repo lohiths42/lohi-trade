@@ -20,20 +20,23 @@ from typing import Any
 import pandas as pd
 
 try:
-    import duckdb
+    import duckdb  # noqa: F401
+
     DUCKDB_AVAILABLE = True
 except ImportError:
     DUCKDB_AVAILABLE = False
 
 try:
     import yfinance as yf
+
     YFINANCE_AVAILABLE = True
 except ImportError:
     YFINANCE_AVAILABLE = False
 
 try:
-    import pyarrow as pa
-    import pyarrow.parquet as pq
+    import pyarrow as pa  # noqa: F401
+    import pyarrow.parquet as pq  # noqa: F401
+
     PYARROW_AVAILABLE = True
 except ImportError:
     PYARROW_AVAILABLE = False
@@ -95,7 +98,8 @@ class HistoricalDataManager:
         if conn is None:
             return
 
-        conn.execute("""
+        conn.execute(
+            """
             CREATE TABLE IF NOT EXISTS historical_daily (
                 symbol VARCHAR,
                 date DATE,
@@ -106,9 +110,11 @@ class HistoricalDataManager:
                 volume BIGINT,
                 PRIMARY KEY (symbol, date)
             )
-        """)
+        """
+        )
 
-        conn.execute("""
+        conn.execute(
+            """
             CREATE TABLE IF NOT EXISTS historical_intraday (
                 symbol VARCHAR,
                 timestamp TIMESTAMP,
@@ -119,7 +125,8 @@ class HistoricalDataManager:
                 volume BIGINT,
                 PRIMARY KEY (symbol, timestamp)
             )
-        """)
+        """
+        )
 
     # ------------------------------------------------------------------
     # Download helpers
@@ -144,7 +151,9 @@ class HistoricalDataManager:
         """
         if not YFINANCE_AVAILABLE:
             logger.warning("yfinance not available – returning empty DataFrame")
-            return pd.DataFrame(columns=["symbol", "date", "open", "high", "low", "close", "volume"])
+            return pd.DataFrame(
+                columns=["symbol", "date", "open", "high", "low", "close", "volume"]
+            )
 
         all_frames: list[pd.DataFrame] = []
 
@@ -163,14 +172,16 @@ class HistoricalDataManager:
                     continue
 
                 df = df.reset_index()
-                df = df.rename(columns={
-                    "Date": "date",
-                    "Open": "open",
-                    "High": "high",
-                    "Low": "low",
-                    "Close": "close",
-                    "Volume": "volume",
-                })
+                df = df.rename(
+                    columns={
+                        "Date": "date",
+                        "Open": "open",
+                        "High": "high",
+                        "Low": "low",
+                        "Close": "close",
+                        "Volume": "volume",
+                    }
+                )
                 df["symbol"] = symbol
                 df["date"] = pd.to_datetime(df["date"]).dt.date
                 df = df[["symbol", "date", "open", "high", "low", "close", "volume"]]
@@ -180,7 +191,9 @@ class HistoricalDataManager:
                 logger.error(f"Failed to download daily data for {symbol}: {exc}")
 
         if not all_frames:
-            return pd.DataFrame(columns=["symbol", "date", "open", "high", "low", "close", "volume"])
+            return pd.DataFrame(
+                columns=["symbol", "date", "open", "high", "low", "close", "volume"]
+            )
 
         return pd.concat(all_frames, ignore_index=True)
 
@@ -201,7 +214,9 @@ class HistoricalDataManager:
         """
         if self.broker is None:
             logger.warning("No broker configured – cannot download intraday data")
-            return pd.DataFrame(columns=["symbol", "timestamp", "open", "high", "low", "close", "volume"])
+            return pd.DataFrame(
+                columns=["symbol", "timestamp", "open", "high", "low", "close", "volume"]
+            )
 
         all_frames: list[pd.DataFrame] = []
         end_dt = datetime.now()
@@ -233,7 +248,9 @@ class HistoricalDataManager:
                     "Close": "close",
                     "Volume": "volume",
                 }
-                data = data.rename(columns={k: v for k, v in rename_map.items() if k in data.columns})
+                data = data.rename(
+                    columns={k: v for k, v in rename_map.items() if k in data.columns}
+                )
                 data = data[["symbol", "timestamp", "open", "high", "low", "close", "volume"]]
                 all_frames.append(data)
                 logger.info(f"Downloaded {len(data)} intraday rows for {symbol}")
@@ -241,7 +258,9 @@ class HistoricalDataManager:
                 logger.error(f"Failed to download intraday data for {symbol}: {exc}")
 
         if not all_frames:
-            return pd.DataFrame(columns=["symbol", "timestamp", "open", "high", "low", "close", "volume"])
+            return pd.DataFrame(
+                columns=["symbol", "timestamp", "open", "high", "low", "close", "volume"]
+            )
 
         return pd.concat(all_frames, ignore_index=True)
 
@@ -273,23 +292,27 @@ class HistoricalDataManager:
         # Use INSERT OR IGNORE semantics via a temp table
         conn.execute("CREATE TEMPORARY TABLE _tmp AS SELECT * FROM data")
         if table_name == "historical_daily":
-            conn.execute(f"""
+            conn.execute(
+                f"""
                 INSERT INTO {table_name}
                 SELECT t.* FROM _tmp t
                 WHERE NOT EXISTS (
                     SELECT 1 FROM {table_name} h
                     WHERE h.symbol = t.symbol AND h.date = t.date
                 )
-            """)
+            """
+            )
         else:
-            conn.execute(f"""
+            conn.execute(
+                f"""
                 INSERT INTO {table_name}
                 SELECT t.* FROM _tmp t
                 WHERE NOT EXISTS (
                     SELECT 1 FROM {table_name} h
                     WHERE h.symbol = t.symbol AND h.timestamp = t.timestamp
                 )
-            """)
+            """
+            )
         conn.execute("DROP TABLE _tmp")
 
         after = conn.execute(f"SELECT COUNT(*) FROM {table_name}").fetchone()[0]
@@ -493,6 +516,7 @@ class HistoricalDataManager:
 
         def _run():
             import pytz
+
             ist = pytz.timezone("Asia/Kolkata")
             last_run_date: date | None = None
 
@@ -510,6 +534,7 @@ class HistoricalDataManager:
 
                 # Sleep 60 s between checks
                 import time
+
                 time.sleep(60)
 
         self._scheduler_thread = threading.Thread(target=_run, daemon=True)

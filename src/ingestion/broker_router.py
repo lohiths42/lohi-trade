@@ -152,8 +152,7 @@ class BrokerRouter:
                 backup_broker=backup_broker,
             )
         logger.info(
-            f"User {user_id} preference set: primary={primary_broker}, "
-            f"backup={backup_broker}",
+            f"User {user_id} preference set: primary={primary_broker}, " f"backup={backup_broker}",
         )
 
     def get_user_preference(self, user_id: str) -> UserBrokerPreference | None:
@@ -210,7 +209,10 @@ class BrokerRouter:
 
         # Try primary broker
         primary_result = self._try_place_order(
-            user_id, pref.primary_broker, order, failover=False,
+            user_id,
+            pref.primary_broker,
+            order,
+            failover=False,
         )
         if primary_result is not None:
             return primary_result
@@ -222,7 +224,10 @@ class BrokerRouter:
                 f"{user_id}. Failing over to '{pref.backup_broker}'.",
             )
             backup_result = self._try_place_order(
-                user_id, pref.backup_broker, order, failover=True,
+                user_id,
+                pref.backup_broker,
+                order,
+                failover=True,
             )
             if backup_result is not None:
                 return backup_result
@@ -240,7 +245,9 @@ class BrokerRouter:
     # ── common broker interface contract (Req 17.5) ───────────────
 
     def cancel_order(
-        self, user_id: str, broker_order_id: str,
+        self,
+        user_id: str,
+        broker_order_id: str,
     ) -> bool:
         """Cancel an order via the user's primary broker with failover."""
         return self._execute_with_failover(
@@ -251,7 +258,9 @@ class BrokerRouter:
         )
 
     def get_order_status(
-        self, user_id: str, broker_order_id: str,
+        self,
+        user_id: str,
+        broker_order_id: str,
     ) -> Order:
         """Get order status via the user's primary broker with failover."""
         return self._execute_with_failover(
@@ -282,7 +291,9 @@ class BrokerRouter:
     # ── audit log access ──────────────────────────────────────────
 
     def get_audit_log(
-        self, user_id: str | None = None, limit: int = 100,
+        self,
+        user_id: str | None = None,
+        limit: int = 100,
     ) -> list[AuditEntry]:
         """Return recent audit entries, optionally filtered by user.
 
@@ -374,8 +385,12 @@ class BrokerRouter:
 
         # Try primary
         primary_result = self._try_operation(
-            user_id, pref.primary_broker, operation_name,
-            request_summary, fn, failover=False,
+            user_id,
+            pref.primary_broker,
+            operation_name,
+            request_summary,
+            fn,
+            failover=False,
         )
         if primary_result is not _SENTINEL:
             return primary_result
@@ -387,8 +402,12 @@ class BrokerRouter:
                 f"for user {user_id}. Failing over to '{pref.backup_broker}'.",
             )
             backup_result = self._try_operation(
-                user_id, pref.backup_broker, operation_name,
-                request_summary, fn, failover=True,
+                user_id,
+                pref.backup_broker,
+                operation_name,
+                request_summary,
+                fn,
+                failover=True,
             )
             if backup_result is not _SENTINEL:
                 return backup_result
@@ -443,8 +462,7 @@ class BrokerRouter:
                 failover=failover,
             )
             logger.error(
-                f"'{operation_name}' failed on '{broker_name}' for user "
-                f"{user_id}: {exc}",
+                f"'{operation_name}' failed on '{broker_name}' for user " f"{user_id}: {exc}",
             )
             return _SENTINEL
 

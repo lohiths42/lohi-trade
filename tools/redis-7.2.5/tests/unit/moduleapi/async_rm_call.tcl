@@ -203,7 +203,7 @@ start_server {tags {"modules"}} {
     test {blocking RM_Call abort} {
         r flushall
         set rd [redis_deferring_client]
-        
+
         $rd client id
         set client_id [$rd read]
 
@@ -374,7 +374,7 @@ start_server {tags {"modules"}} {
         #
         # Explanation of the second multi exec block:
         # {lpop l} - pop the value by our blocking command 'blpop_and_set_multiple_keys'
-        # {del string_foo} - lazy expiration of string_foo when 'blpop_and_set_multiple_keys' tries to write to it. 
+        # {del string_foo} - lazy expiration of string_foo when 'blpop_and_set_multiple_keys' tries to write to it.
         # {set string_foo 1} - the action of our blocking command 'blpop_and_set_multiple_keys'
         # {set string_bar 2} - the action of our blocking command 'blpop_and_set_multiple_keys'
         # {incr expired} - the post notification job, registered after string_foo got expired
@@ -410,7 +410,7 @@ start_server {tags {"modules"}} {
         }
         close_replication_stream $repl
         r DEBUG SET-ACTIVE-EXPIRE 1
-        
+
         wait_for_blocked_clients_count 0
         $rd close
     }

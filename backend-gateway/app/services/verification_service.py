@@ -4,7 +4,7 @@ import asyncio
 import logging
 import os
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional
@@ -60,6 +60,7 @@ class PANRejectionReason(str, Enum):
 @dataclass
 class PANVerificationResult:
     """Result of a PAN verification attempt."""
+
     status: PANStatus
     holder_name: Optional[str] = None
     rejection_reason: Optional[str] = None
@@ -81,7 +82,9 @@ class PANVerificationService:
         nsdl_api_key: str = "",
     ):
         self.db_pool = db_pool
-        self.nsdl_api_url = nsdl_api_url or os.getenv("NSDL_API_URL", "https://api.nsdl.co.in/pan/verify")
+        self.nsdl_api_url = nsdl_api_url or os.getenv(
+            "NSDL_API_URL", "https://api.nsdl.co.in/pan/verify"
+        )
         self.nsdl_api_key = nsdl_api_key or os.getenv("NSDL_API_KEY", "")
 
     # ── Format validation ────────────────────────────────────────────────
@@ -228,7 +231,7 @@ class PANVerificationService:
 
             # Exponential backoff: 1s, 2s, 4s
             if attempt < MAX_RETRIES - 1:
-                backoff = BASE_BACKOFF_SECONDS * (2 ** attempt)
+                backoff = BASE_BACKOFF_SECONDS * (2**attempt)
                 await asyncio.sleep(backoff)
 
         logger.error(
@@ -279,7 +282,7 @@ class PANVerificationService:
 # Minimum DPI for document images
 MIN_DOCUMENT_DPI = 300
 # Document file size limits
-MIN_DOCUMENT_SIZE = 100 * 1024       # 100 KB
+MIN_DOCUMENT_SIZE = 100 * 1024  # 100 KB
 MAX_DOCUMENT_SIZE = 5 * 1024 * 1024  # 5 MB
 ALLOWED_MIME_TYPES = {"image/jpeg", "image/png"}
 
@@ -297,8 +300,9 @@ class KYCStatus(str, Enum):
 @dataclass
 class KYCDocuments:
     """Documents required for KYC submission."""
+
     full_name: str
-    date_of_birth: str          # ISO format YYYY-MM-DD
+    date_of_birth: str  # ISO format YYYY-MM-DD
     address: str
     government_id_photo: bytes  # raw image bytes
     government_id_mime_type: str  # image/jpeg or image/png
@@ -308,6 +312,7 @@ class KYCDocuments:
 @dataclass
 class KYCSubmissionResult:
     """Result of a KYC submission attempt."""
+
     status: KYCStatus
     verification_ref: Optional[str] = None
     rejection_reason: Optional[str] = None
@@ -334,7 +339,9 @@ class KYCService:
         kra_api_key: str = "",
     ):
         self.db_pool = db_pool
-        self.kra_api_url = kra_api_url or os.getenv("KRA_API_URL", "https://api.kra.co.in/kyc/verify")
+        self.kra_api_url = kra_api_url or os.getenv(
+            "KRA_API_URL", "https://api.kra.co.in/kyc/verify"
+        )
         self.kra_api_key = kra_api_key or os.getenv("KRA_API_KEY", "")
 
     # ── Document quality validation ──────────────────────────────────────
@@ -450,9 +457,7 @@ class KYCService:
 
     # ── KYC submission ───────────────────────────────────────────────────
 
-    async def submit_kyc(
-        self, user_id: str, documents: KYCDocuments
-    ) -> KYCSubmissionResult:
+    async def submit_kyc(self, user_id: str, documents: KYCDocuments) -> KYCSubmissionResult:
         """Submit KYC documents for verification.
 
         1. Verify PAN is completed
@@ -578,7 +583,7 @@ class KYCService:
 
             # Exponential backoff: 1s, 2s, 4s
             if attempt < MAX_RETRIES - 1:
-                backoff = BASE_BACKOFF_SECONDS * (2 ** attempt)
+                backoff = BASE_BACKOFF_SECONDS * (2**attempt)
                 await asyncio.sleep(backoff)
 
         logger.error(
@@ -629,6 +634,7 @@ class KYCService:
         document_expiry = None
         if result.verified_at:
             from datetime import timedelta
+
             document_expiry = result.verified_at + timedelta(days=DOCUMENT_RETENTION_DAYS)
 
         try:
@@ -688,6 +694,7 @@ class DMATRejectionReason(str, Enum):
 @dataclass
 class DMATVerificationResult:
     """Result of a DMAT account verification attempt."""
+
     status: DMATStatus
     dmat_id: Optional[str] = None
     depository: Optional[str] = None  # "CDSL" or "NSDL"
@@ -907,7 +914,7 @@ class DMATService:
 
             # Exponential backoff: 1s, 2s, 4s
             if attempt < MAX_RETRIES - 1:
-                backoff = BASE_BACKOFF_SECONDS * (2 ** attempt)
+                backoff = BASE_BACKOFF_SECONDS * (2**attempt)
                 await asyncio.sleep(backoff)
 
         logger.error(
@@ -970,9 +977,7 @@ class DMATService:
 
     # ── Database storage ─────────────────────────────────────────────────
 
-    async def _store_dmat_account(
-        self, user_id: str, result: DMATVerificationResult
-    ) -> None:
+    async def _store_dmat_account(self, user_id: str, result: DMATVerificationResult) -> None:
         """Store DMAT account verification result in the database."""
         if self.db_pool is None:
             logger.debug("No db_pool configured — skipping DMAT storage")

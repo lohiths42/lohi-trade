@@ -829,7 +829,7 @@ Broker WebSocket disconnect	Exponential backoff reconnect (1/2/4/8/60s cap); sub
 DB connection failure	Health check fails; Docker Compose restart policy kicks in (restart: unless-stopped); engine pauses order submission until DB healthy
 Engine crash	Supervisor restarts engine; on startup, engine reads active strategies from DB and resumes; open orders reconciled with broker
 Kill switch triggered	All strategies stopped immediately; open orders cancelled via broker API; all positions flattened (configurable); notification fired; manual reset required
-Corrupt DB	Alembic migration detects incompatible schema; lohi doctor provides diagnostic; restore from backup using lohi restore 
+Corrupt DB	Alembic migration detects incompatible schema; lohi doctor provides diagnostic; restore from backup using lohi restore
 Rollback procedures:
 
 Bad strategy deployment: Stop strategy via UI → orders placed by strategy remain but no new ones → manually close positions via Positions page or bulk [Close All].

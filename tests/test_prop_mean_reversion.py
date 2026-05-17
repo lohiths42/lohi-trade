@@ -68,20 +68,52 @@ def valid_mean_reversion_inputs(draw):
 
     # Pick vwap, then close above vwap, then bb_lower above close
     vwap = draw(st.floats(min_value=1.0, max_value=50_000.0, allow_nan=False, allow_infinity=False))
-    close = draw(st.floats(min_value=vwap + 0.01, max_value=vwap + 10_000.0, allow_nan=False, allow_infinity=False))
-    bb_lower = draw(st.floats(min_value=close + 0.01, max_value=close + 10_000.0, allow_nan=False, allow_infinity=False))
-    bb_middle = draw(st.floats(min_value=bb_lower + 0.01, max_value=bb_lower + 10_000.0, allow_nan=False, allow_infinity=False))
-    bb_upper = draw(st.floats(min_value=bb_middle + 0.01, max_value=bb_middle + 10_000.0, allow_nan=False, allow_infinity=False))
+    close = draw(
+        st.floats(
+            min_value=vwap + 0.01, max_value=vwap + 10_000.0, allow_nan=False, allow_infinity=False
+        )
+    )
+    bb_lower = draw(
+        st.floats(
+            min_value=close + 0.01,
+            max_value=close + 10_000.0,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
+    bb_middle = draw(
+        st.floats(
+            min_value=bb_lower + 0.01,
+            max_value=bb_lower + 10_000.0,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
+    bb_upper = draw(
+        st.floats(
+            min_value=bb_middle + 0.01,
+            max_value=bb_middle + 10_000.0,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
 
     # Volume spike: volume > volume_multiplier × volume_avg_20
-    volume_avg_20 = draw(st.floats(min_value=100.0, max_value=1e8, allow_nan=False, allow_infinity=False))
-    volume = draw(st.floats(
-        min_value=volume_multiplier * volume_avg_20 + 1.0,
-        max_value=volume_multiplier * volume_avg_20 + 1e8,
-        allow_nan=False, allow_infinity=False,
-    ))
+    volume_avg_20 = draw(
+        st.floats(min_value=100.0, max_value=1e8, allow_nan=False, allow_infinity=False)
+    )
+    volume = draw(
+        st.floats(
+            min_value=volume_multiplier * volume_avg_20 + 1.0,
+            max_value=volume_multiplier * volume_avg_20 + 1e8,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
 
-    atr_14 = draw(st.floats(min_value=0.01, max_value=1000.0, allow_nan=False, allow_infinity=False))
+    atr_14 = draw(
+        st.floats(min_value=0.01, max_value=1000.0, allow_nan=False, allow_infinity=False)
+    )
 
     indicators = IndicatorSet(
         symbol="TEST",
@@ -103,14 +135,16 @@ def valid_mean_reversion_inputs(draw):
         volume_avg_20=volume_avg_20,
     )
 
-    candles = pd.DataFrame({
-        "open": [close - 1.0],
-        "high": [close + 1.0],
-        "low": [close - 2.0],
-        "close": [close],
-        "volume": [volume],
-        "timestamp": [datetime(2024, 1, 15, 10, 0, 0)],
-    })
+    candles = pd.DataFrame(
+        {
+            "open": [close - 1.0],
+            "high": [close + 1.0],
+            "low": [close - 2.0],
+            "close": [close],
+            "volume": [volume],
+            "timestamp": [datetime(2024, 1, 15, 10, 0, 0)],
+        }
+    )
 
     return indicators, candles, atr_14, bb_middle, close
 
@@ -126,36 +160,81 @@ def invalid_mean_reversion_inputs(draw):
 
     # Start with valid values
     vwap = draw(st.floats(min_value=1.0, max_value=50_000.0, allow_nan=False, allow_infinity=False))
-    close = draw(st.floats(min_value=vwap + 0.01, max_value=vwap + 10_000.0, allow_nan=False, allow_infinity=False))
-    bb_lower = draw(st.floats(min_value=close + 0.01, max_value=close + 10_000.0, allow_nan=False, allow_infinity=False))
-    bb_middle = draw(st.floats(min_value=bb_lower + 0.01, max_value=bb_lower + 10_000.0, allow_nan=False, allow_infinity=False))
-    bb_upper = draw(st.floats(min_value=bb_middle + 0.01, max_value=bb_middle + 10_000.0, allow_nan=False, allow_infinity=False))
+    close = draw(
+        st.floats(
+            min_value=vwap + 0.01, max_value=vwap + 10_000.0, allow_nan=False, allow_infinity=False
+        )
+    )
+    bb_lower = draw(
+        st.floats(
+            min_value=close + 0.01,
+            max_value=close + 10_000.0,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
+    bb_middle = draw(
+        st.floats(
+            min_value=bb_lower + 0.01,
+            max_value=bb_lower + 10_000.0,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
+    bb_upper = draw(
+        st.floats(
+            min_value=bb_middle + 0.01,
+            max_value=bb_middle + 10_000.0,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
     rsi_14 = draw(st.floats(min_value=0.1, max_value=29.99, allow_nan=False, allow_infinity=False))
-    volume_avg_20 = draw(st.floats(min_value=100.0, max_value=1e8, allow_nan=False, allow_infinity=False))
+    volume_avg_20 = draw(
+        st.floats(min_value=100.0, max_value=1e8, allow_nan=False, allow_infinity=False)
+    )
     volume = volume_multiplier * volume_avg_20 + 1.0
-    atr_14 = draw(st.floats(min_value=0.01, max_value=1000.0, allow_nan=False, allow_infinity=False))
+    atr_14 = draw(
+        st.floats(min_value=0.01, max_value=1000.0, allow_nan=False, allow_infinity=False)
+    )
 
     # Pick which condition to break (0-3)
     condition_to_break = draw(st.integers(min_value=0, max_value=3))
 
     if condition_to_break == 0:
         # Break RSI: make RSI >= 30
-        rsi_14 = draw(st.floats(min_value=30.0, max_value=100.0, allow_nan=False, allow_infinity=False))
+        rsi_14 = draw(
+            st.floats(min_value=30.0, max_value=100.0, allow_nan=False, allow_infinity=False)
+        )
     elif condition_to_break == 1:
         # Break price < bb_lower: make close >= bb_lower
-        close = draw(st.floats(min_value=bb_lower, max_value=bb_lower + 10_000.0, allow_nan=False, allow_infinity=False))
+        close = draw(
+            st.floats(
+                min_value=bb_lower,
+                max_value=bb_lower + 10_000.0,
+                allow_nan=False,
+                allow_infinity=False,
+            )
+        )
         # Ensure close still > vwap for isolation (only one condition broken)
-        vwap = close - draw(st.floats(min_value=0.01, max_value=1000.0, allow_nan=False, allow_infinity=False))
+        vwap = close - draw(
+            st.floats(min_value=0.01, max_value=1000.0, allow_nan=False, allow_infinity=False)
+        )
     elif condition_to_break == 2:
         # Break volume: make volume <= volume_multiplier × volume_avg_20
-        volume = draw(st.floats(
-            min_value=0.0,
-            max_value=volume_multiplier * volume_avg_20,
-            allow_nan=False, allow_infinity=False,
-        ))
+        volume = draw(
+            st.floats(
+                min_value=0.0,
+                max_value=volume_multiplier * volume_avg_20,
+                allow_nan=False,
+                allow_infinity=False,
+            )
+        )
     else:
         # Break price > vwap: make close <= vwap
-        vwap = close + draw(st.floats(min_value=0.0, max_value=10_000.0, allow_nan=False, allow_infinity=False))
+        vwap = close + draw(
+            st.floats(min_value=0.0, max_value=10_000.0, allow_nan=False, allow_infinity=False)
+        )
         # Ensure close still < bb_lower
         bb_lower = max(bb_lower, close + 0.01)
 
@@ -179,14 +258,16 @@ def invalid_mean_reversion_inputs(draw):
         volume_avg_20=volume_avg_20,
     )
 
-    candles = pd.DataFrame({
-        "open": [close - 1.0],
-        "high": [close + 1.0],
-        "low": [close - 2.0],
-        "close": [close],
-        "volume": [volume],
-        "timestamp": [datetime(2024, 1, 15, 10, 0, 0)],
-    })
+    candles = pd.DataFrame(
+        {
+            "open": [close - 1.0],
+            "high": [close + 1.0],
+            "low": [close - 2.0],
+            "close": [close],
+            "volume": [volume],
+            "timestamp": [datetime(2024, 1, 15, 10, 0, 0)],
+        }
+    )
 
     return indicators, candles
 
@@ -194,6 +275,7 @@ def invalid_mean_reversion_inputs(draw):
 # ---------------------------------------------------------------------------
 # Property Tests
 # ---------------------------------------------------------------------------
+
 
 class TestMeanReversionProperties:
     """**Validates: Requirements 4.2**
@@ -244,9 +326,9 @@ class TestMeanReversionProperties:
         signal = strategy.generate_signal(indicators, candles)
 
         assert signal is not None
-        assert signal.stop_loss < signal.entry_price, (
-            f"stop_loss ({signal.stop_loss}) must be below entry_price ({signal.entry_price})"
-        )
+        assert (
+            signal.stop_loss < signal.entry_price
+        ), f"stop_loss ({signal.stop_loss}) must be below entry_price ({signal.entry_price})"
 
     @given(data=valid_mean_reversion_inputs())
     @settings(max_examples=25)
@@ -261,9 +343,9 @@ class TestMeanReversionProperties:
         signal = strategy.generate_signal(indicators, candles)
 
         assert signal is not None
-        assert signal.target == pytest.approx(bb_middle), (
-            f"target ({signal.target}) must equal bb_middle ({bb_middle})"
-        )
+        assert signal.target == pytest.approx(
+            bb_middle
+        ), f"target ({signal.target}) must equal bb_middle ({bb_middle})"
 
     @given(data=valid_mean_reversion_inputs())
     @settings(max_examples=25)

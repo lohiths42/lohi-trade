@@ -297,7 +297,7 @@ int dictRehash(dict *d, int n) {
     unsigned long s0 = DICTHT_SIZE(d->ht_size_exp[0]);
     unsigned long s1 = DICTHT_SIZE(d->ht_size_exp[1]);
     if (dict_can_resize == DICT_RESIZE_FORBID || !dictIsRehashing(d)) return 0;
-    if (dict_can_resize == DICT_RESIZE_AVOID && 
+    if (dict_can_resize == DICT_RESIZE_AVOID &&
         ((s1 > s0 && s1 / s0 < dict_force_resize_ratio) ||
          (s1 < s0 && s0 / s1 < dict_force_resize_ratio)))
     {
@@ -387,8 +387,8 @@ long long timeInMilliseconds(void) {
     return (((long long)tv.tv_sec)*1000)+(tv.tv_usec/1000);
 }
 
-/* Rehash in ms+"delta" milliseconds. The value of "delta" is larger 
- * than 0, and is smaller than 1 in most cases. The exact upper bound 
+/* Rehash in ms+"delta" milliseconds. The value of "delta" is larger
+ * than 0, and is smaller than 1 in most cases. The exact upper bound
  * depends on the running time of dictRehash(d,100).*/
 int dictRehashMilliseconds(dict *d, int ms) {
     if (d->pauserehash > 0) return 0;

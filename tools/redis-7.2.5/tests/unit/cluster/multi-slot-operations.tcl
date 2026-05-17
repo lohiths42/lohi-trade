@@ -52,7 +52,7 @@ test "ADDSLOTS command with several boundary conditions test suite" {
     assert_error "ERR Invalid or out of range slot" {R 0 cluster ADDSLOTS 3001 aaa}
     assert_error "ERR Invalid or out of range slot" {R 0 cluster ADDSLOTS 3001 -1000}
     assert_error "ERR Invalid or out of range slot" {R 0 cluster ADDSLOTS 3001 30003}
-    
+
     assert_error "ERR Slot 3200 is already busy" {R 0 cluster ADDSLOTS 3200}
     assert_error "ERR Slot 8501 is already busy" {R 0 cluster ADDSLOTS 8501}
 

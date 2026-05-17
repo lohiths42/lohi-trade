@@ -1,7 +1,8 @@
 """Bias and news response models."""
 
-from pydantic import BaseModel, Field
 from datetime import datetime
+
+from pydantic import Field
 
 from app.models.base import CamelModel
 

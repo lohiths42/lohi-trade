@@ -29,7 +29,7 @@ class String
 
 end
 
-COMMANDS = %w(create check info fix reshard rebalance add-node 
+COMMANDS = %w(create check info fix reshard rebalance add-node
               del-node set-timeout call import help)
 
 ALLOWED_OPTIONS={
@@ -55,7 +55,7 @@ def parse_options(cmd)
                 options['verbose'] = true
                 next
             end
-            if ALLOWED_OPTIONS[cmd] == nil || 
+            if ALLOWED_OPTIONS[cmd] == nil ||
                ALLOWED_OPTIONS[cmd][option] == nil
                 next
             end
@@ -85,7 +85,7 @@ end
 
 def command_example(cmd, args, opts)
     cmd = "redis-cli --cluster #{cmd}"
-    args.each{|a| 
+    args.each{|a|
         a = a.to_s
         a = a.inspect if a[' ']
         cmd << " #{a}"

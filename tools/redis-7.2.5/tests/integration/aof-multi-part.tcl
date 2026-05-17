@@ -717,7 +717,7 @@ tags {"external:skip"} {
             set d1 [$client debug digest]
             $client debug loadaof
             set d2 [$client debug digest]
-            assert {$d1 eq $d2} 
+            assert {$d1 eq $d2}
         }
 
         clean_aof_persistence $aof_dirpath
@@ -740,7 +740,7 @@ tags {"external:skip"} {
             set d1 [$client debug digest]
             $client debug loadaof
             set d2 [$client debug digest]
-            assert {$d1 eq $d2} 
+            assert {$d1 eq $d2}
         }
 
         clean_aof_persistence $aof_dirpath
@@ -1090,7 +1090,7 @@ tags {"external:skip"} {
         }
 
         test "AOF will trigger limit when AOFRW fails many times" {
-            # Clear all data and trigger a successful AOFRW, so we can let 
+            # Clear all data and trigger a successful AOFRW, so we can let
             # server.aof_current_size equal to 0
             r flushall
             r bgrewriteaof
@@ -1124,7 +1124,7 @@ tags {"external:skip"} {
                 {file appendonly.aof.8.incr.aof seq 8 type i}
                 {file appendonly.aof.9.incr.aof seq 9 type i}
             }
-            
+
             # Write 1KB data to trigger AOFRW
             r set x [string repeat x 1024]
 
@@ -1205,7 +1205,7 @@ tags {"external:skip"} {
                 assert_equal 1 [s aof_rewrite_in_progress]
                 set pid1 [get_child_pid 0]
                 catch {exec kill -9 $pid1}
- 
+
                 # Wait for AOFRW to exit and delete temp incr aof
                 wait_for_condition 1000 100 {
                     [count_log_message 0 "Removing the temp incr aof file"] == 1
@@ -1286,7 +1286,7 @@ tags {"external:skip"} {
                     fail "temp aof did not delete 3 times"
                 }
 
-                # Make sure no new incr AOF was created           
+                # Make sure no new incr AOF was created
                 assert_aof_manifest_content $aof_manifest_file {
                     {file appendonly.aof.1.base.rdb seq 1 type b}
                     {file appendonly.aof.1.incr.aof seq 1 type i}

@@ -37,9 +37,7 @@ class ResearchJudgeReport(Base):
         JSONB, nullable=False, server_default="[]"
     )
     safe_to_display: Mapped[bool] = mapped_column(Boolean, nullable=False)
-    retry_count: Mapped[int] = mapped_column(
-        Integer, nullable=False, server_default="0"
-    )
+    retry_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True), nullable=False, server_default=func.now()
     )

@@ -23,7 +23,6 @@ import json
 from uuid import uuid4
 
 import pytest
-
 from app.websocket import (
     _channel_for,
     _decode_field,
@@ -31,11 +30,11 @@ from app.websocket import (
     _dispatch_partial,
     _dispatch_pubsub,
 )
+
 from src.research.constants import (
     RESEARCH_JUDGE_REPORT_CHANNEL,
     RESEARCH_LATENCY_BUDGET_CHANNEL,
 )
-
 
 # --------------------------------------------------------------------------- #
 # Fake Socket.IO server                                                       #

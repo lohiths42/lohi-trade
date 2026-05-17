@@ -68,7 +68,7 @@ FORBIDDEN_SQL_KEYWORDS: Final[tuple[str, ...]] = (
 # ── Safety checks ──────────────────────────────────────────────────────────
 
 
-class DataSafetyViolation(Exception):
+class DataSafetyError(Exception):
     """Raised when a data-safety check fails.
 
     Carries structured context for audit logging.
@@ -91,9 +91,10 @@ def check_path_not_protected(path: str | Path) -> None:
         if path_str.endswith(protected) or protected in path_str:
             logger.critical(
                 "DATA SAFETY: blocked write to protected path %s (matched %s)",
-                path_str, protected,
+                path_str,
+                protected,
             )
-            raise DataSafetyViolation(
+            raise DataSafetyError(
                 check="PROTECTED_PATH",
                 detail=f"Write to '{path_str}' is blocked — this path is protected.",
                 context={"path": path_str, "matched_rule": protected},
@@ -109,9 +110,11 @@ def check_bulk_delete_limit(row_count: int, scope: str) -> None:
     if row_count > MAX_BULK_DELETE_ROWS:
         logger.critical(
             "DATA SAFETY: blocked bulk delete of %d rows (scope=%s, limit=%d)",
-            row_count, scope, MAX_BULK_DELETE_ROWS,
+            row_count,
+            scope,
+            MAX_BULK_DELETE_ROWS,
         )
-        raise DataSafetyViolation(
+        raise DataSafetyError(
             check="BULK_DELETE_LIMIT",
             detail=(
                 f"Delete operation would affect {row_count} rows "
@@ -136,9 +139,10 @@ def check_sql_safety(query: str) -> None:
         if keyword in query_upper:
             logger.critical(
                 "DATA SAFETY: blocked SQL containing '%s' — query: %.200s",
-                keyword, query,
+                keyword,
+                query,
             )
-            raise DataSafetyViolation(
+            raise DataSafetyError(
                 check="FORBIDDEN_SQL",
                 detail=f"Query contains forbidden keyword '{keyword}'.",
                 context={"keyword": keyword, "query_preview": query[:200]},
@@ -172,12 +176,14 @@ def check_backup_integrity() -> dict:
         result["latest_backup"] = latest.name
         # Check if latest backup is less than 48 hours old
         import time
+
         age_hours = (time.time() - os.path.getmtime(latest)) / 3600
         if age_hours > 48:
             result["status"] = "stale"
             logger.warning(
                 "DATA SAFETY: latest backup is %.1f hours old (>48h threshold): %s",
-                age_hours, latest.name,
+                age_hours,
+                latest.name,
             )
         else:
             result["status"] = "healthy"

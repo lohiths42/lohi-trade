@@ -119,8 +119,7 @@ class TestDatabaseConnectionManager:
             # Insert data using context manager
             with db_manager.get_sqlite_cursor() as cursor:
                 cursor.execute(
-                    "INSERT INTO audit_log (event_type, component, message) "
-                    "VALUES (?, ?, ?)",
+                    "INSERT INTO audit_log (event_type, component, message) " "VALUES (?, ?, ?)",
                     ("TEST", "test_component", "test message"),
                 )
 
@@ -211,8 +210,7 @@ class TestDatabaseWriteRetry:
             db_manager.connect_sqlite()
 
             cursor = db_manager.execute_with_retry(
-                "INSERT INTO audit_log (event_type, component, message) "
-                "VALUES (?, ?, ?)",
+                "INSERT INTO audit_log (event_type, component, message) " "VALUES (?, ?, ?)",
                 ("TEST", "component", "message"),
             )
 
@@ -299,16 +297,16 @@ class TestDatabasePropertyBased:
     @patch("time.sleep")
     def test_property_database_write_retry(self, mock_sleep, max_retries, backoff_base):
         """Feature: lohi-trade, Property 80: Database Write Retry
-        
+
         For any database write failure, up to 3 retry attempts should be made
         with exponential backoff (1s, 2s, 4s).
-        
+
         This property verifies that:
         1. Retries are attempted up to max_retries times
         2. Exponential backoff is applied between retries
         3. Success is returned if any retry succeeds
         4. Error is raised if all retries fail
-        
+
         Validates: Requirements 25.4
         """
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -322,10 +320,9 @@ class TestDatabasePropertyBased:
             # Test case 1: Succeed after some retries
             retry_count = min(max_retries - 1, 2)  # Fail a few times, then succeed
             mock_cursor = MagicMock()
-            mock_conn.execute.side_effect = (
-                [sqlite3.OperationalError("database is locked")] * retry_count
-                + [mock_cursor]
-            )
+            mock_conn.execute.side_effect = [
+                sqlite3.OperationalError("database is locked")
+            ] * retry_count + [mock_cursor]
 
             db_manager._sqlite_conn = mock_conn
 
@@ -346,7 +343,7 @@ class TestDatabasePropertyBased:
 
                 # Check backoff delays
                 for i in range(retry_count):
-                    expected_delay = backoff_base * (2 ** i)
+                    expected_delay = backoff_base * (2**i)
                     actual_delay = mock_sleep.call_args_list[i][0][0]
                     assert abs(actual_delay - expected_delay) < 0.001
 
@@ -369,13 +366,19 @@ class TestDatabasePropertyBased:
 
     @settings(max_examples=5, deadline=5000)
     @given(
-        event_type=st.text(min_size=1, max_size=50, alphabet=st.characters(blacklist_categories=("Cs",))),
-        component=st.text(min_size=1, max_size=50, alphabet=st.characters(blacklist_categories=("Cs",))),
-        message=st.text(min_size=1, max_size=200, alphabet=st.characters(blacklist_categories=("Cs",))),
+        event_type=st.text(
+            min_size=1, max_size=50, alphabet=st.characters(blacklist_categories=("Cs",))
+        ),
+        component=st.text(
+            min_size=1, max_size=50, alphabet=st.characters(blacklist_categories=("Cs",))
+        ),
+        message=st.text(
+            min_size=1, max_size=200, alphabet=st.characters(blacklist_categories=("Cs",))
+        ),
     )
     def test_property_audit_log_persistence(self, event_type, component, message):
         """Property: Audit log entries should be persisted correctly.
-        
+
         For any event_type, component, and message, after inserting into
         audit_log, the data should be retrievable with all fields intact.
         """
@@ -388,8 +391,7 @@ class TestDatabasePropertyBased:
             # Insert audit log entry
             with db_manager.get_sqlite_cursor() as cursor:
                 cursor.execute(
-                    "INSERT INTO audit_log (event_type, component, message) "
-                    "VALUES (?, ?, ?)",
+                    "INSERT INTO audit_log (event_type, component, message) " "VALUES (?, ?, ?)",
                     (event_type, component, message),
                 )
 
@@ -417,6 +419,7 @@ class TestGetDatabaseManager:
         """Test get_database_manager creates instance."""
         # Reset global instance
         import src.state.database as db_module
+
         db_module._db_manager = None
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -431,6 +434,7 @@ class TestGetDatabaseManager:
         """Test get_database_manager returns same instance."""
         # Reset global instance
         import src.state.database as db_module
+
         db_module._db_manager = None
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -440,7 +444,6 @@ class TestGetDatabaseManager:
             manager2 = get_database_manager(sqlite_path=sqlite_path)
 
             assert manager1 is manager2
-
 
 
 class TestDatabaseBackup:
@@ -458,8 +461,7 @@ class TestDatabaseBackup:
 
             with db_manager.get_sqlite_cursor() as cursor:
                 cursor.execute(
-                    "INSERT INTO audit_log (event_type, component, message) "
-                    "VALUES (?, ?, ?)",
+                    "INSERT INTO audit_log (event_type, component, message) " "VALUES (?, ?, ?)",
                     ("TEST", "component", "message"),
                 )
 
@@ -467,6 +469,7 @@ class TestDatabaseBackup:
 
             # Create backup
             from src.state.database_backup import DatabaseBackupManager
+
             backup_manager = DatabaseBackupManager(
                 sqlite_path=sqlite_path,
                 backup_dir=backup_dir,
@@ -493,8 +496,7 @@ class TestDatabaseBackup:
             test_message = "test_backup_data"
             with db_manager.get_sqlite_cursor() as cursor:
                 cursor.execute(
-                    "INSERT INTO audit_log (event_type, component, message) "
-                    "VALUES (?, ?, ?)",
+                    "INSERT INTO audit_log (event_type, component, message) " "VALUES (?, ?, ?)",
                     ("TEST", "component", test_message),
                 )
 
@@ -502,6 +504,7 @@ class TestDatabaseBackup:
 
             # Create backup
             from src.state.database_backup import DatabaseBackupManager
+
             backup_manager = DatabaseBackupManager(
                 sqlite_path=sqlite_path,
                 backup_dir=backup_dir,
@@ -544,6 +547,7 @@ class TestDatabaseBackup:
 
             # Set modification times
             import os
+
             old_time = (datetime.now() - timedelta(days=35)).timestamp()
             recent_time = (datetime.now() - timedelta(days=5)).timestamp()
 
@@ -553,6 +557,7 @@ class TestDatabaseBackup:
 
             # Cleanup old backups
             from src.state.database_backup import DatabaseBackupManager
+
             backup_manager = DatabaseBackupManager(
                 sqlite_path=sqlite_path,
                 backup_dir=str(backup_dir),
@@ -585,6 +590,7 @@ class TestDatabaseBackup:
 
             # List backups
             from src.state.database_backup import DatabaseBackupManager
+
             backup_manager = DatabaseBackupManager(
                 sqlite_path=sqlite_path,
                 backup_dir=str(backup_dir),
@@ -611,6 +617,7 @@ class TestDatabaseBackup:
 
             # Perform backup with cleanup
             from src.state.database_backup import DatabaseBackupManager
+
             backup_manager = DatabaseBackupManager(
                 sqlite_path=sqlite_path,
                 backup_dir=backup_dir,
@@ -637,8 +644,7 @@ class TestDatabaseBackup:
 
             with db_manager.get_sqlite_cursor() as cursor:
                 cursor.execute(
-                    "INSERT INTO audit_log (event_type, component, message) "
-                    "VALUES (?, ?, ?)",
+                    "INSERT INTO audit_log (event_type, component, message) " "VALUES (?, ?, ?)",
                     ("ORIGINAL", "component", "original message"),
                 )
 

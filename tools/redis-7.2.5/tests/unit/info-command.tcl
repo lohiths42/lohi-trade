@@ -12,10 +12,10 @@ start_server {tags {"info and its relative command"}} {
             assert { ![string match "*sentinel_tilt*" $info] }
             assert { [string match "*used_memory*" $info] }
             if {$arg == "" || $arg == "default"} {
-                assert { ![string match "*rejected_calls*" $info] }        
+                assert { ![string match "*rejected_calls*" $info] }
             } else {
-                assert { [string match "*rejected_calls*" $info] }        
-            }        
+                assert { [string match "*rejected_calls*" $info] }
+            }
         }
     }
 
@@ -58,5 +58,5 @@ start_server {tags {"info and its relative command"}} {
         # check that we didn't get the same info twice
         assert { ![string match "*used_cpu_user_children*used_cpu_user_children*" $info] }
     }
-   
+
 }

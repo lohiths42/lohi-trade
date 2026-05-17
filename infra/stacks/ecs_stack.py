@@ -8,19 +8,30 @@ Requirements covered:
 """
 
 from aws_cdk import (
-    Stack,
+    CfnOutput,
     Duration,
     RemovalPolicy,
-    CfnOutput,
+    Stack,
+)
+from aws_cdk import (
     aws_ec2 as ec2,
-    aws_ecs as ecs,
+)
+from aws_cdk import (
     aws_ecr as ecr,
-    aws_iam as iam,
+)
+from aws_cdk import (
+    aws_ecs as ecs,
+)
+from aws_cdk import (
     aws_elasticloadbalancingv2 as elbv2,
+)
+from aws_cdk import (
+    aws_iam as iam,
+)
+from aws_cdk import (
     aws_logs as logs,
 )
 from constructs import Construct
-
 
 # Service definitions: (name, cpu, memory_mib, container_port, desired_count)
 _SERVICES = [
@@ -132,9 +143,7 @@ class EcsStack(Stack):
                     stream_prefix=svc_name,
                     log_group=log_group,
                 ),
-                port_mappings=[
-                    ecs.PortMapping(container_port=port, protocol=ecs.Protocol.TCP)
-                ],
+                port_mappings=[ecs.PortMapping(container_port=port, protocol=ecs.Protocol.TCP)],
                 environment={
                     "SERVICE_NAME": svc_name,
                 },
@@ -147,9 +156,7 @@ class EcsStack(Stack):
                 task_definition=task_def,
                 desired_count=desired,
                 security_groups=[ecs_sg],
-                vpc_subnets=ec2.SubnetSelection(
-                    subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS
-                ),
+                vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS),
                 assign_public_ip=False,
             )
 

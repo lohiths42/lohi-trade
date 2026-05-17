@@ -33,11 +33,13 @@ from src.ingestion.broker_interface import (
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_trades_db() -> MagicMock:
     """Create a MagicMock db_manager backed by an in-memory SQLite with trades table."""
     conn = sqlite3.connect(":memory:")
     conn.row_factory = sqlite3.Row
-    conn.executescript("""
+    conn.executescript(
+        """
         CREATE TABLE IF NOT EXISTS trades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             trade_id TEXT UNIQUE NOT NULL,
@@ -55,7 +57,8 @@ def _make_trades_db() -> MagicMock:
             exit_reason TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
-    """)
+    """
+    )
     conn.commit()
     db = MagicMock()
     db.connect_sqlite.return_value = conn
@@ -67,7 +70,9 @@ def _make_oms() -> MagicMock:
     """Create a mock OMS that returns successful order results."""
     oms = MagicMock()
     oms.place_order.return_value = OrderResult(
-        success=True, order_id="mock-order", broker_order_id="BROKER-1",
+        success=True,
+        order_id="mock-order",
+        broker_order_id="BROKER-1",
     )
     oms.cancel_order.return_value = True
     return oms
@@ -98,7 +103,8 @@ def _make_pm(
 def _get_trade_row(db: MagicMock, trade_id: str) -> sqlite3.Row:
     conn = db.connect_sqlite()
     return conn.execute(
-        "SELECT * FROM trades WHERE trade_id=?", (trade_id,),
+        "SELECT * FROM trades WHERE trade_id=?",
+        (trade_id,),
     ).fetchone()
 
 
@@ -115,9 +121,14 @@ class TestStopLossPlacement:
         pm = _make_pm(oms=oms)
 
         pos = pm.on_fill(
-            signal_id="sig-1", symbol="RELIANCE", side="BUY",
-            entry_price=2500.0, quantity=10, stop_loss=2450.0,
-            target=2600.0, strategy="MeanReversion",
+            signal_id="sig-1",
+            symbol="RELIANCE",
+            side="BUY",
+            entry_price=2500.0,
+            quantity=10,
+            stop_loss=2450.0,
+            target=2600.0,
+            strategy="MeanReversion",
         )
 
         # OMS should have been called at least twice (SL + target)
@@ -136,9 +147,14 @@ class TestStopLossPlacement:
         pm = _make_pm(oms=oms)
 
         pos = pm.on_fill(
-            signal_id="sig-2", symbol="TCS", side="SELL",
-            entry_price=3500.0, quantity=5, stop_loss=3550.0,
-            target=3400.0, strategy="TrendFollowing",
+            signal_id="sig-2",
+            symbol="TCS",
+            side="SELL",
+            entry_price=3500.0,
+            quantity=5,
+            stop_loss=3550.0,
+            target=3400.0,
+            strategy="TrendFollowing",
         )
 
         sl_order = oms.place_order.call_args_list[0][0][0]
@@ -151,9 +167,14 @@ class TestStopLossPlacement:
         pm = _make_pm(oms=oms)
 
         pos = pm.on_fill(
-            signal_id="sig-3", symbol="INFY", side="BUY",
-            entry_price=1500.0, quantity=20, stop_loss=1470.0,
-            target=1550.0, strategy="MeanReversion",
+            signal_id="sig-3",
+            symbol="INFY",
+            side="BUY",
+            entry_price=1500.0,
+            quantity=20,
+            stop_loss=1470.0,
+            target=1550.0,
+            strategy="MeanReversion",
         )
 
         assert pos.stop_order_id is not None
@@ -172,9 +193,14 @@ class TestTargetPlacement:
         pm = _make_pm(oms=oms)
 
         pos = pm.on_fill(
-            signal_id="sig-4", symbol="RELIANCE", side="BUY",
-            entry_price=2500.0, quantity=10, stop_loss=2450.0,
-            target=2600.0, strategy="MeanReversion",
+            signal_id="sig-4",
+            symbol="RELIANCE",
+            side="BUY",
+            entry_price=2500.0,
+            quantity=10,
+            stop_loss=2450.0,
+            target=2600.0,
+            strategy="MeanReversion",
         )
 
         # Second call should be the target
@@ -189,9 +215,14 @@ class TestTargetPlacement:
         pm = _make_pm(oms=oms)
 
         pos = pm.on_fill(
-            signal_id="sig-5", symbol="TCS", side="SELL",
-            entry_price=3500.0, quantity=5, stop_loss=3550.0,
-            target=3400.0, strategy="TrendFollowing",
+            signal_id="sig-5",
+            symbol="TCS",
+            side="SELL",
+            entry_price=3500.0,
+            quantity=5,
+            stop_loss=3550.0,
+            target=3400.0,
+            strategy="TrendFollowing",
         )
 
         target_order = oms.place_order.call_args_list[1][0][0]
@@ -204,9 +235,14 @@ class TestTargetPlacement:
         pm = _make_pm(oms=oms)
 
         pos = pm.on_fill(
-            signal_id="sig-6", symbol="INFY", side="BUY",
-            entry_price=1500.0, quantity=20, stop_loss=1470.0,
-            target=1550.0, strategy="MeanReversion",
+            signal_id="sig-6",
+            symbol="INFY",
+            side="BUY",
+            entry_price=1500.0,
+            quantity=20,
+            stop_loss=1470.0,
+            target=1550.0,
+            strategy="MeanReversion",
         )
 
         assert pos.target_order_id is not None
@@ -223,9 +259,14 @@ class TestTrailingStop:
     def test_trailing_stop_moves_up_for_buy(self):
         pm = _make_pm()
         pos = pm.on_fill(
-            signal_id="sig-7", symbol="RELIANCE", side="BUY",
-            entry_price=2500.0, quantity=10, stop_loss=2450.0,
-            target=2600.0, strategy="MeanReversion",
+            signal_id="sig-7",
+            symbol="RELIANCE",
+            side="BUY",
+            entry_price=2500.0,
+            quantity=10,
+            stop_loss=2450.0,
+            target=2600.0,
+            strategy="MeanReversion",
         )
 
         # Price moves up to 2560 -> new_stop = 2500 + 0.5*(2560-2500) = 2530
@@ -235,9 +276,14 @@ class TestTrailingStop:
     def test_trailing_stop_moves_down_for_sell(self):
         pm = _make_pm()
         pos = pm.on_fill(
-            signal_id="sig-8", symbol="TCS", side="SELL",
-            entry_price=3500.0, quantity=5, stop_loss=3550.0,
-            target=3400.0, strategy="TrendFollowing",
+            signal_id="sig-8",
+            symbol="TCS",
+            side="SELL",
+            entry_price=3500.0,
+            quantity=5,
+            stop_loss=3550.0,
+            target=3400.0,
+            strategy="TrendFollowing",
         )
 
         # Price moves down to 3440 -> new_stop = 3500 - 0.5*(3500-3440) = 3470
@@ -247,9 +293,14 @@ class TestTrailingStop:
     def test_trailing_stop_never_moves_backward_buy(self):
         pm = _make_pm()
         pos = pm.on_fill(
-            signal_id="sig-9", symbol="RELIANCE", side="BUY",
-            entry_price=2500.0, quantity=10, stop_loss=2450.0,
-            target=2600.0, strategy="MeanReversion",
+            signal_id="sig-9",
+            symbol="RELIANCE",
+            side="BUY",
+            entry_price=2500.0,
+            quantity=10,
+            stop_loss=2450.0,
+            target=2600.0,
+            strategy="MeanReversion",
         )
 
         # Move price up
@@ -264,9 +315,14 @@ class TestTrailingStop:
     def test_trailing_stop_never_moves_backward_sell(self):
         pm = _make_pm()
         pos = pm.on_fill(
-            signal_id="sig-10", symbol="TCS", side="SELL",
-            entry_price=3500.0, quantity=5, stop_loss=3550.0,
-            target=3400.0, strategy="TrendFollowing",
+            signal_id="sig-10",
+            symbol="TCS",
+            side="SELL",
+            entry_price=3500.0,
+            quantity=5,
+            stop_loss=3550.0,
+            target=3400.0,
+            strategy="TrendFollowing",
         )
 
         # Move price down
@@ -281,9 +337,14 @@ class TestTrailingStop:
     def test_trailing_stop_no_change_when_price_unfavourable_buy(self):
         pm = _make_pm()
         pos = pm.on_fill(
-            signal_id="sig-11", symbol="RELIANCE", side="BUY",
-            entry_price=2500.0, quantity=10, stop_loss=2450.0,
-            target=2600.0, strategy="MeanReversion",
+            signal_id="sig-11",
+            symbol="RELIANCE",
+            side="BUY",
+            entry_price=2500.0,
+            quantity=10,
+            stop_loss=2450.0,
+            target=2600.0,
+            strategy="MeanReversion",
         )
 
         original_stop = pos.trailing_stop
@@ -295,9 +356,14 @@ class TestTrailingStop:
         oms = _make_oms()
         pm = _make_pm(oms=oms)
         pos = pm.on_fill(
-            signal_id="sig-12", symbol="RELIANCE", side="BUY",
-            entry_price=2500.0, quantity=10, stop_loss=2450.0,
-            target=2600.0, strategy="MeanReversion",
+            signal_id="sig-12",
+            symbol="RELIANCE",
+            side="BUY",
+            entry_price=2500.0,
+            quantity=10,
+            stop_loss=2450.0,
+            target=2600.0,
+            strategy="MeanReversion",
         )
 
         initial_call_count = oms.place_order.call_count
@@ -322,9 +388,14 @@ class TestPositionClosingOnStopHit:
     def test_buy_position_closed_on_stop_hit(self):
         pm = _make_pm()
         pos = pm.on_fill(
-            signal_id="sig-13", symbol="RELIANCE", side="BUY",
-            entry_price=2500.0, quantity=10, stop_loss=2450.0,
-            target=2600.0, strategy="MeanReversion",
+            signal_id="sig-13",
+            symbol="RELIANCE",
+            side="BUY",
+            entry_price=2500.0,
+            quantity=10,
+            stop_loss=2450.0,
+            target=2600.0,
+            strategy="MeanReversion",
         )
 
         closed = pm.on_stop_hit(pos.stop_order_id, 2450.0)
@@ -338,9 +409,14 @@ class TestPositionClosingOnStopHit:
     def test_sell_position_closed_on_stop_hit(self):
         pm = _make_pm()
         pos = pm.on_fill(
-            signal_id="sig-14", symbol="TCS", side="SELL",
-            entry_price=3500.0, quantity=5, stop_loss=3550.0,
-            target=3400.0, strategy="TrendFollowing",
+            signal_id="sig-14",
+            symbol="TCS",
+            side="SELL",
+            entry_price=3500.0,
+            quantity=5,
+            stop_loss=3550.0,
+            target=3400.0,
+            strategy="TrendFollowing",
         )
 
         closed = pm.on_stop_hit(pos.stop_order_id, 3550.0)
@@ -367,9 +443,14 @@ class TestPositionClosingOnTargetHit:
     def test_buy_position_closed_on_target_hit(self):
         pm = _make_pm()
         pos = pm.on_fill(
-            signal_id="sig-15", symbol="RELIANCE", side="BUY",
-            entry_price=2500.0, quantity=10, stop_loss=2450.0,
-            target=2600.0, strategy="MeanReversion",
+            signal_id="sig-15",
+            symbol="RELIANCE",
+            side="BUY",
+            entry_price=2500.0,
+            quantity=10,
+            stop_loss=2450.0,
+            target=2600.0,
+            strategy="MeanReversion",
         )
 
         closed = pm.on_target_hit(pos.target_order_id, 2600.0)
@@ -383,9 +464,14 @@ class TestPositionClosingOnTargetHit:
     def test_sell_position_closed_on_target_hit(self):
         pm = _make_pm()
         pos = pm.on_fill(
-            signal_id="sig-16", symbol="TCS", side="SELL",
-            entry_price=3500.0, quantity=5, stop_loss=3550.0,
-            target=3400.0, strategy="TrendFollowing",
+            signal_id="sig-16",
+            symbol="TCS",
+            side="SELL",
+            entry_price=3500.0,
+            quantity=5,
+            stop_loss=3550.0,
+            target=3400.0,
+            strategy="TrendFollowing",
         )
 
         closed = pm.on_target_hit(pos.target_order_id, 3400.0)
@@ -408,9 +494,14 @@ class TestOCOCancellation:
         oms = _make_oms()
         pm = _make_pm(oms=oms)
         pos = pm.on_fill(
-            signal_id="sig-17", symbol="RELIANCE", side="BUY",
-            entry_price=2500.0, quantity=10, stop_loss=2450.0,
-            target=2600.0, strategy="MeanReversion",
+            signal_id="sig-17",
+            symbol="RELIANCE",
+            side="BUY",
+            entry_price=2500.0,
+            quantity=10,
+            stop_loss=2450.0,
+            target=2600.0,
+            strategy="MeanReversion",
         )
 
         target_order_id = pos.target_order_id
@@ -424,9 +515,14 @@ class TestOCOCancellation:
         oms = _make_oms()
         pm = _make_pm(oms=oms)
         pos = pm.on_fill(
-            signal_id="sig-18", symbol="RELIANCE", side="BUY",
-            entry_price=2500.0, quantity=10, stop_loss=2450.0,
-            target=2600.0, strategy="MeanReversion",
+            signal_id="sig-18",
+            symbol="RELIANCE",
+            side="BUY",
+            entry_price=2500.0,
+            quantity=10,
+            stop_loss=2450.0,
+            target=2600.0,
+            strategy="MeanReversion",
         )
 
         stop_order_id = pos.stop_order_id
@@ -447,14 +543,24 @@ class TestForcedSquareOff:
     def test_square_off_closes_all_positions(self):
         pm = _make_pm()
         pos1 = pm.on_fill(
-            signal_id="sig-19", symbol="RELIANCE", side="BUY",
-            entry_price=2500.0, quantity=10, stop_loss=2450.0,
-            target=2600.0, strategy="MeanReversion",
+            signal_id="sig-19",
+            symbol="RELIANCE",
+            side="BUY",
+            entry_price=2500.0,
+            quantity=10,
+            stop_loss=2450.0,
+            target=2600.0,
+            strategy="MeanReversion",
         )
         pos2 = pm.on_fill(
-            signal_id="sig-20", symbol="TCS", side="SELL",
-            entry_price=3500.0, quantity=5, stop_loss=3550.0,
-            target=3400.0, strategy="TrendFollowing",
+            signal_id="sig-20",
+            symbol="TCS",
+            side="SELL",
+            entry_price=3500.0,
+            quantity=5,
+            stop_loss=3550.0,
+            target=3400.0,
+            strategy="TrendFollowing",
         )
 
         squared = pm.force_square_off()
@@ -466,9 +572,14 @@ class TestForcedSquareOff:
         oms = _make_oms()
         pm = _make_pm(oms=oms)
         pos = pm.on_fill(
-            signal_id="sig-21", symbol="RELIANCE", side="BUY",
-            entry_price=2500.0, quantity=10, stop_loss=2450.0,
-            target=2600.0, strategy="MeanReversion",
+            signal_id="sig-21",
+            symbol="RELIANCE",
+            side="BUY",
+            entry_price=2500.0,
+            quantity=10,
+            stop_loss=2450.0,
+            target=2600.0,
+            strategy="MeanReversion",
         )
 
         stop_id = pos.stop_order_id
@@ -484,9 +595,14 @@ class TestForcedSquareOff:
         oms = _make_oms()
         pm = _make_pm(oms=oms)
         pm.on_fill(
-            signal_id="sig-22", symbol="RELIANCE", side="BUY",
-            entry_price=2500.0, quantity=10, stop_loss=2450.0,
-            target=2600.0, strategy="MeanReversion",
+            signal_id="sig-22",
+            symbol="RELIANCE",
+            side="BUY",
+            entry_price=2500.0,
+            quantity=10,
+            stop_loss=2450.0,
+            target=2600.0,
+            strategy="MeanReversion",
         )
 
         initial_place_count = oms.place_order.call_count
@@ -503,9 +619,14 @@ class TestForcedSquareOff:
         now = datetime(2024, 1, 15, 15, 15)
         pm = _make_pm(now=now)
         pm.on_fill(
-            signal_id="sig-23", symbol="RELIANCE", side="BUY",
-            entry_price=2500.0, quantity=10, stop_loss=2450.0,
-            target=2600.0, strategy="MeanReversion",
+            signal_id="sig-23",
+            symbol="RELIANCE",
+            side="BUY",
+            entry_price=2500.0,
+            quantity=10,
+            stop_loss=2450.0,
+            target=2600.0,
+            strategy="MeanReversion",
         )
 
         triggered = pm.check_square_off_time()
@@ -516,9 +637,14 @@ class TestForcedSquareOff:
         now = datetime(2024, 1, 15, 14, 30)
         pm = _make_pm(now=now)
         pm.on_fill(
-            signal_id="sig-24", symbol="RELIANCE", side="BUY",
-            entry_price=2500.0, quantity=10, stop_loss=2450.0,
-            target=2600.0, strategy="MeanReversion",
+            signal_id="sig-24",
+            symbol="RELIANCE",
+            side="BUY",
+            entry_price=2500.0,
+            quantity=10,
+            stop_loss=2450.0,
+            target=2600.0,
+            strategy="MeanReversion",
         )
 
         triggered = pm.check_square_off_time()
@@ -538,9 +664,14 @@ class TestPositionPersistence:
         pm = _make_pm(db=db)
 
         pos = pm.on_fill(
-            signal_id="sig-25", symbol="RELIANCE", side="BUY",
-            entry_price=2500.0, quantity=10, stop_loss=2450.0,
-            target=2600.0, strategy="MeanReversion",
+            signal_id="sig-25",
+            symbol="RELIANCE",
+            side="BUY",
+            entry_price=2500.0,
+            quantity=10,
+            stop_loss=2450.0,
+            target=2600.0,
+            strategy="MeanReversion",
         )
 
         row = _get_trade_row(db, pos.position_id)
@@ -558,9 +689,14 @@ class TestPositionPersistence:
         pm = _make_pm(db=db)
 
         pos = pm.on_fill(
-            signal_id="sig-26", symbol="RELIANCE", side="BUY",
-            entry_price=2500.0, quantity=10, stop_loss=2450.0,
-            target=2600.0, strategy="MeanReversion",
+            signal_id="sig-26",
+            symbol="RELIANCE",
+            side="BUY",
+            entry_price=2500.0,
+            quantity=10,
+            stop_loss=2450.0,
+            target=2600.0,
+            strategy="MeanReversion",
         )
 
         pm.on_target_hit(pos.target_order_id, 2600.0)
@@ -583,9 +719,14 @@ class TestEventPublishing:
     def test_close_event_published_on_stop_hit(self):
         pm = _make_pm()
         pos = pm.on_fill(
-            signal_id="sig-27", symbol="RELIANCE", side="BUY",
-            entry_price=2500.0, quantity=10, stop_loss=2450.0,
-            target=2600.0, strategy="MeanReversion",
+            signal_id="sig-27",
+            symbol="RELIANCE",
+            side="BUY",
+            entry_price=2500.0,
+            quantity=10,
+            stop_loss=2450.0,
+            target=2600.0,
+            strategy="MeanReversion",
         )
 
         pm.on_stop_hit(pos.stop_order_id, 2450.0)
@@ -601,9 +742,14 @@ class TestEventPublishing:
     def test_close_event_published_on_target_hit(self):
         pm = _make_pm()
         pos = pm.on_fill(
-            signal_id="sig-28", symbol="RELIANCE", side="BUY",
-            entry_price=2500.0, quantity=10, stop_loss=2450.0,
-            target=2600.0, strategy="MeanReversion",
+            signal_id="sig-28",
+            symbol="RELIANCE",
+            side="BUY",
+            entry_price=2500.0,
+            quantity=10,
+            stop_loss=2450.0,
+            target=2600.0,
+            strategy="MeanReversion",
         )
 
         pm.on_target_hit(pos.target_order_id, 2600.0)
@@ -617,17 +763,30 @@ class TestEventPublishing:
     def test_close_event_contains_required_fields(self):
         pm = _make_pm()
         pos = pm.on_fill(
-            signal_id="sig-29", symbol="RELIANCE", side="BUY",
-            entry_price=2500.0, quantity=10, stop_loss=2450.0,
-            target=2600.0, strategy="MeanReversion",
+            signal_id="sig-29",
+            symbol="RELIANCE",
+            side="BUY",
+            entry_price=2500.0,
+            quantity=10,
+            stop_loss=2450.0,
+            target=2600.0,
+            strategy="MeanReversion",
         )
 
         pm.on_target_hit(pos.target_order_id, 2600.0)
 
         payload = pm._event_bus.publish.call_args[0][1]
         required_fields = [
-            "position_id", "symbol", "side", "entry_price", "exit_price",
-            "quantity", "realized_pnl", "exit_reason", "strategy", "timestamp",
+            "position_id",
+            "symbol",
+            "side",
+            "entry_price",
+            "exit_price",
+            "quantity",
+            "realized_pnl",
+            "exit_reason",
+            "strategy",
+            "timestamp",
         ]
         for field in required_fields:
             assert field in payload, f"Missing field: {field}"
@@ -644,9 +803,14 @@ class TestEdgeCases:
     def test_update_price_on_closed_position_is_noop(self):
         pm = _make_pm()
         pos = pm.on_fill(
-            signal_id="sig-30", symbol="RELIANCE", side="BUY",
-            entry_price=2500.0, quantity=10, stop_loss=2450.0,
-            target=2600.0, strategy="MeanReversion",
+            signal_id="sig-30",
+            symbol="RELIANCE",
+            side="BUY",
+            entry_price=2500.0,
+            quantity=10,
+            stop_loss=2450.0,
+            target=2600.0,
+            strategy="MeanReversion",
         )
 
         pm.on_stop_hit(pos.stop_order_id, 2450.0)
@@ -658,14 +822,24 @@ class TestEdgeCases:
     def test_get_open_positions(self):
         pm = _make_pm()
         pos1 = pm.on_fill(
-            signal_id="sig-31", symbol="RELIANCE", side="BUY",
-            entry_price=2500.0, quantity=10, stop_loss=2450.0,
-            target=2600.0, strategy="MeanReversion",
+            signal_id="sig-31",
+            symbol="RELIANCE",
+            side="BUY",
+            entry_price=2500.0,
+            quantity=10,
+            stop_loss=2450.0,
+            target=2600.0,
+            strategy="MeanReversion",
         )
         pos2 = pm.on_fill(
-            signal_id="sig-32", symbol="TCS", side="SELL",
-            entry_price=3500.0, quantity=5, stop_loss=3550.0,
-            target=3400.0, strategy="TrendFollowing",
+            signal_id="sig-32",
+            symbol="TCS",
+            side="SELL",
+            entry_price=3500.0,
+            quantity=5,
+            stop_loss=3550.0,
+            target=3400.0,
+            strategy="TrendFollowing",
         )
 
         # Close one
@@ -678,9 +852,14 @@ class TestEdgeCases:
     def test_unrealized_pnl_updated_on_price_change(self):
         pm = _make_pm()
         pos = pm.on_fill(
-            signal_id="sig-33", symbol="RELIANCE", side="BUY",
-            entry_price=2500.0, quantity=10, stop_loss=2450.0,
-            target=2600.0, strategy="MeanReversion",
+            signal_id="sig-33",
+            symbol="RELIANCE",
+            side="BUY",
+            entry_price=2500.0,
+            quantity=10,
+            stop_loss=2450.0,
+            target=2600.0,
+            strategy="MeanReversion",
         )
 
         pm.update_price(pos.position_id, 2550.0)

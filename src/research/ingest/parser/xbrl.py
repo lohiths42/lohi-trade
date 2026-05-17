@@ -273,9 +273,7 @@ def _rows_to_markdown_table(rows: list[list[str]]) -> str:
         return collapsed.replace("|", "\\|")
 
     header = rows[0] + [""] * max(0, n_cols - len(rows[0]))
-    body = [
-        row + [""] * max(0, n_cols - len(row)) for row in rows[1:]
-    ]
+    body = [row + [""] * max(0, n_cols - len(row)) for row in rows[1:]]
     separator = "|".join(["---"] * n_cols)
     lines = [
         "| " + " | ".join(_cell(c) for c in header[:n_cols]) + " |",

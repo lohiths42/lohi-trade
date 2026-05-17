@@ -228,9 +228,7 @@ def parse_stream_entry(
             break
 
     entry_id_str = (
-        entry_id.decode("utf-8")
-        if isinstance(entry_id, (bytes, bytearray))
-        else str(entry_id)
+        entry_id.decode("utf-8") if isinstance(entry_id, (bytes, bytearray)) else str(entry_id)
     )
 
     return StreamEvent(

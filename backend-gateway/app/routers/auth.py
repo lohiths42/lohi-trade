@@ -3,8 +3,8 @@
 import logging
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Depends, Header
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, Header, HTTPException
+from pydantic import BaseModel, Field
 
 from app.services.auth_service import (
     authenticate,
@@ -19,6 +19,7 @@ router = APIRouter()
 
 # ── Request / Response models ────────────────────────────────────────────────
 
+
 class LoginRequest(BaseModel):
     username: str
     password: str
@@ -30,9 +31,11 @@ class TOTPRequest(BaseModel):
 
 
 class AuthResponse(BaseModel):
+    model_config = {"populate_by_name": True}
+
     token: str
     user: dict
-    totpRequired: bool = False
+    totp_required: bool = Field(default=False, alias="totpRequired")
 
 
 class TokenRefreshResponse(BaseModel):
@@ -40,6 +43,7 @@ class TokenRefreshResponse(BaseModel):
 
 
 # ── Dependency: extract current user from Authorization header ───────────────
+
 
 def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
     """Dependency that extracts and validates JWT from Authorization header."""
@@ -53,6 +57,7 @@ def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
 
 
 # ── Endpoints ────────────────────────────────────────────────────────────────
+
 
 @router.post("/auth/login", response_model=AuthResponse)
 async def login(req: LoginRequest):

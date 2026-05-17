@@ -138,13 +138,14 @@ def _extract_body_text(content: str, *, source_url: str | None) -> str:
 
     # --- Secondary: readability-lxml ----------------------------------------
     try:
-        from readability import Document  # noqa: PLC0415
+        from readability import Document as ReadabilityDoc  # noqa: PLC0415
+        document_cls = ReadabilityDoc
     except ImportError:
-        Document = None  # type: ignore[assignment]
+        document_cls = None  # type: ignore[assignment]
 
-    if Document is not None:
+    if document_cls is not None:
         try:
-            summary_html = Document(content).summary(html_partial=True)
+            summary_html = document_cls(content).summary(html_partial=True)
         except Exception:  # noqa: BLE001
             summary_html = ""
         if summary_html and summary_html.strip():
@@ -204,7 +205,9 @@ class _TagStripper(HTMLParser):
         self._skip_depth: int = 0
 
     def handle_starttag(
-        self, tag: str, attrs: list[tuple[str, str | None]],
+        self,
+        tag: str,
+        attrs: list[tuple[str, str | None]],
     ) -> None:
         if tag in self._SKIP_TAGS:
             self._skip_depth += 1
@@ -265,7 +268,9 @@ class _TableCollector(HTMLParser):
     # -- tag handlers --------------------------------------------------------
 
     def handle_starttag(
-        self, tag: str, attrs: list[tuple[str, str | None]],
+        self,
+        tag: str,
+        attrs: list[tuple[str, str | None]],
     ) -> None:
         if tag == "table":
             # Start a fresh buffer. Nested tables replace the current
@@ -373,9 +378,7 @@ def _normalise_whitespace(text: str) -> str:
     unified = text.replace("\r\n", "\n").replace("\r", "\n")
     # Collapse spaces/tabs within lines (but leave the newlines alone —
     # Markdown uses them as significant separators).
-    squashed_lines = [
-        _WHITESPACE_RUN_RE.sub(" ", line).rstrip() for line in unified.split("\n")
-    ]
+    squashed_lines = [_WHITESPACE_RUN_RE.sub(" ", line).rstrip() for line in unified.split("\n")]
     rejoined = "\n".join(squashed_lines)
     # Collapse 3+ blank lines to 2.
     rejoined = _BLANKLINE_RUN_RE.sub("\n\n", rejoined)

@@ -21,6 +21,7 @@ from src.soldier.indicator_engine import IndicatorEngine, IndicatorSet
 # base_price so we can create two distinct series at different price levels.
 # ---------------------------------------------------------------------------
 
+
 @st.composite
 def candle_series_for_symbol(draw, symbol: str, base_price: float):
     """Generate a series of 50 candles for a given symbol starting around
@@ -81,10 +82,19 @@ def _indicators_match(a: IndicatorSet, b: IndicatorSet, tol: float = 1e-10) -> l
     """
     mismatches: list[str] = []
     float_fields = [
-        "rsi_14", "macd", "macd_signal", "macd_hist",
-        "bb_upper", "bb_middle", "bb_lower",
-        "vwap", "ema_9", "ema_21",
-        "supertrend", "atr_14", "volume_avg_20",
+        "rsi_14",
+        "macd",
+        "macd_signal",
+        "macd_hist",
+        "bb_upper",
+        "bb_middle",
+        "bb_lower",
+        "vwap",
+        "ema_9",
+        "ema_21",
+        "supertrend",
+        "atr_14",
+        "volume_avg_20",
     ]
     for field in float_fields:
         val_a = getattr(a, field)
@@ -159,13 +169,11 @@ def test_property_symbol_isolation_in_indicator_calculation(data):
     # --- Core assertion: shared engine results must match isolated results ---
 
     mismatches_a = _indicators_match(shared_result_a, isolated_result_a)
-    assert not mismatches_a, (
-        "Symbol A indicators differ between shared and isolated engines:\n"
-        + "\n".join(mismatches_a)
-    )
+    assert (
+        not mismatches_a
+    ), "Symbol A indicators differ between shared and isolated engines:\n" + "\n".join(mismatches_a)
 
     mismatches_b = _indicators_match(shared_result_b, isolated_result_b)
-    assert not mismatches_b, (
-        "Symbol B indicators differ between shared and isolated engines:\n"
-        + "\n".join(mismatches_b)
-    )
+    assert (
+        not mismatches_b
+    ), "Symbol B indicators differ between shared and isolated engines:\n" + "\n".join(mismatches_b)

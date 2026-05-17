@@ -98,7 +98,10 @@ def compute_sorted_doc_hashes_sha256(sorted_doc_hashes: list[str]) -> str:
 
 
 def _build_key(
-    *, symbol: str, query_template_hash: str, sorted_doc_hashes: list[str],
+    *,
+    symbol: str,
+    query_template_hash: str,
+    sorted_doc_hashes: list[str],
 ) -> str:
     """Assemble the ``research:ret:...`` cache key from caller inputs."""
     return RETRIEVAL_CACHE_KEY_TEMPLATE.format(

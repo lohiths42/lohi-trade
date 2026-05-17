@@ -6,6 +6,8 @@ import os
 import platform
 import shutil
 import subprocess
+import sys
+import time
 from dataclasses import dataclass
 
 
@@ -78,6 +80,30 @@ def get_install_hint(dep_name: str, os_name: str) -> str:
             "fedora": "sudo dnf install -y python3.11",
             "arch": "sudo pacman -S python",
         },
+        "git": {
+            "macos": "brew install git",
+            "ubuntu": "sudo apt-get install -y git",
+            "fedora": "sudo dnf install -y git",
+            "arch": "sudo pacman -S git",
+        },
+        "curl": {
+            "macos": "Included with macOS (or brew install curl)",
+            "ubuntu": "sudo apt-get install -y curl",
+            "fedora": "sudo dnf install -y curl",
+            "arch": "sudo pacman -S curl",
+        },
+        "lsof": {
+            "macos": "Included with macOS",
+            "ubuntu": "sudo apt-get install -y lsof",
+            "fedora": "sudo dnf install -y lsof",
+            "arch": "sudo pacman -S lsof",
+        },
+        "ta-lib": {
+            "macos": "brew install ta-lib",
+            "ubuntu": "wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz && tar -xzf ta-lib-0.4.0-src.tar.gz && cd ta-lib/ && ./configure --prefix=/usr && make && sudo make install",
+            "fedora": "sudo dnf install ta-lib",
+            "arch": "sudo pacman -S ta-lib",
+        },
     }
     return hints.get(dep_name, {}).get(os_name, f"Please install {dep_name} manually")
 
@@ -86,7 +112,10 @@ def _run_cmd(cmd: list[str], timeout: int = 10) -> str | None:
     """Run a command and return stdout, or None on failure."""
     try:
         result = subprocess.run(
-            cmd, capture_output=True, text=True, timeout=timeout,
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
         )
         if result.returncode == 0:
             return result.stdout.strip()
@@ -116,11 +145,24 @@ def check_docker() -> DependencyCheck:
 
     # Extract version number
     import re
+
     match = re.search(r"(\d+\.\d+)", version_output)
     version = match.group(1) if match else "unknown"
 
-    # Check if daemon is running
-    daemon_check = _run_cmd(["docker", "info"])
+    # Auto‑start Docker Desktop on macOS if daemon not running
+    if sys.platform == "darwin":
+        # Try to open Docker app silently; Docker Desktop will start the daemon.
+        try:
+            subprocess.run(
+                ["open", "-a", "Docker"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
+        except Exception:
+            pass
+        # Give Docker a few seconds to start up before checking again
+        time.sleep(5)
+        daemon_check = _run_cmd(["docker", "info"], timeout=10)
+    else:
+        daemon_check = _run_cmd(["docker", "info"], timeout=10)
     if daemon_check is None:
         return DependencyCheck(
             name="Docker",
@@ -131,7 +173,10 @@ def check_docker() -> DependencyCheck:
         )
 
     return DependencyCheck(
-        name="Docker", required_version="20.0+", installed=True, current_version=version,
+        name="Docker",
+        required_version="20.0+",
+        installed=True,
+        current_version=version,
     )
 
 
@@ -141,6 +186,7 @@ def check_docker_compose() -> DependencyCheck:
     output = _run_cmd(["docker", "compose", "version"])
     if output:
         import re
+
         match = re.search(r"v?(\d+\.\d+)", output)
         version = match.group(1) if match else "unknown"
         return DependencyCheck(
@@ -155,6 +201,7 @@ def check_docker_compose() -> DependencyCheck:
         output = _run_cmd(["docker-compose", "--version"])
         if output:
             import re
+
             match = re.search(r"(\d+\.\d+)", output)
             version = match.group(1) if match else "unknown"
             return DependencyCheck(
@@ -193,6 +240,7 @@ def check_node() -> DependencyCheck:
 
     # Parse version (e.g., "v18.17.0" → 18)
     import re
+
     match = re.search(r"v?(\d+)", output)
     major = int(match.group(1)) if match else 0
 
@@ -216,6 +264,7 @@ def check_node() -> DependencyCheck:
 def check_python() -> DependencyCheck:
     """Check Python version (we're already running in Python, so just check version)."""
     import sys
+
     version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
     if sys.version_info < (3, 11):
         return DependencyCheck(
@@ -233,6 +282,23 @@ def check_python() -> DependencyCheck:
     )
 
 
+def check_binary(name: str, display_name: str, required_version: str = "any") -> DependencyCheck:
+    """Generic check for a binary in PATH."""
+    if not shutil.which(name):
+        return DependencyCheck(
+            name=display_name,
+            required_version=required_version,
+            installed=False,
+            install_hint=get_install_hint(name, detect_os()),
+        )
+    return DependencyCheck(
+        name=display_name,
+        required_version=required_version,
+        installed=True,
+        current_version="installed",
+    )
+
+
 def check_all_dependencies() -> list[DependencyCheck]:
     """Check all required system dependencies."""
     return [
@@ -240,6 +306,9 @@ def check_all_dependencies() -> list[DependencyCheck]:
         check_docker_compose(),
         check_node(),
         check_python(),
+        check_binary("git", "Git"),
+        check_binary("curl", "Curl"),
+        check_binary("lsof", "lsof"),
     ]
 
 
@@ -297,10 +366,10 @@ def find_project_root() -> str | None:
     2. Parent directories (up to 5 levels)
     3. Immediate subdirectories of current directory (e.g., Lohi-Trade-OpenSource/)
     """
+
     def _is_project_root(path: str) -> bool:
-        return (
-            os.path.exists(os.path.join(path, "docker-compose.yml"))
-            and os.path.exists(os.path.join(path, "backend-gateway"))
+        return os.path.exists(os.path.join(path, "docker-compose.yml")) and os.path.exists(
+            os.path.join(path, "backend-gateway")
         )
 
     # Check current directory and parents

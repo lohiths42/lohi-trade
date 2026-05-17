@@ -83,7 +83,9 @@ class MLStrategy(Strategy):
         self._sentiment_cache[symbol] = sentiment
 
     def generate_signal(
-        self, indicators: IndicatorSet, candles: pd.DataFrame,
+        self,
+        indicators: IndicatorSet,
+        candles: pd.DataFrame,
     ) -> Signal | None:
         """Run base strategies and filter through ML model.
 
@@ -115,7 +117,8 @@ class MLStrategy(Strategy):
 
         # Extract features
         sentiment = self._sentiment_cache.get(
-            indicators.symbol, SentimentFeatures(),
+            indicators.symbol,
+            SentimentFeatures(),
         )
         fv = extract_features(indicators, close_price, sentiment)
 

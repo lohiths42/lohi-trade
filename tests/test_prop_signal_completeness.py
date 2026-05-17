@@ -93,47 +93,97 @@ def _make_pipeline(strategies):
 # Composite strategies (hypothesis generators)
 # ---------------------------------------------------------------------------
 
+
 @st.composite
 def mean_reversion_signal_inputs(draw):
     """Generate valid MeanReversion indicator inputs that trigger a BUY signal.
 
     Constrains ATR so that stop_loss = close - 1.5*ATR > 0.
     """
-    vwap = draw(st.floats(min_value=10.0, max_value=50_000.0, allow_nan=False, allow_infinity=False))
-    close = draw(st.floats(min_value=vwap + 0.01, max_value=vwap + 5_000.0, allow_nan=False, allow_infinity=False))
-    bb_lower = draw(st.floats(min_value=close + 0.01, max_value=close + 5_000.0, allow_nan=False, allow_infinity=False))
-    bb_middle = draw(st.floats(min_value=bb_lower + 0.01, max_value=bb_lower + 5_000.0, allow_nan=False, allow_infinity=False))
-    bb_upper = draw(st.floats(min_value=bb_middle + 0.01, max_value=bb_middle + 5_000.0, allow_nan=False, allow_infinity=False))
+    vwap = draw(
+        st.floats(min_value=10.0, max_value=50_000.0, allow_nan=False, allow_infinity=False)
+    )
+    close = draw(
+        st.floats(
+            min_value=vwap + 0.01, max_value=vwap + 5_000.0, allow_nan=False, allow_infinity=False
+        )
+    )
+    bb_lower = draw(
+        st.floats(
+            min_value=close + 0.01, max_value=close + 5_000.0, allow_nan=False, allow_infinity=False
+        )
+    )
+    bb_middle = draw(
+        st.floats(
+            min_value=bb_lower + 0.01,
+            max_value=bb_lower + 5_000.0,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
+    bb_upper = draw(
+        st.floats(
+            min_value=bb_middle + 0.01,
+            max_value=bb_middle + 5_000.0,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
 
     rsi_14 = draw(st.floats(min_value=0.1, max_value=29.99, allow_nan=False, allow_infinity=False))
 
-    volume_avg_20 = draw(st.floats(min_value=100.0, max_value=1e7, allow_nan=False, allow_infinity=False))
-    volume = draw(st.floats(
-        min_value=1.5 * volume_avg_20 + 1.0,
-        max_value=1.5 * volume_avg_20 + 1e7,
-        allow_nan=False, allow_infinity=False,
-    ))
+    volume_avg_20 = draw(
+        st.floats(min_value=100.0, max_value=1e7, allow_nan=False, allow_infinity=False)
+    )
+    volume = draw(
+        st.floats(
+            min_value=1.5 * volume_avg_20 + 1.0,
+            max_value=1.5 * volume_avg_20 + 1e7,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
 
     # ATR must be small enough that stop_loss = close - 1.5*ATR > 0
     max_atr = (close - 0.01) / 1.5
-    atr_14 = draw(st.floats(min_value=0.01, max_value=max(0.01, max_atr), allow_nan=False, allow_infinity=False))
+    atr_14 = draw(
+        st.floats(
+            min_value=0.01, max_value=max(0.01, max_atr), allow_nan=False, allow_infinity=False
+        )
+    )
 
     ts = datetime(2024, 1, 15, 10, 0, 0)
 
     indicators = IndicatorSet(
-        symbol="TEST", timeframe="5m", timestamp=ts,
-        rsi_14=rsi_14, macd=0.0, macd_signal=0.0, macd_hist=0.0,
-        bb_upper=bb_upper, bb_middle=bb_middle, bb_lower=bb_lower,
-        vwap=vwap, ema_9=0.0, ema_21=0.0,
-        supertrend=0.0, supertrend_direction=1,
-        atr_14=atr_14, volume_avg_20=volume_avg_20,
+        symbol="TEST",
+        timeframe="5m",
+        timestamp=ts,
+        rsi_14=rsi_14,
+        macd=0.0,
+        macd_signal=0.0,
+        macd_hist=0.0,
+        bb_upper=bb_upper,
+        bb_middle=bb_middle,
+        bb_lower=bb_lower,
+        vwap=vwap,
+        ema_9=0.0,
+        ema_21=0.0,
+        supertrend=0.0,
+        supertrend_direction=1,
+        atr_14=atr_14,
+        volume_avg_20=volume_avg_20,
     )
 
-    candles = pd.DataFrame({
-        "open": [close - 1.0], "high": [close + 1.0],
-        "low": [close - 2.0], "close": [close],
-        "volume": [volume], "timestamp": [ts],
-    })
+    candles = pd.DataFrame(
+        {
+            "open": [close - 1.0],
+            "high": [close + 1.0],
+            "low": [close - 2.0],
+            "close": [close],
+            "volume": [volume],
+            "timestamp": [ts],
+        }
+    )
 
     return indicators, candles
 
@@ -144,42 +194,84 @@ def trend_following_signal_inputs(draw):
 
     Constrains ATR so that stop_loss = close - 2.0*ATR > 0.
     """
-    vwap = draw(st.floats(min_value=10.0, max_value=50_000.0, allow_nan=False, allow_infinity=False))
-    close = draw(st.floats(min_value=vwap + 0.01, max_value=vwap + 5_000.0, allow_nan=False, allow_infinity=False))
+    vwap = draw(
+        st.floats(min_value=10.0, max_value=50_000.0, allow_nan=False, allow_infinity=False)
+    )
+    close = draw(
+        st.floats(
+            min_value=vwap + 0.01, max_value=vwap + 5_000.0, allow_nan=False, allow_infinity=False
+        )
+    )
 
-    ema_21 = draw(st.floats(min_value=1.0, max_value=50_000.0, allow_nan=False, allow_infinity=False))
-    ema_9 = draw(st.floats(min_value=ema_21 + 0.01, max_value=ema_21 + 5_000.0, allow_nan=False, allow_infinity=False))
+    ema_21 = draw(
+        st.floats(min_value=1.0, max_value=50_000.0, allow_nan=False, allow_infinity=False)
+    )
+    ema_9 = draw(
+        st.floats(
+            min_value=ema_21 + 0.01,
+            max_value=ema_21 + 5_000.0,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
 
     macd = draw(st.floats(min_value=0.01, max_value=500.0, allow_nan=False, allow_infinity=False))
-    macd_hist = draw(st.floats(min_value=0.01, max_value=500.0, allow_nan=False, allow_infinity=False))
+    macd_hist = draw(
+        st.floats(min_value=0.01, max_value=500.0, allow_nan=False, allow_infinity=False)
+    )
 
-    volume_avg_20 = draw(st.floats(min_value=100.0, max_value=1e7, allow_nan=False, allow_infinity=False))
-    volume = draw(st.floats(
-        min_value=volume_avg_20 + 1.0,
-        max_value=volume_avg_20 + 1e7,
-        allow_nan=False, allow_infinity=False,
-    ))
+    volume_avg_20 = draw(
+        st.floats(min_value=100.0, max_value=1e7, allow_nan=False, allow_infinity=False)
+    )
+    volume = draw(
+        st.floats(
+            min_value=volume_avg_20 + 1.0,
+            max_value=volume_avg_20 + 1e7,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
 
     # ATR must be small enough that stop_loss = close - 2.0*ATR > 0
     max_atr = (close - 0.01) / 2.0
-    atr_14 = draw(st.floats(min_value=0.01, max_value=max(0.01, max_atr), allow_nan=False, allow_infinity=False))
+    atr_14 = draw(
+        st.floats(
+            min_value=0.01, max_value=max(0.01, max_atr), allow_nan=False, allow_infinity=False
+        )
+    )
 
     ts = datetime(2024, 1, 15, 10, 0, 0)
 
     indicators = IndicatorSet(
-        symbol="TEST", timeframe="5m", timestamp=ts,
-        rsi_14=50.0, macd=macd, macd_signal=0.0, macd_hist=macd_hist,
-        bb_upper=0.0, bb_middle=0.0, bb_lower=0.0,
-        vwap=vwap, ema_9=ema_9, ema_21=ema_21,
-        supertrend=0.0, supertrend_direction=1,
-        atr_14=atr_14, volume_avg_20=volume_avg_20,
+        symbol="TEST",
+        timeframe="5m",
+        timestamp=ts,
+        rsi_14=50.0,
+        macd=macd,
+        macd_signal=0.0,
+        macd_hist=macd_hist,
+        bb_upper=0.0,
+        bb_middle=0.0,
+        bb_lower=0.0,
+        vwap=vwap,
+        ema_9=ema_9,
+        ema_21=ema_21,
+        supertrend=0.0,
+        supertrend_direction=1,
+        atr_14=atr_14,
+        volume_avg_20=volume_avg_20,
     )
 
-    candles = pd.DataFrame({
-        "open": [close - 1.0], "high": [close + 1.0],
-        "low": [close - 2.0], "close": [close],
-        "volume": [volume], "timestamp": [ts],
-    })
+    candles = pd.DataFrame(
+        {
+            "open": [close - 1.0],
+            "high": [close + 1.0],
+            "low": [close - 2.0],
+            "close": [close],
+            "volume": [volume],
+            "timestamp": [ts],
+        }
+    )
 
     return indicators, candles
 
@@ -187,37 +279,78 @@ def trend_following_signal_inputs(draw):
 @st.composite
 def orb_buy_signal_inputs(draw):
     """Generate valid ORB BUY breakout inputs."""
-    range_low = draw(st.floats(min_value=10.0, max_value=50_000.0, allow_nan=False, allow_infinity=False))
-    range_high = draw(st.floats(min_value=range_low + 0.01, max_value=range_low + 5_000.0, allow_nan=False, allow_infinity=False))
-    close = draw(st.floats(min_value=range_high + 0.01, max_value=range_high + 5_000.0, allow_nan=False, allow_infinity=False))
+    range_low = draw(
+        st.floats(min_value=10.0, max_value=50_000.0, allow_nan=False, allow_infinity=False)
+    )
+    range_high = draw(
+        st.floats(
+            min_value=range_low + 0.01,
+            max_value=range_low + 5_000.0,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
+    close = draw(
+        st.floats(
+            min_value=range_high + 0.01,
+            max_value=range_high + 5_000.0,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
 
-    volume_avg_20 = draw(st.floats(min_value=100.0, max_value=1e7, allow_nan=False, allow_infinity=False))
-    volume = draw(st.floats(
-        min_value=2.0 * volume_avg_20 + 1.0,
-        max_value=2.0 * volume_avg_20 + 1e7,
-        allow_nan=False, allow_infinity=False,
-    ))
+    volume_avg_20 = draw(
+        st.floats(min_value=100.0, max_value=1e7, allow_nan=False, allow_infinity=False)
+    )
+    volume = draw(
+        st.floats(
+            min_value=2.0 * volume_avg_20 + 1.0,
+            max_value=2.0 * volume_avg_20 + 1e7,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
 
     atr_14 = draw(st.floats(min_value=0.01, max_value=500.0, allow_nan=False, allow_infinity=False))
 
     hour = draw(st.sampled_from([9, 10]))
-    minute = draw(st.integers(min_value=30, max_value=59)) if hour == 9 else draw(st.integers(min_value=0, max_value=30))
+    minute = (
+        draw(st.integers(min_value=30, max_value=59))
+        if hour == 9
+        else draw(st.integers(min_value=0, max_value=30))
+    )
     ts = datetime(2024, 1, 15, hour, minute, 0)
 
     indicators = IndicatorSet(
-        symbol="TEST", timeframe="5m", timestamp=ts,
-        rsi_14=50.0, macd=0.0, macd_signal=0.0, macd_hist=0.0,
-        bb_upper=0.0, bb_middle=0.0, bb_lower=0.0,
-        vwap=0.0, ema_9=0.0, ema_21=0.0,
-        supertrend=0.0, supertrend_direction=1,
-        atr_14=atr_14, volume_avg_20=volume_avg_20,
+        symbol="TEST",
+        timeframe="5m",
+        timestamp=ts,
+        rsi_14=50.0,
+        macd=0.0,
+        macd_signal=0.0,
+        macd_hist=0.0,
+        bb_upper=0.0,
+        bb_middle=0.0,
+        bb_lower=0.0,
+        vwap=0.0,
+        ema_9=0.0,
+        ema_21=0.0,
+        supertrend=0.0,
+        supertrend_direction=1,
+        atr_14=atr_14,
+        volume_avg_20=volume_avg_20,
     )
 
-    candles = pd.DataFrame({
-        "open": [close - 1.0], "high": [close + 1.0],
-        "low": [close - 2.0], "close": [close],
-        "volume": [volume], "timestamp": [ts],
-    })
+    candles = pd.DataFrame(
+        {
+            "open": [close - 1.0],
+            "high": [close + 1.0],
+            "low": [close - 2.0],
+            "close": [close],
+            "volume": [volume],
+            "timestamp": [ts],
+        }
+    )
 
     return indicators, candles, range_high, range_low
 
@@ -230,41 +363,76 @@ def orb_sell_signal_inputs(draw):
     and close < range_low.
     """
     # Pick close first, then derive range so target stays positive.
-    close = draw(st.floats(min_value=10.0, max_value=50_000.0, allow_nan=False, allow_infinity=False))
+    close = draw(
+        st.floats(min_value=10.0, max_value=50_000.0, allow_nan=False, allow_infinity=False)
+    )
     # range_high - range_low must be < close / 1.5 so target > 0
     max_range_size = (close - 0.01) / 1.5
-    range_size = draw(st.floats(min_value=0.1, max_value=max(0.1, max_range_size), allow_nan=False, allow_infinity=False))
+    range_size = draw(
+        st.floats(
+            min_value=0.1, max_value=max(0.1, max_range_size), allow_nan=False, allow_infinity=False
+        )
+    )
     # range_low must be > close (so close < range_low triggers SELL)
-    range_low = draw(st.floats(min_value=close + 0.01, max_value=close + 5_000.0, allow_nan=False, allow_infinity=False))
+    range_low = draw(
+        st.floats(
+            min_value=close + 0.01, max_value=close + 5_000.0, allow_nan=False, allow_infinity=False
+        )
+    )
     range_high = range_low + range_size
 
-    volume_avg_20 = draw(st.floats(min_value=100.0, max_value=1e7, allow_nan=False, allow_infinity=False))
-    volume = draw(st.floats(
-        min_value=2.0 * volume_avg_20 + 1.0,
-        max_value=2.0 * volume_avg_20 + 1e7,
-        allow_nan=False, allow_infinity=False,
-    ))
+    volume_avg_20 = draw(
+        st.floats(min_value=100.0, max_value=1e7, allow_nan=False, allow_infinity=False)
+    )
+    volume = draw(
+        st.floats(
+            min_value=2.0 * volume_avg_20 + 1.0,
+            max_value=2.0 * volume_avg_20 + 1e7,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
 
     atr_14 = draw(st.floats(min_value=0.01, max_value=500.0, allow_nan=False, allow_infinity=False))
 
     hour = draw(st.sampled_from([9, 10]))
-    minute = draw(st.integers(min_value=30, max_value=59)) if hour == 9 else draw(st.integers(min_value=0, max_value=30))
+    minute = (
+        draw(st.integers(min_value=30, max_value=59))
+        if hour == 9
+        else draw(st.integers(min_value=0, max_value=30))
+    )
     ts = datetime(2024, 1, 15, hour, minute, 0)
 
     indicators = IndicatorSet(
-        symbol="TEST", timeframe="5m", timestamp=ts,
-        rsi_14=50.0, macd=0.0, macd_signal=0.0, macd_hist=0.0,
-        bb_upper=0.0, bb_middle=0.0, bb_lower=0.0,
-        vwap=0.0, ema_9=0.0, ema_21=0.0,
-        supertrend=0.0, supertrend_direction=1,
-        atr_14=atr_14, volume_avg_20=volume_avg_20,
+        symbol="TEST",
+        timeframe="5m",
+        timestamp=ts,
+        rsi_14=50.0,
+        macd=0.0,
+        macd_signal=0.0,
+        macd_hist=0.0,
+        bb_upper=0.0,
+        bb_middle=0.0,
+        bb_lower=0.0,
+        vwap=0.0,
+        ema_9=0.0,
+        ema_21=0.0,
+        supertrend=0.0,
+        supertrend_direction=1,
+        atr_14=atr_14,
+        volume_avg_20=volume_avg_20,
     )
 
-    candles = pd.DataFrame({
-        "open": [close - 1.0], "high": [close + 1.0],
-        "low": [close - 2.0], "close": [close],
-        "volume": [volume], "timestamp": [ts],
-    })
+    candles = pd.DataFrame(
+        {
+            "open": [close - 1.0],
+            "high": [close + 1.0],
+            "low": [close - 2.0],
+            "close": [close],
+            "volume": [volume],
+            "timestamp": [ts],
+        }
+    )
 
     return indicators, candles, range_high, range_low
 
@@ -272,6 +440,7 @@ def orb_sell_signal_inputs(draw):
 # ---------------------------------------------------------------------------
 # Helper: generate signal through the pipeline
 # ---------------------------------------------------------------------------
+
 
 def _signal_via_mr_pipeline(indicators, candles) -> Signal:
     """Run MeanReversion through the pipeline and return the signal."""
@@ -305,6 +474,7 @@ def _signal_via_orb_pipeline(indicators, candles, range_high, range_low) -> Sign
 # Property Tests
 # ---------------------------------------------------------------------------
 
+
 class TestSignalCompletenessProperties:
     """**Validates: Requirements 4.5**
 
@@ -336,7 +506,6 @@ class TestSignalCompletenessProperties:
         signal = _signal_via_tf_pipeline(indicators, candles)
         assert isinstance(signal.signal_id, str) and len(signal.signal_id) > 0
         uuid.UUID(signal.signal_id)
-
 
     @given(data=orb_buy_signal_inputs())
     @settings(max_examples=25)
@@ -378,7 +547,6 @@ class TestSignalCompletenessProperties:
             val = getattr(signal, field_name)
             assert math.isfinite(val), f"{field_name} must be finite, got {val}"
             assert val > 0, f"{field_name} must be positive, got {val}"
-
 
     @given(data=trend_following_signal_inputs())
     @settings(max_examples=25)
@@ -425,7 +593,6 @@ class TestSignalCompletenessProperties:
             assert math.isfinite(val), f"{field_name} must be finite, got {val}"
             assert val > 0, f"{field_name} must be positive, got {val}"
 
-
     # --- Property 3: BUY signals have stop_loss < entry_price < target ---
 
     @given(data=mean_reversion_signal_inputs())
@@ -438,12 +605,12 @@ class TestSignalCompletenessProperties:
         indicators, candles = data
         signal = _signal_via_mr_pipeline(indicators, candles)
         assert signal.side == "BUY"
-        assert signal.stop_loss < signal.entry_price, (
-            f"stop_loss ({signal.stop_loss}) must be < entry_price ({signal.entry_price})"
-        )
-        assert signal.entry_price < signal.target, (
-            f"entry_price ({signal.entry_price}) must be < target ({signal.target})"
-        )
+        assert (
+            signal.stop_loss < signal.entry_price
+        ), f"stop_loss ({signal.stop_loss}) must be < entry_price ({signal.entry_price})"
+        assert (
+            signal.entry_price < signal.target
+        ), f"entry_price ({signal.entry_price}) must be < target ({signal.target})"
 
     @given(data=trend_following_signal_inputs())
     @settings(max_examples=25)
@@ -455,12 +622,12 @@ class TestSignalCompletenessProperties:
         indicators, candles = data
         signal = _signal_via_tf_pipeline(indicators, candles)
         assert signal.side == "BUY"
-        assert signal.stop_loss < signal.entry_price, (
-            f"stop_loss ({signal.stop_loss}) must be < entry_price ({signal.entry_price})"
-        )
-        assert signal.entry_price < signal.target, (
-            f"entry_price ({signal.entry_price}) must be < target ({signal.target})"
-        )
+        assert (
+            signal.stop_loss < signal.entry_price
+        ), f"stop_loss ({signal.stop_loss}) must be < entry_price ({signal.entry_price})"
+        assert (
+            signal.entry_price < signal.target
+        ), f"entry_price ({signal.entry_price}) must be < target ({signal.target})"
 
     @given(data=orb_buy_signal_inputs())
     @settings(max_examples=25)
@@ -472,13 +639,12 @@ class TestSignalCompletenessProperties:
         indicators, candles, rh, rl = data
         signal = _signal_via_orb_pipeline(indicators, candles, rh, rl)
         assert signal.side == "BUY"
-        assert signal.stop_loss < signal.entry_price, (
-            f"stop_loss ({signal.stop_loss}) must be < entry_price ({signal.entry_price})"
-        )
-        assert signal.entry_price < signal.target, (
-            f"entry_price ({signal.entry_price}) must be < target ({signal.target})"
-        )
-
+        assert (
+            signal.stop_loss < signal.entry_price
+        ), f"stop_loss ({signal.stop_loss}) must be < entry_price ({signal.entry_price})"
+        assert (
+            signal.entry_price < signal.target
+        ), f"entry_price ({signal.entry_price}) must be < target ({signal.target})"
 
     # --- Property 4: SELL signals (ORB) have stop_loss > entry_price > target ---
 
@@ -492,12 +658,12 @@ class TestSignalCompletenessProperties:
         indicators, candles, rh, rl = data
         signal = _signal_via_orb_pipeline(indicators, candles, rh, rl)
         assert signal.side == "SELL"
-        assert signal.stop_loss > signal.entry_price, (
-            f"stop_loss ({signal.stop_loss}) must be > entry_price ({signal.entry_price})"
-        )
-        assert signal.entry_price > signal.target, (
-            f"entry_price ({signal.entry_price}) must be > target ({signal.target})"
-        )
+        assert (
+            signal.stop_loss > signal.entry_price
+        ), f"stop_loss ({signal.stop_loss}) must be > entry_price ({signal.entry_price})"
+        assert (
+            signal.entry_price > signal.target
+        ), f"entry_price ({signal.entry_price}) must be > target ({signal.target})"
 
     # --- Property 5: valid strategy name ---
 
@@ -533,7 +699,6 @@ class TestSignalCompletenessProperties:
         indicators, candles, rh, rl = data
         signal = _signal_via_orb_pipeline(indicators, candles, rh, rl)
         assert signal.strategy in VALID_STRATEGIES
-
 
     # --- Property 6: valid side ---
 
@@ -580,7 +745,6 @@ class TestSignalCompletenessProperties:
         indicators, candles, rh, rl = data
         signal = _signal_via_orb_pipeline(indicators, candles, rh, rl)
         assert signal.side in VALID_SIDES
-
 
     # --- Property 7: indicators snapshot is an IndicatorSet ---
 

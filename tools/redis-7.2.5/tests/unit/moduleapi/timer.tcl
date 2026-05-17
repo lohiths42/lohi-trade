@@ -96,4 +96,3 @@ start_server {tags {"modules"}} {
         assert_equal {OK} [r module unload timer]
     }
 }
-

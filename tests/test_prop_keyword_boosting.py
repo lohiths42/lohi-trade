@@ -14,7 +14,6 @@ Properties tested:
   5. Multiple keywords accumulate their boosts
 """
 
-
 import numpy as np
 from hypothesis import assume, given, settings
 from hypothesis import strategies as st
@@ -102,9 +101,9 @@ class TestKeywordBoostingProperties:
 
         result = analyzer.analyze(text)
         # With neutral logits, raw_score ≈ 0, so boosted should be > raw
-        assert result.boosted_score >= result.raw_score, (
-            f"Positive boost failed: boosted={result.boosted_score}, raw={result.raw_score}"
-        )
+        assert (
+            result.boosted_score >= result.raw_score
+        ), f"Positive boost failed: boosted={result.boosted_score}, raw={result.raw_score}"
 
     @given(data=keyword_and_text(polarity="negative"))
     @settings(max_examples=25)
@@ -115,9 +114,9 @@ class TestKeywordBoostingProperties:
         analyzer = _build_analyzer(keywords)
 
         result = analyzer.analyze(text)
-        assert result.boosted_score <= result.raw_score, (
-            f"Negative boost failed: boosted={result.boosted_score}, raw={result.raw_score}"
-        )
+        assert (
+            result.boosted_score <= result.raw_score
+        ), f"Negative boost failed: boosted={result.boosted_score}, raw={result.raw_score}"
 
     @given(
         kw=_keyword,
@@ -136,9 +135,9 @@ class TestKeywordBoostingProperties:
         text = f"Some text about {kw} in the market"
         result = analyzer.analyze(text)
 
-        assert -1.0 <= result.boosted_score <= 1.0, (
-            f"Boosted score out of range: {result.boosted_score}"
-        )
+        assert (
+            -1.0 <= result.boosted_score <= 1.0
+        ), f"Boosted score out of range: {result.boosted_score}"
 
     @given(text=st.text(min_size=5, max_size=100, alphabet=st.characters(categories=("L", "Z"))))
     @settings(max_examples=25)
@@ -146,9 +145,9 @@ class TestKeywordBoostingProperties:
         """With empty keyword dict, boosted_score equals raw_score."""
         analyzer = _build_analyzer({"positive": {}, "negative": {}})
         result = analyzer.analyze(text)
-        assert result.boosted_score == result.raw_score, (
-            f"Expected no boost: boosted={result.boosted_score}, raw={result.raw_score}"
-        )
+        assert (
+            result.boosted_score == result.raw_score
+        ), f"Expected no boost: boosted={result.boosted_score}, raw={result.raw_score}"
 
     @given(
         kw1=keyword_and_text(polarity="positive"),
@@ -173,6 +172,6 @@ class TestKeywordBoostingProperties:
         result_one = analyzer2.analyze(f"News about {kw1_word} today")
 
         # Both keywords should produce >= single keyword boost
-        assert result_both.boosted_score >= result_one.boosted_score - 0.001, (
-            f"Accumulation failed: both={result_both.boosted_score}, one={result_one.boosted_score}"
-        )
+        assert (
+            result_both.boosted_score >= result_one.boosted_score - 0.001
+        ), f"Accumulation failed: both={result_both.boosted_score}, one={result_one.boosted_score}"

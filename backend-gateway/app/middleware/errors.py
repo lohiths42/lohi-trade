@@ -87,7 +87,6 @@ from src.research.providers.errors import (
     UnknownProviderError,
 )
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -204,8 +203,7 @@ class ProviderTimeoutError(ProviderError):
         self.attempt = attempt
         self.elapsed_ms = elapsed_ms
         self.message = message or (
-            f"Provider timeout: {provider}/{model} "
-            f"(attempt={attempt}, elapsed_ms={elapsed_ms})"
+            f"Provider timeout: {provider}/{model} " f"(attempt={attempt}, elapsed_ms={elapsed_ms})"
         )
         super().__init__(self.message)
 
@@ -451,9 +449,7 @@ def register_research_exception_handlers(app: Any) -> None:
     """
     app.add_exception_handler(ProviderError, provider_exception_handler)
     app.add_exception_handler(ConfigMissingError, provider_exception_handler)
-    app.add_exception_handler(
-        LatencyBudgetExceededError, provider_exception_handler
-    )
+    app.add_exception_handler(LatencyBudgetExceededError, provider_exception_handler)
 
 
 __all__ = [

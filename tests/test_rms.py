@@ -28,6 +28,7 @@ from src.utils.config import (
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 def _make_indicator_set(symbol: str = "RELIANCE") -> IndicatorSet:
     """Create a minimal IndicatorSet for testing."""
     return IndicatorSet(
@@ -132,7 +133,8 @@ def _make_rms(
     db_manager = MagicMock()
     conn = sqlite3.connect(":memory:")
     conn.row_factory = sqlite3.Row
-    conn.executescript("""
+    conn.executescript(
+        """
         CREATE TABLE trades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             trade_id TEXT, symbol TEXT, side TEXT, strategy TEXT,
@@ -156,7 +158,8 @@ def _make_rms(
             event_type TEXT, component TEXT, message TEXT,
             metadata TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
-    """)
+    """
+    )
 
     today_str = now.strftime("%Y-%m-%d")
 
@@ -166,8 +169,20 @@ def _make_rms(
             "INSERT INTO trades (trade_id, symbol, side, strategy, entry_price, "
             "exit_price, quantity, entry_time, exit_time, realized_pnl, stop_loss, target) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            ("t1", "TEST", "BUY", "test", 100, 110, 10, f"{today_str} 09:30:00",
-             f"{today_str} 10:00:00", daily_pnl, 95, 115),
+            (
+                "t1",
+                "TEST",
+                "BUY",
+                "test",
+                100,
+                110,
+                10,
+                f"{today_str} 09:30:00",
+                f"{today_str} 10:00:00",
+                daily_pnl,
+                95,
+                115,
+            ),
         )
 
     # Insert open positions
@@ -176,8 +191,7 @@ def _make_rms(
             "INSERT INTO trades (trade_id, symbol, side, strategy, entry_price, "
             "quantity, entry_time, stop_loss, target) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (f"open-{i}", f"SYM{i}", "BUY", "test", 100, 10,
-             f"{today_str} 09:30:00", 95, 115),
+            (f"open-{i}", f"SYM{i}", "BUY", "test", 100, 10, f"{today_str} 09:30:00", 95, 115),
         )
 
     # Insert orders for today
@@ -185,8 +199,7 @@ def _make_rms(
         conn.execute(
             "INSERT INTO orders (order_id, symbol, side, order_type, quantity, "
             "status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (f"ord-{i}", "TEST", "BUY", "MARKET", 10, "PLACED",
-             f"{today_str} 10:00:00"),
+            (f"ord-{i}", "TEST", "BUY", "MARKET", 10, "PLACED", f"{today_str} 10:00:00"),
         )
 
     # Insert last closed trade for cooldown check
@@ -195,9 +208,20 @@ def _make_rms(
             "INSERT INTO trades (trade_id, symbol, side, strategy, entry_price, "
             "exit_price, quantity, entry_time, exit_time, realized_pnl, stop_loss, target) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            ("last-trade", "TEST", "BUY", "test", 100, 95, 10,
-             f"{today_str} 09:30:00", last_trade["exit_time"],
-             last_trade["realized_pnl"], 90, 115),
+            (
+                "last-trade",
+                "TEST",
+                "BUY",
+                "test",
+                100,
+                95,
+                10,
+                f"{today_str} 09:30:00",
+                last_trade["exit_time"],
+                last_trade["realized_pnl"],
+                90,
+                115,
+            ),
         )
 
     conn.commit()
@@ -233,6 +257,7 @@ def _make_rms(
 # Test: All checks pass
 # ---------------------------------------------------------------------------
 
+
 class TestRMSAllChecksPass:
     def test_order_passes_all_checks(self):
         """When all conditions are favorable, order should pass all 9 checks."""
@@ -250,6 +275,7 @@ class TestRMSAllChecksPass:
 # ---------------------------------------------------------------------------
 # Test: Check 1 - Kill Switch
 # ---------------------------------------------------------------------------
+
 
 class TestKillSwitchCheck:
     def test_reject_when_kill_switch_active(self):
@@ -273,6 +299,7 @@ class TestKillSwitchCheck:
 # ---------------------------------------------------------------------------
 # Test: Check 2 - Trading Hours
 # ---------------------------------------------------------------------------
+
 
 class TestTradingHoursCheck:
     def test_reject_before_trading_start(self):
@@ -312,6 +339,7 @@ class TestTradingHoursCheck:
 # Test: Check 3 - Daily Loss Limit
 # ---------------------------------------------------------------------------
 
+
 class TestDailyLossLimitCheck:
     def test_reject_when_daily_loss_exceeds_limit(self):
         """Requirement 9.2: Reject if daily loss > 2% of capital (₹4,000)."""
@@ -338,13 +366,15 @@ class TestDailyLossLimitCheck:
         rms.validate_order(_make_signal())
         # Kill switch should have been activated via redis.set
         rms._redis.set.assert_any_call(
-            RiskManagementSystem.KILL_SWITCH_KEY, "true",
+            RiskManagementSystem.KILL_SWITCH_KEY,
+            "true",
         )
 
 
 # ---------------------------------------------------------------------------
 # Test: Check 4 - Position Limit
 # ---------------------------------------------------------------------------
+
 
 class TestPositionLimitCheck:
     def test_reject_when_at_position_limit(self):
@@ -370,6 +400,7 @@ class TestPositionLimitCheck:
 # ---------------------------------------------------------------------------
 # Test: Check 5 - Position Size Limit
 # ---------------------------------------------------------------------------
+
 
 class TestPositionSizeLimitCheck:
     def test_reject_when_order_value_exceeds_limit(self):
@@ -402,6 +433,7 @@ class TestPositionSizeLimitCheck:
 # Test: Check 6 - Order Count Limit
 # ---------------------------------------------------------------------------
 
+
 class TestOrderCountLimitCheck:
     def test_reject_when_at_order_limit(self):
         """Requirement 9.5: Reject if orders today >= 20."""
@@ -421,6 +453,7 @@ class TestOrderCountLimitCheck:
 # ---------------------------------------------------------------------------
 # Test: Check 7 - Cooldown
 # ---------------------------------------------------------------------------
+
 
 class TestCooldownCheck:
     def test_reject_when_cooldown_active(self):
@@ -467,6 +500,7 @@ class TestCooldownCheck:
 # Test: Check 8 - Volatility Guard
 # ---------------------------------------------------------------------------
 
+
 class TestVolatilityGuardCheck:
     def test_reject_when_nifty_drops_over_threshold(self):
         """Requirement 9.8: Reject if Nifty dropped > 2% in 10 min."""
@@ -502,13 +536,15 @@ class TestVolatilityGuardCheck:
         )
         rms.validate_order(_make_signal())
         rms._redis.set.assert_any_call(
-            RiskManagementSystem.KILL_SWITCH_KEY, "true",
+            RiskManagementSystem.KILL_SWITCH_KEY,
+            "true",
         )
 
 
 # ---------------------------------------------------------------------------
 # Test: Check 9 - Bias Filter
 # ---------------------------------------------------------------------------
+
 
 class TestBiasFilterCheck:
     def test_reject_buy_when_bearish(self):
@@ -555,6 +591,7 @@ class TestBiasFilterCheck:
 # Test: Exposure Metrics
 # ---------------------------------------------------------------------------
 
+
 class TestExposureMetrics:
     def test_get_current_exposure(self):
         rms = _make_rms(
@@ -577,22 +614,26 @@ class TestExposureMetrics:
 # Test: Kill Switch Management
 # ---------------------------------------------------------------------------
 
+
 class TestKillSwitchManagement:
     def test_activate_kill_switch(self):
         rms = _make_rms()
         rms.activate_kill_switch("Test reason")
         rms._redis.set.assert_any_call(
-            RiskManagementSystem.KILL_SWITCH_KEY, "true",
+            RiskManagementSystem.KILL_SWITCH_KEY,
+            "true",
         )
         rms._redis.set.assert_any_call(
-            RiskManagementSystem.KILL_SWITCH_REASON_KEY, "Test reason",
+            RiskManagementSystem.KILL_SWITCH_REASON_KEY,
+            "Test reason",
         )
 
     def test_deactivate_kill_switch(self):
         rms = _make_rms()
         rms.deactivate_kill_switch()
         rms._redis.set.assert_called_with(
-            RiskManagementSystem.KILL_SWITCH_KEY, "false",
+            RiskManagementSystem.KILL_SWITCH_KEY,
+            "false",
         )
         rms._redis.delete.assert_called_with(
             RiskManagementSystem.KILL_SWITCH_REASON_KEY,
@@ -602,6 +643,7 @@ class TestKillSwitchManagement:
 # ---------------------------------------------------------------------------
 # Test: Rejection Logging
 # ---------------------------------------------------------------------------
+
 
 class TestRejectionLogging:
     def test_log_rejection_publishes_to_event_bus(self):
@@ -635,6 +677,7 @@ class TestRejectionLogging:
 # Test: Multiple failures reported
 # ---------------------------------------------------------------------------
 
+
 class TestMultipleFailures:
     def test_all_failed_checks_reported(self):
         """All 9 checks should be evaluated even if early ones fail."""
@@ -662,6 +705,7 @@ class TestMultipleFailures:
 # ---------------------------------------------------------------------------
 # Test: Latency Tracking (Requirement 9.10)
 # ---------------------------------------------------------------------------
+
 
 class TestLatencyTracking:
     def test_latency_ms_populated(self):

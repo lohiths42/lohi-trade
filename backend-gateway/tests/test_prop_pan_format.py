@@ -16,10 +16,9 @@ from cryptography.fernet import Fernet
 _TEST_KEY = Fernet.generate_key().decode()
 os.environ["PAN_ENCRYPTION_KEY"] = _TEST_KEY
 
-from hypothesis import given, settings, assume
-from hypothesis import strategies as st
-
 from app.services.verification_service import PANVerificationService
+from hypothesis import assume, given, settings
+from hypothesis import strategies as st
 
 PAN_PATTERN = re.compile(r"^[A-Z]{5}[0-9]{4}[A-Z]{1}$")
 
@@ -71,9 +70,9 @@ class TestPANFormatValidationProperty:
         """validate_format() result must always agree with the PAN regex."""
         regex_match = bool(PAN_PATTERN.match(pan))
         service_result = self.service.validate_format(pan)
-        assert service_result == regex_match, (
-            f"Mismatch: regex says {regex_match}, service says {service_result} for '{pan}'"
-        )
+        assert (
+            service_result == regex_match
+        ), f"Mismatch: regex says {regex_match}, service says {service_result} for '{pan}'"
 
     @given(s=any_string)
     @settings(max_examples=100)
@@ -81,6 +80,6 @@ class TestPANFormatValidationProperty:
         """For any arbitrary string, validate_format() agrees with the regex."""
         regex_match = bool(PAN_PATTERN.match(s))
         service_result = self.service.validate_format(s)
-        assert service_result == regex_match, (
-            f"Mismatch: regex says {regex_match}, service says {service_result} for '{s!r}'"
-        )
+        assert (
+            service_result == regex_match
+        ), f"Mismatch: regex says {regex_match}, service says {service_result} for '{s!r}'"

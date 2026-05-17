@@ -608,7 +608,7 @@ void saddCommand(client *c) {
 
     set = lookupKeyWrite(c->db,c->argv[1]);
     if (checkType(c,set,OBJ_SET)) return;
-    
+
     if (set == NULL) {
         set = setTypeCreate(c->argv[2]->ptr, c->argc - 2);
         dbAdd(c->db,c->argv[1],set);
@@ -1490,7 +1490,7 @@ void sunionDiffGenericCommand(client *c, robj **setkeys, int setnum,
     int encoding;
     int j, cardinality = 0;
     int diff_algo = 1;
-    int sameset = 0; 
+    int sameset = 0;
 
     for (j = 0; j < setnum; j++) {
         robj *setobj = lookupKeyRead(c->db, setkeys[j]);
@@ -1504,7 +1504,7 @@ void sunionDiffGenericCommand(client *c, robj **setkeys, int setnum,
         }
         sets[j] = setobj;
         if (j > 0 && sets[0] == sets[j]) {
-            sameset = 1; 
+            sameset = 1;
         }
     }
 

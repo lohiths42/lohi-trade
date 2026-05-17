@@ -23,10 +23,16 @@ from src.ml.model_trainer import (
 )
 
 finite_float = st.floats(
-    min_value=-1e4, max_value=1e4, allow_nan=False, allow_infinity=False,
+    min_value=-1e4,
+    max_value=1e4,
+    allow_nan=False,
+    allow_infinity=False,
 )
 label_float = st.floats(
-    min_value=-1.0, max_value=1.0, allow_nan=False, allow_infinity=False,
+    min_value=-1.0,
+    max_value=1.0,
+    allow_nan=False,
+    allow_infinity=False,
 )
 
 
@@ -34,7 +40,8 @@ label_float = st.floats(
 def feature_vectors(draw):
     """Generate random feature vectors of correct shape."""
     return np.array(
-        [draw(finite_float) for _ in range(NUM_FEATURES)], dtype=np.float64,
+        [draw(finite_float) for _ in range(NUM_FEATURES)],
+        dtype=np.float64,
     )
 
 
@@ -66,10 +73,14 @@ def _make_balanced_samples(n: int) -> list:
             features[0] = -abs(features[0]) - 0.5
             features[3] = -1.0
             label = -0.5
-        samples.append(TrainingSample(
-            features=features, label=label, symbol="TEST",
-            timestamp=datetime.now(UTC),
-        ))
+        samples.append(
+            TrainingSample(
+                features=features,
+                label=label,
+                symbol="TEST",
+                timestamp=datetime.now(UTC),
+            )
+        )
     return samples
 
 
@@ -173,10 +184,12 @@ class TestModelTrainerProperties:
         with tempfile.TemporaryDirectory() as d:
             trainer = ModelTrainer(model_dir=d, retrain_threshold=9999)
             for i in range(5):
-                trainer.add_sample(TrainingSample(
-                    features=np.random.randn(NUM_FEATURES),
-                    label=0.5 if i % 2 == 0 else -0.5,
-                ))
+                trainer.add_sample(
+                    TrainingSample(
+                        features=np.random.randn(NUM_FEATURES),
+                        label=0.5 if i % 2 == 0 else -0.5,
+                    )
+                )
             trainer.reset()
             assert not trainer.is_trained
             assert trainer.sample_count == 0
@@ -188,10 +201,12 @@ class TestModelTrainerProperties:
         with tempfile.TemporaryDirectory() as d:
             trainer = ModelTrainer(model_dir=d, min_samples=30, retrain_threshold=9999)
             for i in range(n_samples):
-                trainer.add_sample(TrainingSample(
-                    features=np.random.randn(NUM_FEATURES),
-                    label=0.5 if i % 2 == 0 else -0.5,
-                ))
+                trainer.add_sample(
+                    TrainingSample(
+                        features=np.random.randn(NUM_FEATURES),
+                        label=0.5 if i % 2 == 0 else -0.5,
+                    )
+                )
             trainer.train()
             assert not trainer.is_trained
 

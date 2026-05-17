@@ -1,17 +1,15 @@
 """Unit tests for RBAC middleware and admin endpoints."""
 
 import uuid
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from fastapi import FastAPI, Depends, HTTPException
-from fastapi.testclient import TestClient
-
-from app.middleware.rbac import require_role, VALID_ROLES
-from app.routers.admin import router as admin_router, get_admin_db_pool
-from app.routers.auth_v2 import get_current_user_payload
+from app.middleware.rbac import require_role
+from app.routers.admin import get_admin_db_pool
+from app.routers.admin import router as admin_router
 from app.services.account_service import _create_access_token
-
+from fastapi import Depends, FastAPI
+from fastapi.testclient import TestClient
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -74,9 +72,7 @@ class TestRequireRole:
         app = _create_rbac_test_app()
         client = TestClient(app)
         token = _make_token("trader-1", "TRADER")
-        resp = client.get(
-            "/trader-or-admin", headers={"Authorization": f"Bearer {token}"}
-        )
+        resp = client.get("/trader-or-admin", headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 200
         assert resp.json()["role"] == "TRADER"
 
@@ -84,18 +80,14 @@ class TestRequireRole:
         app = _create_rbac_test_app()
         client = TestClient(app)
         token = _make_token("admin-1", "ADMIN")
-        resp = client.get(
-            "/trader-or-admin", headers={"Authorization": f"Bearer {token}"}
-        )
+        resp = client.get("/trader-or-admin", headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 200
 
     def test_viewer_denied_trader_or_admin(self):
         app = _create_rbac_test_app()
         client = TestClient(app)
         token = _make_token("viewer-1", "VIEWER")
-        resp = client.get(
-            "/trader-or-admin", headers={"Authorization": f"Bearer {token}"}
-        )
+        resp = client.get("/trader-or-admin", headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 403
 
     def test_all_roles_can_access_viewer_ok(self):
@@ -103,9 +95,7 @@ class TestRequireRole:
         client = TestClient(app)
         for role in ["ADMIN", "TRADER", "VIEWER"]:
             token = _make_token(f"user-{role}", role)
-            resp = client.get(
-                "/viewer-ok", headers={"Authorization": f"Bearer {token}"}
-            )
+            resp = client.get("/viewer-ok", headers={"Authorization": f"Bearer {token}"})
             assert resp.status_code == 200, f"{role} should have access"
 
     def test_no_token_returns_401(self):
@@ -117,9 +107,7 @@ class TestRequireRole:
     def test_invalid_token_returns_401(self):
         app = _create_rbac_test_app()
         client = TestClient(app)
-        resp = client.get(
-            "/admin-only", headers={"Authorization": "Bearer bad.token.here"}
-        )
+        resp = client.get("/admin-only", headers={"Authorization": "Bearer bad.token.here"})
         assert resp.status_code == 401
 
     def test_invalid_role_in_definition_raises_valueerror(self):
@@ -166,9 +154,7 @@ class _FakeAcquireCtx:
 def _mock_pool_with_user(user_id: str, is_active: bool):
     """Create a mock asyncpg pool that returns a user row."""
     mock_conn = AsyncMock()
-    mock_conn.fetchrow = AsyncMock(
-        return_value={"id": user_id, "is_active": is_active}
-    )
+    mock_conn.fetchrow = AsyncMock(return_value={"id": user_id, "is_active": is_active})
     mock_conn.execute = AsyncMock()
 
     mock_pool = MagicMock()

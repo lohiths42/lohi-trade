@@ -134,8 +134,7 @@ class TestTickForwardingToUnifiedStream:
 
         call_args_list = bus.publish.call_args_list
         stream_names = [
-            c.kwargs.get("stream_name", c[0][0] if c[0] else "")
-            for c in call_args_list
+            c.kwargs.get("stream_name", c[0][0] if c[0] else "") for c in call_args_list
         ]
         assert "stream:ticks:RELIANCE" in stream_names
         assert UNIFIED_TICK_STREAM in stream_names
@@ -242,12 +241,14 @@ class TestCorporateActionNotificationWiring:
         captured = []
 
         def push_callback(symbol, title, message, data):
-            captured.append({
-                "symbol": symbol,
-                "title": title,
-                "message": message,
-                "data": data,
-            })
+            captured.append(
+                {
+                    "symbol": symbol,
+                    "title": title,
+                    "message": message,
+                    "data": data,
+                }
+            )
 
         wiring, bus, _, cac = _make_wiring(
             watchlist=["RELIANCE"],
@@ -285,9 +286,9 @@ class TestCorporateActionNotificationWiring:
 
         # Check that stream:notifications was published to
         notification_calls = [
-            c for c in bus.publish.call_args_list
-            if (c.kwargs.get("stream_name") or (c[0][0] if c[0] else ""))
-            == "stream:notifications"
+            c
+            for c in bus.publish.call_args_list
+            if (c.kwargs.get("stream_name") or (c[0][0] if c[0] else "")) == "stream:notifications"
         ]
         assert len(notification_calls) >= 1
 
@@ -309,6 +310,7 @@ class TestCorporateActionNotificationWiring:
 
     def test_push_callback_failure_does_not_break_stream_publish(self):
         """If push callback fails, stream publish still works."""
+
         def failing_callback(**kwargs):
             raise Exception("FCM down")
 
@@ -430,7 +432,11 @@ class TestSeamlessConsumption:
 
         # Verify all fields expected by the existing pipeline
         required_fields = [
-            "symbol", "ltp", "volume", "timestamp", "exchange",
+            "symbol",
+            "ltp",
+            "volume",
+            "timestamp",
+            "exchange",
         ]
         for field in required_fields:
             assert field in unified_msg, f"Missing field: {field}"

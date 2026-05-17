@@ -44,6 +44,4 @@ class ResearchGuardrailDecision(Base):
         TIMESTAMP(timezone=True), nullable=False, server_default=func.now()
     )
 
-    run: Mapped[Optional["ResearchRun"]] = relationship(
-        back_populates="guardrail_decisions"
-    )
+    run: Mapped[Optional["ResearchRun"]] = relationship(back_populates="guardrail_decisions")

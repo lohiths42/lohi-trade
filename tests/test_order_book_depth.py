@@ -21,6 +21,7 @@ from src.ingestion.market_data_collector import (
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_event_bus() -> MagicMock:
     """Create a mock EventBus with a mock redis_client that has hset/hgetall."""
     bus = MagicMock()
@@ -57,6 +58,7 @@ def _make_depth(
 # Tests: OrderBookLevel dataclass
 # ---------------------------------------------------------------------------
 
+
 class TestOrderBookLevel:
     def test_create_level(self):
         level = OrderBookLevel(price=2500.0, quantity=100)
@@ -72,6 +74,7 @@ class TestOrderBookLevel:
 # ---------------------------------------------------------------------------
 # Tests: OrderBookDepth dataclass
 # ---------------------------------------------------------------------------
+
 
 class TestOrderBookDepth:
     def test_create_depth(self):
@@ -100,6 +103,7 @@ class TestOrderBookDepth:
 # ---------------------------------------------------------------------------
 # Tests: OrderBookDepth.to_redis_hash()
 # ---------------------------------------------------------------------------
+
 
 class TestOrderBookDepthToRedisHash:
     def test_full_5_levels(self):
@@ -161,9 +165,14 @@ class TestOrderBookDepthToRedisHash:
 
         expected_keys = {"symbol", "timestamp"}
         for i in range(1, 6):
-            expected_keys.update({
-                f"bid_{i}", f"ask_{i}", f"bid_qty_{i}", f"ask_qty_{i}",
-            })
+            expected_keys.update(
+                {
+                    f"bid_{i}",
+                    f"ask_{i}",
+                    f"bid_qty_{i}",
+                    f"ask_qty_{i}",
+                }
+            )
         assert set(h.keys()) == expected_keys
 
     def test_all_values_are_strings(self):
@@ -177,6 +186,7 @@ class TestOrderBookDepthToRedisHash:
 # ---------------------------------------------------------------------------
 # Tests: OrderBookDepth.from_redis_hash()
 # ---------------------------------------------------------------------------
+
 
 class TestOrderBookDepthFromRedisHash:
     def test_roundtrip_full_depth(self):
@@ -233,6 +243,7 @@ class TestOrderBookDepthFromRedisHash:
 # Tests: MarketDataCollector._store_order_book_depth()
 # ---------------------------------------------------------------------------
 
+
 class TestStoreOrderBookDepth:
     def test_stores_to_correct_redis_key(self):
         bus = _make_event_bus()
@@ -273,6 +284,7 @@ class TestStoreOrderBookDepth:
 # ---------------------------------------------------------------------------
 # Tests: MarketDataCollector.get_order_book_depth()
 # ---------------------------------------------------------------------------
+
 
 class TestGetOrderBookDepth:
     def test_retrieves_from_correct_key(self):
@@ -335,12 +347,14 @@ class TestGetOrderBookDepth:
 # Tests: MarketDataCollector.collect_order_book() (async)
 # ---------------------------------------------------------------------------
 
+
 class TestCollectOrderBook:
     @pytest.mark.asyncio
     async def test_uses_subscribed_symbols_by_default(self):
         bus = _make_event_bus()
         collector = MarketDataCollector(
-            event_bus=bus, subscribed_symbols=["RELIANCE", "TCS"],
+            event_bus=bus,
+            subscribed_symbols=["RELIANCE", "TCS"],
         )
 
         # _fetch_order_book_depth returns None by default
@@ -439,6 +453,7 @@ class TestCollectOrderBook:
 # ---------------------------------------------------------------------------
 # Tests: _fetch_order_book_depth default implementation
 # ---------------------------------------------------------------------------
+
 
 class TestFetchOrderBookDepth:
     @pytest.mark.asyncio

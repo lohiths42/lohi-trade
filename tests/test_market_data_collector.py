@@ -27,6 +27,7 @@ from src.ingestion.market_data_collector import (
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_event_bus() -> MagicMock:
     """Create a mock EventBus."""
     bus = MagicMock()
@@ -73,29 +74,32 @@ def _make_tick_data(
 
 def _make_nse_json(symbol: str = "RELIANCE", ltp: float = 2500.0) -> str:
     """Create a raw NSE JSON message string."""
-    return json.dumps({
-        "symbol": symbol,
-        "token": 12345,
-        "ltp": ltp,
-        "last_traded_qty": 100,
-        "total_volume": 500000,
-        "best_bid_price": 2499.50,
-        "best_bid_qty": 200,
-        "best_ask_price": 2500.50,
-        "best_ask_qty": 150,
-        "open": 2480.0,
-        "high": 2510.0,
-        "low": 2475.0,
-        "close": 2505.0,
-        "previous_close": 2490.0,
-        "timestamp": datetime.now(IST).isoformat(),
-        "exchange": "NSE",
-    })
+    return json.dumps(
+        {
+            "symbol": symbol,
+            "token": 12345,
+            "ltp": ltp,
+            "last_traded_qty": 100,
+            "total_volume": 500000,
+            "best_bid_price": 2499.50,
+            "best_bid_qty": 200,
+            "best_ask_price": 2500.50,
+            "best_ask_qty": 150,
+            "open": 2480.0,
+            "high": 2510.0,
+            "low": 2475.0,
+            "close": 2505.0,
+            "previous_close": 2490.0,
+            "timestamp": datetime.now(IST).isoformat(),
+            "exchange": "NSE",
+        }
+    )
 
 
 # ---------------------------------------------------------------------------
 # Tests: Initialisation & basic state
 # ---------------------------------------------------------------------------
+
 
 class TestMarketDataCollectorInit:
     def test_initial_state(self):
@@ -126,6 +130,7 @@ class TestMarketDataCollectorInit:
 # Tests: Subscription management
 # ---------------------------------------------------------------------------
 
+
 class TestSubscription:
     def test_subscribe_adds_symbols(self):
         bus = _make_event_bus()
@@ -146,7 +151,8 @@ class TestSubscription:
     def test_unsubscribe_removes_symbols(self):
         bus = _make_event_bus()
         collector = MarketDataCollector(
-            event_bus=bus, subscribed_symbols=["RELIANCE", "TCS", "INFY"],
+            event_bus=bus,
+            subscribed_symbols=["RELIANCE", "TCS", "INFY"],
         )
 
         collector.unsubscribe(["TCS"])
@@ -157,6 +163,7 @@ class TestSubscription:
 # ---------------------------------------------------------------------------
 # Tests: Tick processing & publishing (Requirement 25.2, 25.4)
 # ---------------------------------------------------------------------------
+
 
 class TestTickProcessing:
     def test_process_tick_publishes_to_event_bus(self):
@@ -239,6 +246,7 @@ class TestTickProcessing:
 # Tests: NSE message parsing (Requirement 25.2)
 # ---------------------------------------------------------------------------
 
+
 class TestNSEMessageParsing:
     def test_parse_valid_message(self):
         bus = _make_event_bus()
@@ -271,12 +279,14 @@ class TestNSEMessageParsing:
         """Optional fields default to 0 when missing."""
         bus = _make_event_bus()
         collector = MarketDataCollector(event_bus=bus)
-        raw = json.dumps({
-            "symbol": "TCS",
-            "token": 999,
-            "ltp": 3500.0,
-            "timestamp": datetime.now(IST).isoformat(),
-        })
+        raw = json.dumps(
+            {
+                "symbol": "TCS",
+                "token": 999,
+                "ltp": 3500.0,
+                "timestamp": datetime.now(IST).isoformat(),
+            }
+        )
 
         tick = collector.parse_nse_message(raw)
 
@@ -288,6 +298,7 @@ class TestNSEMessageParsing:
 # ---------------------------------------------------------------------------
 # Tests: Market session detection (Requirements 25.6, 25.7)
 # ---------------------------------------------------------------------------
+
 
 class TestMarketSession:
     def test_pre_market_session(self):
@@ -339,6 +350,7 @@ class TestMarketSession:
 # Tests: Pre-market and post-market data collection (25.6, 25.7)
 # ---------------------------------------------------------------------------
 
+
 class TestSessionDataCollection:
     def test_collect_pre_market_data(self):
         """Pre-market data includes indicative opening price."""
@@ -384,6 +396,7 @@ class TestSessionDataCollection:
 # Tests: Connection lifecycle (Requirement 25.1)
 # ---------------------------------------------------------------------------
 
+
 class TestConnectionLifecycle:
     @pytest.mark.asyncio
     async def test_connect_nse_feed(self):
@@ -417,6 +430,7 @@ class TestConnectionLifecycle:
 # Tests: Reconnection with exponential backoff (Requirement 25.5)
 # ---------------------------------------------------------------------------
 
+
 class TestReconnection:
     @pytest.mark.asyncio
     async def test_reconnect_success(self):
@@ -439,7 +453,7 @@ class TestReconnection:
         # Simulate many failed attempts
         collector._reconnect_attempts = 8
         max_delay = min(
-            collector.RECONNECT_BASE_DELAY * (2 ** 8),
+            collector.RECONNECT_BASE_DELAY * (2**8),
             collector.RECONNECT_MAX_DELAY,
         )
         assert max_delay == 5.0
@@ -469,6 +483,7 @@ class TestReconnection:
 # ---------------------------------------------------------------------------
 # Tests: Broker fallback (Requirement 25.5)
 # ---------------------------------------------------------------------------
+
 
 class TestBrokerFallback:
     @pytest.mark.asyncio
@@ -504,7 +519,9 @@ class TestBrokerFallback:
         bus = _make_event_bus()
         broker = _make_fallback_broker()
         collector = MarketDataCollector(
-            event_bus=bus, fallback_broker=broker, subscribed_symbols=["TCS"],
+            event_bus=bus,
+            fallback_broker=broker,
+            subscribed_symbols=["TCS"],
         )
 
         await collector._activate_fallback()
@@ -517,7 +534,9 @@ class TestBrokerFallback:
         bus = _make_event_bus()
         broker = _make_fallback_broker()
         collector = MarketDataCollector(
-            event_bus=bus, fallback_broker=broker, subscribed_symbols=["INFY"],
+            event_bus=bus,
+            fallback_broker=broker,
+            subscribed_symbols=["INFY"],
         )
         collector._fallback_active = True
 
@@ -559,6 +578,7 @@ class TestBrokerFallback:
 # Tests: handle_feed_disconnect (Requirement 25.5)
 # ---------------------------------------------------------------------------
 
+
 class TestHandleFeedDisconnect:
     @pytest.mark.asyncio
     async def test_feed_disconnect_activates_fallback_and_reconnects(self):
@@ -585,16 +605,30 @@ class TestHandleFeedDisconnect:
 # Tests: tick_to_message static method
 # ---------------------------------------------------------------------------
 
+
 class TestTickToMessage:
     def test_all_fields_present(self):
         tick = _make_tick_data()
         msg = MarketDataCollector._tick_to_message(tick)
 
         expected_keys = {
-            "symbol", "token", "ltp", "last_traded_qty", "volume",
-            "bid", "bid_qty", "ask", "ask_qty",
-            "open", "high", "low", "close", "previous_close",
-            "timestamp", "exchange", "session",
+            "symbol",
+            "token",
+            "ltp",
+            "last_traded_qty",
+            "volume",
+            "bid",
+            "bid_qty",
+            "ask",
+            "ask_qty",
+            "open",
+            "high",
+            "low",
+            "close",
+            "previous_close",
+            "timestamp",
+            "exchange",
+            "session",
         }
         assert set(msg.keys()) == expected_keys
 
@@ -609,6 +643,7 @@ class TestTickToMessage:
 # ---------------------------------------------------------------------------
 # Tests: ConnectionStats
 # ---------------------------------------------------------------------------
+
 
 class TestConnectionStats:
     def test_avg_latency_zero_when_no_data(self):
@@ -658,29 +693,32 @@ def _make_bse_tick_data(
 
 def _make_bse_json(symbol: str = "RELIANCE", ltp: float = 2502.0) -> str:
     """Create a raw BSE JSON message string."""
-    return json.dumps({
-        "symbol": symbol,
-        "token": 54321,
-        "ltp": ltp,
-        "last_traded_qty": 80,
-        "total_volume": 300000,
-        "best_bid_price": 2501.50,
-        "best_bid_qty": 180,
-        "best_ask_price": 2502.50,
-        "best_ask_qty": 120,
-        "open": 2478.0,
-        "high": 2512.0,
-        "low": 2470.0,
-        "close": 2508.0,
-        "previous_close": 2488.0,
-        "timestamp": datetime.now(IST).isoformat(),
-        "exchange": "BSE",
-    })
+    return json.dumps(
+        {
+            "symbol": symbol,
+            "token": 54321,
+            "ltp": ltp,
+            "last_traded_qty": 80,
+            "total_volume": 300000,
+            "best_bid_price": 2501.50,
+            "best_bid_qty": 180,
+            "best_ask_price": 2502.50,
+            "best_ask_qty": 120,
+            "open": 2478.0,
+            "high": 2512.0,
+            "low": 2470.0,
+            "close": 2508.0,
+            "previous_close": 2488.0,
+            "timestamp": datetime.now(IST).isoformat(),
+            "exchange": "BSE",
+        }
+    )
 
 
 # ---------------------------------------------------------------------------
 # Tests: BSE Initialisation & state (Requirement 26.1)
 # ---------------------------------------------------------------------------
+
 
 class TestBSEInit:
     def test_bse_initial_state(self):
@@ -696,7 +734,8 @@ class TestBSEInit:
         bus = _make_event_bus()
         dual = ["RELIANCE", "TCS", "INFY"]
         collector = MarketDataCollector(
-            event_bus=bus, dual_listed_symbols=dual,
+            event_bus=bus,
+            dual_listed_symbols=dual,
         )
         assert collector.dual_listed_symbols == dual
 
@@ -704,14 +743,16 @@ class TestBSEInit:
         bus = _make_event_bus()
         bse_only = ["BSELTD", "BSESTOCK"]
         collector = MarketDataCollector(
-            event_bus=bus, bse_only_symbols=bse_only,
+            event_bus=bus,
+            bse_only_symbols=bse_only,
         )
         assert collector.bse_only_symbols == bse_only
 
     def test_init_with_custom_bse_feed_url(self):
         bus = _make_event_bus()
         collector = MarketDataCollector(
-            event_bus=bus, bse_feed_url="wss://custom-bse.example.com/ws",
+            event_bus=bus,
+            bse_feed_url="wss://custom-bse.example.com/ws",
         )
         assert collector.bse_feed_url == "wss://custom-bse.example.com/ws"
 
@@ -719,6 +760,7 @@ class TestBSEInit:
 # ---------------------------------------------------------------------------
 # Tests: BSE Connection lifecycle (Requirement 26.1, 26.6)
 # ---------------------------------------------------------------------------
+
 
 class TestBSEConnection:
     @pytest.mark.asyncio
@@ -766,7 +808,9 @@ class TestBSEConnection:
 
         # Simulate BSE connection failure
         with patch.object(
-            collector, "_establish_bse_connection", side_effect=Exception("BSE down"),
+            collector,
+            "_establish_bse_connection",
+            side_effect=Exception("BSE down"),
         ):
             await collector.connect_bse_feed()
 
@@ -778,6 +822,7 @@ class TestBSEConnection:
 # ---------------------------------------------------------------------------
 # Tests: BSE message parsing (Requirement 26.2)
 # ---------------------------------------------------------------------------
+
 
 class TestBSEMessageParsing:
     def test_parse_valid_bse_message(self):
@@ -832,12 +877,14 @@ class TestBSEMessageParsing:
         """Optional fields default to 0 when missing."""
         bus = _make_event_bus()
         collector = MarketDataCollector(event_bus=bus)
-        raw = json.dumps({
-            "symbol": "BSELTD",
-            "token": 999,
-            "ltp": 150.0,
-            "timestamp": datetime.now(IST).isoformat(),
-        })
+        raw = json.dumps(
+            {
+                "symbol": "BSELTD",
+                "token": 999,
+                "ltp": 150.0,
+                "timestamp": datetime.now(IST).isoformat(),
+            }
+        )
 
         tick = collector.parse_bse_message(raw)
 
@@ -850,6 +897,7 @@ class TestBSEMessageParsing:
 # ---------------------------------------------------------------------------
 # Tests: Dual-listed handling — NSE primary (Requirement 26.3)
 # ---------------------------------------------------------------------------
+
 
 class TestDualListedHandling:
     def test_dual_listed_nse_primary_no_publish(self):
@@ -929,6 +977,7 @@ class TestDualListedHandling:
 # Tests: BSE-only securities (Requirement 26.4)
 # ---------------------------------------------------------------------------
 
+
 class TestBSEOnlySecurities:
     def test_bse_only_publishes_to_event_bus(self):
         """BSE-only securities are published as sole source. (Req 26.4)"""
@@ -985,6 +1034,7 @@ class TestBSEOnlySecurities:
 # ---------------------------------------------------------------------------
 # Tests: Price discrepancy detection (Requirement 26.5)
 # ---------------------------------------------------------------------------
+
 
 class TestPriceDiscrepancy:
     def test_discrepancy_above_threshold(self):
@@ -1069,6 +1119,7 @@ class TestPriceDiscrepancy:
 # Tests: BSE feed unavailability — continue with NSE (Requirement 26.6)
 # ---------------------------------------------------------------------------
 
+
 class TestBSEFeedUnavailability:
     @pytest.mark.asyncio
     async def test_nse_continues_when_bse_unavailable(self):
@@ -1082,7 +1133,9 @@ class TestBSEFeedUnavailability:
 
         # BSE fails to connect
         with patch.object(
-            collector, "_establish_bse_connection", side_effect=Exception("BSE down"),
+            collector,
+            "_establish_bse_connection",
+            side_effect=Exception("BSE down"),
         ):
             await collector.connect_bse_feed()
 
@@ -1137,6 +1190,7 @@ class TestBSEFeedUnavailability:
 # ---------------------------------------------------------------------------
 # Tests: BSE ConnectionStats
 # ---------------------------------------------------------------------------
+
 
 class TestBSEConnectionStats:
     def test_bse_stats_initial_values(self):

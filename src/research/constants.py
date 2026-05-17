@@ -97,9 +97,7 @@ RETRIEVAL_CACHE_KEY_TEMPLATE = (
 # digests of the prompt and context (design §3.11, §4.3, Req 5.8). Bypassed
 # when the caller requests streaming.
 # Fields: provider, model, prompt_sha256, context_sha256.
-LLM_RESPONSE_CACHE_KEY_TEMPLATE = (
-    "research:llm:{provider}:{model}:{prompt_sha256}:{context_sha256}"
-)
+LLM_RESPONSE_CACHE_KEY_TEMPLATE = "research:llm:{provider}:{model}:{prompt_sha256}:{context_sha256}"
 
 # Guardrail rate-limit counter (integer). One counter per user per time
 # window (design §3.6, §4.3, Req 16.5). ``window_epoch`` is the unix-epoch

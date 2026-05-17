@@ -111,7 +111,7 @@ foreach command {SORT SORT_RO} {
     test "SORT extracts STORE correctly" {
         r command getkeys sort abc store def
     } {abc def}
-    
+
     test "SORT_RO get keys" {
         r command getkeys sort_ro abc
     } {abc}

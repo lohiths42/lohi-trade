@@ -21,7 +21,7 @@ start_server {tags {"bitops"}} {
         r del bits
         set results [r bitfield bits set i8 0 255 set i8 0 100 get i8 0]
     } {0 -1 100}
- 
+
     test {BITFIELD unsigned with SET, GET and INCRBY arguments} {
         r del bits
         set results [r bitfield bits set u8 0 255 incrby u8 0 100 get u8 0]

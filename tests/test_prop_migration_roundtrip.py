@@ -51,7 +51,10 @@ safe_text = st.text(
 )
 
 finite_float = st.floats(
-    min_value=-1e9, max_value=1e9, allow_nan=False, allow_infinity=False,
+    min_value=-1e9,
+    max_value=1e9,
+    allow_nan=False,
+    allow_infinity=False,
 )
 
 positive_int = st.integers(min_value=1, max_value=1_000_000)
@@ -59,6 +62,7 @@ positive_int = st.integers(min_value=1, max_value=1_000_000)
 column_name = st.from_regex(r"[a-z][a-z0-9_]{0,15}", fullmatch=True)
 
 # Strategy for a single row dict with consistent columns
+
 
 @st.composite
 def row_data(draw, columns: list[str] | None = None):
@@ -107,20 +111,54 @@ def row_list(draw, min_rows=1, max_rows=10):
 
 # Realistic table schemas matching the SQLite schema
 TRADES_COLUMNS = [
-    "id", "trade_id", "symbol", "side", "strategy", "entry_price",
-    "exit_price", "quantity", "entry_time", "exit_time", "realized_pnl",
-    "stop_loss", "target", "exit_reason", "created_at",
+    "id",
+    "trade_id",
+    "symbol",
+    "side",
+    "strategy",
+    "entry_price",
+    "exit_price",
+    "quantity",
+    "entry_time",
+    "exit_time",
+    "realized_pnl",
+    "stop_loss",
+    "target",
+    "exit_reason",
+    "created_at",
 ]
 
 ORDERS_COLUMNS = [
-    "id", "order_id", "trade_id", "symbol", "side", "order_type",
-    "quantity", "price", "trigger_price", "status", "broker_order_id",
-    "filled_qty", "filled_price", "rejection_reason", "created_at", "updated_at",
+    "id",
+    "order_id",
+    "trade_id",
+    "symbol",
+    "side",
+    "order_type",
+    "quantity",
+    "price",
+    "trigger_price",
+    "status",
+    "broker_order_id",
+    "filled_qty",
+    "filled_price",
+    "rejection_reason",
+    "created_at",
+    "updated_at",
 ]
 
 NEWS_COLUMNS = [
-    "id", "article_id", "source", "title", "content", "url",
-    "published_at", "fetched_at", "content_hash", "sentiment", "created_at",
+    "id",
+    "article_id",
+    "source",
+    "title",
+    "content",
+    "url",
+    "published_at",
+    "fetched_at",
+    "content_hash",
+    "sentiment",
+    "created_at",
 ]
 
 
@@ -131,30 +169,38 @@ def trades_rows(draw, min_rows=1, max_rows=8):
     rows = []
     for i in range(n):
         entry_price = draw(finite_float.filter(lambda x: x > 0))
-        rows.append({
-            "id": i + 1,
-            "trade_id": f"T{draw(st.integers(min_value=1000, max_value=9999))}_{i}",
-            "symbol": draw(st.sampled_from(["RELIANCE", "TCS", "INFY", "HDFCBANK", "SBIN"])),
-            "side": draw(st.sampled_from(["BUY", "SELL"])),
-            "strategy": draw(st.sampled_from(["mean_reversion", "trend_following", "orb"])),
-            "entry_price": entry_price,
-            "exit_price": draw(st.one_of(st.none(), finite_float.filter(lambda x: x > 0))),
-            "quantity": draw(st.integers(min_value=1, max_value=1000)),
-            "entry_time": "2025-01-15 10:30:00",
-            "exit_time": draw(st.one_of(st.none(), st.just("2025-01-15 14:30:00"))),
-            "realized_pnl": draw(st.one_of(st.none(), finite_float)),
-            "stop_loss": entry_price * 0.98,
-            "target": entry_price * 1.04,
-            "exit_reason": draw(st.one_of(st.none(), st.sampled_from(["target", "stop_loss", "manual"]))),
-            "created_at": "2025-01-15 10:30:00",
-        })
+        rows.append(
+            {
+                "id": i + 1,
+                "trade_id": f"T{draw(st.integers(min_value=1000, max_value=9999))}_{i}",
+                "symbol": draw(st.sampled_from(["RELIANCE", "TCS", "INFY", "HDFCBANK", "SBIN"])),
+                "side": draw(st.sampled_from(["BUY", "SELL"])),
+                "strategy": draw(st.sampled_from(["mean_reversion", "trend_following", "orb"])),
+                "entry_price": entry_price,
+                "exit_price": draw(st.one_of(st.none(), finite_float.filter(lambda x: x > 0))),
+                "quantity": draw(st.integers(min_value=1, max_value=1000)),
+                "entry_time": "2025-01-15 10:30:00",
+                "exit_time": draw(st.one_of(st.none(), st.just("2025-01-15 14:30:00"))),
+                "realized_pnl": draw(st.one_of(st.none(), finite_float)),
+                "stop_loss": entry_price * 0.98,
+                "target": entry_price * 1.04,
+                "exit_reason": draw(
+                    st.one_of(st.none(), st.sampled_from(["target", "stop_loss", "manual"]))
+                ),
+                "created_at": "2025-01-15 10:30:00",
+            }
+        )
     return rows
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
+
 def _create_sqlite_with_rows(
-    db_path: str, table: str, columns: list[str], rows: list[dict],
+    db_path: str,
+    table: str,
+    columns: list[str],
+    rows: list[dict],
 ) -> None:
     """Create a SQLite table and insert rows."""
     conn = sqlite3.connect(db_path)
@@ -215,6 +261,7 @@ class TestMigrationRoundTripProperty:
         """
         rows, cols = data
         import random
+
         shuffled = rows.copy()
         random.shuffle(shuffled)
         hash_original = SQLiteToPostgresMigrator._checksum_rows(rows, cols)
@@ -236,9 +283,9 @@ class TestMigrationRoundTripProperty:
 
         # Checksum on original columns should be unchanged
         hash_after = SQLiteToPostgresMigrator._checksum_rows(rows, cols)
-        assert hash_before == hash_after, (
-            "Checksum over original columns changed after adding user_id"
-        )
+        assert (
+            hash_before == hash_after
+        ), "Checksum over original columns changed after adding user_id"
 
     @given(data=row_list(min_rows=1, max_rows=10))
     @settings(max_examples=25)
@@ -270,9 +317,9 @@ class TestMigrationRoundTripProperty:
         migrator = SQLiteToPostgresMigrator(db_path, "unused")
         read_back = migrator._read_sqlite_table(table)
 
-        assert len(read_back) == len(rows), (
-            f"Row count mismatch: wrote {len(rows)}, read {len(read_back)}"
-        )
+        assert len(read_back) == len(
+            rows
+        ), f"Row count mismatch: wrote {len(rows)}, read {len(read_back)}"
 
         # Compute checksum on the original data (stringified to match SQLite storage)
         normalized_original = []
@@ -291,9 +338,9 @@ class TestMigrationRoundTripProperty:
         hash_original = SQLiteToPostgresMigrator._checksum_rows(normalized_original, TRADES_COLUMNS)
         hash_readback = SQLiteToPostgresMigrator._checksum_rows(read_back, TRADES_COLUMNS)
 
-        assert hash_original == hash_readback, (
-            "Round-trip checksum mismatch: SQLite write → read produced different data"
-        )
+        assert (
+            hash_original == hash_readback
+        ), "Round-trip checksum mismatch: SQLite write → read produced different data"
 
     @given(rows=trades_rows(min_rows=1, max_rows=5))
     @settings(max_examples=25)
@@ -334,9 +381,9 @@ class TestMigrationRoundTripProperty:
         # Checksum on shared SQLite columns should still match
         hash_after = SQLiteToPostgresMigrator._checksum_rows(read_back, TRADES_COLUMNS)
 
-        assert hash_before == hash_after, (
-            "Round-trip checksum on shared columns changed after adding user_id"
-        )
+        assert (
+            hash_before == hash_after
+        ), "Round-trip checksum on shared columns changed after adding user_id"
 
     @given(data=row_list(min_rows=2, max_rows=10))
     @settings(max_examples=25, suppress_health_check=[HealthCheck.large_base_example])
@@ -347,7 +394,7 @@ class TestMigrationRoundTripProperty:
         rows, cols = data
         assume(len(cols) >= 3)
 
-        subset_cols = cols[:len(cols) - 1]  # Drop last column
+        subset_cols = cols[: len(cols) - 1]  # Drop last column
         hash_full_cols = SQLiteToPostgresMigrator._checksum_rows(rows, subset_cols)
 
         # Add an extra column to each row
@@ -356,6 +403,6 @@ class TestMigrationRoundTripProperty:
             r["extra_col_xyz"] = "noise"
 
         hash_augmented = SQLiteToPostgresMigrator._checksum_rows(augmented, subset_cols)
-        assert hash_full_cols == hash_augmented, (
-            "Checksum on column subset changed when extra columns were added to rows"
-        )
+        assert (
+            hash_full_cols == hash_augmented
+        ), "Checksum on column subset changed when extra columns were added to rows"

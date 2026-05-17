@@ -224,7 +224,7 @@ start_server {} {
         # Disconnect the master's direct replica
         $R(0) client kill type replica
         wait_for_condition 50 1000 {
-            [status $R(1) master_link_status] == "up" && 
+            [status $R(1) master_link_status] == "up" &&
             [status $R(2) master_link_status] == "up" &&
             [status $R(0) sync_partial_ok] == $sync_partial_master + 1 &&
             [status $R(1) sync_partial_ok] == $sync_partial_replica

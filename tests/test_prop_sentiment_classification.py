@@ -15,7 +15,6 @@ Properties tested:
   5. When model is unavailable, fallback returns NEUTRAL with confidence 0.0
 """
 
-
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
@@ -112,9 +111,7 @@ class TestSentimentClassificationProperties:
         """Sentiment label is always one of POSITIVE, NEGATIVE, NEUTRAL."""
         analyzer = _build_analyzer(logits=list(logits))
         result = analyzer.analyze(text)
-        assert result.sentiment in VALID_LABELS, (
-            f"Invalid sentiment label: {result.sentiment}"
-        )
+        assert result.sentiment in VALID_LABELS, f"Invalid sentiment label: {result.sentiment}"
 
     @given(logits=_logits, text=_text)
     @settings(max_examples=25)
@@ -122,9 +119,7 @@ class TestSentimentClassificationProperties:
         """Confidence is in [0.0, 1.0]."""
         analyzer = _build_analyzer(logits=list(logits))
         result = analyzer.analyze(text)
-        assert 0.0 <= result.confidence <= 1.0, (
-            f"Confidence out of range: {result.confidence}"
-        )
+        assert 0.0 <= result.confidence <= 1.0, f"Confidence out of range: {result.confidence}"
 
     @given(logits=_logits, text=_text)
     @settings(max_examples=25)
@@ -132,9 +127,7 @@ class TestSentimentClassificationProperties:
         """Raw score (positive_prob - negative_prob) is in [-1.0, 1.0]."""
         analyzer = _build_analyzer(logits=list(logits))
         result = analyzer.analyze(text)
-        assert -1.0 <= result.raw_score <= 1.0, (
-            f"Raw score out of range: {result.raw_score}"
-        )
+        assert -1.0 <= result.raw_score <= 1.0, f"Raw score out of range: {result.raw_score}"
 
     @given(logits=_logits, text=_text)
     @settings(max_examples=25)
@@ -142,9 +135,9 @@ class TestSentimentClassificationProperties:
         """Boosted score is clamped to [-1.0, 1.0]."""
         analyzer = _build_analyzer(logits=list(logits))
         result = analyzer.analyze(text)
-        assert -1.0 <= result.boosted_score <= 1.0, (
-            f"Boosted score out of range: {result.boosted_score}"
-        )
+        assert (
+            -1.0 <= result.boosted_score <= 1.0
+        ), f"Boosted score out of range: {result.boosted_score}"
 
     @given(text=_text)
     @settings(max_examples=25)

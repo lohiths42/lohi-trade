@@ -222,7 +222,9 @@ class TestCredentialValidationCorrectness:
     )
     @settings(max_examples=200)
     def test_validator_returns_error_iff_value_does_not_match_pattern(
-        self, entry: tuple[str, str, str], value: str,
+        self,
+        entry: tuple[str, str, str],
+        value: str,
     ) -> None:
         """For any credential value and its associated validation pattern,
         the validator SHALL return a validation error if and only if the
@@ -306,7 +308,8 @@ class TestCredentialValidationCorrectness:
     @given(entry=validation_entry_strategy)
     @settings(max_examples=100)
     def test_empty_string_always_rejected(
-        self, entry: tuple[str, str, str],
+        self,
+        entry: tuple[str, str, str],
     ) -> None:
         """For any credential key with a validation pattern, an empty
         string SHALL always produce a validation error (required field).

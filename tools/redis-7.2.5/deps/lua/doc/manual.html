@@ -409,7 +409,7 @@ Square brackets are used to index a table:
 <pre>
 	var ::= prefixexp `<b>[</b>&acute; exp `<b>]</b>&acute;
 </pre><p>
-The meaning of accesses to global variables 
+The meaning of accesses to global variables
 and table fields can be changed via metatables.
 An access to an indexed variable <code>t[i]</code> is equivalent to
 a call <code>gettable_event(t,i)</code>.
@@ -489,7 +489,7 @@ There are no empty statements and thus '<code>;;</code>' is not legal.
 
 
 <p>
-Lua handles a chunk as the body of an anonymous function 
+Lua handles a chunk as the body of an anonymous function
 with a variable number of arguments
 (see <a href="#2.5.9">&sect;2.5.9</a>).
 As such, chunks can define local variables,
@@ -931,7 +931,7 @@ Here are some examples:
      a,b = ...          -- a gets the first vararg parameter, b gets
                         -- the second (both a and b can get nil if there
                         -- is no corresponding vararg parameter)
-     
+
      a,b,c = x, f()     -- f() is adjusted to 2 results
      a,b,c = f()        -- f() is adjusted to 3 results
      return f()         -- returns all results from f()
@@ -998,7 +998,7 @@ this new object is different from any previously existing object.
 
 
 <p>
-You can change the way that Lua compares tables and userdata 
+You can change the way that Lua compares tables and userdata
 by using the "eq" metamethod (see <a href="#2.8">&sect;2.8</a>).
 
 
@@ -1099,7 +1099,7 @@ If the array has "holes"
 then <code>#t</code> can be any of the indices that
 directly precedes a <b>nil</b> value
 (that is, it may consider any such <b>nil</b> value as the end of
-the array). 
+the array).
 
 
 
@@ -1393,13 +1393,13 @@ to the vararg expression:
 
 <pre>
      CALL            PARAMETERS
-     
+
      f(3)             a=3, b=nil
      f(3, 4)          a=3, b=4
      f(3, 4, 5)       a=3, b=4
      f(r(), 10)       a=1, b=10
      f(r())           a=1, b=2
-     
+
      g(3)             a=3, b=nil, ... --&gt;  (nothing)
      g(3, 4)          a=3, b=4,   ... --&gt;  (nothing)
      g(3, 4, 5, 8)    a=3, b=4,   ... --&gt;  5  8
@@ -1535,7 +1535,7 @@ Lua calls this function to perform the addition.
 <p>
 We call the keys in a metatable <em>events</em>
 and the values <em>metamethods</em>.
-In the previous example, the event is <code>"add"</code> 
+In the previous example, the event is <code>"add"</code>
 and the metamethod is the function that performs the addition.
 
 
@@ -2034,7 +2034,7 @@ the speed of memory allocation.
 <p>
 You can change these numbers by calling <a href="#lua_gc"><code>lua_gc</code></a> in C
 or <a href="#pdf-collectgarbage"><code>collectgarbage</code></a> in Lua.
-With these functions you can also control 
+With these functions you can also control
 the collector directly (e.g., stop and restart it).
 
 
@@ -2201,7 +2201,7 @@ consider the following code:
        print("foo", a)
        return coroutine.yield(2*a)
      end
-     
+
      co = coroutine.create(function (a,b)
            print("co-body", a, b)
            local r = foo(a+1)
@@ -2210,7 +2210,7 @@ consider the following code:
            print("co-body", r, s)
            return b, "end"
      end)
-            
+
      print("main", coroutine.resume(co, 1, 10))
      print("main", coroutine.resume(co, "r"))
      print("main", coroutine.resume(co, "x", "y"))
@@ -2221,7 +2221,7 @@ When you run it, it produces the following output:
 <pre>
      co-body 1       10
      foo     2
-     
+
      main    true    4
      co-body r
      main    true    11      -9
@@ -2297,7 +2297,7 @@ and index <em>-n</em> represents the first element.
 We say that an index is <em>valid</em>
 if it lies between&nbsp;1 and the stack top
 (that is, if <code>1 &le; abs(index) &le; top</code>).
- 
+
 
 
 
@@ -4715,7 +4715,7 @@ when the index is greater than the number of upvalues.
 
 The <em>auxiliary library</em> provides several convenient functions
 to interface C with Lua.
-While the basic API provides the primitive functions for all 
+While the basic API provides the primitive functions for all
 interactions between C and Lua,
 the auxiliary library provides higher-level functions for some
 common tasks.
@@ -5451,7 +5451,7 @@ Returns an address to a space of size <a name="pdf-LUAL_BUFFERSIZE"><code>LUAL_B
 where you can copy a string to be added to buffer <code>B</code>
 (see <a href="#luaL_Buffer"><code>luaL_Buffer</code></a>).
 After copying the string into this space you must call
-<a href="#luaL_addsize"><code>luaL_addsize</code></a> with the size of the string to actually add 
+<a href="#luaL_addsize"><code>luaL_addsize</code></a> with the size of the string to actually add
 it to the buffer.
 
 
@@ -5695,7 +5695,7 @@ e.g., by using <a href="#lua_call"><code>lua_call</code></a>.
 <p>
 The basic library provides some core functions to Lua.
 If you do not include this library in your application,
-you should check carefully whether you need to provide 
+you should check carefully whether you need to provide
 implementations for some of its facilities.
 
 
@@ -5864,7 +5864,7 @@ A return of an empty string, <b>nil</b>, or no value signals the end of the chun
 
 
 <p>
-If there are no errors, 
+If there are no errors,
 returns the compiled chunk as a function;
 otherwise, returns <b>nil</b> plus the error message.
 The environment of the returned function is the global environment.
@@ -6409,7 +6409,7 @@ final value of <code>package.loaded[modname]</code>.
 <p>
 If there is any error loading or running the module,
 or if it cannot find any loader for the module,
-then <code>require</code> signals an error. 
+then <code>require</code> signals an error.
 
 
 
@@ -6838,21 +6838,21 @@ Here are some examples:
 <pre>
      x = string.gsub("hello world", "(%w+)", "%1 %1")
      --&gt; x="hello hello world world"
-     
+
      x = string.gsub("hello world", "%w+", "%0 %0", 1)
      --&gt; x="hello hello world"
-     
+
      x = string.gsub("hello world from Lua", "(%w+)%s*(%w+)", "%2 %1")
      --&gt; x="world hello Lua from"
-     
+
      x = string.gsub("home = $HOME, user = $USER", "%$(%w+)", os.getenv)
      --&gt; x="home = /home/roberto, user = roberto"
-     
+
      x = string.gsub("4+5 = $return 4+5$", "%$(.-)%$", function (s)
            return loadstring(s)()
          end)
      --&gt; x="4+5 = 9"
-     
+
      local t = {name="lua", version="5.1"}
      x = string.gsub("$name-$version.tar.gz", "%$(%w+)", t)
      --&gt; x="lua-5.1.tar.gz"
@@ -7171,7 +7171,7 @@ of table <code>t</code>.
 Returns the largest positive numerical index of the given table,
 or zero if the table has no positive numerical indices.
 (To do its job this function does a linear traversal of
-the whole table.) 
+the whole table.)
 
 
 
@@ -7477,7 +7477,7 @@ pseudo-random generator function <code>rand</code> provided by ANSI&nbsp;C.
 <p>
 When called without arguments,
 returns a uniform pseudo-random real number
-in the range <em>[0,1)</em>.  
+in the range <em>[0,1)</em>.
 When called with an integer number <code>m</code>,
 <code>math.random</code> returns
 a uniform pseudo-random integer in the range <em>[1, m]</em>.
@@ -8567,12 +8567,12 @@ as in
 (Of course,
 the location of the Lua interpreter may be different in your machine.
 If <code>lua</code> is in your <code>PATH</code>,
-then 
+then
 
 <pre>
      #!/usr/bin/env lua
 </pre><p>
-is a more portable solution.) 
+is a more portable solution.)
 
 
 
@@ -8728,17 +8728,17 @@ Here is the complete syntax of Lua in extended BNF.
 
 	block ::= chunk
 
-	stat ::=  varlist `<b>=</b>&acute; explist | 
-		 functioncall | 
-		 <b>do</b> block <b>end</b> | 
-		 <b>while</b> exp <b>do</b> block <b>end</b> | 
-		 <b>repeat</b> block <b>until</b> exp | 
-		 <b>if</b> exp <b>then</b> block {<b>elseif</b> exp <b>then</b> block} [<b>else</b> block] <b>end</b> | 
-		 <b>for</b> Name `<b>=</b>&acute; exp `<b>,</b>&acute; exp [`<b>,</b>&acute; exp] <b>do</b> block <b>end</b> | 
-		 <b>for</b> namelist <b>in</b> explist <b>do</b> block <b>end</b> | 
-		 <b>function</b> funcname funcbody | 
-		 <b>local</b> <b>function</b> Name funcbody | 
-		 <b>local</b> namelist [`<b>=</b>&acute; explist] 
+	stat ::=  varlist `<b>=</b>&acute; explist |
+		 functioncall |
+		 <b>do</b> block <b>end</b> |
+		 <b>while</b> exp <b>do</b> block <b>end</b> |
+		 <b>repeat</b> block <b>until</b> exp |
+		 <b>if</b> exp <b>then</b> block {<b>elseif</b> exp <b>then</b> block} [<b>else</b> block] <b>end</b> |
+		 <b>for</b> Name `<b>=</b>&acute; exp `<b>,</b>&acute; exp [`<b>,</b>&acute; exp] <b>do</b> block <b>end</b> |
+		 <b>for</b> namelist <b>in</b> explist <b>do</b> block <b>end</b> |
+		 <b>function</b> funcname funcbody |
+		 <b>local</b> <b>function</b> Name funcbody |
+		 <b>local</b> namelist [`<b>=</b>&acute; explist]
 
 	laststat ::= <b>return</b> [explist] | <b>break</b>
 
@@ -8746,20 +8746,20 @@ Here is the complete syntax of Lua in extended BNF.
 
 	varlist ::= var {`<b>,</b>&acute; var}
 
-	var ::=  Name | prefixexp `<b>[</b>&acute; exp `<b>]</b>&acute; | prefixexp `<b>.</b>&acute; Name 
+	var ::=  Name | prefixexp `<b>[</b>&acute; exp `<b>]</b>&acute; | prefixexp `<b>.</b>&acute; Name
 
 	namelist ::= Name {`<b>,</b>&acute; Name}
 
 	explist ::= {exp `<b>,</b>&acute;} exp
 
-	exp ::=  <b>nil</b> | <b>false</b> | <b>true</b> | Number | String | `<b>...</b>&acute; | function | 
-		 prefixexp | tableconstructor | exp binop exp | unop exp 
+	exp ::=  <b>nil</b> | <b>false</b> | <b>true</b> | Number | String | `<b>...</b>&acute; | function |
+		 prefixexp | tableconstructor | exp binop exp | unop exp
 
 	prefixexp ::= var | functioncall | `<b>(</b>&acute; exp `<b>)</b>&acute;
 
-	functioncall ::=  prefixexp args | prefixexp `<b>:</b>&acute; Name args 
+	functioncall ::=  prefixexp args | prefixexp `<b>:</b>&acute; Name args
 
-	args ::=  `<b>(</b>&acute; [explist] `<b>)</b>&acute; | tableconstructor | String 
+	args ::=  `<b>(</b>&acute; [explist] `<b>)</b>&acute; | tableconstructor | String
 
 	function ::= <b>function</b> funcbody
 
@@ -8775,8 +8775,8 @@ Here is the complete syntax of Lua in extended BNF.
 
 	fieldsep ::= `<b>,</b>&acute; | `<b>;</b>&acute;
 
-	binop ::= `<b>+</b>&acute; | `<b>-</b>&acute; | `<b>*</b>&acute; | `<b>/</b>&acute; | `<b>^</b>&acute; | `<b>%</b>&acute; | `<b>..</b>&acute; | 
-		 `<b>&lt;</b>&acute; | `<b>&lt;=</b>&acute; | `<b>&gt;</b>&acute; | `<b>&gt;=</b>&acute; | `<b>==</b>&acute; | `<b>~=</b>&acute; | 
+	binop ::= `<b>+</b>&acute; | `<b>-</b>&acute; | `<b>*</b>&acute; | `<b>/</b>&acute; | `<b>^</b>&acute; | `<b>%</b>&acute; | `<b>..</b>&acute; |
+		 `<b>&lt;</b>&acute; | `<b>&lt;=</b>&acute; | `<b>&gt;</b>&acute; | `<b>&gt;=</b>&acute; | `<b>==</b>&acute; | `<b>~=</b>&acute; |
 		 <b>and</b> | <b>or</b>
 
 	unop ::= `<b>-</b>&acute; | <b>not</b> | `<b>#</b>&acute;
@@ -8801,4 +8801,3 @@ Last change: revised for Lua 5.1.5
 -->
 
 </body></html>
-

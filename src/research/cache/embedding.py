@@ -173,7 +173,8 @@ class EmbeddingCache:
         hashes = [_sha256_hex(t) for t in texts]
         keys = [
             EMBEDDING_CACHE_KEY_TEMPLATE.format(
-                embedding_model=model_id, text_sha256=h,
+                embedding_model=model_id,
+                text_sha256=h,
             )
             for h in hashes
         ]
@@ -239,7 +240,8 @@ class EmbeddingCache:
             for h, vector in zip(ordered_hashes, vectors):
                 payload = json.dumps(vector)
                 key = EMBEDDING_CACHE_KEY_TEMPLATE.format(
-                    embedding_model=model_id, text_sha256=h,
+                    embedding_model=model_id,
+                    text_sha256=h,
                 )
                 try:
                     await self._redis.set(key, payload, ex=self._ttl)

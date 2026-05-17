@@ -206,8 +206,7 @@ class NewsSentimentAgent:
                 kind="no_data",
                 section_name=self.section_name,
                 reason=(
-                    "no_data: news_sentiment requires a symbol scope to "
-                    "filter stream events"
+                    "no_data: news_sentiment requires a symbol scope to " "filter stream events"
                 ),
                 wall_time_ms=int((time.perf_counter() - start) * 1000),
             )
@@ -232,10 +231,7 @@ class NewsSentimentAgent:
                 stream_name,
                 count=self.events_per_stream,
             )
-            parsed = [
-                parse_stream_entry(stream=stream_name, entry=entry)
-                for entry in raw_entries
-            ]
+            parsed = [parse_stream_entry(stream=stream_name, entry=entry) for entry in raw_entries]
             # ``news_clean`` / ``sentiment`` are global streams keyed by
             # ``ticker`` in the fields dict, and ``bias`` is sometimes
             # sharded by ticker in the stream name itself (see
@@ -262,8 +258,7 @@ class NewsSentimentAgent:
                 kind="no_data",
                 section_name=self.section_name,
                 reason=(
-                    f"no_data: no recent {stream_names} events "
-                    f"for symbol={context.symbol}"
+                    f"no_data: no recent {stream_names} events " f"for symbol={context.symbol}"
                 ),
                 wall_time_ms=int((time.perf_counter() - start) * 1000),
             )
@@ -279,8 +274,7 @@ class NewsSentimentAgent:
         ]
         if self.llm is None:
             raise ValueError(
-                f"{self.name} agent requires an LLMProvider; "
-                "construct with ``llm=...``.",
+                f"{self.name} agent requires an LLMProvider; " "construct with ``llm=...``.",
             )
         completion = await self.llm.complete(messages, self._llm_params())
 

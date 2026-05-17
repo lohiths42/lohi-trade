@@ -66,7 +66,8 @@ class TestHealthEndpointCompleteness:
     @given(registry_state=registry_state_strategy)
     @settings(max_examples=200)
     def test_get_status_contains_all_services_with_correct_status(
-        self, registry_state: dict[str, ServiceStatus],
+        self,
+        registry_state: dict[str, ServiceStatus],
     ) -> None:
         """For any valid service registry state, get_status() SHALL contain
         an entry for every registered service with correct status and
@@ -94,9 +95,7 @@ class TestHealthEndpointCompleteness:
             response = setup_service.get_status()
 
             # Build lookup from response for easy assertion
-            response_by_group_id = {
-                svc.group_id: svc for svc in response.services
-            }
+            response_by_group_id = {svc.group_id: svc for svc in response.services}
 
             # Assert: every registered group appears in the response
             assert len(response.services) == len(CREDENTIAL_GROUPS), (

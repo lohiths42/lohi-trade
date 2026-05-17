@@ -21,8 +21,13 @@ def run_tests():
 
     result = subprocess.run(
         [
-            sys.executable, "-m", "pytest", "tests/", "-v",
-            "--tb=short", "-q",
+            sys.executable,
+            "-m",
+            "pytest",
+            "tests/",
+            "-v",
+            "--tb=short",
+            "-q",
             "--cov=src/execution",
             "--cov=src/soldier",
             "--cov=src/ingestion",

@@ -327,7 +327,8 @@ class _TimingPublisher:
     _first_agent_done_ms: int | None = field(default=None, init=False)
     _done_ms: int | None = field(default=None, init=False)
     calls: list[tuple[str, dict[str, Any]]] = field(
-        default_factory=list, init=False,
+        default_factory=list,
+        init=False,
     )
 
     async def __call__(
@@ -484,9 +485,9 @@ async def _simulate_one_run(rng: random.Random) -> _RunMetrics:
     # Check once per run rather than in a dedicated test to keep the
     # property's wall-clock tight.
     for stream, _ in publisher.calls:
-        assert stream == RESEARCH_PARTIALS_STREAM, (
-            f"partial publish went to unexpected stream: {stream!r}"
-        )
+        assert (
+            stream == RESEARCH_PARTIALS_STREAM
+        ), f"partial publish went to unexpected stream: {stream!r}"
 
     return _RunMetrics(
         first_token_ms=first_agent_done_ms,
@@ -533,15 +534,9 @@ async def test_latency_slo_95_of_100_runs_under_budget() -> None:
     # Per-budget pass counts. A run "passes" a budget when its metric
     # is at or under the threshold — the ``≤`` is deliberate and
     # matches the wording of Req 5.1–5.3 ("within 800 ms", etc.).
-    first_token_passes = sum(
-        1 for m in metrics if m.first_token_ms <= _FIRST_TOKEN_BUDGET_MS
-    )
-    first_agent_passes = sum(
-        1 for m in metrics if m.first_agent_ms <= _FIRST_AGENT_BUDGET_MS
-    )
-    full_brief_passes = sum(
-        1 for m in metrics if m.full_brief_ms <= _FULL_BRIEF_BUDGET_MS
-    )
+    first_token_passes = sum(1 for m in metrics if m.first_token_ms <= _FIRST_TOKEN_BUDGET_MS)
+    first_agent_passes = sum(1 for m in metrics if m.first_agent_ms <= _FIRST_AGENT_BUDGET_MS)
+    full_brief_passes = sum(1 for m in metrics if m.full_brief_ms <= _FULL_BRIEF_BUDGET_MS)
 
     # Per-metric P95 values — surfaced in the assertion failure
     # messages so a regression tells the developer which metric is

@@ -24,6 +24,7 @@ from src.state.database import DatabaseConnectionManager
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 class InMemoryDBManager(DatabaseConnectionManager):
     """Lightweight in-memory SQLite for testing."""
 
@@ -37,7 +38,8 @@ class InMemoryDBManager(DatabaseConnectionManager):
         if self._sqlite_conn is None:
             self._sqlite_conn = sqlite3.connect(":memory:")
             self._sqlite_conn.row_factory = sqlite3.Row
-            self._sqlite_conn.executescript("""
+            self._sqlite_conn.executescript(
+                """
                 CREATE TABLE sentiment_log (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     article_id TEXT NOT NULL,
@@ -52,7 +54,8 @@ class InMemoryDBManager(DatabaseConnectionManager):
                 );
                 CREATE INDEX idx_sentiment_ticker ON sentiment_log(ticker);
                 CREATE INDEX idx_sentiment_created_at ON sentiment_log(created_at);
-            """)
+            """
+            )
         return self._sqlite_conn
 
 
@@ -87,6 +90,7 @@ def _insert_sentiment(
 # ---------------------------------------------------------------------------
 # Tests: Decay weight
 # ---------------------------------------------------------------------------
+
 
 class TestDecayWeight:
     """Tests for compute_decay_weight."""
@@ -126,6 +130,7 @@ class TestDecayWeight:
 # ---------------------------------------------------------------------------
 # Tests: Classification
 # ---------------------------------------------------------------------------
+
 
 class TestClassification:
     """Tests for bias classification thresholds."""
@@ -170,6 +175,7 @@ class TestClassification:
 # ---------------------------------------------------------------------------
 # Tests: calculate_bias with database
 # ---------------------------------------------------------------------------
+
 
 class TestCalculateBias:
     """Tests for the full calculate_bias pipeline."""
@@ -299,6 +305,7 @@ class TestCalculateBias:
 # Tests: get_current_bias (cache)
 # ---------------------------------------------------------------------------
 
+
 class TestGetCurrentBias:
     """Tests for the in-memory bias cache."""
 
@@ -340,6 +347,7 @@ class TestGetCurrentBias:
 # Tests: no database manager
 # ---------------------------------------------------------------------------
 
+
 class TestNoDatabaseManager:
     """Tests when no database manager is provided."""
 
@@ -355,6 +363,7 @@ class TestNoDatabaseManager:
 # ---------------------------------------------------------------------------
 # Tests: confidence calculation
 # ---------------------------------------------------------------------------
+
 
 class TestConfidence:
     """Tests for the confidence metric."""

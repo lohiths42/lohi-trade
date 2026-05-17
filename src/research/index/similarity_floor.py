@@ -49,11 +49,11 @@ __all__ = ["DEFAULT_FLOORS", "similarity_floor_for"]
 # Module-private source of truth. Exposed read-only via ``DEFAULT_FLOORS``
 # below so tests can introspect without reaching into a ``_`` name.
 _DEFAULT_FLOORS: dict[str, float] = {
-    "BAAI/bge-small-en-v1.5":   0.25,
-    "BAAI/bge-base-en-v1.5":    0.30,
-    "text-embedding-3-small":   0.35,
-    "text-embedding-ada-002":   0.75,
-    "nomic-embed-text":         0.35,
+    "BAAI/bge-small-en-v1.5": 0.25,
+    "BAAI/bge-base-en-v1.5": 0.30,
+    "text-embedding-3-small": 0.35,
+    "text-embedding-ada-002": 0.75,
+    "nomic-embed-text": 0.35,
 }
 
 

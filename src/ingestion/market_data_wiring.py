@@ -136,9 +136,7 @@ class MarketDataWiring:
 
         Requirement: 27.3
         """
-        original_send_notification = (
-            self.corporate_actions_collector._send_notification
-        )
+        original_send_notification = self.corporate_actions_collector._send_notification
 
         def enhanced_send_notification(
             symbol: str,
@@ -174,9 +172,7 @@ class MarketDataWiring:
                         extra={"symbol": symbol},
                     )
 
-        self.corporate_actions_collector._send_notification = (
-            enhanced_send_notification
-        )
+        self.corporate_actions_collector._send_notification = enhanced_send_notification
         logger.info(
             "Wired CorporateActionsCollector → push notification center",
         )

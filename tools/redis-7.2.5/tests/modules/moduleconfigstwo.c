@@ -23,7 +23,7 @@ int setBoolConfigCommand(const char *name, int new, void *privdata, RedisModuleS
     return REDISMODULE_ERR;
 }
 
-/* No arguments are expected */ 
+/* No arguments are expected */
 int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     REDISMODULE_NOT_USED(argv);
     REDISMODULE_NOT_USED(argc);

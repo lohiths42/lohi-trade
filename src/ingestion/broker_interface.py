@@ -50,7 +50,7 @@ class ProductType(Enum):
 @dataclass
 class Tick:
     """Represents a single price update from the exchange.
-    
+
     Attributes:
         symbol: Trading symbol (e.g., "RELIANCE")
         token: Exchange token for the instrument
@@ -84,7 +84,7 @@ class Tick:
 @dataclass
 class Order:
     """Represents a trading order.
-    
+
     Attributes:
         order_id: Internal UUID for the order
         symbol: Trading symbol
@@ -122,7 +122,7 @@ class Order:
 @dataclass
 class BrokerCredentials:
     """Broker authentication credentials.
-    
+
     Attributes:
         api_key: API key for broker
         client_id: Client ID or user ID
@@ -139,7 +139,7 @@ class BrokerCredentials:
 
 class BrokerInterface(ABC):
     """Abstract base class for broker adapters.
-    
+
     All broker implementations (Shoonya, Angel One) must implement this interface
     to ensure consistent behavior across different brokers.
     """
@@ -147,13 +147,13 @@ class BrokerInterface(ABC):
     @abstractmethod
     def connect(self, credentials: BrokerCredentials) -> bool:
         """Establish connection to broker API and authenticate.
-        
+
         Args:
             credentials: Broker authentication credentials
-            
+
         Returns:
             True if connection successful, False otherwise
-            
+
         Raises:
             ConnectionError: If connection fails
             AuthenticationError: If authentication fails
@@ -162,13 +162,12 @@ class BrokerInterface(ABC):
 
     @abstractmethod
     def disconnect(self) -> None:
-        """Disconnect from broker API and clean up resources.
-        """
+        """Disconnect from broker API and clean up resources."""
 
     @abstractmethod
     def is_connected(self) -> bool:
         """Check if broker connection is active.
-        
+
         Returns:
             True if connected, False otherwise
 
@@ -177,14 +176,14 @@ class BrokerInterface(ABC):
     @abstractmethod
     def subscribe(self, symbols: list[str], on_tick: Callable[[Tick], None]) -> bool:
         """Subscribe to real-time tick data for given symbols.
-        
+
         Args:
             symbols: List of trading symbols to subscribe to
             on_tick: Callback function to handle incoming ticks
-            
+
         Returns:
             True if subscription successful, False otherwise
-            
+
         Raises:
             ConnectionError: If not connected to broker
 
@@ -193,10 +192,10 @@ class BrokerInterface(ABC):
     @abstractmethod
     def unsubscribe(self, symbols: list[str]) -> bool:
         """Unsubscribe from real-time tick data for given symbols.
-        
+
         Args:
             symbols: List of trading symbols to unsubscribe from
-            
+
         Returns:
             True if unsubscription successful, False otherwise
 
@@ -205,13 +204,13 @@ class BrokerInterface(ABC):
     @abstractmethod
     def place_order(self, order: Order) -> str:
         """Place an order with the broker.
-        
+
         Args:
             order: Order object with all required details
-            
+
         Returns:
             Broker order ID if successful
-            
+
         Raises:
             OrderRejectionError: If broker rejects the order
             ConnectionError: If not connected to broker
@@ -221,13 +220,13 @@ class BrokerInterface(ABC):
     @abstractmethod
     def cancel_order(self, broker_order_id: str) -> bool:
         """Cancel a pending order.
-        
+
         Args:
             broker_order_id: Broker's order ID to cancel
-            
+
         Returns:
             True if cancellation successful, False otherwise
-            
+
         Raises:
             OrderNotFoundError: If order ID not found
 
@@ -236,13 +235,13 @@ class BrokerInterface(ABC):
     @abstractmethod
     def get_order_status(self, broker_order_id: str) -> Order:
         """Get current status of an order.
-        
+
         Args:
             broker_order_id: Broker's order ID to query
-            
+
         Returns:
             Order object with updated status
-            
+
         Raises:
             OrderNotFoundError: If order ID not found
 
@@ -251,7 +250,7 @@ class BrokerInterface(ABC):
     @abstractmethod
     def get_positions(self) -> list[dict]:
         """Get all open positions.
-        
+
         Returns:
             List of position dictionaries with symbol, quantity, avg_price, etc.
 
@@ -260,7 +259,7 @@ class BrokerInterface(ABC):
     @abstractmethod
     def get_instrument_master(self) -> list[dict]:
         """Download instrument master with symbol tokens and trading details.
-        
+
         Returns:
             List of instrument dictionaries with symbol, token, lot_size, tick_size, etc.
 
@@ -271,22 +270,17 @@ class BrokerError(Exception):
     """Base exception for broker-related errors."""
 
 
-
 class ConnectionError(BrokerError):
     """Raised when broker connection fails."""
-
 
 
 class AuthenticationError(BrokerError):
     """Raised when broker authentication fails."""
 
 
-
 class OrderRejectionError(BrokerError):
     """Raised when broker rejects an order."""
 
 
-
 class OrderNotFoundError(BrokerError):
     """Raised when order ID is not found."""
-

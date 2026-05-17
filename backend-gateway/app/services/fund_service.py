@@ -9,7 +9,7 @@ import asyncio
 import logging
 import os
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from enum import Enum
@@ -64,13 +64,13 @@ class WithdrawalStatus(str, Enum):
     FAILED = "FAILED"
 
 
-
 # ── Data classes ─────────────────────────────────────────────────────────────
 
 
 @dataclass
 class DepositTransaction:
     """A fund deposit transaction record."""
+
     id: str = ""
     user_id: str = ""
     amount: Decimal = Decimal("0")
@@ -87,6 +87,7 @@ class DepositTransaction:
 @dataclass
 class ReconciliationResult:
     """Result of daily reconciliation run."""
+
     total_gateway_transactions: int = 0
     total_local_transactions: int = 0
     matched: int = 0
@@ -99,6 +100,7 @@ class ReconciliationResult:
 @dataclass
 class WithdrawalTransaction:
     """A fund withdrawal transaction record."""
+
     id: str = ""
     user_id: str = ""
     amount: Decimal = Decimal("0")
@@ -170,9 +172,7 @@ class FundService:
 
     # ── Payment gateway interaction ──────────────────────────────────────
 
-    async def _call_payment_gateway(
-        self, endpoint: str, payload: dict
-    ) -> Optional[dict]:
+    async def _call_payment_gateway(self, endpoint: str, payload: dict) -> Optional[dict]:
         """Call payment gateway API with retry and exponential backoff.
 
         Returns response dict on success, None on failure.
@@ -209,7 +209,7 @@ class FundService:
                 )
 
             if attempt < MAX_RETRIES - 1:
-                backoff = BASE_BACKOFF_SECONDS * (2 ** attempt)
+                backoff = BASE_BACKOFF_SECONDS * (2**attempt)
                 await asyncio.sleep(backoff)
 
         logger.error(
@@ -222,16 +222,12 @@ class FundService:
 
     # ── UPI link generation ──────────────────────────────────────────────
 
-    def _generate_upi_link(
-        self, transaction_id: str, amount: Decimal
-    ) -> tuple[str, datetime]:
+    def _generate_upi_link(self, transaction_id: str, amount: Decimal) -> tuple[str, datetime]:
         """Generate a UPI payment link with 15-minute expiry.
 
         Returns (upi_link, expires_at).
         """
-        expires_at = datetime.now(timezone.utc) + timedelta(
-            minutes=UPI_LINK_EXPIRY_MINUTES
-        )
+        expires_at = datetime.now(timezone.utc) + timedelta(minutes=UPI_LINK_EXPIRY_MINUTES)
         upi_link = (
             f"upi://pay?pa=lohi-trade@upi"
             f"&pn=LOHI-TRADE"
@@ -300,9 +296,7 @@ class FundService:
             "method": method.value,
             "currency": "INR",
         }
-        gateway_response = await self._call_payment_gateway(
-            "deposit/initiate", gateway_payload
-        )
+        gateway_response = await self._call_payment_gateway("deposit/initiate", gateway_payload)
 
         if gateway_response is None:
             txn = DepositTransaction(
@@ -399,8 +393,7 @@ class FundService:
                 # Credit balance and update status
                 now = datetime.now(timezone.utc)
                 await conn.execute(
-                    "UPDATE fund_transactions SET status = $1, completed_at = $2 "
-                    "WHERE id = $3",
+                    "UPDATE fund_transactions SET status = $1, completed_at = $2 " "WHERE id = $3",
                     TransactionStatus.COMPLETED.value,
                     now,
                     transaction_id,
@@ -450,16 +443,12 @@ class FundService:
                 )
                 return True
         except Exception:
-            logger.exception(
-                "Failed to credit balance for user %s, amount %s", user_id, amount
-            )
+            logger.exception("Failed to credit balance for user %s, amount %s", user_id, amount)
             return False
 
     # ── Notify user on failure ───────────────────────────────────────────
 
-    async def _notify_user_failure(
-        self, user_id: str, txn: DepositTransaction
-    ) -> None:
+    async def _notify_user_failure(self, user_id: str, txn: DepositTransaction) -> None:
         """Notify user about a failed deposit with the failure reason."""
         logger.info(
             "Deposit FAILED for user %s: amount=%s, method=%s, reason=%s",
@@ -560,7 +549,11 @@ class FundService:
                     logger.warning(
                         "Reconciliation mismatch for ref %s: "
                         "gateway(amount=%s, status=%s) vs local(amount=%s, status=%s)",
-                        ref, gw_amount, gw_status, local_amount, local_status,
+                        ref,
+                        gw_amount,
+                        gw_status,
+                        local_amount,
+                        local_status,
                     )
             else:
                 result.missing_on_gateway += 1
@@ -681,9 +674,7 @@ class FundService:
                 )
                 return dict(row) if row else None
         except Exception:
-            logger.exception(
-                "Failed to fetch bank account %s for user %s", bank_id, user_id
-            )
+            logger.exception("Failed to fetch bank account %s for user %s", bank_id, user_id)
             return None
 
     # ── Determine processing timeline ────────────────────────────────────
@@ -731,9 +722,7 @@ class FundService:
                 )
                 return True
         except Exception:
-            logger.exception(
-                "Failed to debit balance for user %s, amount %s", user_id, amount
-            )
+            logger.exception("Failed to debit balance for user %s, amount %s", user_id, amount)
             return False
 
     # ── Reverse debit on failure ─────────────────────────────────────────
@@ -779,9 +768,7 @@ class FundService:
 
     # ── Notify user on withdrawal failure ────────────────────────────────
 
-    async def _notify_withdrawal_failure(
-        self, user_id: str, txn: WithdrawalTransaction
-    ) -> None:
+    async def _notify_withdrawal_failure(self, user_id: str, txn: WithdrawalTransaction) -> None:
         """Notify user about a failed withdrawal with the failure reason."""
         logger.info(
             "Withdrawal FAILED for user %s: amount=%s, bank=%s, reason=%s",
@@ -892,9 +879,7 @@ class FundService:
             "method": "NEFT",
             "currency": "INR",
         }
-        gateway_response = await self._call_payment_gateway(
-            "withdrawal/initiate", gateway_payload
-        )
+        gateway_response = await self._call_payment_gateway("withdrawal/initiate", gateway_payload)
 
         # Step 8: Handle gateway failure — reverse debit
         if gateway_response is None:

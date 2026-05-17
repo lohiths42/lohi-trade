@@ -276,7 +276,8 @@ async def run_resynthesis_loop(
     # does not need to special-case the "no retries allowed" branch.
     if max_retries < 1:
         redacted, unsupported_sections = _redact_unsupported_sections(
-            brief, first_report,
+            brief,
+            first_report,
         )
         return ResynthesisOutcome(
             brief=redacted,
@@ -328,7 +329,8 @@ async def run_resynthesis_loop(
     # on the *re-synthesised* brief (it is the most recent, best-effort
     # output) and return quality=low.
     redacted, unsupported_sections = _redact_unsupported_sections(
-        resynthesised_brief, second_report,
+        resynthesised_brief,
+        second_report,
     )
     return ResynthesisOutcome(
         brief=redacted,

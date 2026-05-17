@@ -5,12 +5,11 @@ status (is_onboarded).
 """
 
 import logging
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from app.routers.auth_v2 import get_current_user_id, get_account_service
+from app.routers.auth_v2 import get_account_service, get_current_user_id
 from app.services.account_service import AccountService
 
 logger = logging.getLogger(__name__)

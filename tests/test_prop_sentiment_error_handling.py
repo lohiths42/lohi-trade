@@ -15,7 +15,6 @@ Properties tested:
   5. ONNX session failure produces NEUTRAL fallback
 """
 
-
 import numpy as np
 from hypothesis import given, settings
 from hypothesis import strategies as st

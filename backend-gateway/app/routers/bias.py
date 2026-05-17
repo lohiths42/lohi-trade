@@ -1,7 +1,8 @@
 """Bias and news endpoints."""
 
-from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional
+
+from fastapi import APIRouter, HTTPException, Query
 
 from app.models.bias import BiasResponse, NewsResponse
 from app.services import db_service

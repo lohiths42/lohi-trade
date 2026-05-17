@@ -248,7 +248,8 @@ class BiasInvalidationListener:
         *,
         redis_reader: RedisStreamReader,
         invalidation_publisher: Callable[
-            [str, Mapping[str, Any]], Awaitable[Any],
+            [str, Mapping[str, Any]],
+            Awaitable[Any],
         ],
         watchlist_resolver: WatchlistResolver,
         streams: Iterable[str] | None = None,
@@ -362,10 +363,7 @@ class BiasInvalidationListener:
             )
             return []
         # Coerce to str in case the Redis client handed back bytes.
-        return [
-            s.decode("utf-8") if isinstance(s, (bytes, bytearray)) else str(s)
-            for s in raw
-        ]
+        return [s.decode("utf-8") if isinstance(s, (bytes, bytearray)) else str(s) for s in raw]
 
     async def _dispatch_event(self, event: StreamEvent) -> int:
         """Resolve the watchlist + publish per-user invalidations.

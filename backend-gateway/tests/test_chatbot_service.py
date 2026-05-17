@@ -12,22 +12,20 @@ from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 from app.services.chatbot_service import (
-    REDIS_CHAT_KEY_PREFIX,
-    REDIS_CHAT_TTL_SECONDS,
     MAX_CONVERSATION_EXCHANGES,
     NO_DATA_RESPONSE,
+    REDIS_CHAT_KEY_PREFIX,
+    REDIS_CHAT_TTL_SECONDS,
     SYSTEM_PROMPT,
+    ChartGenerator,
     ChatbotService,
     ChatResponse,
-    ChartGenerator,
     LLMClient,
     Message,
     MessageRole,
     RAGContext,
 )
-
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -53,27 +51,33 @@ def _make_mock_redis():
     return redis
 
 
-def _make_service(
-    llm_client=None, db_pool=None, redis=None, chart_gen=None
-) -> ChatbotService:
+def _make_service(llm_client=None, db_pool=None, redis=None, chart_gen=None) -> ChatbotService:
     llm = llm_client or LLMClient(api_key="test-key")
-    return ChatbotService(
-        llm_client=llm, db_pool=db_pool, redis=redis, chart_gen=chart_gen
-    )
+    return ChatbotService(llm_client=llm, db_pool=db_pool, redis=redis, chart_gen=chart_gen)
 
 
 def _make_trade_row(
-    id="trade-1", symbol="RELIANCE", strategy="mean_reversion",
-    entry_price=2500.0, exit_price=2550.0, quantity=10,
-    realized_pnl=500.0, entry_time="2024-01-15T10:00:00",
+    id="trade-1",
+    symbol="RELIANCE",
+    strategy="mean_reversion",
+    entry_price=2500.0,
+    exit_price=2550.0,
+    quantity=10,
+    realized_pnl=500.0,
+    entry_time="2024-01-15T10:00:00",
     exit_time="2024-01-15T14:00:00",
 ):
     row = MagicMock()
     data = {
-        "id": id, "symbol": symbol, "strategy": strategy,
-        "entry_price": entry_price, "exit_price": exit_price,
-        "quantity": quantity, "realized_pnl": realized_pnl,
-        "entry_time": entry_time, "exit_time": exit_time,
+        "id": id,
+        "symbol": symbol,
+        "strategy": strategy,
+        "entry_price": entry_price,
+        "exit_price": exit_price,
+        "quantity": quantity,
+        "realized_pnl": realized_pnl,
+        "entry_time": entry_time,
+        "exit_time": exit_time,
     }
     row.__getitem__ = lambda self, key: data[key]
     row.get = lambda key, default=None: data.get(key, default)
@@ -87,13 +91,19 @@ def _make_trade_row(
 
 
 def _make_sentiment_row(
-    ticker="RELIANCE", sentiment="BULLISH", score=0.85,
-    headline="Reliance Q3 results beat estimates", created_at="2024-01-15T09:00:00",
+    ticker="RELIANCE",
+    sentiment="BULLISH",
+    score=0.85,
+    headline="Reliance Q3 results beat estimates",
+    created_at="2024-01-15T09:00:00",
 ):
     row = MagicMock()
     data = {
-        "ticker": ticker, "sentiment": sentiment, "score": score,
-        "headline": headline, "created_at": created_at,
+        "ticker": ticker,
+        "sentiment": sentiment,
+        "score": score,
+        "headline": headline,
+        "created_at": created_at,
     }
     row.__getitem__ = lambda self, key: data[key]
     row.get = lambda key, default=None: data.get(key, default)
@@ -106,14 +116,20 @@ def _make_sentiment_row(
 
 
 def _make_signal_row(
-    symbol="RELIANCE", signal_type="BUY", strategy="mean_reversion",
-    indicator_values='{"rsi": 30}', bias_state="BULLISH",
+    symbol="RELIANCE",
+    signal_type="BUY",
+    strategy="mean_reversion",
+    indicator_values='{"rsi": 30}',
+    bias_state="BULLISH",
     created_at="2024-01-15T09:30:00",
 ):
     row = MagicMock()
     data = {
-        "symbol": symbol, "signal_type": signal_type, "strategy": strategy,
-        "indicator_values": indicator_values, "bias_state": bias_state,
+        "symbol": symbol,
+        "signal_type": signal_type,
+        "strategy": strategy,
+        "indicator_values": indicator_values,
+        "bias_state": bias_state,
         "created_at": created_at,
     }
     row.__getitem__ = lambda self, key: data[key]
@@ -159,7 +175,9 @@ class TestMessage:
         assert msg.content == ""
 
     def test_round_trip(self):
-        original = Message(role=MessageRole.SYSTEM, content="system prompt", timestamp="2024-01-01T00:00:00")
+        original = Message(
+            role=MessageRole.SYSTEM, content="system prompt", timestamp="2024-01-01T00:00:00"
+        )
         d = original.to_dict()
         restored = Message.from_dict(d)
         assert restored.role == original.role
@@ -244,9 +262,7 @@ class TestLLMClient:
 
         mock_response = MagicMock()
         mock_response.raise_for_status = MagicMock()
-        mock_response.json.return_value = {
-            "choices": [{"message": {"content": "Hi there!"}}]
-        }
+        mock_response.json.return_value = {"choices": [{"message": {"content": "Hi there!"}}]}
 
         mock_http_client = AsyncMock()
         mock_http_client.post.return_value = mock_response

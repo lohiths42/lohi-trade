@@ -8,21 +8,19 @@ Provides:
 Requirements: 34.5, 34.6
 """
 
-import sqlite3
 import logging
+import sqlite3
 from typing import Any, Dict, List, Optional
-from datetime import date, datetime
 
 from app.config import (
-    DB_PATH,
     DATABASE_URL,
-    PG_POOL_MIN_SIZE,
+    DB_PATH,
     PG_POOL_MAX_SIZE,
-    REDIS_HOST,
-    REDIS_PORT,
+    PG_POOL_MIN_SIZE,
     REDIS_DB,
-    REDIS_POOL_MIN_CONNECTIONS,
+    REDIS_HOST,
     REDIS_POOL_MAX_CONNECTIONS,
+    REDIS_PORT,
 )
 
 logger = logging.getLogger(__name__)
@@ -258,14 +256,16 @@ def get_bias() -> List[Dict[str, Any]]:
     """Get latest bias per ticker."""
     conn = _get_connection()
     try:
-        cursor = conn.execute("""
+        cursor = conn.execute(
+            """
             SELECT b.* FROM bias_log b
             INNER JOIN (
                 SELECT ticker, MAX(created_at) as max_time
                 FROM bias_log GROUP BY ticker
             ) latest ON b.ticker = latest.ticker AND b.created_at = latest.max_time
             ORDER BY b.ticker
-        """)
+        """
+        )
         return _rows_to_dicts(cursor.fetchall())
     finally:
         conn.close()
@@ -347,7 +347,8 @@ def ensure_trade_notes_table() -> None:
     """Create trade_notes table if it doesn't exist."""
     conn = _get_connection()
     try:
-        conn.execute("""
+        conn.execute(
+            """
             CREATE TABLE IF NOT EXISTS trade_notes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 trade_id TEXT NOT NULL,
@@ -355,10 +356,9 @@ def ensure_trade_notes_table() -> None:
                 created_at TEXT NOT NULL DEFAULT (datetime('now')),
                 updated_at TEXT NOT NULL DEFAULT (datetime('now'))
             )
-        """)
-        conn.execute(
-            "CREATE INDEX IF NOT EXISTS idx_trade_notes_trade_id ON trade_notes(trade_id)"
+        """
         )
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_trade_notes_trade_id ON trade_notes(trade_id)")
         conn.commit()
     finally:
         conn.close()
@@ -402,7 +402,9 @@ def update_trade_note(trade_id: str, note_id: int, note_text: str) -> Optional[D
             [note_text[:2000], note_id, trade_id],
         )
         conn.commit()
-        row = conn.execute("SELECT * FROM trade_notes WHERE id = ? AND trade_id = ?", [note_id, trade_id]).fetchone()
+        row = conn.execute(
+            "SELECT * FROM trade_notes WHERE id = ? AND trade_id = ?", [note_id, trade_id]
+        ).fetchone()
         return dict(row) if row else None
     finally:
         conn.close()

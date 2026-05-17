@@ -496,15 +496,15 @@ start_server {tags {"string"}} {
         assert_equal "" [r substr key 7 8]
         assert_equal "" [r substr nokey 0 1]
     }
-    
+
 if {[string match {*jemalloc*} [s mem_allocator]]} {
     test {trim on SET with big value} {
         # set a big value to trigger increasing the query buf
-        r set key [string repeat A 100000] 
+        r set key [string repeat A 100000]
         # set a smaller value but > PROTO_MBULK_BIG_ARG (32*1024) Redis will try to save the query buf itself on the DB.
         r set key [string repeat A 33000]
         # asset the value was trimmed
-        assert {[r memory usage key] < 42000}; # 42K to count for Jemalloc's additional memory overhead. 
+        assert {[r memory usage key] < 42000}; # 42K to count for Jemalloc's additional memory overhead.
     }
 } ;# if jemalloc
 
@@ -666,7 +666,7 @@ if {[string match {*jemalloc*} [s mem_allocator]]} {
         set res {}
         lappend res [r get foo]
         assert_encoding "raw" foo
-        
+
         r set bar 12
         assert_encoding "int" bar
         lappend res [r get bar]

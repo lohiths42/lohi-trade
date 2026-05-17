@@ -20,7 +20,6 @@ import csv
 import io
 import logging
 import os
-import re
 import sys
 from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
@@ -59,88 +58,315 @@ BSE_HEADERS = {
 
 SECTOR_KEYWORDS: dict[str, list[str]] = {
     "Insurance": [
-        "insurance", "life insurance", "general insurance", "reinsurance",
+        "insurance",
+        "life insurance",
+        "general insurance",
+        "reinsurance",
     ],
     "Banking & Finance": [
-        "bank", "finance", "financial", "nbfc", "credit", "lending",
-        "microfinance", "wealth", "capital market", "stock exchange",
-        "mutual fund", "asset management", "housing finance",
-        "investment", "leasing", "securities", "fincorp", "finserv",
-        "fiscal", "holding", "trading", "equity", "etf",
-        "home loan", "mercantile", "networth", "corporate serv",
-        "advisor", "consult",
+        "bank",
+        "finance",
+        "financial",
+        "nbfc",
+        "credit",
+        "lending",
+        "microfinance",
+        "wealth",
+        "capital market",
+        "stock exchange",
+        "mutual fund",
+        "asset management",
+        "housing finance",
+        "investment",
+        "leasing",
+        "securities",
+        "fincorp",
+        "finserv",
+        "fiscal",
+        "holding",
+        "trading",
+        "equity",
+        "etf",
+        "home loan",
+        "mercantile",
+        "networth",
+        "corporate serv",
+        "advisor",
+        "consult",
     ],
     "IT/Technology": [
-        "software", "information technology", "it ", "computer",
-        "digital", "cloud", "saas", "internet", "e-commerce", "tech",
-        "data processing", "artificial intelligence", "infotech",
-        "network", "automation", "electronic", "semiconductor",
-        "online", "solution", "infoway", "systems ltd", "systems limited",
+        "software",
+        "information technology",
+        "it ",
+        "computer",
+        "digital",
+        "cloud",
+        "saas",
+        "internet",
+        "e-commerce",
+        "tech",
+        "data processing",
+        "artificial intelligence",
+        "infotech",
+        "network",
+        "automation",
+        "electronic",
+        "semiconductor",
+        "online",
+        "solution",
+        "infoway",
+        "systems ltd",
+        "systems limited",
     ],
     "Pharma": [
-        "pharma", "drug", "healthcare", "hospital", "diagnostic",
-        "medical", "biotech", "laboratory", "pathology", "health",
-        "bioscien", "lifescien", "therapeut", "surgical", "nutraceut",
-        "clinical", "nutri", "ayurved",
+        "pharma",
+        "drug",
+        "healthcare",
+        "hospital",
+        "diagnostic",
+        "medical",
+        "biotech",
+        "laboratory",
+        "pathology",
+        "health",
+        "bioscien",
+        "lifescien",
+        "therapeut",
+        "surgical",
+        "nutraceut",
+        "clinical",
+        "nutri",
+        "ayurved",
     ],
     "FMCG": [
-        "consumer", "fmcg", "food", "beverage", "personal care",
-        "tobacco", "dairy", "packaged", "household", "detergent",
-        "agro", "agri", "agricultur", "cotton", "textile", "garment",
-        "apparel", "fabric", "silk", "jute", "wool", "yarn", "fibre",
-        "flour", "edible", "rice", "wheat", "jewel", "diamond",
-        "cosmetic", "soap", "paper", "newsprint", "sugar", "tea",
-        "spice", "confection", "biscuit", "brewer", "footwear",
-        "leather", "fashion", "retail", "spirit", "liquor", "distiller",
-        "spinning", "weaving", "knit", "denim", "ceramic", "glass",
-        "stove", "kitchen", "appliance", "export", "import", "impex",
+        "consumer",
+        "fmcg",
+        "food",
+        "beverage",
+        "personal care",
+        "tobacco",
+        "dairy",
+        "packaged",
+        "household",
+        "detergent",
+        "agro",
+        "agri",
+        "agricultur",
+        "cotton",
+        "textile",
+        "garment",
+        "apparel",
+        "fabric",
+        "silk",
+        "jute",
+        "wool",
+        "yarn",
+        "fibre",
+        "flour",
+        "edible",
+        "rice",
+        "wheat",
+        "jewel",
+        "diamond",
+        "cosmetic",
+        "soap",
+        "paper",
+        "newsprint",
+        "sugar",
+        "tea",
+        "spice",
+        "confection",
+        "biscuit",
+        "brewer",
+        "footwear",
+        "leather",
+        "fashion",
+        "retail",
+        "spirit",
+        "liquor",
+        "distiller",
+        "spinning",
+        "weaving",
+        "knit",
+        "denim",
+        "ceramic",
+        "glass",
+        "stove",
+        "kitchen",
+        "appliance",
+        "export",
+        "import",
+        "impex",
     ],
     "Energy": [
-        "oil", "gas", "petroleum", "power", "energy", "electricity",
-        "solar", "wind", "renewable", "coal", "fuel", "refiner",
-        "petrochem", "thermal", "hydro", "transformer", "electrical",
-        "cable", "drilling", "pipeline", "electro", "switchgear",
-        "generator", "turbine", "boiler", "battery", "lamp", "lighting",
+        "oil",
+        "gas",
+        "petroleum",
+        "power",
+        "energy",
+        "electricity",
+        "solar",
+        "wind",
+        "renewable",
+        "coal",
+        "fuel",
+        "refiner",
+        "petrochem",
+        "thermal",
+        "hydro",
+        "transformer",
+        "electrical",
+        "cable",
+        "drilling",
+        "pipeline",
+        "electro",
+        "switchgear",
+        "generator",
+        "turbine",
+        "boiler",
+        "battery",
+        "lamp",
+        "lighting",
     ],
     "Automobile": [
-        "auto", "vehicle", "motor", "car", "tractor", "tyre", "tire",
-        "two wheeler", "scooter", "motorcycle", "ev ", "electric vehicle",
-        "automotive", "transmission", "passenger vehicle", "bearing",
-        "brake", "axle", "mobility",
+        "auto",
+        "vehicle",
+        "motor",
+        "car",
+        "tractor",
+        "tyre",
+        "tire",
+        "two wheeler",
+        "scooter",
+        "motorcycle",
+        "ev ",
+        "electric vehicle",
+        "automotive",
+        "transmission",
+        "passenger vehicle",
+        "bearing",
+        "brake",
+        "axle",
+        "mobility",
     ],
     "Metals & Mining": [
-        "steel", "iron", "metal", "mining", "aluminium", "aluminum",
-        "copper", "zinc", "gold", "silver", "mineral", "ore",
-        "alloy", "stainless", "foundry", "casting", "forging",
-        "ferro", "tungsten", "titanium", "nickel", "ispat",
-        "wire", "precision", "fastener", "forge",
+        "steel",
+        "iron",
+        "metal",
+        "mining",
+        "aluminium",
+        "aluminum",
+        "copper",
+        "zinc",
+        "gold",
+        "silver",
+        "mineral",
+        "ore",
+        "alloy",
+        "stainless",
+        "foundry",
+        "casting",
+        "forging",
+        "ferro",
+        "tungsten",
+        "titanium",
+        "nickel",
+        "ispat",
+        "wire",
+        "precision",
+        "fastener",
+        "forge",
     ],
     "Infrastructure": [
-        "infrastructure", "construction", "cement", "road", "highway",
-        "railway", "port", "shipping", "logistics", "warehouse",
-        "engineering", "epc", "real estate", "aviation", "airline",
-        "airport", "defence", "defense", "shipyard", "dock", "container",
-        "transport", "cargo", "freight", "pump", "floor", "tile",
-        "sanitar", "crane", "compressor", "project",
+        "infrastructure",
+        "construction",
+        "cement",
+        "road",
+        "highway",
+        "railway",
+        "port",
+        "shipping",
+        "logistics",
+        "warehouse",
+        "engineering",
+        "epc",
+        "real estate",
+        "aviation",
+        "airline",
+        "airport",
+        "defence",
+        "defense",
+        "shipyard",
+        "dock",
+        "container",
+        "transport",
+        "cargo",
+        "freight",
+        "pump",
+        "floor",
+        "tile",
+        "sanitar",
+        "crane",
+        "compressor",
+        "project",
     ],
     "Chemicals": [
-        "chemical", "specialty chemical", "agrochemical", "fertilizer",
-        "pesticide", "paint", "pigment", "dye", "polymer", "plastic",
-        "fluorochem", "resin", "solvent", "acid", "rubber", "latex",
-        "adhesive", "laminate", "plywood", "synthetic", "vinyl", "epoxy",
-        "nitrochem", "coating",
+        "chemical",
+        "specialty chemical",
+        "agrochemical",
+        "fertilizer",
+        "pesticide",
+        "paint",
+        "pigment",
+        "dye",
+        "polymer",
+        "plastic",
+        "fluorochem",
+        "resin",
+        "solvent",
+        "acid",
+        "rubber",
+        "latex",
+        "adhesive",
+        "laminate",
+        "plywood",
+        "synthetic",
+        "vinyl",
+        "epoxy",
+        "nitrochem",
+        "coating",
     ],
     "Telecom": [
-        "telecom", "communication", "tower", "fiber", "broadband",
-        "satellite", "wireless",
+        "telecom",
+        "communication",
+        "tower",
+        "fiber",
+        "broadband",
+        "satellite",
+        "wireless",
     ],
     "Real Estate": [
-        "real estate", "property", "housing", "realty", "reit",
-        "developer", "builder", "estate",
+        "real estate",
+        "property",
+        "housing",
+        "realty",
+        "reit",
+        "developer",
+        "builder",
+        "estate",
     ],
     "Media & Entertainment": [
-        "media", "entertainment", "broadcast", "film", "television",
-        "gaming", "advertising", "print", "publishing", "cinema", "studio",
+        "media",
+        "entertainment",
+        "broadcast",
+        "film",
+        "television",
+        "gaming",
+        "advertising",
+        "print",
+        "publishing",
+        "cinema",
+        "studio",
     ],
     "Miscellaneous": [],  # catch-all
 }
@@ -227,18 +453,20 @@ async def fetch_nse_equity_list() -> list[dict]:
         # Clean ISIN (sometimes has leading space)
         isin = isin.strip()
 
-        securities.append({
-            "symbol": symbol.upper(),
-            "isin": isin.upper(),
-            "company_name": company_name or symbol,
-            "exchange": "NSE",
-            "sector": classify_sector(industry, company_name),
-            "industry": industry or None,
-            "market_cap_category": None,  # Will be filled by live_data_service
-            "listing_date": _parse_date_nse(listing_date_str),
-            "face_value": _parse_face_value(face_value_str),
-            "status": "ACTIVE",
-        })
+        securities.append(
+            {
+                "symbol": symbol.upper(),
+                "isin": isin.upper(),
+                "company_name": company_name or symbol,
+                "exchange": "NSE",
+                "sector": classify_sector(industry, company_name),
+                "industry": industry or None,
+                "market_cap_category": None,  # Will be filled by live_data_service
+                "listing_date": _parse_date_nse(listing_date_str),
+                "face_value": _parse_face_value(face_value_str),
+                "status": "ACTIVE",
+            }
+        )
 
     logger.info("Parsed %d securities from NSE EQUITY_L.csv", len(securities))
     return securities
@@ -278,8 +506,13 @@ async def fetch_bse_equity_list() -> list[dict]:
         scrip_code = str(item.get("Scrip_Code") or item.get("SCRIP_CD") or "").strip()
         symbol = (item.get("scrip_id") or item.get("SCRIP_ID") or "").strip()
         isin = (item.get("ISIN_NUMBER") or item.get("Isin_Number") or "").strip()
-        company_name = (item.get("Scrip_Name") or item.get("SCRIP_NAME") or
-                        item.get("LongName") or item.get("LONG_NAME") or "").strip()
+        company_name = (
+            item.get("Scrip_Name")
+            or item.get("SCRIP_NAME")
+            or item.get("LongName")
+            or item.get("LONG_NAME")
+            or ""
+        ).strip()
         industry = (item.get("Industry") or item.get("INDUSTRY") or "").strip()
         group = (item.get("Scrip_Group") or item.get("GROUP") or "").strip()
         face_value_str = str(item.get("Face_Value") or item.get("FACE_VALUE") or "").strip()
@@ -298,19 +531,21 @@ async def fetch_bse_equity_list() -> list[dict]:
         if symbol and symbol[0].isdigit():
             continue
 
-        securities.append({
-            "symbol": symbol.upper(),
-            "isin": isin.upper().strip(),
-            "company_name": company_name or symbol,
-            "exchange": "BSE",
-            "sector": classify_sector(industry, company_name),
-            "industry": industry or None,
-            "market_cap_category": None,
-            "listing_date": None,
-            "face_value": _parse_face_value(face_value_str),
-            "status": "ACTIVE",
-            "scrip_code": scrip_code,
-        })
+        securities.append(
+            {
+                "symbol": symbol.upper(),
+                "isin": isin.upper().strip(),
+                "company_name": company_name or symbol,
+                "exchange": "BSE",
+                "sector": classify_sector(industry, company_name),
+                "industry": industry or None,
+                "market_cap_category": None,
+                "listing_date": None,
+                "face_value": _parse_face_value(face_value_str),
+                "status": "ACTIVE",
+                "scrip_code": scrip_code,
+            }
+        )
 
     logger.info("Parsed %d securities from BSE API", len(securities))
     return securities
@@ -339,14 +574,17 @@ async def seed_database(database_url: str, securities: list[dict]) -> int:
             # Prefer NSE symbol over BSE scrip_code
             if sec["exchange"] == "NSE":
                 existing["symbol"] = sec["symbol"]
-                existing["company_name"] = sec.get("company_name") or existing.get("company_name", "")
+                existing["company_name"] = sec.get("company_name") or existing.get(
+                    "company_name", ""
+                )
                 if sec.get("listing_date"):
                     existing["listing_date"] = sec["listing_date"]
         else:
             merged[isin] = dict(sec)
 
     async with pool.acquire() as conn:
-        stmt = await conn.prepare("""
+        stmt = await conn.prepare(
+            """
             INSERT INTO securities
                 (symbol, isin, company_name, exchange, sector, industry,
                  market_cap_category, listing_date, face_value, status, updated_at)
@@ -361,7 +599,8 @@ async def seed_database(database_url: str, securities: list[dict]) -> int:
                 face_value = COALESCE(EXCLUDED.face_value, securities.face_value),
                 status = 'ACTIVE',
                 updated_at = EXCLUDED.updated_at
-        """)
+        """
+        )
 
         for sec in merged.values():
             try:
@@ -382,17 +621,23 @@ async def seed_database(database_url: str, securities: list[dict]) -> int:
                 logger.warning("Failed to upsert %s: %s", sec.get("symbol"), e)
 
         # Ensure fundamentals/technicals rows exist for all securities
-        await conn.execute("""
+        await conn.execute(
+            """
             INSERT INTO security_fundamentals (security_id, updated_at)
             SELECT id, $1 FROM securities
             WHERE id NOT IN (SELECT security_id FROM security_fundamentals)
-        """, now)
+        """,
+            now,
+        )
 
-        await conn.execute("""
+        await conn.execute(
+            """
             INSERT INTO security_technicals (security_id, updated_at)
             SELECT id, $1 FROM securities
             WHERE id NOT IN (SELECT security_id FROM security_technicals)
-        """, now)
+        """,
+            now,
+        )
 
     await pool.close()
     return inserted
@@ -427,8 +672,12 @@ async def main():
 
     inserted = await seed_database(database_url, all_securities)
     logger.info("=" * 60)
-    logger.info("Seeding complete: %d securities inserted/updated (NSE: %d, BSE: %d)",
-                inserted, len(nse_securities), len(bse_securities))
+    logger.info(
+        "Seeding complete: %d securities inserted/updated (NSE: %d, BSE: %d)",
+        inserted,
+        len(nse_securities),
+        len(bse_securities),
+    )
     logger.info("=" * 60)
 
 

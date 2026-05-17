@@ -269,9 +269,11 @@ class KillSwitch:
     def _log_audit(self, event_type: str, message: str) -> None:
         """Write an entry to the ``audit_log`` table."""
         try:
-            metadata = json.dumps({
-                "timestamp": self._now_fn().isoformat(),
-            })
+            metadata = json.dumps(
+                {
+                    "timestamp": self._now_fn().isoformat(),
+                }
+            )
             self._db.execute_with_retry(
                 "INSERT INTO audit_log (event_type, component, message, metadata) "
                 "VALUES (?, ?, ?, ?)",

@@ -39,4 +39,3 @@ test "CKQUORUM detects failover authorization cannot be reached" {
         restart_instance sentinel [expr {$i + 1}]
     }
 }
-

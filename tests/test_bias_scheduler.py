@@ -26,6 +26,7 @@ from src.state.database import DatabaseConnectionManager
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 class InMemoryDBManager(DatabaseConnectionManager):
     """Lightweight in-memory SQLite for testing."""
 
@@ -39,7 +40,8 @@ class InMemoryDBManager(DatabaseConnectionManager):
         if self._sqlite_conn is None:
             self._sqlite_conn = sqlite3.connect(":memory:")
             self._sqlite_conn.row_factory = sqlite3.Row
-            self._sqlite_conn.executescript("""
+            self._sqlite_conn.executescript(
+                """
                 CREATE TABLE IF NOT EXISTS bias_log (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     ticker TEXT NOT NULL,
@@ -61,14 +63,19 @@ class InMemoryDBManager(DatabaseConnectionManager):
                     news_source TEXT NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
-            """)
+            """
+            )
         return self._sqlite_conn
 
 
-def _make_result(ticker: str = "RELIANCE", bias: str = "BULLISH",
-                 score: float = 0.35, confidence: float = 0.8,
-                 article_count: int = 5,
-                 ts: datetime | None = None) -> BiasResult:
+def _make_result(
+    ticker: str = "RELIANCE",
+    bias: str = "BULLISH",
+    score: float = 0.35,
+    confidence: float = 0.8,
+    article_count: int = 5,
+    ts: datetime | None = None,
+) -> BiasResult:
     return BiasResult(
         ticker=ticker,
         bias=bias,
@@ -88,6 +95,7 @@ def _utc_for_ist(hour: int, minute: int = 0) -> datetime:
 # ---------------------------------------------------------------------------
 # Market hours
 # ---------------------------------------------------------------------------
+
 
 class TestMarketHours:
     def test_during_market_hours(self):
@@ -134,6 +142,7 @@ class TestMarketHours:
 # ---------------------------------------------------------------------------
 # publish_bias
 # ---------------------------------------------------------------------------
+
 
 class TestPublishBias:
     def test_publishes_correct_fields(self):
@@ -185,6 +194,7 @@ class TestPublishBias:
 # store_bias
 # ---------------------------------------------------------------------------
 
+
 class TestStoreBias:
     def test_inserts_into_bias_log(self):
         db = InMemoryDBManager()
@@ -235,6 +245,7 @@ class TestStoreBias:
 # Scheduler start / stop
 # ---------------------------------------------------------------------------
 
+
 class TestStartStop:
     def test_start_sets_running(self):
         scheduler = BiasScheduler(
@@ -279,6 +290,7 @@ class TestStartStop:
 # ---------------------------------------------------------------------------
 # recalculate_all
 # ---------------------------------------------------------------------------
+
 
 class TestRecalculateAll:
     def test_skips_outside_market_hours(self):

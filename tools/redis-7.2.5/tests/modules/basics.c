@@ -511,7 +511,7 @@ int TestNestedCallReplyArrayElement(RedisModuleCtx *ctx, RedisModuleString **arg
     RedisModuleCallReply *keys_reply = RedisModule_CallReplyArrayElement(scan_reply, 1);
     RedisModule_Assert(RedisModule_CallReplyType(keys_reply) == REDISMODULE_REPLY_ARRAY);
     RedisModule_Assert( RedisModule_CallReplyLength(keys_reply) == 1);
- 
+
     RedisModuleCallReply *key_reply = RedisModule_CallReplyArrayElement(keys_reply, 0);
     RedisModule_Assert(RedisModule_CallReplyType(key_reply) == REDISMODULE_REPLY_STRING);
     RedisModuleString *key = RedisModule_CreateStringFromCallReply(key_reply);
@@ -883,7 +883,7 @@ int TestBasics(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
 
     T("test.string.append.am","");
     if (!TestAssertStringReply(ctx,reply,"foobar",6)) goto fail;
-    
+
     T("test.string.trim","");
     if (!TestAssertStringReply(ctx,reply,"OK",2)) goto fail;
 

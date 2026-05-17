@@ -22,11 +22,14 @@ from src.backtesting.backtesting_engine import (
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def engine():
     """Create a BacktestingEngine with a minimal config stub."""
+
     class _Cfg:
         pass
+
     return BacktestingEngine(config=_Cfg())
 
 
@@ -36,14 +39,16 @@ def sample_ohlcv():
     np.random.seed(42)
     n = 100
     close = 1000 + np.cumsum(np.random.randn(n) * 5)
-    df = pd.DataFrame({
-        "symbol": "RELIANCE",
-        "open": close - np.random.rand(n) * 2,
-        "high": close + np.random.rand(n) * 5,
-        "low": close - np.random.rand(n) * 5,
-        "close": close,
-        "volume": np.random.randint(100_000, 500_000, n),
-    })
+    df = pd.DataFrame(
+        {
+            "symbol": "RELIANCE",
+            "open": close - np.random.rand(n) * 2,
+            "high": close + np.random.rand(n) * 5,
+            "low": close - np.random.rand(n) * 5,
+            "close": close,
+            "volume": np.random.randint(100_000, 500_000, n),
+        }
+    )
     return df
 
 
@@ -52,15 +57,25 @@ def sample_trades():
     """Create a list of sample TradeRecord objects."""
     return [
         TradeRecord(
-            symbol="RELIANCE", strategy="mean_reversion", side="BUY",
-            entry_price=1000.0, exit_price=1050.0, quantity=10,
-            entry_date="2023-01-01", exit_date="2023-01-05",
+            symbol="RELIANCE",
+            strategy="mean_reversion",
+            side="BUY",
+            entry_price=1000.0,
+            exit_price=1050.0,
+            quantity=10,
+            entry_date="2023-01-01",
+            exit_date="2023-01-05",
             holding_period=4,
         ),
         TradeRecord(
-            symbol="TCS", strategy="mean_reversion", side="BUY",
-            entry_price=3000.0, exit_price=2950.0, quantity=5,
-            entry_date="2023-01-10", exit_date="2023-01-12",
+            symbol="TCS",
+            strategy="mean_reversion",
+            side="BUY",
+            entry_price=3000.0,
+            exit_price=2950.0,
+            quantity=5,
+            entry_date="2023-01-10",
+            exit_date="2023-01-12",
             holding_period=2,
         ),
     ]
@@ -69,6 +84,7 @@ def sample_trades():
 # ---------------------------------------------------------------------------
 # Transaction cost tests
 # ---------------------------------------------------------------------------
+
 
 class TestTransactionCosts:
     def test_costs_are_positive(self, engine, sample_trades):
@@ -83,9 +99,14 @@ class TestTransactionCosts:
 
     def test_stt_applied_on_sell_side(self, engine):
         trade = TradeRecord(
-            symbol="X", strategy="test", side="BUY",
-            entry_price=100.0, exit_price=110.0, quantity=100,
-            entry_date="2023-01-01", exit_date="2023-01-02",
+            symbol="X",
+            strategy="test",
+            side="BUY",
+            entry_price=100.0,
+            exit_price=110.0,
+            quantity=100,
+            entry_date="2023-01-01",
+            exit_date="2023-01-02",
         )
         engine.apply_transaction_costs([trade])
         sell_turnover = 110.0 * 100
@@ -95,9 +116,14 @@ class TestTransactionCosts:
 
     def test_brokerage_flat_fee(self, engine):
         trade = TradeRecord(
-            symbol="X", strategy="test", side="BUY",
-            entry_price=100.0, exit_price=100.0, quantity=1,
-            entry_date="2023-01-01", exit_date="2023-01-02",
+            symbol="X",
+            strategy="test",
+            side="BUY",
+            entry_price=100.0,
+            exit_price=100.0,
+            quantity=1,
+            entry_date="2023-01-01",
+            exit_date="2023-01-02",
         )
         engine.apply_transaction_costs([trade])
         # Minimum cost is at least 2 × brokerage
@@ -105,9 +131,14 @@ class TestTransactionCosts:
 
     def test_stamp_duty_on_buy_side(self, engine):
         trade = TradeRecord(
-            symbol="X", strategy="test", side="BUY",
-            entry_price=500.0, exit_price=510.0, quantity=200,
-            entry_date="2023-01-01", exit_date="2023-01-02",
+            symbol="X",
+            strategy="test",
+            side="BUY",
+            entry_price=500.0,
+            exit_price=510.0,
+            quantity=200,
+            entry_date="2023-01-01",
+            exit_date="2023-01-02",
         )
         engine.apply_transaction_costs([trade])
         buy_turnover = 500.0 * 200
@@ -118,6 +149,7 @@ class TestTransactionCosts:
 # ---------------------------------------------------------------------------
 # Slippage tests
 # ---------------------------------------------------------------------------
+
 
 class TestSlippage:
     def test_buy_slippage_increases_price(self, engine):
@@ -146,6 +178,7 @@ class TestSlippage:
 # Metrics calculation tests
 # ---------------------------------------------------------------------------
 
+
 class TestMetrics:
     def test_total_return(self, engine):
         equity = pd.Series([100_000, 105_000, 110_000])
@@ -168,9 +201,14 @@ class TestMetrics:
     def test_profit_factor_no_losses(self, engine):
         trades = [
             TradeRecord(
-                symbol="X", strategy="test", side="BUY",
-                entry_price=100, exit_price=110, quantity=10,
-                entry_date="2023-01-01", exit_date="2023-01-02",
+                symbol="X",
+                strategy="test",
+                side="BUY",
+                entry_price=100,
+                exit_price=110,
+                quantity=10,
+                entry_date="2023-01-01",
+                exit_date="2023-01-02",
                 net_pnl=100,
             ),
         ]
@@ -199,13 +237,23 @@ class TestMetrics:
 # Trade log tests
 # ---------------------------------------------------------------------------
 
+
 class TestTradeLog:
     def test_trade_log_columns(self, engine, sample_trades):
         log = engine.generate_trade_log(sample_trades)
         expected_cols = {
-            "symbol", "strategy", "side", "entry_price", "exit_price",
-            "quantity", "entry_date", "exit_date", "gross_pnl",
-            "transaction_costs", "net_pnl", "holding_period",
+            "symbol",
+            "strategy",
+            "side",
+            "entry_price",
+            "exit_price",
+            "quantity",
+            "entry_date",
+            "exit_date",
+            "gross_pnl",
+            "transaction_costs",
+            "net_pnl",
+            "holding_period",
         }
         assert set(log.columns) == expected_cols
 
@@ -222,6 +270,7 @@ class TestTradeLog:
 # ---------------------------------------------------------------------------
 # Threshold validation tests
 # ---------------------------------------------------------------------------
+
 
 class TestThresholdValidation:
     def test_all_pass(self, engine):
@@ -292,6 +341,7 @@ class TestThresholdValidation:
 # Backtest run tests
 # ---------------------------------------------------------------------------
 
+
 class TestBacktestRun:
     def test_run_mean_reversion(self, engine, sample_ohlcv):
         result = engine.run_backtest("mean_reversion", sample_ohlcv)
@@ -336,12 +386,14 @@ class TestBacktestRun:
 
     def test_with_signal_column(self, engine):
         """Test backtest with pre-computed signals."""
-        df = pd.DataFrame({
-            "symbol": "TEST",
-            "close": [100, 102, 104, 103, 101, 99, 100, 105, 110, 108],
-            "high": [101, 103, 105, 104, 102, 100, 101, 106, 111, 109],
-            "low": [99, 101, 103, 102, 100, 98, 99, 104, 109, 107],
-            "signal": [0, 1, 0, 0, 0, -1, 0, 1, 0, -1],
-        })
+        df = pd.DataFrame(
+            {
+                "symbol": "TEST",
+                "close": [100, 102, 104, 103, 101, 99, 100, 105, 110, 108],
+                "high": [101, 103, 105, 104, 102, 100, 101, 106, 111, 109],
+                "low": [99, 101, 103, 102, 100, 98, 99, 104, 109, 107],
+                "signal": [0, 1, 0, 0, 0, -1, 0, 1, 0, -1],
+            }
+        )
         result = engine.run_backtest("mean_reversion", df, 100_000)
         assert len(result.trades) >= 1

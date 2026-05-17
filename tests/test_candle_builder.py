@@ -66,29 +66,29 @@ def test_property_ohlcv_calculation_correctness(tick_data):
     assert candle is not None, "Candle should exist after processing ticks"
 
     # Open = first tick's price
-    assert candle.open == prices[0], (
-        f"Open should be first tick price: expected {prices[0]}, got {candle.open}"
-    )
+    assert (
+        candle.open == prices[0]
+    ), f"Open should be first tick price: expected {prices[0]}, got {candle.open}"
 
     # High = max of all tick prices
-    assert candle.high == max(prices), (
-        f"High should be max price: expected {max(prices)}, got {candle.high}"
-    )
+    assert candle.high == max(
+        prices
+    ), f"High should be max price: expected {max(prices)}, got {candle.high}"
 
     # Low = min of all tick prices
-    assert candle.low == min(prices), (
-        f"Low should be min price: expected {min(prices)}, got {candle.low}"
-    )
+    assert candle.low == min(
+        prices
+    ), f"Low should be min price: expected {min(prices)}, got {candle.low}"
 
     # Close = last tick's price
-    assert candle.close == prices[-1], (
-        f"Close should be last tick price: expected {prices[-1]}, got {candle.close}"
-    )
+    assert (
+        candle.close == prices[-1]
+    ), f"Close should be last tick price: expected {prices[-1]}, got {candle.close}"
 
     # Volume = sum of all tick volumes
-    assert candle.volume == sum(volumes), (
-        f"Volume should be sum of volumes: expected {sum(volumes)}, got {candle.volume}"
-    )
+    assert candle.volume == sum(
+        volumes
+    ), f"Volume should be sum of volumes: expected {sum(volumes)}, got {candle.volume}"
 
 
 # Strategy: generate a random price for the initial tick that establishes last known price
@@ -131,33 +131,32 @@ def test_property_market_gap_handling(last_price):
 
     # The gap candle's bucket should be the 10:01 bucket
     expected_bucket = datetime(2024, 1, 15, 10, 1, 0)
-    assert gap_candle.timestamp == expected_bucket, (
-        f"Gap candle timestamp should be {expected_bucket}, got {gap_candle.timestamp}"
-    )
+    assert (
+        gap_candle.timestamp == expected_bucket
+    ), f"Gap candle timestamp should be {expected_bucket}, got {gap_candle.timestamp}"
 
     # All OHLCV price fields should equal the last known price
-    assert gap_candle.open == last_price, (
-        f"Gap candle open should be last known price {last_price}, got {gap_candle.open}"
-    )
-    assert gap_candle.high == last_price, (
-        f"Gap candle high should be last known price {last_price}, got {gap_candle.high}"
-    )
-    assert gap_candle.low == last_price, (
-        f"Gap candle low should be last known price {last_price}, got {gap_candle.low}"
-    )
-    assert gap_candle.close == last_price, (
-        f"Gap candle close should be last known price {last_price}, got {gap_candle.close}"
-    )
+    assert (
+        gap_candle.open == last_price
+    ), f"Gap candle open should be last known price {last_price}, got {gap_candle.open}"
+    assert (
+        gap_candle.high == last_price
+    ), f"Gap candle high should be last known price {last_price}, got {gap_candle.high}"
+    assert (
+        gap_candle.low == last_price
+    ), f"Gap candle low should be last known price {last_price}, got {gap_candle.low}"
+    assert (
+        gap_candle.close == last_price
+    ), f"Gap candle close should be last known price {last_price}, got {gap_candle.close}"
 
     # Volume should be zero for a gap candle
-    assert gap_candle.volume == 0, (
-        f"Gap candle volume should be 0, got {gap_candle.volume}"
-    )
+    assert gap_candle.volume == 0, f"Gap candle volume should be 0, got {gap_candle.volume}"
 
     # Gap candle should be marked as complete
-    assert gap_candle.is_complete is True, (
-        f"Gap candle should be complete, got is_complete={gap_candle.is_complete}"
-    )
+    assert (
+        gap_candle.is_complete is True
+    ), f"Gap candle should be complete, got is_complete={gap_candle.is_complete}"
+
 
 # Strategy: generate tick data that spans multiple 1-minute buckets
 # Each tick has (price, volume, minute_offset) where minute_offset is 0..N
@@ -216,22 +215,20 @@ def test_property_multi_timeframe_candle_building(tick_data):
     # 1) At least one completed 1m candle should exist (the 10:00 bucket completes
     #    when the first tick in the 10:01 bucket arrives).
     completed_1m = [c for c in completed_candles if c.timeframe == "1m"]
-    assert len(completed_1m) >= 1, (
-        f"Expected at least 1 completed 1m candle, got {len(completed_1m)}"
-    )
+    assert (
+        len(completed_1m) >= 1
+    ), f"Expected at least 1 completed 1m candle, got {len(completed_1m)}"
 
     # 2) All completed candles must be marked complete
     for c in completed_candles:
-        assert c.is_complete is True, (
-            f"Completed candle {c.symbol} {c.timeframe} should have is_complete=True"
-        )
+        assert (
+            c.is_complete is True
+        ), f"Completed candle {c.symbol} {c.timeframe} should have is_complete=True"
 
     # 3) In-progress candles should exist for ALL 3 timeframes after processing
     for tf in all_timeframes:
         candle = builder.get_current_candle("RELIANCE", tf)
-        assert candle is not None, (
-            f"Expected in-progress candle for timeframe {tf}, got None"
-        )
+        assert candle is not None, f"Expected in-progress candle for timeframe {tf}, got None"
 
     # 4) All completed candles should have valid OHLCV data
     for c in completed_candles:
@@ -242,4 +239,3 @@ def test_property_multi_timeframe_candle_building(tick_data):
         assert c.low <= c.open, f"Low ({c.low}) should be <= Open ({c.open})"
         assert c.low <= c.close, f"Low ({c.low}) should be <= Close ({c.close})"
         assert c.volume > 0, f"Volume should be positive, got {c.volume}"
-

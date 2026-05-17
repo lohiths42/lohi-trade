@@ -1,6 +1,7 @@
 """Shared base model with camelCase JSON serialization."""
 
 from typing import Any
+
 from pydantic import BaseModel, ConfigDict
 
 
@@ -12,6 +13,7 @@ def to_camel(name: str) -> str:
 
 class CamelModel(BaseModel):
     """Base model that serializes fields as camelCase in JSON responses."""
+
     model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
 
     def model_dump(self, *, by_alias: bool = True, **kwargs: Any) -> dict[str, Any]:

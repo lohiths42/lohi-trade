@@ -22,7 +22,6 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import json
 import logging
 import sqlite3
 import sys
@@ -154,9 +153,7 @@ class SQLiteToPostgresMigrator:
                 h.update(str(val).encode())
         return h.hexdigest()
 
-    def _add_user_id_column(
-        self, rows: List[Dict[str, Any]], user_id: str
-    ) -> List[Dict[str, Any]]:
+    def _add_user_id_column(self, rows: List[Dict[str, Any]], user_id: str) -> List[Dict[str, Any]]:
         """Add user_id to all rows for multi-tenant support."""
         for row in rows:
             row["user_id"] = user_id
@@ -168,8 +165,7 @@ class SQLiteToPostgresMigrator:
             cur.execute("SELECT id FROM users WHERE id = %s", (admin_user_id,))
             if cur.fetchone() is None:
                 cur.execute(
-                    "INSERT INTO users (id, email, name, role) "
-                    "VALUES (%s, %s, %s, %s)",
+                    "INSERT INTO users (id, email, name, role) " "VALUES (%s, %s, %s, %s)",
                     (admin_user_id, "admin@lohi-trade.local", "Admin", "ADMIN"),
                 )
                 logger.info("Created admin user %s", admin_user_id)
@@ -326,7 +322,9 @@ class SQLiteToPostgresMigrator:
                 tr = TableReport(table=table)
                 try:
                     # SQLite side
-                    sqlite_rows = [dict(r) for r in sqlite_conn.execute(f"SELECT * FROM {table}").fetchall()]
+                    sqlite_rows = [
+                        dict(r) for r in sqlite_conn.execute(f"SELECT * FROM {table}").fetchall()
+                    ]
                     sqlite_cols = self._get_sqlite_columns(sqlite_conn, table)
                     tr.sqlite_count = len(sqlite_rows)
 
@@ -361,13 +359,17 @@ class SQLiteToPostgresMigrator:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Migrate LOHI-TRADE SQLite data to PostgreSQL")
     parser.add_argument("--sqlite", default="data/lohi_trade.db", help="Path to SQLite database")
-    parser.add_argument("--pg", default="postgresql://lohi:lohi@localhost:5432/lohi_trade", help="PostgreSQL DSN")
+    parser.add_argument(
+        "--pg", default="postgresql://lohi:lohi@localhost:5432/lohi_trade", help="PostgreSQL DSN"
+    )
     parser.add_argument(
         "--admin-user-id",
         default="00000000-0000-0000-0000-000000000001",
         help="UUID to assign as user_id for all migrated rows",
     )
-    parser.add_argument("--validate-only", action="store_true", help="Only validate, do not migrate")
+    parser.add_argument(
+        "--validate-only", action="store_true", help="Only validate, do not migrate"
+    )
     args = parser.parse_args()
 
     migrator = SQLiteToPostgresMigrator(args.sqlite, args.pg)

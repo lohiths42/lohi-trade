@@ -118,11 +118,15 @@ class Guardrail(Protocol):
     """
 
     async def check_input(
-        self, user_id: UUID, prompt: str,
+        self,
+        user_id: UUID,
+        prompt: str,
     ) -> tuple[str, list[GuardrailDecision]]: ...
 
     async def check_output(
-        self, user_id: UUID, text: str,
+        self,
+        user_id: UUID,
+        text: str,
     ) -> tuple[str, list[GuardrailDecision]]: ...
 
 
@@ -193,7 +197,9 @@ class PydanticGuardrail:
     # ---------------------------------------------------------------- #
 
     async def check_input(
-        self, user_id: UUID, prompt: str,
+        self,
+        user_id: UUID,
+        prompt: str,
     ) -> tuple[str, list[GuardrailDecision]]:
         """Run input-phase rules + rate limit against ``prompt``.
 
@@ -262,7 +268,9 @@ class PydanticGuardrail:
         return current, decisions
 
     async def check_output(
-        self, user_id: UUID, text: str,
+        self,
+        user_id: UUID,
+        text: str,
     ) -> tuple[str, list[GuardrailDecision]]:
         """Run output-phase rules against Sub_Agent-generated ``text``.
 
@@ -371,7 +379,9 @@ class PydanticGuardrail:
         return modified
 
     async def _check_rate_limit(
-        self, user_id: UUID, prompt: str,
+        self,
+        user_id: UUID,
+        prompt: str,
     ) -> GuardrailDecision | None:
         """Per-user per-minute counter. Returns a refuse decision on overrun."""
         if self._redis is None:
@@ -379,7 +389,8 @@ class PydanticGuardrail:
 
         window_epoch = int(time.time()) // _RATE_LIMIT_WINDOW_SECONDS
         key = GUARDRAIL_RATE_LIMIT_KEY_TEMPLATE.format(
-            user_id=str(user_id), window_epoch=window_epoch,
+            user_id=str(user_id),
+            window_epoch=window_epoch,
         )
 
         # INCR returns the post-increment value. Expire is set on the

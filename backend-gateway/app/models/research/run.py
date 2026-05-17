@@ -37,21 +37,15 @@ class ResearchRun(Base):
     prompt: Mapped[str] = mapped_column(Text, nullable=False)
     # pending | running | done | error | partial
     status: Mapped[str] = mapped_column(String(16), nullable=False)
-    partial: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, server_default="false"
-    )
+    partial: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
     # normal | low
     quality: Mapped[Optional[str]] = mapped_column(String(8), nullable=True)
     judge_score: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    budget_exhausted: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, server_default="false"
-    )
+    budget_exhausted: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True), nullable=False, server_default=func.now()
     )
-    finished_at: Mapped[Optional[datetime]] = mapped_column(
-        TIMESTAMP(timezone=True), nullable=True
-    )
+    finished_at: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
 
     brief_sections: Mapped[list["ResearchBriefSection"]] = relationship(
         back_populates="run",
@@ -73,7 +67,5 @@ class ResearchRun(Base):
         cascade="all, delete-orphan",
         passive_deletes=True,
     )
-    episodic_summaries: Mapped[list["ResearchEpisodicMemory"]] = relationship(
-        back_populates="run"
-    )
+    episodic_summaries: Mapped[list["ResearchEpisodicMemory"]] = relationship(back_populates="run")
     llm_usage: Mapped[list["LLMUsage"]] = relationship(back_populates="run")

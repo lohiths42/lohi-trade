@@ -87,7 +87,7 @@ start_server {
         r rpush key [string repeat x 10000]"969"
         r rpush key b
         r lrem key 1 a
-        r rpop key 
+        r rpop key
         r lrem key 1 [string repeat x 10000]"969"
         r rpush key crash
         r ping
@@ -123,7 +123,7 @@ foreach comp {2 1 0} {
     set cycles 1000
     if {$::accurate} { set cycles 10000 }
     config_set list-compress-depth $comp
-    
+
     test "Stress tester for #3343-alike bugs comp: $comp" {
         r del key
         set sent {}

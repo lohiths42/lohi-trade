@@ -8,12 +8,10 @@ from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-
 from app.services.screener_service import (
     DEFAULT_PAGE_SIZE,
     MAX_PAGE_SIZE,
     MAX_PRESETS_PER_USER,
-    PREBUILT_TEMPLATES,
     Range,
     ScreenerEngine,
     ScreenerFilters,
@@ -23,7 +21,6 @@ from app.services.screener_service import (
     dict_to_filters,
     filters_to_dict,
 )
-
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -51,37 +48,67 @@ def _make_count_row(cnt=10):
 
 
 def _make_screener_row(
-    id=1, symbol="RELIANCE", company_name="Reliance Industries",
-    exchange="NSE", sector="Energy", market_cap_category="large-cap",
-    pe_ratio=Decimal("25.5"), pb_ratio=Decimal("2.1"),
-    market_cap=Decimal("1500000"), dividend_yield=Decimal("1.2"),
-    eps=Decimal("85.0"), roe=Decimal("12.5"),
-    debt_to_equity=Decimal("0.5"), revenue_growth_1y=Decimal("15.0"),
-    revenue_growth_3y=Decimal("12.0"), profit_growth_1y=Decimal("18.0"),
-    profit_growth_3y=Decimal("14.0"), return_1y=Decimal("22.0"),
-    cagr_3y=Decimal("16.0"), cagr_5y=Decimal("14.0"),
-    high_52w=Decimal("2800.0"), low_52w=Decimal("2100.0"),
-    rsi_14=Decimal("55.0"), sma_50=Decimal("2600.0"),
-    sma_200=Decimal("2400.0"), avg_volume_20d=5000000,
-    price_change_1d=Decimal("1.5"), price_change_1w=Decimal("3.2"),
-    price_change_1m=Decimal("5.0"), price_change_3m=Decimal("8.0"),
-    price_change_6m=Decimal("12.0"), price_change_1y=Decimal("22.0"),
-    price_change_3y=Decimal("45.0"), price_change_5y=Decimal("80.0"),
+    id=1,
+    symbol="RELIANCE",
+    company_name="Reliance Industries",
+    exchange="NSE",
+    sector="Energy",
+    market_cap_category="large-cap",
+    pe_ratio=Decimal("25.5"),
+    pb_ratio=Decimal("2.1"),
+    market_cap=Decimal("1500000"),
+    dividend_yield=Decimal("1.2"),
+    eps=Decimal("85.0"),
+    roe=Decimal("12.5"),
+    debt_to_equity=Decimal("0.5"),
+    revenue_growth_1y=Decimal("15.0"),
+    revenue_growth_3y=Decimal("12.0"),
+    profit_growth_1y=Decimal("18.0"),
+    profit_growth_3y=Decimal("14.0"),
+    return_1y=Decimal("22.0"),
+    cagr_3y=Decimal("16.0"),
+    cagr_5y=Decimal("14.0"),
+    high_52w=Decimal("2800.0"),
+    low_52w=Decimal("2100.0"),
+    rsi_14=Decimal("55.0"),
+    sma_50=Decimal("2600.0"),
+    sma_200=Decimal("2400.0"),
+    avg_volume_20d=5000000,
+    price_change_1d=Decimal("1.5"),
+    price_change_1w=Decimal("3.2"),
+    price_change_1m=Decimal("5.0"),
+    price_change_3m=Decimal("8.0"),
+    price_change_6m=Decimal("12.0"),
+    price_change_1y=Decimal("22.0"),
+    price_change_3y=Decimal("45.0"),
+    price_change_5y=Decimal("80.0"),
 ):
     data = {
-        "id": id, "symbol": symbol, "company_name": company_name,
-        "exchange": exchange, "sector": sector,
+        "id": id,
+        "symbol": symbol,
+        "company_name": company_name,
+        "exchange": exchange,
+        "sector": sector,
         "market_cap_category": market_cap_category,
-        "pe_ratio": pe_ratio, "pb_ratio": pb_ratio,
-        "market_cap": market_cap, "dividend_yield": dividend_yield,
-        "eps": eps, "roe": roe, "debt_to_equity": debt_to_equity,
+        "pe_ratio": pe_ratio,
+        "pb_ratio": pb_ratio,
+        "market_cap": market_cap,
+        "dividend_yield": dividend_yield,
+        "eps": eps,
+        "roe": roe,
+        "debt_to_equity": debt_to_equity,
         "revenue_growth_1y": revenue_growth_1y,
         "revenue_growth_3y": revenue_growth_3y,
         "profit_growth_1y": profit_growth_1y,
         "profit_growth_3y": profit_growth_3y,
-        "return_1y": return_1y, "cagr_3y": cagr_3y, "cagr_5y": cagr_5y,
-        "high_52w": high_52w, "low_52w": low_52w,
-        "rsi_14": rsi_14, "sma_50": sma_50, "sma_200": sma_200,
+        "return_1y": return_1y,
+        "cagr_3y": cagr_3y,
+        "cagr_5y": cagr_5y,
+        "high_52w": high_52w,
+        "low_52w": low_52w,
+        "rsi_14": rsi_14,
+        "sma_50": sma_50,
+        "sma_200": sma_200,
         "avg_volume_20d": avg_volume_20d,
         "price_change_1d": price_change_1d,
         "price_change_1w": price_change_1w,
@@ -99,16 +126,23 @@ def _make_screener_row(
 
 
 def _make_preset_row(
-    id="preset-1", user_id="user-1", name="My Preset",
-    filters=None, is_prebuilt=False, created_at=None,
+    id="preset-1",
+    user_id="user-1",
+    name="My Preset",
+    filters=None,
+    is_prebuilt=False,
+    created_at=None,
 ):
     if filters is None:
         filters = {"pe_ratio": {"min": 5, "max": 30}}
     if created_at is None:
         created_at = datetime.now(timezone.utc)
     data = {
-        "id": id, "user_id": user_id, "name": name,
-        "filters": filters, "is_prebuilt": is_prebuilt,
+        "id": id,
+        "user_id": user_id,
+        "name": name,
+        "filters": filters,
+        "is_prebuilt": is_prebuilt,
         "created_at": created_at,
     }
     row = MagicMock()
@@ -736,8 +770,11 @@ class TestExportCSV:
 class TestRowMapping:
     def test_row_to_result_item(self):
         row = _make_screener_row(
-            id=5, symbol="TCS", company_name="TCS Ltd",
-            pe_ratio=Decimal("30.0"), rsi_14=Decimal("65.0"),
+            id=5,
+            symbol="TCS",
+            company_name="TCS Ltd",
+            pe_ratio=Decimal("30.0"),
+            rsi_14=Decimal("65.0"),
         )
         result = ScreenerEngine._row_to_result_item(row)
 
@@ -749,7 +786,9 @@ class TestRowMapping:
 
     def test_row_to_preset(self):
         row = _make_preset_row(
-            id="p-1", user_id="u-1", name="Test Preset",
+            id="p-1",
+            user_id="u-1",
+            name="Test Preset",
             filters={"pe_ratio": {"min": 5, "max": 25}},
         )
         result = ScreenerEngine._row_to_preset(row)

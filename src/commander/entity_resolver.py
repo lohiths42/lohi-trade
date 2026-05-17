@@ -223,7 +223,9 @@ class EntityResolver:
             "timestamp": resolved.timestamp.isoformat(),
         }
         msg_id = self._event_bus.publish(
-            ENTITIES_STREAM_NAME, message, maxlen=ENTITIES_STREAM_MAXLEN,
+            ENTITIES_STREAM_NAME,
+            message,
+            maxlen=ENTITIES_STREAM_MAXLEN,
         )
         logger.debug(
             f"Published resolved entities to {ENTITIES_STREAM_NAME}: {msg_id}",

@@ -8,10 +8,6 @@ Property 19: Serialization round-trip — serializing trade query results to JSO
 
 import json
 
-import pytest
-from hypothesis import given, settings, assume
-from hypothesis import strategies as st
-
 from app.services.chatbot_service import (
     ChatbotService,
     PerformanceSummary,
@@ -19,18 +15,25 @@ from app.services.chatbot_service import (
     StockInfo,
     TradeDetail,
 )
-
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
 # ── Strategies ───────────────────────────────────────────────────────────────
 
 # Finite floats that survive JSON round-trip (no NaN/Inf)
 finite_floats = st.floats(
-    min_value=-1e12, max_value=1e12, allow_nan=False, allow_infinity=False,
+    min_value=-1e12,
+    max_value=1e12,
+    allow_nan=False,
+    allow_infinity=False,
 )
 
 # Non-negative finite floats for prices/quantities
 positive_floats = st.floats(
-    min_value=0.0, max_value=1e12, allow_nan=False, allow_infinity=False,
+    min_value=0.0,
+    max_value=1e12,
+    allow_nan=False,
+    allow_infinity=False,
 )
 
 # Simple text for string fields (printable, no surrogates)
@@ -101,26 +104,34 @@ stock_info_strategy = st.builds(
     StockInfo,
     symbol=st.from_regex(r"[A-Z]{2,10}", fullmatch=True),
     recent_sentiment=st.lists(
-        st.fixed_dictionaries({
-            "sentiment": st.sampled_from(["BULLISH", "BEARISH", "NEUTRAL"]),
-            "score": st.floats(min_value=-1.0, max_value=1.0, allow_nan=False, allow_infinity=False),
-        }),
+        st.fixed_dictionaries(
+            {
+                "sentiment": st.sampled_from(["BULLISH", "BEARISH", "NEUTRAL"]),
+                "score": st.floats(
+                    min_value=-1.0, max_value=1.0, allow_nan=False, allow_infinity=False
+                ),
+            }
+        ),
         min_size=0,
         max_size=5,
     ),
     bias_status=st.one_of(st.none(), st.sampled_from(["BULLISH", "BEARISH", "NEUTRAL"])),
     open_positions=st.lists(
-        st.fixed_dictionaries({
-            "symbol": st.from_regex(r"[A-Z]{2,10}", fullmatch=True),
-            "quantity": st.integers(min_value=1, max_value=10000),
-        }),
+        st.fixed_dictionaries(
+            {
+                "symbol": st.from_regex(r"[A-Z]{2,10}", fullmatch=True),
+                "quantity": st.integers(min_value=1, max_value=10000),
+            }
+        ),
         min_size=0,
         max_size=3,
     ),
     recent_trades=st.lists(
-        st.fixed_dictionaries({
-            "pnl": finite_floats,
-        }),
+        st.fixed_dictionaries(
+            {
+                "pnl": finite_floats,
+            }
+        ),
         min_size=0,
         max_size=5,
     ),
@@ -161,9 +172,7 @@ def _assert_performance_summary_equivalent(
     assert restored.sharpe_ratio == original.sharpe_ratio
 
 
-def _assert_signal_explanation_equivalent(
-    original: SignalExplanation, restored: SignalExplanation
-):
+def _assert_signal_explanation_equivalent(original: SignalExplanation, restored: SignalExplanation):
     """Assert two SignalExplanation instances are equivalent after round-trip."""
     assert restored.symbol == original.symbol
     assert restored.signal_type == original.signal_type
@@ -202,9 +211,7 @@ class TestSerializationRoundTripProperty:
         parsed = json.loads(json_str)
         assert isinstance(parsed, dict)
         # Deserialize back to TradeDetail
-        restored = ChatbotService.deserialize_llm_response(
-            json_str, expected_type=TradeDetail
-        )
+        restored = ChatbotService.deserialize_llm_response(json_str, expected_type=TradeDetail)
         assert isinstance(restored, TradeDetail)
         _assert_trade_detail_equivalent(trade, restored)
 
@@ -244,9 +251,7 @@ class TestSerializationRoundTripProperty:
         json_str = ChatbotService.serialize_query_results(info)
         parsed = json.loads(json_str)
         assert isinstance(parsed, dict)
-        restored = ChatbotService.deserialize_llm_response(
-            json_str, expected_type=StockInfo
-        )
+        restored = ChatbotService.deserialize_llm_response(json_str, expected_type=StockInfo)
         assert isinstance(restored, StockInfo)
         _assert_stock_info_equivalent(info, restored)
 
@@ -259,9 +264,7 @@ class TestSerializationRoundTripProperty:
         parsed = json.loads(json_str)
         assert isinstance(parsed, list)
         assert len(parsed) == len(trades)
-        restored = ChatbotService.deserialize_llm_response(
-            json_str, expected_type=TradeDetail
-        )
+        restored = ChatbotService.deserialize_llm_response(json_str, expected_type=TradeDetail)
         assert isinstance(restored, list)
         assert len(restored) == len(trades)
         for original, result in zip(trades, restored):

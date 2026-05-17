@@ -16,9 +16,9 @@ _src_path = str(Path(__file__).resolve().parents[3])
 if _src_path not in sys.path:
     sys.path.insert(0, _src_path)
 
-from src.markets.market_profile import Country, MarketProfile, TaxProfile
+from src.markets.market_profile import Country, TaxProfile
 from src.markets.market_registry import MarketRegistry, get_market_registry
-from src.markets.tax_engine import TaxEngine, TaxEstimate
+from src.markets.tax_engine import TaxEngine
 from src.markets.tax_profile_generator import (
     TaxGenerationError,
     TaxProfileGenerator,
@@ -183,9 +183,7 @@ class MarketService:
             raise ValueError("No market configured")
 
         try:
-            diff = await self._tax_generator.refresh(
-                profile.tax_profile, profile.country_name
-            )
+            diff = await self._tax_generator.refresh(profile.tax_profile, profile.country_name)
             return {
                 "success": True,
                 "diff": diff.to_dict(),

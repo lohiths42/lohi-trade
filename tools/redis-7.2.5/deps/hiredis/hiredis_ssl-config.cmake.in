@@ -13,4 +13,3 @@ SET(hiredis_ssl_LIBRARIES hiredis::hiredis_ssl)
 SET(hiredis_ssl_INCLUDE_DIRS ${hiredis_ssl_INCLUDEDIR})
 
 check_required_components(hiredis_ssl)
-

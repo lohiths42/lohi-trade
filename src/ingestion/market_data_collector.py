@@ -40,9 +40,9 @@ class FeedSource(Enum):
 class MarketSession(Enum):
     """Current market session type."""
 
-    PRE_MARKET = "PRE_MARKET"       # 9:00 - 9:15 IST
-    NORMAL = "NORMAL"               # 9:15 - 15:30 IST
-    POST_MARKET = "POST_MARKET"     # 15:30 - 16:00 IST
+    PRE_MARKET = "PRE_MARKET"  # 9:00 - 9:15 IST
+    NORMAL = "NORMAL"  # 9:15 - 15:30 IST
+    POST_MARKET = "POST_MARKET"  # 15:30 - 16:00 IST
     CLOSED = "CLOSED"
 
 
@@ -373,13 +373,14 @@ class MarketDataCollector:
             symbols: List of symbols to remove.
 
         """
-        self._subscribed_symbols = [
-            s for s in self._subscribed_symbols if s not in symbols
-        ]
+        self._subscribed_symbols = [s for s in self._subscribed_symbols if s not in symbols]
         logger.info(f"Unsubscribed from {len(symbols)} symbols")
 
     def detect_price_discrepancy(
-        self, symbol: str, nse_price: float, bse_price: float,
+        self,
+        symbol: str,
+        nse_price: float,
+        bse_price: float,
     ) -> bool:
         """Detect and log price discrepancy between NSE and BSE for dual-listed securities.
 
@@ -426,7 +427,8 @@ class MarketDataCollector:
     # ------------------------------------------------------------------
 
     async def collect_order_book(
-        self, symbols: list[str] | None = None,
+        self,
+        symbols: list[str] | None = None,
     ) -> dict[str, OrderBookDepth]:
         """Collect top 5 bid/ask levels for watchlist securities and store in Redis.
 
@@ -583,10 +585,10 @@ class MarketDataCollector:
 
         t = now.hour * 60 + now.minute
 
-        pre_start = 9 * 60       # 09:00
-        pre_end = 9 * 60 + 15    # 09:15
+        pre_start = 9 * 60  # 09:00
+        pre_end = 9 * 60 + 15  # 09:15
         normal_end = 15 * 60 + 30  # 15:30
-        post_end = 16 * 60        # 16:00
+        post_end = 16 * 60  # 16:00
 
         if pre_start <= t < pre_end:
             return MarketSession.PRE_MARKET
@@ -759,7 +761,9 @@ class MarketDataCollector:
             nse_price = self._nse_latest_prices.get(tick_data.symbol)
             if nse_price is not None:
                 self.detect_price_discrepancy(
-                    tick_data.symbol, nse_price, tick_data.ltp,
+                    tick_data.symbol,
+                    nse_price,
+                    tick_data.ltp,
                 )
             self._stats.bse_ticks_published += 1
         elif is_bse_only:
@@ -938,7 +942,8 @@ class MarketDataCollector:
 
         try:
             self.fallback_broker.subscribe(
-                self._subscribed_symbols, self._on_fallback_tick,
+                self._subscribed_symbols,
+                self._on_fallback_tick,
             )
             self._fallback_active = True
             self._feed_source = FeedSource.BROKER_FALLBACK

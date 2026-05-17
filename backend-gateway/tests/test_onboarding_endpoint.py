@@ -2,14 +2,11 @@
 
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
+from app.routers.auth_v2 import get_account_service, get_current_user_id
+from app.routers.users import router
+from app.services.account_service import AccountService, _create_access_token
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-
-from app.routers.users import router
-from app.routers.auth_v2 import get_account_service, get_current_user_id
-from app.services.account_service import AccountService, _create_access_token
-
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -35,10 +32,12 @@ def _mock_account_service(execute_result: str = "UPDATE 1") -> AccountService:
     mock_conn.execute = AsyncMock(return_value=execute_result)
 
     mock_pool = MagicMock()
-    mock_pool.acquire = MagicMock(return_value=AsyncMock(
-        __aenter__=AsyncMock(return_value=mock_conn),
-        __aexit__=AsyncMock(return_value=False),
-    ))
+    mock_pool.acquire = MagicMock(
+        return_value=AsyncMock(
+            __aenter__=AsyncMock(return_value=mock_conn),
+            __aexit__=AsyncMock(return_value=False),
+        )
+    )
 
     mock_svc = MagicMock(spec=AccountService)
     mock_svc._pool = mock_pool

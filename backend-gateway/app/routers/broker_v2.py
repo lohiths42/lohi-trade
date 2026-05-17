@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.middleware.rbac import require_role
-from app.routers.auth_v2 import get_current_user_id, get_current_user_payload
+from app.routers.auth_v2 import get_current_user_id
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -27,7 +27,9 @@ router = APIRouter()
 
 class ConnectBrokerRequest(BaseModel):
     broker_name: str = Field(..., description="Broker to connect (shoonya, angelone, kite, groww)")
-    credentials: dict = Field(default_factory=dict, description="OAuth or API credentials for the broker")
+    credentials: dict = Field(
+        default_factory=dict, description="OAuth or API credentials for the broker"
+    )
 
 
 class SetPrimaryBrokerRequest(BaseModel):
@@ -164,7 +166,9 @@ async def connect_broker(
             message=result.get("message", f"Broker '{name}' connected successfully"),
         )
     except ValueError as exc:
-        logger.warning("BROKER_EVENT connect_failed user=%s broker=%s reason=%s", user_id, name, exc)
+        logger.warning(
+            "BROKER_EVENT connect_failed user=%s broker=%s reason=%s", user_id, name, exc
+        )
         raise HTTPException(status_code=400, detail=str(exc))
 
 
@@ -185,7 +189,9 @@ async def disconnect_broker(
         logger.info("BROKER_EVENT disconnect user=%s broker=%s", user_id, broker_name)
         return MessageResponse(message=f"Broker '{broker_name}' disconnected successfully")
     except ValueError as exc:
-        logger.warning("BROKER_EVENT disconnect_failed user=%s broker=%s reason=%s", user_id, broker_name, exc)
+        logger.warning(
+            "BROKER_EVENT disconnect_failed user=%s broker=%s reason=%s", user_id, broker_name, exc
+        )
         raise HTTPException(status_code=400, detail=str(exc))
 
 

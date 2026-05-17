@@ -22,21 +22,26 @@ from src.backtesting.backtesting_engine import (
 # Shared fixtures / helpers
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def engine():
     class _Cfg:
         pass
+
     return BacktestingEngine(config=_Cfg())
 
 
 def _make_engine():
     class _Cfg:
         pass
+
     return BacktestingEngine(config=_Cfg())
 
 
 # Hypothesis strategies
-positive_price = st.floats(min_value=1.0, max_value=100_000.0, allow_nan=False, allow_infinity=False)
+positive_price = st.floats(
+    min_value=1.0, max_value=100_000.0, allow_nan=False, allow_infinity=False
+)
 positive_qty = st.integers(min_value=1, max_value=10_000)
 side_strategy = st.sampled_from(["BUY", "SELL"])
 
@@ -45,6 +50,7 @@ side_strategy = st.sampled_from(["BUY", "SELL"])
 # Property 62: Transaction Cost Application
 # For any trade, transaction costs should be positive and reduce net P&L.
 # ---------------------------------------------------------------------------
+
 
 class TestProperty62TransactionCosts:
     @given(
@@ -57,10 +63,14 @@ class TestProperty62TransactionCosts:
         """Transaction costs must always be positive for any valid trade."""
         engine = _make_engine()
         trade = TradeRecord(
-            symbol="TEST", strategy="test", side="BUY",
-            entry_price=entry_price, exit_price=exit_price,
+            symbol="TEST",
+            strategy="test",
+            side="BUY",
+            entry_price=entry_price,
+            exit_price=exit_price,
             quantity=quantity,
-            entry_date="2023-01-01", exit_date="2023-01-02",
+            entry_date="2023-01-01",
+            exit_date="2023-01-02",
         )
         engine.apply_transaction_costs([trade])
         assert trade.transaction_costs > 0
@@ -75,10 +85,14 @@ class TestProperty62TransactionCosts:
         """Net P&L must always be less than gross P&L after costs."""
         engine = _make_engine()
         trade = TradeRecord(
-            symbol="TEST", strategy="test", side="BUY",
-            entry_price=entry_price, exit_price=exit_price,
+            symbol="TEST",
+            strategy="test",
+            side="BUY",
+            entry_price=entry_price,
+            exit_price=exit_price,
             quantity=quantity,
-            entry_date="2023-01-01", exit_date="2023-01-02",
+            entry_date="2023-01-01",
+            exit_date="2023-01-02",
         )
         engine.apply_transaction_costs([trade])
         assert trade.net_pnl < trade.gross_pnl
@@ -93,16 +107,24 @@ class TestProperty62TransactionCosts:
         """Larger turnover should produce larger transaction costs."""
         engine = _make_engine()
         trade_small = TradeRecord(
-            symbol="TEST", strategy="test", side="BUY",
-            entry_price=entry_price, exit_price=exit_price,
+            symbol="TEST",
+            strategy="test",
+            side="BUY",
+            entry_price=entry_price,
+            exit_price=exit_price,
             quantity=1,
-            entry_date="2023-01-01", exit_date="2023-01-02",
+            entry_date="2023-01-01",
+            exit_date="2023-01-02",
         )
         trade_large = TradeRecord(
-            symbol="TEST", strategy="test", side="BUY",
-            entry_price=entry_price, exit_price=exit_price,
+            symbol="TEST",
+            strategy="test",
+            side="BUY",
+            entry_price=entry_price,
+            exit_price=exit_price,
             quantity=max(quantity, 2),
-            entry_date="2023-01-01", exit_date="2023-01-02",
+            entry_date="2023-01-01",
+            exit_date="2023-01-02",
         )
         engine.apply_transaction_costs([trade_small])
         engine.apply_transaction_costs([trade_large])
@@ -113,6 +135,7 @@ class TestProperty62TransactionCosts:
 # Property 63: Slippage Application
 # For any order, slippage should worsen the execution price.
 # ---------------------------------------------------------------------------
+
 
 class TestProperty63Slippage:
     @given(price=positive_price)
@@ -162,6 +185,7 @@ class TestProperty63Slippage:
 # For any equity curve, metrics should be mathematically correct.
 # ---------------------------------------------------------------------------
 
+
 class TestProperty64Metrics:
     @given(
         values=st.lists(
@@ -194,8 +218,12 @@ class TestProperty64Metrics:
         assert 0 <= metrics["max_drawdown"] <= 100
 
     @given(
-        initial=st.floats(min_value=100.0, max_value=1_000_000.0, allow_nan=False, allow_infinity=False),
-        final=st.floats(min_value=100.0, max_value=1_000_000.0, allow_nan=False, allow_infinity=False),
+        initial=st.floats(
+            min_value=100.0, max_value=1_000_000.0, allow_nan=False, allow_infinity=False
+        ),
+        final=st.floats(
+            min_value=100.0, max_value=1_000_000.0, allow_nan=False, allow_infinity=False
+        ),
     )
     @settings(max_examples=25, deadline=None)
     def test_total_return_correct(self, initial, final):
@@ -233,19 +261,33 @@ class TestProperty64Metrics:
 
         trades = []
         for _ in range(n_wins):
-            trades.append(TradeRecord(
-                symbol="X", strategy="t", side="BUY",
-                entry_price=100, exit_price=110, quantity=1,
-                entry_date="2023-01-01", exit_date="2023-01-02",
-                net_pnl=10.0,
-            ))
+            trades.append(
+                TradeRecord(
+                    symbol="X",
+                    strategy="t",
+                    side="BUY",
+                    entry_price=100,
+                    exit_price=110,
+                    quantity=1,
+                    entry_date="2023-01-01",
+                    exit_date="2023-01-02",
+                    net_pnl=10.0,
+                )
+            )
         for _ in range(n_losses):
-            trades.append(TradeRecord(
-                symbol="X", strategy="t", side="BUY",
-                entry_price=100, exit_price=90, quantity=1,
-                entry_date="2023-01-01", exit_date="2023-01-02",
-                net_pnl=-10.0,
-            ))
+            trades.append(
+                TradeRecord(
+                    symbol="X",
+                    strategy="t",
+                    side="BUY",
+                    entry_price=100,
+                    exit_price=90,
+                    quantity=1,
+                    entry_date="2023-01-01",
+                    exit_date="2023-01-02",
+                    net_pnl=-10.0,
+                )
+            )
 
         equity = pd.Series([100_000, 100_100])
         metrics = engine.calculate_metrics(equity, trades)

@@ -165,11 +165,13 @@ class TaxProfile(BaseModel):
         description="All transaction-level taxes and charges",
     )
     capital_gains_short_term_pct: float = Field(
-        ge=0, le=100,
+        ge=0,
+        le=100,
         description="Short-term capital gains tax rate",
     )
     capital_gains_long_term_pct: float = Field(
-        ge=0, le=100,
+        ge=0,
+        le=100,
         description="Long-term capital gains tax rate",
     )
     short_term_threshold_days: int = Field(
@@ -181,11 +183,14 @@ class TaxProfile(BaseModel):
         description="Whether wash sale rules apply (e.g., US 30-day rule)",
     )
     wash_sale_window_days: int = Field(
-        default=0, ge=0,
+        default=0,
+        ge=0,
         description="Wash sale window in days (0 if not applicable)",
     )
     dividend_tax_pct: float = Field(
-        default=0, ge=0, le=100,
+        default=0,
+        ge=0,
+        le=100,
         description="Tax on dividend income",
     )
     last_updated: str = Field(description="ISO date of last update")

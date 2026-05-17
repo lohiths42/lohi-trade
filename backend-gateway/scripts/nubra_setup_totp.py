@@ -19,6 +19,7 @@ import sys
 
 # Load .env
 from dotenv import load_dotenv
+
 load_dotenv()
 
 phone = os.getenv("NUBRA_PHONE_NO", "")
@@ -66,7 +67,7 @@ try:
     print("\nTOTP enabled successfully!")
     print()
     print("=" * 60)
-    print(f"Add this to your backend-gateway/.env:")
+    print("Add this to your backend-gateway/.env:")
     print(f"NUBRA_TOTP_SECRET={secret}")
     print("=" * 60)
 

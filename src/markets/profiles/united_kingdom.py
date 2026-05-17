@@ -127,10 +127,20 @@ UK_PROFILE = MarketProfile(
         ),
     ],
     news_sources=[
-        NewsSource(name="Financial Times", url="https://www.ft.com/rss/home/uk", category="general"),
-        NewsSource(name="Reuters UK", url="https://www.reutersagency.com/feed/", category="general"),
-        NewsSource(name="London Stock Exchange RNS", url="https://www.londonstockexchange.com/news", category="regulatory"),
-        NewsSource(name="Investegate", url="https://www.investegate.co.uk/Rss.aspx", category="regulatory"),
+        NewsSource(
+            name="Financial Times", url="https://www.ft.com/rss/home/uk", category="general"
+        ),
+        NewsSource(
+            name="Reuters UK", url="https://www.reutersagency.com/feed/", category="general"
+        ),
+        NewsSource(
+            name="London Stock Exchange RNS",
+            url="https://www.londonstockexchange.com/news",
+            category="regulatory",
+        ),
+        NewsSource(
+            name="Investegate", url="https://www.investegate.co.uk/Rss.aspx", category="regulatory"
+        ),
     ],
     data_suffix=".L",
     supports_short_selling=True,
@@ -140,9 +150,21 @@ UK_PROFILE = MarketProfile(
     supports_after_hours=False,
     min_lot_size=1,
     default_symbols=[
-        "AZN.L", "SHEL.L", "HSBA.L", "ULVR.L", "BP.L",
-        "GSK.L", "RIO.L", "DGE.L", "LSEG.L", "REL.L",
-        "BATS.L", "NG.L", "VOD.L", "BARC.L", "LLOY.L",
+        "AZN.L",
+        "SHEL.L",
+        "HSBA.L",
+        "ULVR.L",
+        "BP.L",
+        "GSK.L",
+        "RIO.L",
+        "DGE.L",
+        "LSEG.L",
+        "REL.L",
+        "BATS.L",
+        "NG.L",
+        "VOD.L",
+        "BARC.L",
+        "LLOY.L",
     ],
     regulator="FCA (Financial Conduct Authority)",
     regulator_url="https://www.fca.org.uk",

@@ -148,9 +148,9 @@ class TestTradingHoursFilterProperties:
 
         signal = pipeline.process_indicators(indicators, candles)
 
-        assert signal is not None, (
-            f"Expected signal at {ts.strftime('%H:%M')} (within trading hours)"
-        )
+        assert (
+            signal is not None
+        ), f"Expected signal at {ts.strftime('%H:%M')} (within trading hours)"
         assert signal.side == "BUY"
         assert signal.strategy == "MeanReversion"
 
@@ -168,9 +168,9 @@ class TestTradingHoursFilterProperties:
 
         signal = pipeline.process_indicators(indicators, candles)
 
-        assert signal is None, (
-            f"Expected no signal at {ts.strftime('%H:%M')} (before trading hours)"
-        )
+        assert (
+            signal is None
+        ), f"Expected no signal at {ts.strftime('%H:%M')} (before trading hours)"
 
     @given(ts=after_trading_hours())
     @settings(max_examples=25)
@@ -186,9 +186,7 @@ class TestTradingHoursFilterProperties:
 
         signal = pipeline.process_indicators(indicators, candles)
 
-        assert signal is None, (
-            f"Expected no signal at {ts.strftime('%H:%M')} (after trading hours)"
-        )
+        assert signal is None, f"Expected no signal at {ts.strftime('%H:%M')} (after trading hours)"
 
     def test_boundary_signal_at_exactly_0930_is_allowed(self):
         """Boundary: Signal at exactly 9:30 AM should be allowed.

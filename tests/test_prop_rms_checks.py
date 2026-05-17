@@ -31,23 +31,37 @@ from src.utils.config import (
 )
 
 # The 9 expected check names in execution order
-EXPECTED_CHECKS = frozenset({
-    "kill_switch",
-    "trading_hours",
-    "daily_loss_limit",
-    "position_limit",
-    "position_size_limit",
-    "order_count_limit",
-    "cooldown",
-    "volatility_guard",
-    "bias_filter",
-})
+EXPECTED_CHECKS = frozenset(
+    {
+        "kill_switch",
+        "trading_hours",
+        "daily_loss_limit",
+        "position_limit",
+        "position_size_limit",
+        "order_count_limit",
+        "cooldown",
+        "volatility_guard",
+        "bias_filter",
+    }
+)
 
 # NSE symbols for generation
 NSE_SYMBOLS = [
-    "RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK",
-    "HINDUNILVR", "SBIN", "BHARTIARTL", "KOTAKBANK", "LT",
-    "WIPRO", "AXISBANK", "MARUTI", "TATAMOTORS", "SUNPHARMA",
+    "RELIANCE",
+    "TCS",
+    "HDFCBANK",
+    "INFY",
+    "ICICIBANK",
+    "HINDUNILVR",
+    "SBIN",
+    "BHARTIARTL",
+    "KOTAKBANK",
+    "LT",
+    "WIPRO",
+    "AXISBANK",
+    "MARUTI",
+    "TATAMOTORS",
+    "SUNPHARMA",
 ]
 
 STRATEGIES = ["MeanReversion", "TrendFollowing", "ORB"]
@@ -97,14 +111,16 @@ def _make_indicator_set(symbol: str) -> IndicatorSet:
     )
 
 
-def _make_signal(symbol: str, side: str, entry_price: float, quantity: int, strategy: str) -> Signal:
+def _make_signal(
+    symbol: str, side: str, entry_price: float, quantity: int, strategy: str
+) -> Signal:
     """Create a Signal with the given parameters and derived stop/target."""
     if side == "BUY":
         stop_loss = entry_price * 0.98  # 2% below entry
-        target = entry_price * 1.03     # 3% above entry
+        target = entry_price * 1.03  # 3% above entry
     else:
         stop_loss = entry_price * 1.02  # 2% above entry
-        target = entry_price * 0.97     # 3% below entry
+        target = entry_price * 0.97  # 3% below entry
 
     return Signal(
         signal_id="prop-test-signal",
@@ -168,7 +184,8 @@ def _make_rms(
     # In-memory SQLite
     conn = sqlite3.connect(":memory:")
     conn.row_factory = sqlite3.Row
-    conn.executescript("""
+    conn.executescript(
+        """
         CREATE TABLE trades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             trade_id TEXT, symbol TEXT, side TEXT, strategy TEXT,
@@ -192,7 +209,8 @@ def _make_rms(
             event_type TEXT, component TEXT, message TEXT,
             metadata TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
-    """)
+    """
+    )
 
     today_str = now.strftime("%Y-%m-%d")
 
@@ -202,8 +220,20 @@ def _make_rms(
             "INSERT INTO trades (trade_id, symbol, side, strategy, entry_price, "
             "exit_price, quantity, entry_time, exit_time, realized_pnl, stop_loss, target) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            ("t1", "TEST", "BUY", "test", 100, 110, 10,
-             f"{today_str} 09:30:00", f"{today_str} 10:00:00", daily_pnl, 95, 115),
+            (
+                "t1",
+                "TEST",
+                "BUY",
+                "test",
+                100,
+                110,
+                10,
+                f"{today_str} 09:30:00",
+                f"{today_str} 10:00:00",
+                daily_pnl,
+                95,
+                115,
+            ),
         )
 
     # Insert open positions
@@ -212,8 +242,7 @@ def _make_rms(
             "INSERT INTO trades (trade_id, symbol, side, strategy, entry_price, "
             "quantity, entry_time, stop_loss, target) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (f"open-{i}", f"SYM{i}", "BUY", "test", 100, 10,
-             f"{today_str} 09:30:00", 95, 115),
+            (f"open-{i}", f"SYM{i}", "BUY", "test", 100, 10, f"{today_str} 09:30:00", 95, 115),
         )
 
     # Insert orders for today
@@ -221,8 +250,7 @@ def _make_rms(
         conn.execute(
             "INSERT INTO orders (order_id, symbol, side, order_type, quantity, "
             "status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (f"ord-{i}", "TEST", "BUY", "MARKET", 10, "PLACED",
-             f"{today_str} 10:00:00"),
+            (f"ord-{i}", "TEST", "BUY", "MARKET", 10, "PLACED", f"{today_str} 10:00:00"),
         )
 
     conn.commit()
@@ -277,7 +305,14 @@ class TestRMSPreOrderCheckExecution:
     )
     @settings(max_examples=100)
     def test_always_executes_all_9_checks(
-        self, symbol, side, entry_price, quantity, strategy, kill_switch, bias,
+        self,
+        symbol,
+        side,
+        entry_price,
+        quantity,
+        strategy,
+        kill_switch,
+        bias,
     ):
         """For any valid signal and RMS configuration, validate_order always
         returns a ValidationResult with exactly 9 checks total.
@@ -301,9 +336,9 @@ class TestRMSPreOrderCheckExecution:
             f"{len(result.checks_failed)} failed = "
             f"{len(result.checks_passed) + len(result.checks_failed)}"
         )
-        assert total_checks == EXPECTED_CHECKS, (
-            f"Expected checks {EXPECTED_CHECKS}, got {total_checks}"
-        )
+        assert (
+            total_checks == EXPECTED_CHECKS
+        ), f"Expected checks {EXPECTED_CHECKS}, got {total_checks}"
 
     @given(
         symbol=_symbol,
@@ -317,8 +352,15 @@ class TestRMSPreOrderCheckExecution:
     )
     @settings(max_examples=100)
     def test_check_count_with_varied_state(
-        self, symbol, side, entry_price, quantity, strategy,
-        daily_pnl, open_positions, orders_today,
+        self,
+        symbol,
+        side,
+        entry_price,
+        quantity,
+        strategy,
+        daily_pnl,
+        open_positions,
+        orders_today,
     ):
         """For any combination of RMS state (daily P&L, open positions,
         order count), all 9 checks are still executed.
@@ -343,9 +385,9 @@ class TestRMSPreOrderCheckExecution:
             f"{len(result.checks_failed)} failed = "
             f"{len(result.checks_passed) + len(result.checks_failed)}"
         )
-        assert total_checks == EXPECTED_CHECKS, (
-            f"Expected checks {EXPECTED_CHECKS}, got {total_checks}"
-        )
+        assert (
+            total_checks == EXPECTED_CHECKS
+        ), f"Expected checks {EXPECTED_CHECKS}, got {total_checks}"
 
     @given(
         symbol=_symbol,
@@ -359,8 +401,15 @@ class TestRMSPreOrderCheckExecution:
     )
     @settings(max_examples=100)
     def test_check_names_with_varied_config(
-        self, symbol, side, entry_price, quantity, strategy,
-        capital, max_positions, max_orders,
+        self,
+        symbol,
+        side,
+        entry_price,
+        quantity,
+        strategy,
+        capital,
+        max_positions,
+        max_orders,
     ):
         """For any RMS configuration (capital, position limits, order limits),
         the exact 9 check names always appear in the result.
@@ -378,12 +427,12 @@ class TestRMSPreOrderCheckExecution:
         result = rms.validate_order(signal)
 
         all_check_names = result.checks_passed + result.checks_failed
-        assert len(all_check_names) == 9, (
-            f"Expected 9 check names, got {len(all_check_names)}: {all_check_names}"
-        )
-        assert set(all_check_names) == EXPECTED_CHECKS, (
-            f"Check names mismatch: expected {EXPECTED_CHECKS}, got {set(all_check_names)}"
-        )
+        assert (
+            len(all_check_names) == 9
+        ), f"Expected 9 check names, got {len(all_check_names)}: {all_check_names}"
+        assert (
+            set(all_check_names) == EXPECTED_CHECKS
+        ), f"Check names mismatch: expected {EXPECTED_CHECKS}, got {set(all_check_names)}"
 
     @given(
         symbol=_symbol,
@@ -394,7 +443,12 @@ class TestRMSPreOrderCheckExecution:
     )
     @settings(max_examples=50)
     def test_no_duplicate_check_names(
-        self, symbol, side, entry_price, quantity, strategy,
+        self,
+        symbol,
+        side,
+        entry_price,
+        quantity,
+        strategy,
     ):
         """No check name appears in both checks_passed and checks_failed.
 
@@ -407,6 +461,4 @@ class TestRMSPreOrderCheckExecution:
         result = rms.validate_order(signal)
 
         overlap = set(result.checks_passed) & set(result.checks_failed)
-        assert len(overlap) == 0, (
-            f"Check names appear in both passed and failed: {overlap}"
-        )
+        assert len(overlap) == 0, f"Check names appear in both passed and failed: {overlap}"

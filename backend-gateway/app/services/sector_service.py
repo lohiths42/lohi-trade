@@ -282,7 +282,9 @@ class SectorService:
                     sector,
                 )
 
-                total_market_cap = Decimal(str(agg_row["total_market_cap"])) if agg_row else Decimal("0")
+                total_market_cap = (
+                    Decimal(str(agg_row["total_market_cap"])) if agg_row else Decimal("0")
+                )
                 stock_count = agg_row["stock_count"] if agg_row else 0
 
                 # Top 5 gainers (highest price_change_1d)
@@ -426,7 +428,8 @@ class SectorService:
     # ── Quarterly classification update (Requirement 8.6) ────────────────
 
     async def update_classifications(
-        self, classifications: list[dict],
+        self,
+        classifications: list[dict],
     ) -> ClassificationUpdate:
         """Update sector and industry classifications for securities.
 

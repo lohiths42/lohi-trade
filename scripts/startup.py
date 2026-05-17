@@ -22,8 +22,8 @@ PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from src.utils.config import ConfigurationError, load_config
 from src.utils.logger import get_logger
-from src.utils.config import load_config, ConfigurationError
 
 logger = get_logger("Startup")
 
@@ -166,9 +166,11 @@ def broker_login(config):
         # Import the appropriate broker adapter
         if primary_name == "shoonya":
             from src.ingestion.shoonya_broker import ShoonyaBroker
+
             broker = ShoonyaBroker()
         else:
             from src.ingestion.angelone_broker import AngelOneBroker
+
             broker = AngelOneBroker()
 
         success = broker.connect(credentials)
@@ -194,9 +196,7 @@ def download_instruments(config, broker) -> bool:
         from src.ingestion.instrument_master import InstrumentMaster
 
         instrument_master = InstrumentMaster(data_dir="data")
-        success = instrument_master.download_from_broker(
-            broker, symbols=config.symbols
-        )
+        success = instrument_master.download_from_broker(broker, symbols=config.symbols)
         if success:
             instrument_master.save_to_file()
             logger.info(

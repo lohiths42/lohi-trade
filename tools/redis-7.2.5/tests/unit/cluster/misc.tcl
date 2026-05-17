@@ -23,4 +23,3 @@ start_cluster 2 2 {tags {external:skip cluster}} {
         assert_equal {OK} [R 0 CLUSTER flushslots]
     }
 }
-

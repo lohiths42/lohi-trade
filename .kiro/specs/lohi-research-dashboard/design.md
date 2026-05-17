@@ -1457,4 +1457,3 @@ Every requirement maps to at least one design element.
 | Req 16.1–16.11       | §3.6, §10, §4.1 (`research_guardrail_decisions`)                          |
 | Req 16.12–16.22      | §3.7, §11, §4.1 (`research_judge_reports`)                                |
 | Req 16.23–16.29      | §3.8, §3.9, §12, §10.1, §3.13 (`RefusalBanner`)                           |
-

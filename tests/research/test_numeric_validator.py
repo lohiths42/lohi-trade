@@ -267,9 +267,7 @@ class TestNumericValidator:
             macro_context = ""
 
         chunks = [_FakeChunk(text="Reported revenue ₹100 Cr.")]
-        assert (
-            validate_numeric_fidelity(brief=BriefLike(), cited_chunks=chunks) == []
-        )
+        assert validate_numeric_fidelity(brief=BriefLike(), cited_chunks=chunks) == []
 
     def test_constructor_epsilon_override(self) -> None:
         """Constructor-supplied epsilon overrides the default."""
@@ -277,11 +275,16 @@ class TestNumericValidator:
         chunks = [_FakeChunk(text="Revenue ₹1,050.")]
         # 5% drift — default 1% rejects, 10% accepts.
         assert NumericValidator(epsilon=0.01).validate(
-            brief=brief, cited_chunks=chunks,
+            brief=brief,
+            cited_chunks=chunks,
         )
-        assert NumericValidator(epsilon=0.10).validate(
-            brief=brief, cited_chunks=chunks,
-        ) == []
+        assert (
+            NumericValidator(epsilon=0.10).validate(
+                brief=brief,
+                cited_chunks=chunks,
+            )
+            == []
+        )
 
     def test_epsilon_negative_raises(self) -> None:
         with pytest.raises(ValueError):

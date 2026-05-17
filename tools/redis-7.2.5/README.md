@@ -40,7 +40,7 @@ libssl-dev on Debian/Ubuntu) and run:
 
     % make BUILD_TLS=yes
 
-To build with systemd support, you'll need systemd development libraries (such 
+To build with systemd support, you'll need systemd development libraries (such
 as libsystemd-dev on Debian/Ubuntu or systemd-devel on CentOS) and run:
 
     % make USE_SYSTEMD=yes
@@ -120,7 +120,7 @@ Monotonic clock
 
 By default, Redis will build using the POSIX clock_gettime function as the
 monotonic clock source.  On most modern systems, the internal processor clock
-can be used to improve performance.  Cautions can be found here: 
+can be used to improve performance.  Cautions can be found here:
     http://oliveryang.net/2015/09/pitfalls-of-TSC-usage/
 
 To build with support for the processor's internal instruction clock, use:

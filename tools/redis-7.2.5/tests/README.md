@@ -60,4 +60,3 @@ In addition, it is possible to specify additional configuration. For example, to
 run tests on a server that does not permit `SYNC` use:
 
     ./runtest --host <host> --port <port> --tags -needs:repl
-

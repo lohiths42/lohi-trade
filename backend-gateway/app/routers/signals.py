@@ -1,7 +1,8 @@
 """Signals endpoint — reads recent signals from Redis stream."""
 
-from fastapi import APIRouter, HTTPException, Query
-from typing import List, Optional
+from typing import Optional
+
+from fastapi import APIRouter, Query
 
 from app.services.redis_consumer import get_redis
 

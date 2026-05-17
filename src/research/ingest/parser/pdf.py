@@ -97,6 +97,7 @@ def parse_pdf(path: str | Path) -> tuple[str, list[dict[str, Any]]]:
     # pdfplumber is an *optional* fallback — we never hard-require it.
     try:
         import pdfplumber  # noqa: PLC0415 — lazy per module docstring
+
         pdfplumber_available: bool = True
     except ImportError:
         pdfplumber = None  # type: ignore[assignment]
@@ -122,14 +123,12 @@ def parse_pdf(path: str | Path) -> tuple[str, list[dict[str, Any]]]:
 
             page_text = page_text.rstrip()
 
-            if (
-                pdfplumber_available
-                and len(page_text) < _SPARSE_CHAR_THRESHOLD
-            ):
+            if pdfplumber_available and len(page_text) < _SPARSE_CHAR_THRESHOLD:
                 if plumber_doc is None:
                     plumber_doc = pdfplumber.open(str(pdf_path))
                 markdown_tables = _extract_tables_as_markdown(
-                    plumber_doc, page_index,
+                    plumber_doc,
+                    page_index,
                 )
                 if markdown_tables:
                     # Keep whatever ``pypdf`` did extract — even sparse
@@ -137,9 +136,7 @@ def parse_pdf(path: str | Path) -> tuple[str, list[dict[str, Any]]]:
                     # append the Markdown tables separated by blank
                     # lines.
                     if page_text:
-                        page_text = (
-                            page_text + _PAGE_SEPARATOR + markdown_tables
-                        )
+                        page_text = page_text + _PAGE_SEPARATOR + markdown_tables
                     else:
                         page_text = markdown_tables
 

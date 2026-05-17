@@ -159,7 +159,7 @@ start_server {tags {"defrag external:skip"} overrides {appendonly yes auto-aof-r
         }
         r config set appendonly no
         r config set key-load-delay 0
-        
+
         test "Active defrag eval scripts" {
             r flushdb
             r script flush sync
@@ -171,7 +171,7 @@ start_server {tags {"defrag external:skip"} overrides {appendonly yes auto-aof-r
             r config set active-defrag-cycle-max 75
             r config set active-defrag-ignore-bytes 1500kb
             r config set maxmemory 0
-            
+
             set n 50000
 
             # Populate memory with interleaving script-key pattern of same size
@@ -192,9 +192,9 @@ start_server {tags {"defrag external:skip"} overrides {appendonly yes auto-aof-r
                 puts "rss [s allocator_active]"
                 puts "frag [s allocator_frag_ratio]"
                 puts "frag_bytes [s allocator_frag_bytes]"
-            }                    
+            }
             assert_lessthan [s allocator_frag_ratio] 1.05
-            
+
             # Delete all the keys to create fragmentation
             for {set j 0} {$j < $n} {incr j} { $rd del k$j }
             for {set j 0} {$j < $n} {incr j} { $rd read } ; # Discard del replies
@@ -205,12 +205,12 @@ start_server {tags {"defrag external:skip"} overrides {appendonly yes auto-aof-r
                 puts "rss [s allocator_active]"
                 puts "frag [s allocator_frag_ratio]"
                 puts "frag_bytes [s allocator_frag_bytes]"
-            }                    
+            }
             assert_morethan [s allocator_frag_ratio] 1.4
 
             catch {r config set activedefrag yes} e
             if {[r config get activedefrag] eq "activedefrag yes"} {
-            
+
                 # wait for the active defrag to start working (decision once a second)
                 wait_for_condition 50 100 {
                     [s active_defrag_running] ne 0
@@ -235,9 +235,9 @@ start_server {tags {"defrag external:skip"} overrides {appendonly yes auto-aof-r
                     puts "rss [s allocator_active]"
                     puts "frag [s allocator_frag_ratio]"
                     puts "frag_bytes [s allocator_frag_bytes]"
-                }                    
+                }
                 assert_lessthan_equal [s allocator_frag_ratio] 1.05
-            }                
+            }
             # Flush all script to make sure we don't crash after defragging them
             r script flush sync
         } {OK}

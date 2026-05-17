@@ -285,7 +285,7 @@ extern int configOOMScoreAdjValuesDefaults[CONFIG_OOM_COUNT];
                                   * from the value of the key. */
 /* Other flags: */
 #define CMD_KEY_NOT_KEY (1ULL<<8)     /* A 'fake' key that should be routed
-                                       * like a key in cluster mode but is 
+                                       * like a key in cluster mode but is
                                        * excluded from other key checks. */
 #define CMD_KEY_INCOMPLETE (1ULL<<9)  /* Means that the keyspec might not point
                                        * out to all keys it should cover */
@@ -1318,8 +1318,8 @@ struct sharedObjectsStruct {
     *busykeyerr, *oomerr, *plus, *messagebulk, *pmessagebulk, *subscribebulk,
     *unsubscribebulk, *psubscribebulk, *punsubscribebulk, *del, *unlink,
     *rpop, *lpop, *lpush, *rpoplpush, *lmove, *blmove, *zpopmin, *zpopmax,
-    *emptyscan, *multi, *exec, *left, *right, *hset, *srem, *xgroup, *xclaim,  
-    *script, *replconf, *eval, *persist, *set, *pexpireat, *pexpire, 
+    *emptyscan, *multi, *exec, *left, *right, *hset, *srem, *xgroup, *xclaim,
+    *script, *replconf, *eval, *persist, *set, *pexpireat, *pexpire,
     *time, *pxat, *absttl, *retrycount, *force, *justid, *entriesread,
     *lastid, *ping, *setid, *keepttl, *load, *createconsumer,
     *getack, *special_asterick, *special_equals, *default_username, *redacted,
@@ -1713,7 +1713,7 @@ struct redisServer {
     long long el_cmd_cnt_max;
     /* The sum of active-expire, active-defrag and all other tasks done by cron and beforeSleep,
        but excluding read, write and AOF, which are counted by other sets of metrics. */
-    monotime el_cron_duration; 
+    monotime el_cron_duration;
     durationStats duration_stats[EL_DURATION_TYPE_NUM];
 
     /* Configuration */
@@ -3151,7 +3151,7 @@ sds keyspaceEventsFlagsToString(int flags);
 
 /* Configuration */
 /* Configuration Flags */
-#define MODIFIABLE_CONFIG 0 /* This is the implied default for a standard 
+#define MODIFIABLE_CONFIG 0 /* This is the implied default for a standard
                              * config, which is mutable. */
 #define IMMUTABLE_CONFIG (1ULL<<0) /* Can this value only be set at startup? */
 #define SENSITIVE_CONFIG (1ULL<<1) /* Does this value contain sensitive information */

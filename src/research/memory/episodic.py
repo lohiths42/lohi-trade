@@ -85,7 +85,8 @@ class EpisodicMemory:
         self,
         *,
         connection_factory: Callable[
-            [UUID], AbstractAsyncContextManager[asyncpg.Connection],
+            [UUID],
+            AbstractAsyncContextManager[asyncpg.Connection],
         ],
     ) -> None:
         self._conn_factory = connection_factory

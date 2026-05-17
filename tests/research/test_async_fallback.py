@@ -122,60 +122,81 @@ class TestShouldRunAsync:
 
     def test_well_within_budget_returns_false(self) -> None:
         # Reference config: 15 000 ms full-brief, 2 000 ms Judge.
-        assert should_run_async(
-            elapsed_ms=5_000,
-            expected_judge_ms=2_000,
-            full_brief_ms_budget=15_000,
-        ) is False
+        assert (
+            should_run_async(
+                elapsed_ms=5_000,
+                expected_judge_ms=2_000,
+                full_brief_ms_budget=15_000,
+            )
+            is False
+        )
 
     def test_sum_equal_to_budget_returns_false(self) -> None:
         """Equal fits — the budget is not exceeded on a tie."""
-        assert should_run_async(
-            elapsed_ms=13_000,
-            expected_judge_ms=2_000,
-            full_brief_ms_budget=15_000,
-        ) is False
+        assert (
+            should_run_async(
+                elapsed_ms=13_000,
+                expected_judge_ms=2_000,
+                full_brief_ms_budget=15_000,
+            )
+            is False
+        )
 
     def test_sum_exceeds_budget_by_one_ms_returns_true(self) -> None:
         """Strictly greater — one ms over the budget flips the decision."""
-        assert should_run_async(
-            elapsed_ms=13_001,
-            expected_judge_ms=2_000,
-            full_brief_ms_budget=15_000,
-        ) is True
+        assert (
+            should_run_async(
+                elapsed_ms=13_001,
+                expected_judge_ms=2_000,
+                full_brief_ms_budget=15_000,
+            )
+            is True
+        )
 
     def test_sum_well_over_budget_returns_true(self) -> None:
-        assert should_run_async(
-            elapsed_ms=20_000,
-            expected_judge_ms=2_000,
-            full_brief_ms_budget=15_000,
-        ) is True
+        assert (
+            should_run_async(
+                elapsed_ms=20_000,
+                expected_judge_ms=2_000,
+                full_brief_ms_budget=15_000,
+            )
+            is True
+        )
 
     def test_zero_values_are_allowed(self) -> None:
         """Zero on every axis is a legitimate caller state (no elapsed time,
         no expected Judge cost, zero budget) — treated as "0 <= 0" which
         fits by the tie rule.
         """
-        assert should_run_async(
-            elapsed_ms=0,
-            expected_judge_ms=0,
-            full_brief_ms_budget=0,
-        ) is False
+        assert (
+            should_run_async(
+                elapsed_ms=0,
+                expected_judge_ms=0,
+                full_brief_ms_budget=0,
+            )
+            is False
+        )
 
     def test_offline_budget_applied(self) -> None:
         """Offline budget is 60 000 ms — what the Orchestrator substitutes
         when ``LOHI_RESEARCH_OFFLINE=true`` (design §13.1).
         """
-        assert should_run_async(
-            elapsed_ms=30_000,
-            expected_judge_ms=2_000,
-            full_brief_ms_budget=60_000,
-        ) is False
-        assert should_run_async(
-            elapsed_ms=58_001,
-            expected_judge_ms=2_000,
-            full_brief_ms_budget=60_000,
-        ) is True
+        assert (
+            should_run_async(
+                elapsed_ms=30_000,
+                expected_judge_ms=2_000,
+                full_brief_ms_budget=60_000,
+            )
+            is False
+        )
+        assert (
+            should_run_async(
+                elapsed_ms=58_001,
+                expected_judge_ms=2_000,
+                full_brief_ms_budget=60_000,
+            )
+            is True
+        )
 
     @pytest.mark.parametrize(
         "elapsed_ms,expected_judge_ms,full_brief_ms_budget",

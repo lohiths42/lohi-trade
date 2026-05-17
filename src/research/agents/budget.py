@@ -292,18 +292,17 @@ class TokenBudget:
         """
         if next_input_estimate < 0:
             raise ValueError(
-                "next_input_estimate must be non-negative; got "
-                f"{next_input_estimate}",
+                "next_input_estimate must be non-negative; got " f"{next_input_estimate}",
             )
         if next_output_estimate < 0:
             raise ValueError(
-                "next_output_estimate must be non-negative; got "
-                f"{next_output_estimate}",
+                "next_output_estimate must be non-negative; got " f"{next_output_estimate}",
             )
 
         async with self._async_lock:
             return self._is_exhausted_locked(
-                next_input_estimate, next_output_estimate,
+                next_input_estimate,
+                next_output_estimate,
             )
 
     def is_exhausted_sync(
@@ -320,17 +319,16 @@ class TokenBudget:
         """
         if next_input_estimate < 0:
             raise ValueError(
-                "next_input_estimate must be non-negative; got "
-                f"{next_input_estimate}",
+                "next_input_estimate must be non-negative; got " f"{next_input_estimate}",
             )
         if next_output_estimate < 0:
             raise ValueError(
-                "next_output_estimate must be non-negative; got "
-                f"{next_output_estimate}",
+                "next_output_estimate must be non-negative; got " f"{next_output_estimate}",
             )
         with self._sync_lock:
             return self._is_exhausted_locked(
-                next_input_estimate, next_output_estimate,
+                next_input_estimate,
+                next_output_estimate,
             )
 
     def totals(self) -> BudgetTotals:
@@ -365,10 +363,7 @@ class TokenBudget:
         """
         projected_input = self._input_tokens + next_input_estimate
         projected_output = self._output_tokens + next_output_estimate
-        return (
-            projected_input > self._input_limit
-            or projected_output > self._output_limit
-        )
+        return projected_input > self._input_limit or projected_output > self._output_limit
 
     # ------------------------------------------------------------------ #
     # Introspection                                                      #

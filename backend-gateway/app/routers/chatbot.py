@@ -93,7 +93,8 @@ async def send_message(
         response = await svc.chat(user_id, req.message)
         logger.info(
             "CHATBOT_EVENT message user=%s response_time_ms=%d",
-            user_id, response.response_time_ms,
+            user_id,
+            response.response_time_ms,
         )
 
         # Encode chart_data as base64 if present

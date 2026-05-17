@@ -18,10 +18,8 @@ libhdrhistogram.a: hdr_histogram.o
 hdr_histogram.o: hdr_histogram.h hdr_histogram.c
 
 .c.o:
-	$(R_CC) -c  $< 
+	$(R_CC) -c  $<
 
 clean:
 	rm -f *.o
 	rm -f *.a
-
-

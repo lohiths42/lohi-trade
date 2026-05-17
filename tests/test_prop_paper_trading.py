@@ -69,6 +69,7 @@ def _make_config(
 # Property 65: Paper Mode API Bypass
 # ---------------------------------------------------------------------------
 
+
 class TestProperty65PaperModeAPIBypass:
     """For any order in paper trading mode, no actual broker API call
     should be made.  ``api_calls_made`` must always be empty after
@@ -106,6 +107,7 @@ class TestProperty65PaperModeAPIBypass:
 # ---------------------------------------------------------------------------
 # Property 66: Paper Fill Simulation
 # ---------------------------------------------------------------------------
+
 
 class TestProperty66PaperFillSimulation:
     """For any paper order, the fill price should be based on the next
@@ -181,6 +183,7 @@ class TestProperty66PaperFillSimulation:
 # Property 67: Paper Fill Delay
 # ---------------------------------------------------------------------------
 
+
 class TestProperty67PaperFillDelay:
     """For any paper order, the fill delay should be between the
     configured min and max (default 100-500 ms).  We mock ``time.sleep``
@@ -223,6 +226,7 @@ class TestProperty67PaperFillDelay:
 # ---------------------------------------------------------------------------
 # Property 68: Paper Trade Logging
 # ---------------------------------------------------------------------------
+
 
 class TestProperty68PaperTradeLogging:
     """For any trade in paper trading mode, the notification should

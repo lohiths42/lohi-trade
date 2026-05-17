@@ -46,8 +46,12 @@ def _make_config() -> Config:
     return config
 
 
-def _make_redis(kill_switch_active: bool = False, reason: str = None,
-                nifty_current: str = None, nifty_start: str = None) -> MagicMock:
+def _make_redis(
+    kill_switch_active: bool = False,
+    reason: str = None,
+    nifty_current: str = None,
+    nifty_start: str = None,
+) -> MagicMock:
     """Create a mock Redis client."""
     store = {}
     if kill_switch_active:
@@ -198,7 +202,8 @@ class TestAutomaticTriggers:
     def test_nifty_volatility_activates_on_large_drop(self):
         # 3% drop: start=20000, current=19400
         ks, *_ = _make_kill_switch(
-            nifty_current="19400", nifty_start="20000",
+            nifty_current="19400",
+            nifty_start="20000",
         )
         result = ks.check_nifty_volatility()
         assert result is True
@@ -207,7 +212,8 @@ class TestAutomaticTriggers:
     def test_nifty_volatility_no_activation_below_threshold(self):
         # 1% drop: start=20000, current=19800
         ks, *_ = _make_kill_switch(
-            nifty_current="19800", nifty_start="20000",
+            nifty_current="19800",
+            nifty_start="20000",
         )
         result = ks.check_nifty_volatility()
         assert result is False
@@ -216,7 +222,8 @@ class TestAutomaticTriggers:
     def test_nifty_volatility_no_activation_on_rise(self):
         # Price went up
         ks, *_ = _make_kill_switch(
-            nifty_current="20500", nifty_start="20000",
+            nifty_current="20500",
+            nifty_start="20000",
         )
         result = ks.check_nifty_volatility()
         assert result is False
@@ -228,7 +235,8 @@ class TestAutomaticTriggers:
 
     def test_nifty_volatility_invalid_data(self):
         ks, *_ = _make_kill_switch(
-            nifty_current="invalid", nifty_start="20000",
+            nifty_current="invalid",
+            nifty_start="20000",
         )
         result = ks.check_nifty_volatility()
         assert result is False
@@ -255,7 +263,8 @@ class TestAutomaticTriggers:
 
     def test_run_checks_activates_on_volatility(self):
         ks, *_ = _make_kill_switch(
-            nifty_current="19400", nifty_start="20000",
+            nifty_current="19400",
+            nifty_start="20000",
         )
         result = ks.run_checks()
         assert result is True
@@ -268,7 +277,8 @@ class TestAutomaticTriggers:
 
     def test_run_checks_no_activation_when_all_ok(self):
         ks, *_ = _make_kill_switch(
-            nifty_current="19900", nifty_start="20000",
+            nifty_current="19900",
+            nifty_start="20000",
             daily_pnl=-1000.0,
         )
         result = ks.run_checks()
@@ -277,7 +287,8 @@ class TestAutomaticTriggers:
     def test_run_checks_skips_when_already_active(self):
         ks, *_ = _make_kill_switch(
             kill_switch_active=True,
-            nifty_current="19400", nifty_start="20000",
+            nifty_current="19400",
+            nifty_start="20000",
         )
         result = ks.run_checks()
         assert result is False  # Already active, no re-activation
@@ -386,7 +397,8 @@ class TestManualDeactivation:
 
     def test_stays_active_after_run_checks(self):
         ks, *_ = _make_kill_switch(
-            nifty_current="19400", nifty_start="20000",
+            nifty_current="19400",
+            nifty_start="20000",
         )
         ks.run_checks()
         assert ks.is_active() is True

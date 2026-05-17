@@ -146,7 +146,7 @@ proc cluster_allocate_with_continuous_slots {n} {
 }
 
 # Create a cluster composed of the specified number of masters and slaves,
-# but with a continuous slot range. 
+# but with a continuous slot range.
 proc cluster_create_with_continuous_slots {masters slaves} {
     cluster_allocate_with_continuous_slots $masters
     if {$slaves} {

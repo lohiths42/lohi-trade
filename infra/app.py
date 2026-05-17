@@ -2,12 +2,11 @@
 """LOHI-TRADE Platform — AWS CDK App Entry Point."""
 
 import aws_cdk as cdk
-
-from stacks.vpc_stack import VpcStack
-from stacks.ecs_stack import EcsStack
-from stacks.data_stack import DataStack
 from stacks.cdn_stack import CdnStack
+from stacks.data_stack import DataStack
+from stacks.ecs_stack import EcsStack
 from stacks.monitoring_stack import MonitoringStack
+from stacks.vpc_stack import VpcStack
 
 app = cdk.App()
 

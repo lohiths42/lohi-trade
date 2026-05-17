@@ -73,9 +73,7 @@ from src.research.validators.refusal_classifier import (
 # --------------------------------------------------------------------------- #
 
 
-_CORPUS_PATH: Final[Path] = (
-    Path(__file__).resolve().parent / "fixtures" / "refusal" / "corpus.yaml"
-)
+_CORPUS_PATH: Final[Path] = Path(__file__).resolve().parent / "fixtures" / "refusal" / "corpus.yaml"
 
 
 def _load_corpus() -> Mapping[str, Any]:
@@ -90,18 +88,15 @@ def _load_corpus() -> Mapping[str, Any]:
         data = yaml.safe_load(fp) or {}
     if not data.get("categories"):
         raise RuntimeError(
-            f"Empty or missing 'categories' in {_CORPUS_PATH}; "
-            "property test cannot run.",
+            f"Empty or missing 'categories' in {_CORPUS_PATH}; " "property test cannot run.",
         )
     if not data.get("entities"):
         raise RuntimeError(
-            f"Missing 'entities' list in {_CORPUS_PATH}; "
-            "property test cannot run.",
+            f"Missing 'entities' list in {_CORPUS_PATH}; " "property test cannot run.",
         )
     if not data.get("negative"):
         raise RuntimeError(
-            f"Missing 'negative' section in {_CORPUS_PATH}; "
-            "negative-path test cannot run.",
+            f"Missing 'negative' section in {_CORPUS_PATH}; " "negative-path test cannot run.",
         )
     return data
 
@@ -272,12 +267,10 @@ def test_refusal_policy_prompts_are_classified(
     # The explanation (``matched_text``) is what surfaces alongside
     # the refusal. An empty match would still satisfy ``matched=True``
     # in a hypothetical buggy classifier, so assert it explicitly.
-    assert signal.matched_text is not None, (
-        f"matched_text is None for refusal prompt: {prompt!r}"
-    )
-    assert signal.matched_text.strip() != "", (
-        f"matched_text is empty for refusal prompt: {prompt!r}"
-    )
+    assert signal.matched_text is not None, f"matched_text is None for refusal prompt: {prompt!r}"
+    assert (
+        signal.matched_text.strip() != ""
+    ), f"matched_text is empty for refusal prompt: {prompt!r}"
 
 
 # --------------------------------------------------------------------------- #

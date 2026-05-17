@@ -24,22 +24,30 @@ VALID_BIASES = {"BULLISH", "BEARISH", "NEUTRAL"}
 
 # Strategies for score ranges
 _bullish_score = st.floats(
-    min_value=0.2, max_value=1.0,
-    allow_nan=False, allow_infinity=False,
+    min_value=0.2,
+    max_value=1.0,
+    allow_nan=False,
+    allow_infinity=False,
     exclude_min=True,
 )
 _bearish_score = st.floats(
-    min_value=-1.0, max_value=-0.2,
-    allow_nan=False, allow_infinity=False,
+    min_value=-1.0,
+    max_value=-0.2,
+    allow_nan=False,
+    allow_infinity=False,
     exclude_max=True,
 )
 _neutral_score = st.floats(
-    min_value=-0.2, max_value=0.2,
-    allow_nan=False, allow_infinity=False,
+    min_value=-0.2,
+    max_value=0.2,
+    allow_nan=False,
+    allow_infinity=False,
 )
 _any_score = st.floats(
-    min_value=-1.0, max_value=1.0,
-    allow_nan=False, allow_infinity=False,
+    min_value=-1.0,
+    max_value=1.0,
+    allow_nan=False,
+    allow_infinity=False,
 )
 
 
@@ -57,9 +65,7 @@ class TestBiasClassificationProperties:
         """
         calc = BiasCalculator()
         result = calc._classify(score)
-        assert result == "BULLISH", (
-            f"Score {score} > 0.2 should be BULLISH, got {result}"
-        )
+        assert result == "BULLISH", f"Score {score} > 0.2 should be BULLISH, got {result}"
 
     @given(score=_bearish_score)
     @settings(max_examples=25)
@@ -70,9 +76,7 @@ class TestBiasClassificationProperties:
         """
         calc = BiasCalculator()
         result = calc._classify(score)
-        assert result == "BEARISH", (
-            f"Score {score} < -0.2 should be BEARISH, got {result}"
-        )
+        assert result == "BEARISH", f"Score {score} < -0.2 should be BEARISH, got {result}"
 
     @given(score=_neutral_score)
     @settings(max_examples=25)
@@ -83,9 +87,7 @@ class TestBiasClassificationProperties:
         """
         calc = BiasCalculator()
         result = calc._classify(score)
-        assert result == "NEUTRAL", (
-            f"Score {score} in [-0.2, 0.2] should be NEUTRAL, got {result}"
-        )
+        assert result == "NEUTRAL", f"Score {score} in [-0.2, 0.2] should be NEUTRAL, got {result}"
 
     @given(score=_any_score)
     @settings(max_examples=25)
@@ -97,9 +99,9 @@ class TestBiasClassificationProperties:
         """
         calc = BiasCalculator()
         result = calc._classify(score)
-        assert result in VALID_BIASES, (
-            f"Score {score} classified as '{result}', expected one of {VALID_BIASES}"
-        )
+        assert (
+            result in VALID_BIASES
+        ), f"Score {score} classified as '{result}', expected one of {VALID_BIASES}"
 
     def test_boundary_upper_is_neutral(self):
         """Boundary: score == 0.2 is classified as NEUTRAL.
@@ -107,9 +109,7 @@ class TestBiasClassificationProperties:
         **Validates: Requirements 8.3**
         """
         calc = BiasCalculator()
-        assert calc._classify(0.2) == "NEUTRAL", (
-            "Score 0.2 should be NEUTRAL (boundary inclusive)"
-        )
+        assert calc._classify(0.2) == "NEUTRAL", "Score 0.2 should be NEUTRAL (boundary inclusive)"
 
     def test_boundary_lower_is_neutral(self):
         """Boundary: score == -0.2 is classified as NEUTRAL.
@@ -117,6 +117,6 @@ class TestBiasClassificationProperties:
         **Validates: Requirements 8.3**
         """
         calc = BiasCalculator()
-        assert calc._classify(-0.2) == "NEUTRAL", (
-            "Score -0.2 should be NEUTRAL (boundary inclusive)"
-        )
+        assert (
+            calc._classify(-0.2) == "NEUTRAL"
+        ), "Score -0.2 should be NEUTRAL (boundary inclusive)"

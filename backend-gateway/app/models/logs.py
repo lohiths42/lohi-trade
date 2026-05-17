@@ -1,8 +1,7 @@
 """Log response models."""
 
-from pydantic import BaseModel
-from typing import Optional
 from datetime import datetime
+from typing import Optional
 
 from app.models.base import CamelModel
 

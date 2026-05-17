@@ -88,7 +88,8 @@ def _show_service_health() -> None:
     """Fetch and display service health from the backend."""
     try:
         req = urllib.request.urlopen(
-            "http://localhost:8000/api/health/services", timeout=5,
+            "http://localhost:8000/api/health/services",
+            timeout=5,
         )
         data = json.loads(req.read().decode())
 

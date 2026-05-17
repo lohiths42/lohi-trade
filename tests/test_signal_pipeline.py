@@ -154,11 +154,11 @@ class TestNoSignalOutsideTradingHours:
     @pytest.mark.parametrize(
         "hour,minute",
         [
-            (9, 0),   # Before trading start
+            (9, 0),  # Before trading start
             (9, 29),  # Just before 9:30
-            (15, 11), # Just after 15:10
+            (15, 11),  # Just after 15:10
             (16, 0),  # Well after trading end
-            (6, 0),   # Early morning
+            (6, 0),  # Early morning
         ],
     )
     def test_no_signal_outside_hours(self, mock_event_bus: MagicMock, hour: int, minute: int):

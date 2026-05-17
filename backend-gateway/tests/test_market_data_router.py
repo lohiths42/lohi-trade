@@ -1,20 +1,17 @@
 """Unit tests for market data API router endpoints."""
 
 from datetime import date, datetime, timezone
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock
 
-import pytest
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-
+from app.routers.auth_v2 import get_current_user_id, get_current_user_payload
 from app.routers.market_data import (
-    router,
-    get_market_data_collector,
     get_corporate_actions_collector,
     get_historical_data_service,
+    get_market_data_collector,
+    router,
 )
-from app.routers.auth_v2 import get_current_user_id, get_current_user_payload
-
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -109,7 +106,8 @@ class TestGetPrice:
     def test_price_symbol_uppercased(self):
         mock_redis = MagicMock()
         mock_redis.hgetall.return_value = {
-            "ltp": "100.0", "volume": "1000",
+            "ltp": "100.0",
+            "volume": "1000",
         }
         mock_event_bus = MagicMock()
         mock_event_bus.redis_client = mock_redis
@@ -130,7 +128,10 @@ class TestGetPrice:
         app.include_router(router, prefix="/api/v2")
         app.dependency_overrides[get_current_user_id] = lambda: TEST_USER_ID
         app.dependency_overrides[get_current_user_payload] = lambda: {
-            "sub": TEST_USER_ID, "email": "t@t.com", "role": "TRADER", "type": "access",
+            "sub": TEST_USER_ID,
+            "email": "t@t.com",
+            "role": "TRADER",
+            "type": "access",
         }
         client = TestClient(app)
         resp = client.get("/api/v2/market/price/RELIANCE")
@@ -233,7 +234,10 @@ class TestGetDepth:
         app.include_router(router, prefix="/api/v2")
         app.dependency_overrides[get_current_user_id] = lambda: TEST_USER_ID
         app.dependency_overrides[get_current_user_payload] = lambda: {
-            "sub": TEST_USER_ID, "email": "t@t.com", "role": "TRADER", "type": "access",
+            "sub": TEST_USER_ID,
+            "email": "t@t.com",
+            "role": "TRADER",
+            "type": "access",
         }
         client = TestClient(app)
         resp = client.get("/api/v2/market/depth/INFY")
@@ -251,7 +255,8 @@ class TestGetCorporateActions:
 
     def test_corporate_actions_returns_list(self):
         from src.ingestion.corporate_actions_collector import (
-            CorporateAction, CorporateActionType,
+            CorporateAction,
+            CorporateActionType,
         )
 
         actions = [
@@ -289,7 +294,8 @@ class TestGetCorporateActions:
 
     def test_corporate_actions_filter_by_symbol(self):
         from src.ingestion.corporate_actions_collector import (
-            CorporateAction, CorporateActionType,
+            CorporateAction,
+            CorporateActionType,
         )
 
         actions = [
@@ -309,7 +315,8 @@ class TestGetCorporateActions:
         assert resp.status_code == 200
         # Verify the collector was called with the symbol filter
         mock_collector.get_action_history.assert_called_once_with(
-            symbol="RELIANCE", action_type=None,
+            symbol="RELIANCE",
+            action_type=None,
         )
 
     def test_corporate_actions_filter_by_action_type(self):
@@ -322,6 +329,7 @@ class TestGetCorporateActions:
         assert resp.status_code == 200
         call_args = mock_collector.get_action_history.call_args
         from src.ingestion.corporate_actions_collector import CorporateActionType
+
         assert call_args.kwargs["action_type"] == CorporateActionType.DIVIDEND
 
     def test_corporate_actions_invalid_action_type(self):
@@ -351,7 +359,10 @@ class TestGetCorporateActions:
         app.include_router(router, prefix="/api/v2")
         app.dependency_overrides[get_current_user_id] = lambda: TEST_USER_ID
         app.dependency_overrides[get_current_user_payload] = lambda: {
-            "sub": TEST_USER_ID, "email": "t@t.com", "role": "TRADER", "type": "access",
+            "sub": TEST_USER_ID,
+            "email": "t@t.com",
+            "role": "TRADER",
+            "type": "access",
         }
         client = TestClient(app)
         resp = client.get("/api/v2/market/corporate-actions")
@@ -371,14 +382,32 @@ class TestGetHistorical:
         from src.ingestion.historical_data_service import OHLCV
 
         bars = [
-            OHLCV(symbol="INFY", date=date(2024, 1, 2), open=1500, high=1520, low=1490, close=1510, volume=3000000),
-            OHLCV(symbol="INFY", date=date(2024, 1, 3), open=1510, high=1530, low=1505, close=1525, volume=2800000),
+            OHLCV(
+                symbol="INFY",
+                date=date(2024, 1, 2),
+                open=1500,
+                high=1520,
+                low=1490,
+                close=1510,
+                volume=3000000,
+            ),
+            OHLCV(
+                symbol="INFY",
+                date=date(2024, 1, 3),
+                open=1510,
+                high=1530,
+                low=1505,
+                close=1525,
+                volume=2800000,
+            ),
         ]
         mock_service = self._make_mock_service(bars)
 
         app = _create_test_app(historical_service=mock_service)
         client = TestClient(app)
-        resp = client.get("/api/v2/market/historical/INFY?start_date=2024-01-01&end_date=2024-01-31")
+        resp = client.get(
+            "/api/v2/market/historical/INFY?start_date=2024-01-01&end_date=2024-01-31"
+        )
 
         assert resp.status_code == 200
         data = resp.json()
@@ -394,13 +423,16 @@ class TestGetHistorical:
 
         app = _create_test_app(historical_service=mock_service)
         client = TestClient(app)
-        resp = client.get("/api/v2/market/historical/TCS?start_date=2024-01-01&end_date=2024-03-31&timeframe=weekly")
+        resp = client.get(
+            "/api/v2/market/historical/TCS?start_date=2024-01-01&end_date=2024-03-31&timeframe=weekly"
+        )
 
         assert resp.status_code == 200
         data = resp.json()
         assert data["timeframe"] == "weekly"
         # Verify the service was called with the correct timeframe
         from src.ingestion.historical_data_service import Timeframe
+
         call_args = mock_service.query.call_args
         assert call_args.kwargs["timeframe"] == Timeframe.WEEKLY
 
@@ -409,7 +441,9 @@ class TestGetHistorical:
 
         app = _create_test_app(historical_service=mock_service)
         client = TestClient(app)
-        resp = client.get("/api/v2/market/historical/TCS?start_date=2024-01-01&end_date=2024-12-31&timeframe=monthly")
+        resp = client.get(
+            "/api/v2/market/historical/TCS?start_date=2024-01-01&end_date=2024-12-31&timeframe=monthly"
+        )
 
         assert resp.status_code == 200
         assert resp.json()["timeframe"] == "monthly"
@@ -419,7 +453,9 @@ class TestGetHistorical:
 
         app = _create_test_app(historical_service=mock_service)
         client = TestClient(app)
-        resp = client.get("/api/v2/market/historical/TCS?start_date=2024-01-01&end_date=2024-01-31&timeframe=hourly")
+        resp = client.get(
+            "/api/v2/market/historical/TCS?start_date=2024-01-01&end_date=2024-01-31&timeframe=hourly"
+        )
 
         assert resp.status_code == 400
         assert "Invalid timeframe" in resp.json()["detail"]
@@ -468,7 +504,9 @@ class TestGetHistorical:
 
         app = _create_test_app(historical_service=mock_service)
         client = TestClient(app)
-        resp = client.get("/api/v2/market/historical/UNKNOWN?start_date=2024-01-01&end_date=2024-01-31")
+        resp = client.get(
+            "/api/v2/market/historical/UNKNOWN?start_date=2024-01-01&end_date=2024-01-31"
+        )
 
         assert resp.status_code == 200
         data = resp.json()
@@ -480,7 +518,9 @@ class TestGetHistorical:
 
         app = _create_test_app(historical_service=mock_service)
         client = TestClient(app)
-        resp = client.get("/api/v2/market/historical/infy?start_date=2024-01-01&end_date=2024-01-31")
+        resp = client.get(
+            "/api/v2/market/historical/infy?start_date=2024-01-01&end_date=2024-01-31"
+        )
 
         assert resp.status_code == 200
         assert resp.json()["symbol"] == "INFY"
@@ -492,10 +532,15 @@ class TestGetHistorical:
         app.include_router(router, prefix="/api/v2")
         app.dependency_overrides[get_current_user_id] = lambda: TEST_USER_ID
         app.dependency_overrides[get_current_user_payload] = lambda: {
-            "sub": TEST_USER_ID, "email": "t@t.com", "role": "TRADER", "type": "access",
+            "sub": TEST_USER_ID,
+            "email": "t@t.com",
+            "role": "TRADER",
+            "type": "access",
         }
         client = TestClient(app)
-        resp = client.get("/api/v2/market/historical/INFY?start_date=2024-01-01&end_date=2024-01-31")
+        resp = client.get(
+            "/api/v2/market/historical/INFY?start_date=2024-01-01&end_date=2024-01-31"
+        )
         assert resp.status_code == 503
 
 
@@ -519,30 +564,40 @@ class TestMarketDataRBAC:
 
     def test_viewer_denied_price(self):
         mc, cc, hs = self._make_mocks()
-        app = _create_test_app(market_collector=mc, corporate_collector=cc, historical_service=hs, role="VIEWER")
+        app = _create_test_app(
+            market_collector=mc, corporate_collector=cc, historical_service=hs, role="VIEWER"
+        )
         client = TestClient(app)
         resp = client.get("/api/v2/market/price/RELIANCE")
         assert resp.status_code == 403
 
     def test_viewer_denied_depth(self):
         mc, cc, hs = self._make_mocks()
-        app = _create_test_app(market_collector=mc, corporate_collector=cc, historical_service=hs, role="VIEWER")
+        app = _create_test_app(
+            market_collector=mc, corporate_collector=cc, historical_service=hs, role="VIEWER"
+        )
         client = TestClient(app)
         resp = client.get("/api/v2/market/depth/RELIANCE")
         assert resp.status_code == 403
 
     def test_viewer_denied_corporate_actions(self):
         mc, cc, hs = self._make_mocks()
-        app = _create_test_app(market_collector=mc, corporate_collector=cc, historical_service=hs, role="VIEWER")
+        app = _create_test_app(
+            market_collector=mc, corporate_collector=cc, historical_service=hs, role="VIEWER"
+        )
         client = TestClient(app)
         resp = client.get("/api/v2/market/corporate-actions")
         assert resp.status_code == 403
 
     def test_viewer_denied_historical(self):
         mc, cc, hs = self._make_mocks()
-        app = _create_test_app(market_collector=mc, corporate_collector=cc, historical_service=hs, role="VIEWER")
+        app = _create_test_app(
+            market_collector=mc, corporate_collector=cc, historical_service=hs, role="VIEWER"
+        )
         client = TestClient(app)
-        resp = client.get("/api/v2/market/historical/INFY?start_date=2024-01-01&end_date=2024-01-31")
+        resp = client.get(
+            "/api/v2/market/historical/INFY?start_date=2024-01-01&end_date=2024-01-31"
+        )
         assert resp.status_code == 403
 
     def test_admin_allowed_price(self):
@@ -563,5 +618,7 @@ class TestMarketDataRBAC:
         mc, cc, hs = self._make_mocks()
         app = _create_test_app(historical_service=hs, role="ADMIN")
         client = TestClient(app)
-        resp = client.get("/api/v2/market/historical/INFY?start_date=2024-01-01&end_date=2024-01-31")
+        resp = client.get(
+            "/api/v2/market/historical/INFY?start_date=2024-01-01&end_date=2024-01-31"
+        )
         assert resp.status_code == 200

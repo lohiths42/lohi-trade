@@ -1,29 +1,24 @@
 """Unit tests for AccountService — email/password registration, login, refresh token."""
 
-import asyncio
-import hashlib
 import time
-from datetime import datetime, timezone, timedelta
-from unittest.mock import AsyncMock, MagicMock, patch
+from datetime import datetime, timedelta, timezone
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-
 from app.services.account_service import (
+    ACCESS_TOKEN_EXPIRY_SECONDS,
     AccountService,
     TokenPair,
-    User,
     UserRole,
-    validate_password,
-    validate_email,
-    validate_phone,
-    hash_password,
-    verify_password,
-    verify_access_token,
     _create_access_token,
     _hash_refresh_token,
-    ACCESS_TOKEN_EXPIRY_SECONDS,
+    hash_password,
+    validate_email,
+    validate_password,
+    validate_phone,
+    verify_access_token,
+    verify_password,
 )
-
 
 # ── Validation tests ────────────────────────────────────────────────────────
 
@@ -140,7 +135,7 @@ class TestAccessToken:
 
     def test_expired_token(self):
         import jwt as pyjwt
-        from app.services.account_service import JWT_SECRET, JWT_ALGORITHM
+        from app.services.account_service import JWT_ALGORITHM, JWT_SECRET
 
         payload = {
             "sub": "user-123",
@@ -155,7 +150,7 @@ class TestAccessToken:
 
     def test_wrong_type_rejected(self):
         import jwt as pyjwt
-        from app.services.account_service import JWT_SECRET, JWT_ALGORITHM
+        from app.services.account_service import JWT_ALGORITHM, JWT_SECRET
 
         payload = {
             "sub": "user-123",
@@ -205,15 +200,17 @@ class TestRegisterEmail:
         now = datetime.now(timezone.utc)
 
         conn.fetchval = AsyncMock(return_value=None)  # no duplicate
-        conn.fetchrow = AsyncMock(return_value={
-            "id": user_id,
-            "email": "new@test.com",
-            "phone": "9876543210",
-            "name": "Test User",
-            "role": "TRADER",
-            "is_onboarded": False,
-            "created_at": now,
-        })
+        conn.fetchrow = AsyncMock(
+            return_value={
+                "id": user_id,
+                "email": "new@test.com",
+                "phone": "9876543210",
+                "name": "Test User",
+                "role": "TRADER",
+                "is_onboarded": False,
+                "created_at": now,
+            }
+        )
 
         svc = AccountService(pool)
         result = await svc.register_email("new@test.com", "Str0ng!Pass", "9876543210", "Test User")
@@ -262,14 +259,16 @@ class TestLoginEmail:
         pw_hash = hash_password("Str0ng!Pass")
         user_id = uuid.uuid4()
 
-        conn.fetchrow = AsyncMock(return_value={
-            "id": user_id,
-            "email": "user@test.com",
-            "password_hash": pw_hash,
-            "role": "TRADER",
-            "is_active": True,
-            "name": "Test",
-        })
+        conn.fetchrow = AsyncMock(
+            return_value={
+                "id": user_id,
+                "email": "user@test.com",
+                "password_hash": pw_hash,
+                "role": "TRADER",
+                "is_active": True,
+                "name": "Test",
+            }
+        )
         conn.execute = AsyncMock()
 
         svc = AccountService(pool)
@@ -288,14 +287,16 @@ class TestLoginEmail:
         pool, conn = _make_mock_pool()
         pw_hash = hash_password("Correct!1")
 
-        conn.fetchrow = AsyncMock(return_value={
-            "id": uuid.uuid4(),
-            "email": "user@test.com",
-            "password_hash": pw_hash,
-            "role": "TRADER",
-            "is_active": True,
-            "name": "Test",
-        })
+        conn.fetchrow = AsyncMock(
+            return_value={
+                "id": uuid.uuid4(),
+                "email": "user@test.com",
+                "password_hash": pw_hash,
+                "role": "TRADER",
+                "is_active": True,
+                "name": "Test",
+            }
+        )
 
         svc = AccountService(pool)
         with pytest.raises(ValueError, match="Invalid email or password"):
@@ -313,14 +314,16 @@ class TestLoginEmail:
     @pytest.mark.asyncio
     async def test_social_only_account(self):
         pool, conn = _make_mock_pool()
-        conn.fetchrow = AsyncMock(return_value={
-            "id": uuid.uuid4(),
-            "email": "social@test.com",
-            "password_hash": None,
-            "role": "TRADER",
-            "is_active": True,
-            "name": "Social User",
-        })
+        conn.fetchrow = AsyncMock(
+            return_value={
+                "id": uuid.uuid4(),
+                "email": "social@test.com",
+                "password_hash": None,
+                "role": "TRADER",
+                "is_active": True,
+                "name": "Social User",
+            }
+        )
 
         svc = AccountService(pool)
         with pytest.raises(ValueError, match="social login"):
@@ -331,14 +334,16 @@ class TestLoginEmail:
         pool, conn = _make_mock_pool()
         pw_hash = hash_password("Str0ng!Pass")
 
-        conn.fetchrow = AsyncMock(return_value={
-            "id": uuid.uuid4(),
-            "email": "inactive@test.com",
-            "password_hash": pw_hash,
-            "role": "TRADER",
-            "is_active": False,
-            "name": "Inactive",
-        })
+        conn.fetchrow = AsyncMock(
+            return_value={
+                "id": uuid.uuid4(),
+                "email": "inactive@test.com",
+                "password_hash": pw_hash,
+                "role": "TRADER",
+                "is_active": False,
+                "name": "Inactive",
+            }
+        )
 
         svc = AccountService(pool)
         with pytest.raises(ValueError, match="deactivated"):
@@ -355,14 +360,16 @@ class TestRefreshToken:
         token_hash = _hash_refresh_token(raw_refresh)
         future = datetime.now(timezone.utc) + timedelta(days=15)
 
-        conn.fetchrow = AsyncMock(return_value={
-            "token_id": token_id,
-            "user_id": user_id,
-            "expires_at": future,
-            "email": "user@test.com",
-            "role": "TRADER",
-            "is_active": True,
-        })
+        conn.fetchrow = AsyncMock(
+            return_value={
+                "token_id": token_id,
+                "user_id": user_id,
+                "expires_at": future,
+                "email": "user@test.com",
+                "role": "TRADER",
+                "is_active": True,
+            }
+        )
         conn.execute = AsyncMock()
 
         svc = AccountService(pool)
@@ -373,9 +380,7 @@ class TestRefreshToken:
         assert tokens.refresh_token
         assert tokens.refresh_token != raw_refresh  # rotated
         # Old token should be deleted
-        conn.execute.assert_any_call(
-            "DELETE FROM refresh_tokens WHERE id = $1", token_id
-        )
+        conn.execute.assert_any_call("DELETE FROM refresh_tokens WHERE id = $1", token_id)
 
     @pytest.mark.asyncio
     async def test_invalid_refresh_token(self):
@@ -392,14 +397,16 @@ class TestRefreshToken:
         token_id = uuid.uuid4()
         past = datetime.now(timezone.utc) - timedelta(days=1)
 
-        conn.fetchrow = AsyncMock(return_value={
-            "token_id": token_id,
-            "user_id": uuid.uuid4(),
-            "expires_at": past,
-            "email": "user@test.com",
-            "role": "TRADER",
-            "is_active": True,
-        })
+        conn.fetchrow = AsyncMock(
+            return_value={
+                "token_id": token_id,
+                "user_id": uuid.uuid4(),
+                "expires_at": past,
+                "email": "user@test.com",
+                "role": "TRADER",
+                "is_active": True,
+            }
+        )
         conn.execute = AsyncMock()
 
         svc = AccountService(pool)
@@ -411,14 +418,16 @@ class TestRefreshToken:
         pool, conn = _make_mock_pool()
         future = datetime.now(timezone.utc) + timedelta(days=15)
 
-        conn.fetchrow = AsyncMock(return_value={
-            "token_id": uuid.uuid4(),
-            "user_id": uuid.uuid4(),
-            "expires_at": future,
-            "email": "user@test.com",
-            "role": "TRADER",
-            "is_active": False,
-        })
+        conn.fetchrow = AsyncMock(
+            return_value={
+                "token_id": uuid.uuid4(),
+                "user_id": uuid.uuid4(),
+                "expires_at": future,
+                "email": "user@test.com",
+                "role": "TRADER",
+                "is_active": False,
+            }
+        )
         conn.execute = AsyncMock()
 
         svc = AccountService(pool)
@@ -537,11 +546,13 @@ class TestLoginGoogle:
         }
 
         # No existing social login, no existing user → create new
-        conn.fetchrow = AsyncMock(side_effect=[
-            None,  # social_logins lookup
-            None,  # users email lookup
-            {"id": user_id, "email": "newuser@gmail.com", "role": "TRADER"},  # INSERT user
-        ])
+        conn.fetchrow = AsyncMock(
+            side_effect=[
+                None,  # social_logins lookup
+                None,  # users email lookup
+                {"id": user_id, "email": "newuser@gmail.com", "role": "TRADER"},  # INSERT user
+            ]
+        )
         conn.execute = AsyncMock()
 
         with sync_patch("app.services.account_service.httpx.AsyncClient") as mock_client_cls:
@@ -576,12 +587,14 @@ class TestLoginGoogle:
         }
 
         # Existing social login found
-        conn.fetchrow = AsyncMock(return_value={
-            "user_id": user_id,
-            "email": "existing@gmail.com",
-            "role": "TRADER",
-            "is_active": True,
-        })
+        conn.fetchrow = AsyncMock(
+            return_value={
+                "user_id": user_id,
+                "email": "existing@gmail.com",
+                "role": "TRADER",
+                "is_active": True,
+            }
+        )
         conn.execute = AsyncMock()
 
         with sync_patch("app.services.account_service.httpx.AsyncClient") as mock_client_cls:
@@ -614,10 +627,17 @@ class TestLoginGoogle:
         }
 
         # No social login, but user with same email exists
-        conn.fetchrow = AsyncMock(side_effect=[
-            None,  # social_logins lookup
-            {"id": user_id, "email": "emailuser@test.com", "role": "TRADER", "is_active": True},  # users lookup
-        ])
+        conn.fetchrow = AsyncMock(
+            side_effect=[
+                None,  # social_logins lookup
+                {
+                    "id": user_id,
+                    "email": "emailuser@test.com",
+                    "role": "TRADER",
+                    "is_active": True,
+                },  # users lookup
+            ]
+        )
         conn.execute = AsyncMock()
 
         with sync_patch("app.services.account_service.httpx.AsyncClient") as mock_client_cls:
@@ -648,12 +668,14 @@ class TestLoginGoogle:
             "aud": "",
         }
 
-        conn.fetchrow = AsyncMock(return_value={
-            "user_id": uuid.uuid4(),
-            "email": "deactivated@gmail.com",
-            "role": "TRADER",
-            "is_active": False,
-        })
+        conn.fetchrow = AsyncMock(
+            return_value={
+                "user_id": uuid.uuid4(),
+                "email": "deactivated@gmail.com",
+                "role": "TRADER",
+                "is_active": False,
+            }
+        )
 
         with sync_patch("app.services.account_service.httpx.AsyncClient") as mock_client_cls:
             mock_client = AsyncMock()
@@ -707,11 +729,13 @@ class TestLoginApple:
         token_resp.json.return_value = {"id_token": "fake.apple.id_token"}
 
         # No existing social login, no existing user → create new
-        conn.fetchrow = AsyncMock(side_effect=[
-            None,  # social_logins lookup
-            None,  # users email lookup
-            {"id": user_id, "email": "apple@icloud.com", "role": "TRADER"},  # INSERT user
-        ])
+        conn.fetchrow = AsyncMock(
+            side_effect=[
+                None,  # social_logins lookup
+                None,  # users email lookup
+                {"id": user_id, "email": "apple@icloud.com", "role": "TRADER"},  # INSERT user
+            ]
+        )
         conn.execute = AsyncMock()
 
         apple_claims = {
@@ -766,12 +790,14 @@ class TestLoginApple:
         conn1.fetchrow = AsyncMock(return_value={"email": "hidden@privaterelay.appleid.com"})
 
         # conn2: _find_or_create_social_user → existing social login found
-        conn2.fetchrow = AsyncMock(return_value={
-            "user_id": user_id,
-            "email": "hidden@privaterelay.appleid.com",
-            "role": "TRADER",
-            "is_active": True,
-        })
+        conn2.fetchrow = AsyncMock(
+            return_value={
+                "user_id": user_id,
+                "email": "hidden@privaterelay.appleid.com",
+                "role": "TRADER",
+                "is_active": True,
+            }
+        )
         conn2.execute = AsyncMock()
 
         with sync_patch("app.services.account_service.httpx.AsyncClient") as mock_client_cls:

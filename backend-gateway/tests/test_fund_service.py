@@ -1,7 +1,6 @@
 """Unit tests for FundService — deposit initiation, amount validation,
 UPI link generation, balance crediting, failure notification, and reconciliation."""
 
-import asyncio
 import os
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
@@ -13,20 +12,15 @@ import pytest
 # Ensure encryption key is set (shared with bank_service tests)
 if "PAN_ENCRYPTION_KEY" not in os.environ:
     from cryptography.fernet import Fernet
+
     os.environ["PAN_ENCRYPTION_KEY"] = Fernet.generate_key().decode()
 
 from app.services.fund_service import (
+    UPI_LINK_EXPIRY_MINUTES,
     FundService,
-    DepositTransaction,
-    ReconciliationResult,
     PaymentMethod,
     TransactionStatus,
-    MIN_DEPOSIT,
-    MAX_DEPOSIT,
-    UPI_LINK_EXPIRY_MINUTES,
-    MAX_RETRIES,
 )
-
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -148,9 +142,7 @@ class TestInitiateDeposit:
     @pytest.mark.asyncio
     async def test_amount_above_maximum_fails(self):
         svc = _make_service()
-        result = await svc.initiate_deposit(
-            "user-1", Decimal("2000000"), PaymentMethod.NEFT
-        )
+        result = await svc.initiate_deposit("user-1", Decimal("2000000"), PaymentMethod.NEFT)
         assert result.status == TransactionStatus.FAILED
         assert "Maximum" in result.failure_reason
 
@@ -181,17 +173,11 @@ class TestInitiateDeposit:
             mock_client = AsyncMock()
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client.__aexit__ = AsyncMock(return_value=False)
-            mock_client.post = AsyncMock(
-                side_effect=httpx.TimeoutException("timeout")
-            )
+            mock_client.post = AsyncMock(side_effect=httpx.TimeoutException("timeout"))
             mock_cls.return_value = mock_client
 
-            with patch(
-                "app.services.fund_service.asyncio.sleep", new_callable=AsyncMock
-            ):
-                result = await svc.initiate_deposit(
-                    "user-1", Decimal("500"), PaymentMethod.UPI
-                )
+            with patch("app.services.fund_service.asyncio.sleep", new_callable=AsyncMock):
+                result = await svc.initiate_deposit("user-1", Decimal("500"), PaymentMethod.UPI)
 
         assert result.status == TransactionStatus.FAILED
         assert "gateway unavailable" in result.failure_reason.lower()
@@ -218,9 +204,7 @@ class TestInitiateDeposit:
             mock_client.post = AsyncMock(return_value=mock_response)
             mock_cls.return_value = mock_client
 
-            result = await svc.initiate_deposit(
-                "user-1", Decimal("500"), PaymentMethod.NET_BANKING
-            )
+            result = await svc.initiate_deposit("user-1", Decimal("500"), PaymentMethod.NET_BANKING)
 
         assert result.status == TransactionStatus.FAILED
         assert result.failure_reason == "Insufficient funds at source"
@@ -246,9 +230,7 @@ class TestInitiateDeposit:
             mock_client.post = AsyncMock(return_value=mock_response)
             mock_cls.return_value = mock_client
 
-            result = await svc.initiate_deposit(
-                "user-1", Decimal("1000"), PaymentMethod.UPI
-            )
+            result = await svc.initiate_deposit("user-1", Decimal("1000"), PaymentMethod.UPI)
 
         assert result.status == TransactionStatus.INITIATED
         assert result.payment_method == PaymentMethod.UPI
@@ -280,9 +262,7 @@ class TestInitiateDeposit:
             mock_client.post = AsyncMock(return_value=mock_response)
             mock_cls.return_value = mock_client
 
-            result = await svc.initiate_deposit(
-                "user-1", Decimal("50000"), PaymentMethod.NEFT
-            )
+            result = await svc.initiate_deposit("user-1", Decimal("50000"), PaymentMethod.NEFT)
 
         assert result.status == TransactionStatus.PROCESSING
         assert result.payment_method == PaymentMethod.NEFT
@@ -310,9 +290,7 @@ class TestInitiateDeposit:
             mock_client.post = AsyncMock(return_value=mock_response)
             mock_cls.return_value = mock_client
 
-            result = await svc.initiate_deposit(
-                "user-1", Decimal("5000"), PaymentMethod.UPI
-            )
+            result = await svc.initiate_deposit("user-1", Decimal("5000"), PaymentMethod.UPI)
 
         assert result.status == TransactionStatus.COMPLETED
         assert result.completed_at is not None
@@ -340,9 +318,7 @@ class TestInitiateDeposit:
             mock_client.post = AsyncMock(return_value=mock_response)
             mock_cls.return_value = mock_client
 
-            result = await svc.initiate_deposit(
-                "user-1", Decimal("500000"), PaymentMethod.RTGS
-            )
+            result = await svc.initiate_deposit("user-1", Decimal("500000"), PaymentMethod.RTGS)
 
         assert result.status == TransactionStatus.PROCESSING
         assert result.payment_method == PaymentMethod.RTGS
@@ -368,9 +344,7 @@ class TestInitiateDeposit:
             mock_client.post = AsyncMock(return_value=mock_response)
             mock_cls.return_value = mock_client
 
-            result = await svc.initiate_deposit(
-                "user-1", Decimal("200"), PaymentMethod.UPI
-            )
+            result = await svc.initiate_deposit("user-1", Decimal("200"), PaymentMethod.UPI)
 
         assert result.id  # non-empty
         assert len(result.id) == 36  # UUID format
@@ -397,16 +371,18 @@ class TestConfirmDeposit:
     @pytest.mark.asyncio
     async def test_already_completed_returns_transaction(self):
         pool, conn = _make_mock_pool()
-        conn.fetchrow = AsyncMock(return_value={
-            "id": "txn-123",
-            "user_id": "user-1",
-            "amount": Decimal("1000"),
-            "payment_method": "UPI",
-            "transaction_ref": "ref-001",
-            "status": "COMPLETED",
-            "failure_reason": None,
-            "created_at": datetime.now(timezone.utc),
-        })
+        conn.fetchrow = AsyncMock(
+            return_value={
+                "id": "txn-123",
+                "user_id": "user-1",
+                "amount": Decimal("1000"),
+                "payment_method": "UPI",
+                "transaction_ref": "ref-001",
+                "status": "COMPLETED",
+                "failure_reason": None,
+                "created_at": datetime.now(timezone.utc),
+            }
+        )
         svc = _make_service(db_pool=pool)
         result = await svc.confirm_deposit("txn-123")
         assert result is not None
@@ -415,16 +391,18 @@ class TestConfirmDeposit:
     @pytest.mark.asyncio
     async def test_failed_transaction_returns_none(self):
         pool, conn = _make_mock_pool()
-        conn.fetchrow = AsyncMock(return_value={
-            "id": "txn-123",
-            "user_id": "user-1",
-            "amount": Decimal("1000"),
-            "payment_method": "UPI",
-            "transaction_ref": "ref-001",
-            "status": "FAILED",
-            "failure_reason": "Payment declined",
-            "created_at": datetime.now(timezone.utc),
-        })
+        conn.fetchrow = AsyncMock(
+            return_value={
+                "id": "txn-123",
+                "user_id": "user-1",
+                "amount": Decimal("1000"),
+                "payment_method": "UPI",
+                "transaction_ref": "ref-001",
+                "status": "FAILED",
+                "failure_reason": "Payment declined",
+                "created_at": datetime.now(timezone.utc),
+            }
+        )
         svc = _make_service(db_pool=pool)
         result = await svc.confirm_deposit("txn-123")
         assert result is None
@@ -432,16 +410,18 @@ class TestConfirmDeposit:
     @pytest.mark.asyncio
     async def test_initiated_transaction_gets_completed(self):
         pool, conn = _make_mock_pool()
-        conn.fetchrow = AsyncMock(return_value={
-            "id": "txn-123",
-            "user_id": "user-1",
-            "amount": Decimal("5000"),
-            "payment_method": "NET_BANKING",
-            "transaction_ref": "ref-002",
-            "status": "INITIATED",
-            "failure_reason": None,
-            "created_at": datetime.now(timezone.utc),
-        })
+        conn.fetchrow = AsyncMock(
+            return_value={
+                "id": "txn-123",
+                "user_id": "user-1",
+                "amount": Decimal("5000"),
+                "payment_method": "NET_BANKING",
+                "transaction_ref": "ref-002",
+                "status": "INITIATED",
+                "failure_reason": None,
+                "created_at": datetime.now(timezone.utc),
+            }
+        )
         conn.execute = AsyncMock()
         svc = _make_service(db_pool=pool)
         result = await svc.confirm_deposit("txn-123")
@@ -492,14 +472,10 @@ class TestReconcileDeposits:
             mock_client = AsyncMock()
             mock_client.__aenter__ = AsyncMock(return_value=mock_client)
             mock_client.__aexit__ = AsyncMock(return_value=False)
-            mock_client.post = AsyncMock(
-                side_effect=httpx.TimeoutException("timeout")
-            )
+            mock_client.post = AsyncMock(side_effect=httpx.TimeoutException("timeout"))
             mock_cls.return_value = mock_client
 
-            with patch(
-                "app.services.fund_service.asyncio.sleep", new_callable=AsyncMock
-            ):
+            with patch("app.services.fund_service.asyncio.sleep", new_callable=AsyncMock):
                 result = await svc.reconcile_deposits("2024-01-15")
 
         assert result.total_gateway_transactions == 0
@@ -508,10 +484,12 @@ class TestReconcileDeposits:
     @pytest.mark.asyncio
     async def test_all_matched(self):
         pool, conn = _make_mock_pool()
-        conn.fetch = AsyncMock(return_value=[
-            {"transaction_ref": "ref-001", "amount": Decimal("1000"), "status": "COMPLETED"},
-            {"transaction_ref": "ref-002", "amount": Decimal("2000"), "status": "COMPLETED"},
-        ])
+        conn.fetch = AsyncMock(
+            return_value=[
+                {"transaction_ref": "ref-001", "amount": Decimal("1000"), "status": "COMPLETED"},
+                {"transaction_ref": "ref-002", "amount": Decimal("2000"), "status": "COMPLETED"},
+            ]
+        )
         svc = _make_service(db_pool=pool)
 
         mock_response = MagicMock()
@@ -542,9 +520,11 @@ class TestReconcileDeposits:
     @pytest.mark.asyncio
     async def test_amount_mismatch_detected(self):
         pool, conn = _make_mock_pool()
-        conn.fetch = AsyncMock(return_value=[
-            {"transaction_ref": "ref-001", "amount": Decimal("1000"), "status": "COMPLETED"},
-        ])
+        conn.fetch = AsyncMock(
+            return_value=[
+                {"transaction_ref": "ref-001", "amount": Decimal("1000"), "status": "COMPLETED"},
+            ]
+        )
         svc = _make_service(db_pool=pool)
 
         mock_response = MagicMock()
@@ -595,9 +575,11 @@ class TestReconcileDeposits:
     @pytest.mark.asyncio
     async def test_missing_on_gateway_detected(self):
         pool, conn = _make_mock_pool()
-        conn.fetch = AsyncMock(return_value=[
-            {"transaction_ref": "ref-001", "amount": Decimal("1000"), "status": "COMPLETED"},
-        ])
+        conn.fetch = AsyncMock(
+            return_value=[
+                {"transaction_ref": "ref-001", "amount": Decimal("1000"), "status": "COMPLETED"},
+            ]
+        )
         svc = _make_service(db_pool=pool)
 
         mock_response = MagicMock()

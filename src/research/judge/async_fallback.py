@@ -225,7 +225,8 @@ def budget_for_mode(
     """
     if offline is None:
         offline = os.environ.get(
-            "LOHI_RESEARCH_OFFLINE", "",
+            "LOHI_RESEARCH_OFFLINE",
+            "",
         ).strip().lower() in ("true", "1", "yes")
     return offline_full_brief_ms if offline else full_brief_ms
 

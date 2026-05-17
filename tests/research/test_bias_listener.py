@@ -288,7 +288,8 @@ class TestDedup:
 
         # A fresh bias event on the same stream.
         reader._per_stream["stream:bias:HDFC"].insert(
-            0, ("2-0", {"ticker": "HDFC", "bias": "BEARISH"}),
+            0,
+            ("2-0", {"ticker": "HDFC", "bias": "BEARISH"}),
         )
         assert await listener.poll_once() == 1
         assert len(publisher.calls) == 2

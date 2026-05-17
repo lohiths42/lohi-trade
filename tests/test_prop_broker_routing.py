@@ -61,8 +61,16 @@ from src.ingestion.kite_broker import (
 # ── Strategies ────────────────────────────────────────────────────
 
 NSE_SYMBOLS = [
-    "RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK",
-    "SBIN", "BHARTIARTL", "KOTAKBANK", "LT", "WIPRO",
+    "RELIANCE",
+    "TCS",
+    "HDFCBANK",
+    "INFY",
+    "ICICIBANK",
+    "SBIN",
+    "BHARTIARTL",
+    "KOTAKBANK",
+    "LT",
+    "WIPRO",
 ]
 
 order_strategy = st.builds(
@@ -74,8 +82,14 @@ order_strategy = st.builds(
     quantity=st.integers(min_value=1, max_value=10000),
     product_type=st.sampled_from(list(ProductType)),
     status=st.just(OrderStatus.PENDING),
-    price=st.one_of(st.none(), st.floats(min_value=0.05, max_value=100000, allow_nan=False, allow_infinity=False)),
-    trigger_price=st.one_of(st.none(), st.floats(min_value=0.05, max_value=100000, allow_nan=False, allow_infinity=False)),
+    price=st.one_of(
+        st.none(),
+        st.floats(min_value=0.05, max_value=100000, allow_nan=False, allow_infinity=False),
+    ),
+    trigger_price=st.one_of(
+        st.none(),
+        st.floats(min_value=0.05, max_value=100000, allow_nan=False, allow_infinity=False),
+    ),
 )
 
 
@@ -113,12 +127,14 @@ class TestBrokerFailoverProperty:
         primary.place_order.side_effect = Exception("Primary API down")
         backup.place_order.return_value = "BACKUP-ORDER-ID"
 
-        router = BrokerRouter(registry={
-            "shoonya": MagicMock(spec=BrokerInterface),
-            "angelone": MagicMock(spec=BrokerInterface),
-            "kite": primary,
-            "groww": backup,
-        })
+        router = BrokerRouter(
+            registry={
+                "shoonya": MagicMock(spec=BrokerInterface),
+                "angelone": MagicMock(spec=BrokerInterface),
+                "kite": primary,
+                "groww": backup,
+            }
+        )
         router.set_user_preference("user-1", "kite", "groww")
 
         result = router.route_order("user-1", order)
@@ -136,12 +152,14 @@ class TestBrokerFailoverProperty:
         primary.place_order.side_effect = Exception("timeout")
         backup.place_order.return_value = "BACKUP-002"
 
-        router = BrokerRouter(registry={
-            "shoonya": MagicMock(spec=BrokerInterface),
-            "angelone": MagicMock(spec=BrokerInterface),
-            "kite": primary,
-            "groww": backup,
-        })
+        router = BrokerRouter(
+            registry={
+                "shoonya": MagicMock(spec=BrokerInterface),
+                "angelone": MagicMock(spec=BrokerInterface),
+                "kite": primary,
+                "groww": backup,
+            }
+        )
         router.set_user_preference("user-1", "kite", "groww")
 
         router.route_order("user-1", order)

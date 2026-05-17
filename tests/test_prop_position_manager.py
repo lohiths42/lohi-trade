@@ -30,10 +30,12 @@ from src.ingestion.broker_interface import (
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_trades_db() -> MagicMock:
     conn = sqlite3.connect(":memory:")
     conn.row_factory = sqlite3.Row
-    conn.executescript("""
+    conn.executescript(
+        """
         CREATE TABLE IF NOT EXISTS trades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             trade_id TEXT UNIQUE NOT NULL,
@@ -51,7 +53,8 @@ def _make_trades_db() -> MagicMock:
             exit_reason TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
-    """)
+    """
+    )
     conn.commit()
     db = MagicMock()
     db.connect_sqlite.return_value = conn
@@ -61,7 +64,9 @@ def _make_trades_db() -> MagicMock:
 def _make_oms() -> MagicMock:
     oms = MagicMock()
     oms.place_order.return_value = OrderResult(
-        success=True, order_id="mock-order", broker_order_id="BROKER-1",
+        success=True,
+        order_id="mock-order",
+        broker_order_id="BROKER-1",
     )
     oms.cancel_order.return_value = True
     return oms
@@ -91,13 +96,27 @@ def _make_pm(
 # Hypothesis strategies
 # ---------------------------------------------------------------------------
 
-symbols = st.sampled_from([
-    "RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK",
-    "SBIN", "BHARTIARTL", "ITC", "KOTAKBANK", "LT",
-])
-strategies_names = st.sampled_from([
-    "MeanReversion", "TrendFollowing", "OpeningRangeBreakout",
-])
+symbols = st.sampled_from(
+    [
+        "RELIANCE",
+        "TCS",
+        "HDFCBANK",
+        "INFY",
+        "ICICIBANK",
+        "SBIN",
+        "BHARTIARTL",
+        "ITC",
+        "KOTAKBANK",
+        "LT",
+    ]
+)
+strategies_names = st.sampled_from(
+    [
+        "MeanReversion",
+        "TrendFollowing",
+        "OpeningRangeBreakout",
+    ]
+)
 quantities = st.integers(min_value=1, max_value=500)
 prices = st.floats(min_value=50.0, max_value=10000.0, allow_nan=False, allow_infinity=False)
 
@@ -105,9 +124,15 @@ prices = st.floats(min_value=50.0, max_value=10000.0, allow_nan=False, allow_inf
 @st.composite
 def buy_position_params(draw):
     """Generate valid BUY position parameters with SL < entry < target."""
-    entry = draw(st.floats(min_value=100.0, max_value=9000.0, allow_nan=False, allow_infinity=False))
-    sl_offset = draw(st.floats(min_value=1.0, max_value=500.0, allow_nan=False, allow_infinity=False))
-    target_offset = draw(st.floats(min_value=1.0, max_value=500.0, allow_nan=False, allow_infinity=False))
+    entry = draw(
+        st.floats(min_value=100.0, max_value=9000.0, allow_nan=False, allow_infinity=False)
+    )
+    sl_offset = draw(
+        st.floats(min_value=1.0, max_value=500.0, allow_nan=False, allow_infinity=False)
+    )
+    target_offset = draw(
+        st.floats(min_value=1.0, max_value=500.0, allow_nan=False, allow_infinity=False)
+    )
     return {
         "side": "BUY",
         "entry_price": entry,
@@ -122,9 +147,15 @@ def buy_position_params(draw):
 @st.composite
 def sell_position_params(draw):
     """Generate valid SELL position parameters with SL > entry > target."""
-    entry = draw(st.floats(min_value=100.0, max_value=9000.0, allow_nan=False, allow_infinity=False))
-    sl_offset = draw(st.floats(min_value=1.0, max_value=500.0, allow_nan=False, allow_infinity=False))
-    target_offset = draw(st.floats(min_value=1.0, max_value=500.0, allow_nan=False, allow_infinity=False))
+    entry = draw(
+        st.floats(min_value=100.0, max_value=9000.0, allow_nan=False, allow_infinity=False)
+    )
+    sl_offset = draw(
+        st.floats(min_value=1.0, max_value=500.0, allow_nan=False, allow_infinity=False)
+    )
+    target_offset = draw(
+        st.floats(min_value=1.0, max_value=500.0, allow_nan=False, allow_infinity=False)
+    )
     return {
         "side": "SELL",
         "entry_price": entry,
@@ -148,6 +179,7 @@ def any_position_params(draw):
 # Property 52: Stop-Loss Placement
 # **Validates: Requirements 12.1**
 # ---------------------------------------------------------------------------
+
 
 class TestProperty52StopLossPlacement:
     """For any filled position, a stop-loss order should be placed at the
@@ -227,6 +259,7 @@ class TestProperty52StopLossPlacement:
 # **Validates: Requirements 12.2**
 # ---------------------------------------------------------------------------
 
+
 class TestProperty53TargetOrderPlacement:
     """For any filled position, a target limit order should be placed at the
     signal's target price.
@@ -304,6 +337,7 @@ class TestProperty53TargetOrderPlacement:
 # **Validates: Requirements 12.3**
 # ---------------------------------------------------------------------------
 
+
 class TestProperty54TrailingStopLoss:
     """For any profitable position, the trailing stop should move by 50% of
     profit and never move backward.
@@ -313,7 +347,9 @@ class TestProperty54TrailingStopLoss:
 
     @given(
         params=buy_position_params(),
-        price_increase=st.floats(min_value=0.01, max_value=1000.0, allow_nan=False, allow_infinity=False),
+        price_increase=st.floats(
+            min_value=0.01, max_value=1000.0, allow_nan=False, allow_infinity=False
+        ),
     )
     @settings(max_examples=25)
     def test_trailing_stop_moves_by_50pct_profit_buy(self, params, price_increase):
@@ -340,7 +376,9 @@ class TestProperty54TrailingStopLoss:
 
     @given(
         params=sell_position_params(),
-        price_decrease=st.floats(min_value=0.01, max_value=1000.0, allow_nan=False, allow_infinity=False),
+        price_decrease=st.floats(
+            min_value=0.01, max_value=1000.0, allow_nan=False, allow_infinity=False
+        ),
     )
     @settings(max_examples=25)
     def test_trailing_stop_moves_by_50pct_profit_sell(self, params, price_decrease):
@@ -394,9 +432,9 @@ class TestProperty54TrailingStopLoss:
             cumulative += inc
             new_price = params["entry_price"] + cumulative
             pm.update_price(pos.position_id, new_price)
-            assert pos.trailing_stop >= prev_stop, (
-                f"Trailing stop moved backward: {pos.trailing_stop} < {prev_stop}"
-            )
+            assert (
+                pos.trailing_stop >= prev_stop
+            ), f"Trailing stop moved backward: {pos.trailing_stop} < {prev_stop}"
             prev_stop = pos.trailing_stop
 
     @given(
@@ -428,9 +466,9 @@ class TestProperty54TrailingStopLoss:
             new_price = params["entry_price"] - cumulative
             assume(new_price > 0)
             pm.update_price(pos.position_id, new_price)
-            assert pos.trailing_stop <= prev_stop, (
-                f"Trailing stop moved backward (up): {pos.trailing_stop} > {prev_stop}"
-            )
+            assert (
+                pos.trailing_stop <= prev_stop
+            ), f"Trailing stop moved backward (up): {pos.trailing_stop} > {prev_stop}"
             prev_stop = pos.trailing_stop
 
 
@@ -438,6 +476,7 @@ class TestProperty54TrailingStopLoss:
 # Property 55: Position Closing on Stop/Target Hit
 # **Validates: Requirements 12.4**
 # ---------------------------------------------------------------------------
+
 
 class TestProperty55PositionClosing:
     """For any position where stop or target is hit, the position should be
@@ -448,7 +487,9 @@ class TestProperty55PositionClosing:
 
     @given(
         params=buy_position_params(),
-        exit_price=st.floats(min_value=10.0, max_value=10000.0, allow_nan=False, allow_infinity=False),
+        exit_price=st.floats(
+            min_value=10.0, max_value=10000.0, allow_nan=False, allow_infinity=False
+        ),
     )
     @settings(max_examples=25)
     def test_buy_position_pnl_on_stop_hit(self, params, exit_price):
@@ -473,7 +514,9 @@ class TestProperty55PositionClosing:
 
     @given(
         params=sell_position_params(),
-        exit_price=st.floats(min_value=10.0, max_value=10000.0, allow_nan=False, allow_infinity=False),
+        exit_price=st.floats(
+            min_value=10.0, max_value=10000.0, allow_nan=False, allow_infinity=False
+        ),
     )
     @settings(max_examples=25)
     def test_sell_position_pnl_on_stop_hit(self, params, exit_price):
@@ -498,7 +541,9 @@ class TestProperty55PositionClosing:
 
     @given(
         params=buy_position_params(),
-        exit_price=st.floats(min_value=10.0, max_value=10000.0, allow_nan=False, allow_infinity=False),
+        exit_price=st.floats(
+            min_value=10.0, max_value=10000.0, allow_nan=False, allow_infinity=False
+        ),
     )
     @settings(max_examples=25)
     def test_buy_position_pnl_on_target_hit(self, params, exit_price):
@@ -546,6 +591,7 @@ class TestProperty55PositionClosing:
 # **Validates: Requirements 12.5**
 # ---------------------------------------------------------------------------
 
+
 class TestProperty56OCOOrderCancellation:
     """For any position where one exit order (stop or target) is filled,
     the other should be cancelled.
@@ -574,9 +620,9 @@ class TestProperty56OCOOrderCancellation:
         pm.on_stop_hit(pos.stop_order_id, params["stop_loss"])
 
         cancel_calls = [c[0][0] for c in oms.cancel_order.call_args_list]
-        assert target_order_id in cancel_calls, (
-            f"Target order {target_order_id} was not cancelled after stop hit"
-        )
+        assert (
+            target_order_id in cancel_calls
+        ), f"Target order {target_order_id} was not cancelled after stop hit"
 
     @given(params=any_position_params())
     @settings(max_examples=25)
@@ -599,9 +645,9 @@ class TestProperty56OCOOrderCancellation:
         pm.on_target_hit(pos.target_order_id, params["target"])
 
         cancel_calls = [c[0][0] for c in oms.cancel_order.call_args_list]
-        assert stop_order_id in cancel_calls, (
-            f"Stop order {stop_order_id} was not cancelled after target hit"
-        )
+        assert (
+            stop_order_id in cancel_calls
+        ), f"Stop order {stop_order_id} was not cancelled after target hit"
 
     @given(params=any_position_params())
     @settings(max_examples=25)

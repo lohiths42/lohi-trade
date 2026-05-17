@@ -11,7 +11,7 @@ int getChannels_subscribe(RedisModuleCtx *ctx, RedisModuleString **argv, int arg
         return REDISMODULE_OK;
     }
     char *err = NULL;
-    
+
     /* getchannels.command [[subscribe|unsubscribe|publish] [pattern|literal] <channel> ...]
      * This command marks the given channel is accessed based on the
      * provided modifiers. */

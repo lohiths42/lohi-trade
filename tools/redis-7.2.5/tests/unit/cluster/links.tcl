@@ -257,7 +257,7 @@ start_cluster 3 0 {tags {external:skip cluster}} {
         # first "INFO memory" results and search for the property again
         set res [string range $res [expr [string length $res] / 2] end]
         set link_mem_after_pubs [getInfoProperty $res mem_cluster_links]
-        
+
         # We expect the memory to have increased by more than
         # the culmulative size of the publish messages
         set mem_diff_floor [expr $msg_size * $num_msgs]

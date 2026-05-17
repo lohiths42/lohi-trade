@@ -47,7 +47,8 @@ from app.services.service_registry import (  # noqa: E402
 # Valid environment variable names: start with uppercase letter or underscore,
 # followed by uppercase letters, digits, or underscores. Minimum length 1.
 env_var_name_strategy = st.from_regex(
-    r"[A-Z][A-Z0-9_]{0,30}", fullmatch=True,
+    r"[A-Z][A-Z0-9_]{0,30}",
+    fullmatch=True,
 )
 
 # Non-empty string values for credentials. Constrain to printable ASCII
@@ -89,7 +90,8 @@ class TestCredentialPersistenceRoundTrip:
     @given(credentials=credentials_dict_strategy)
     @settings(max_examples=100)
     def test_credentials_survive_write_read_round_trip(
-        self, credentials: dict[str, str],
+        self,
+        credentials: dict[str, str],
     ) -> None:
         """For any valid set of credentials (key-value pairs where keys are
         valid environment variable names and values are non-empty strings),
@@ -122,7 +124,8 @@ class TestCredentialPersistenceRoundTrip:
             patched_groups = {**_GROUPS_BY_ID, test_group_id: test_group}
 
             with patch(
-                "app.services.credential_store._GROUPS_BY_ID", patched_groups,
+                "app.services.credential_store._GROUPS_BY_ID",
+                patched_groups,
             ):
                 store = CredentialStore(repo_root=repo_root)
 
@@ -147,7 +150,8 @@ class TestCredentialPersistenceRoundTrip:
     @given(credentials=credentials_dict_strategy)
     @settings(max_examples=100)
     def test_credentials_written_to_correct_env_file(
-        self, credentials: dict[str, str],
+        self,
+        credentials: dict[str, str],
     ) -> None:
         """Credentials for a group with env_file='.env.research' must be
         written to .env.research, not .env.
@@ -176,7 +180,8 @@ class TestCredentialPersistenceRoundTrip:
             patched_groups = {**_GROUPS_BY_ID, test_group_id: test_group}
 
             with patch(
-                "app.services.credential_store._GROUPS_BY_ID", patched_groups,
+                "app.services.credential_store._GROUPS_BY_ID",
+                patched_groups,
             ):
                 store = CredentialStore(repo_root=repo_root)
 
@@ -185,9 +190,9 @@ class TestCredentialPersistenceRoundTrip:
 
                 # Verify .env.research was created (not .env)
                 env_research_path = repo_root / ".env.research"
-                assert env_research_path.exists(), (
-                    ".env.research file should exist for research groups"
-                )
+                assert (
+                    env_research_path.exists()
+                ), ".env.research file should exist for research groups"
 
                 # Read back and verify equivalence
                 result = store.read_raw_credentials(test_group_id)

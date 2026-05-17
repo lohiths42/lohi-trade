@@ -41,7 +41,11 @@ class _RaisingLLM(FakeLLMProvider):
 
 
 def _build_hit(
-    *, chunk_id: str, user_id: UUID, symbol: str, text: str,
+    *,
+    chunk_id: str,
+    user_id: UUID,
+    symbol: str,
+    text: str,
 ) -> ChunkHit:
     return ChunkHit(
         chunk=ChunkRecord(
@@ -130,7 +134,9 @@ class TestHappyPath:
 
         result = await agent.invoke(
             _build_context(
-                user_id=user_id, symbol="RELIANCE", retriever=retriever,
+                user_id=user_id,
+                symbol="RELIANCE",
+                retriever=retriever,
             ),
         )
         assert result.kind == "ok"
@@ -160,7 +166,9 @@ class TestRetrievalShape:
         agent = MacroAgent(llm=FakeLLMProvider())
         await agent.invoke(
             _build_context(
-                user_id=user_id, symbol="RELIANCE", retriever=retriever,
+                user_id=user_id,
+                symbol="RELIANCE",
+                retriever=retriever,
             ),
         )
         filter_used: RetrievalFilter = retriever.calls[0]["filter"]
@@ -231,7 +239,9 @@ class TestFailureModes:
         agent = MacroAgent(llm=FakeLLMProvider())
         result = await agent.invoke(
             _build_context(
-                user_id=user_id, symbol="RELIANCE", retriever=retriever,
+                user_id=user_id,
+                symbol="RELIANCE",
+                retriever=retriever,
             ),
         )
         assert result.kind == "no_data"
@@ -264,6 +274,8 @@ class TestFailureModes:
         with pytest.raises(RuntimeError, match="macro llm exploded"):
             await agent.invoke(
                 _build_context(
-                    user_id=user_id, symbol="RELIANCE", retriever=retriever,
+                    user_id=user_id,
+                    symbol="RELIANCE",
+                    retriever=retriever,
                 ),
             )

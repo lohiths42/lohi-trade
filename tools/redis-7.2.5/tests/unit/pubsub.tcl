@@ -445,7 +445,7 @@ start_server {tags {"pubsub network"}} {
         assert_equal {1} [psubscribe $rd1 *]
         r set foo bar
         # second set of foo should not cause a 'new' event
-        r set foo baz 
+        r set foo baz
         r set bar bar
         assert_equal "pmessage * __keyevent@${db}__:new foo" [$rd1 read]
         assert_equal "pmessage * __keyevent@${db}__:new bar" [$rd1 read]

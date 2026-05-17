@@ -35,10 +35,20 @@ volume_st = st.integers(min_value=0, max_value=10_000_000)
 
 date_st = st.dates(min_value=date(2010, 1, 1), max_value=date(2025, 12, 31))
 
-symbol_st = st.sampled_from([
-    "RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK",
-    "SBIN", "BHARTIARTL", "KOTAKBANK", "LT", "WIPRO",
-])
+symbol_st = st.sampled_from(
+    [
+        "RELIANCE",
+        "TCS",
+        "HDFCBANK",
+        "INFY",
+        "ICICIBANK",
+        "SBIN",
+        "BHARTIARTL",
+        "KOTAKBANK",
+        "LT",
+        "WIPRO",
+    ]
+)
 
 
 def ohlcv_bar_st(symbol=None, bar_date=None):
@@ -100,6 +110,7 @@ def _deduplicate_bars_by_date(bars):
 
 
 # ── Property 17: Corporate action round-trip ──────────────────────
+
 
 class TestCorporateActionRoundTrip:
     """**Property 17: Corporate action round-trip**

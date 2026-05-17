@@ -16,14 +16,11 @@ from datetime import date, datetime, timezone
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
-from hypothesis import given, settings, assume
-from hypothesis import strategies as st
-
 from app.services.stock_universe_service import (
     StockUniverseService,
-    Security,
 )
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
 
 def _run_async(coro):
@@ -138,9 +135,9 @@ class TestSearchResponseTimeProperty:
         result = _run_async(svc.search_securities(query))
         elapsed_ms = (time.monotonic() - start) * 1000
 
-        assert elapsed_ms < 200, (
-            f"Search for {query!r} took {elapsed_ms:.1f}ms, exceeding 200ms target"
-        )
+        assert (
+            elapsed_ms < 200
+        ), f"Search for {query!r} took {elapsed_ms:.1f}ms, exceeding 200ms target"
         # Result should be a list (may be empty or contain items)
         assert isinstance(result, list)
 
@@ -175,13 +172,11 @@ class TestSearchCompletenessProperty:
 
         result = _run_async(svc.search_securities(symbol))
 
-        assert len(result) >= 1, (
-            f"Searching for exact symbol {symbol!r} returned no results"
-        )
+        assert len(result) >= 1, f"Searching for exact symbol {symbol!r} returned no results"
         symbols_returned = [s.symbol for s in result]
-        assert symbol in symbols_returned, (
-            f"Security with symbol {symbol!r} not found in results: {symbols_returned}"
-        )
+        assert (
+            symbol in symbols_returned
+        ), f"Security with symbol {symbol!r} not found in results: {symbols_returned}"
 
     @given(symbol=stock_symbol)
     @settings(max_examples=25)
@@ -195,6 +190,6 @@ class TestSearchCompletenessProperty:
         result = _run_async(svc.search_securities(symbol))
 
         # With no active securities matching, result should be empty
-        assert len(result) == 0, (
-            f"Search for inactive symbol {symbol!r} unexpectedly returned results"
-        )
+        assert (
+            len(result) == 0
+        ), f"Search for inactive symbol {symbol!r} unexpectedly returned results"

@@ -156,8 +156,8 @@ static size_t rioFileWrite(rio *r, const void *buf, size_t len) {
                  * OS, and when posix_fadvise is called, the dirty page may
                  * still be in flushing, which means it would be ignored by
                  * posix_fadvise.
-                 * 
-                 * So we posix_fadvise the whole file, and the writeback-ed 
+                 *
+                 * So we posix_fadvise the whole file, and the writeback-ed
                  * pages will have other chances to be reclaimed. */
                 reclaimFilePageCache(fileno(r->io.file.fp), 0, 0);
             }
@@ -453,7 +453,7 @@ void rioSetAutoSync(rio *r, off_t bytes) {
 /* Set the file-based rio object to reclaim cache after every auto-sync.
  * In the Linux implementation POSIX_FADV_DONTNEED skips the dirty
  * pages, so if auto sync is unset this option will have no effect.
- * 
+ *
  * This feature can reduce the cache footprint backed by the file. */
 void rioSetReclaimCache(rio *r, int enabled) {
     r->io.file.reclaim_cache = enabled;

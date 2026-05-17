@@ -29,6 +29,7 @@ from src.state.event_bus import EventBus
 
 # Test fixtures
 
+
 @pytest.fixture
 def mock_broker():
     """Create mock broker adapter."""
@@ -86,6 +87,7 @@ def sample_tick():
 
 
 # Unit Tests
+
 
 def test_websocket_client_initialization(websocket_client):
     """Test WebSocket client initialization."""
@@ -248,18 +250,19 @@ def test_get_statistics(websocket_client, sample_tick):
 
 # Property-Based Tests
 
+
 @given(
     reconnect_attempt=st.integers(min_value=1, max_value=10),
 )
 @settings(max_examples=5, deadline=None)
 def test_property_reconnection_backoff(reconnect_attempt):
     """Property 2: WebSocket Reconnection Backoff
-    
+
     For any WebSocket connection failure, reconnection attempts should follow
     exponential backoff pattern (1s, 2s, 4s, 8s, max 30s).
-    
+
     Validates: Requirements 1.3
-    
+
     Feature: lohi-trade, Property 2: WebSocket Reconnection Backoff
     """
     # Calculate expected backoff delay
@@ -401,15 +404,15 @@ def test_property_tick_processing_throughput(num_symbols, ticks_per_symbol):
 @settings(max_examples=5, deadline=None)
 def test_property_tick_to_event_bus_latency(symbol, token, ltp, volume):
     """Property 1: Tick to Event Bus Latency
-    
+
     For any tick received from the broker WebSocket, the time from receipt
     to Event_Bus publish should be less than 10 milliseconds.
-    
+
     Note: This test verifies the latency tracking mechanism. Actual latency
     depends on system performance and cannot be guaranteed in unit tests.
-    
+
     Validates: Requirements 1.2
-    
+
     Feature: lohi-trade, Property 1: Tick to Event Bus Latency
     """
     # Create mocks inside the test to avoid fixture issues with Hypothesis
@@ -468,7 +471,7 @@ def test_property_tick_to_event_bus_latency(symbol, token, ltp, volume):
 @settings(max_examples=5, deadline=None)
 def test_property_average_latency_calculation(num_ticks):
     """Test that average latency is calculated correctly.
-    
+
     For any number of ticks processed, the average latency should be
     the sum of all latencies divided by the number of ticks.
     """
@@ -520,7 +523,7 @@ def test_property_average_latency_calculation(num_ticks):
 @settings(max_examples=5, deadline=None)
 def test_property_subscription_state_maintained(symbols):
     """Test that subscription state is maintained correctly.
-    
+
     For any list of symbols subscribed, the client should maintain
     the correct subscription state.
     """

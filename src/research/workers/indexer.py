@@ -150,7 +150,10 @@ async def _run_worker(*, once: bool = False) -> None:
         bse_cfg = _sources_block(ingest_cfg, "bse_feed")
         if bse_cfg.get("enabled", True):
             bse_task = await _start_bse_poller(
-                bse_cfg, redis_client, settings, once=once,
+                bse_cfg,
+                redis_client,
+                settings,
+                once=once,
             )
             if bse_task is not None:
                 tasks.append(bse_task)
@@ -159,7 +162,10 @@ async def _run_worker(*, once: bool = False) -> None:
         nse_cfg = _sources_block(ingest_cfg, "nse_feed")
         if nse_cfg.get("enabled", True):
             nse_task = await _start_nse_poller(
-                nse_cfg, redis_client, settings, once=once,
+                nse_cfg,
+                redis_client,
+                settings,
+                once=once,
             )
             if nse_task is not None:
                 tasks.append(nse_task)
@@ -171,7 +177,8 @@ async def _run_worker(*, once: bool = False) -> None:
         uploads_cfg = _sources_block(ingest_cfg, "user_uploads")
         if uploads_cfg.get("enabled", True):
             watcher = await _start_user_uploads_watcher(
-                uploads_cfg, redis_client,
+                uploads_cfg,
+                redis_client,
             )
             if watcher is not None:
                 watchers.append(watcher)

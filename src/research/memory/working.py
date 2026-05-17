@@ -200,7 +200,8 @@ class WorkingMemory:
         so no other module needs to know the on-the-wire shape.
         """
         return WORKING_MEMORY_KEY_TEMPLATE.format(
-            user_id=str(user_id), conv_id=str(conv_id),
+            user_id=str(user_id),
+            conv_id=str(conv_id),
         )
 
     @staticmethod
@@ -211,7 +212,8 @@ class WorkingMemory:
         :meth:`forget` when no specific ``conv_id`` is supplied.
         """
         return WORKING_MEMORY_KEY_TEMPLATE.format(
-            user_id=str(user_id), conv_id="*",
+            user_id=str(user_id),
+            conv_id="*",
         )
 
     # ------------------------------------------------------------------ #
@@ -219,7 +221,10 @@ class WorkingMemory:
     # ------------------------------------------------------------------ #
 
     async def append_turn(
-        self, user_id: UUID, conv_id: UUID, turn: dict,
+        self,
+        user_id: UUID,
+        conv_id: UUID,
+        turn: dict,
     ) -> None:
         """Append a single turn to ``(user_id, conv_id)``.
 
@@ -264,16 +269,14 @@ class WorkingMemory:
                 decoded = json.loads(text)
             except (TypeError, ValueError):
                 logger.warning(
-                    "working_memory.read: skipping non-JSON entry for "
-                    "user_id=%s conv_id=%s",
+                    "working_memory.read: skipping non-JSON entry for " "user_id=%s conv_id=%s",
                     user_id,
                     conv_id,
                 )
                 continue
             if not isinstance(decoded, dict):
                 logger.warning(
-                    "working_memory.read: skipping non-dict entry for "
-                    "user_id=%s conv_id=%s",
+                    "working_memory.read: skipping non-dict entry for " "user_id=%s conv_id=%s",
                     user_id,
                     conv_id,
                 )
@@ -286,7 +289,9 @@ class WorkingMemory:
     # ------------------------------------------------------------------ #
 
     async def summarise_if_needed(
-        self, user_id: UUID, conv_id: UUID,
+        self,
+        user_id: UUID,
+        conv_id: UUID,
     ) -> None:
         """Collapse the oldest half of turns into a summary if over budget.
 
@@ -371,7 +376,8 @@ class WorkingMemory:
         new_entries = [summary_turn] + newer
         for entry in new_entries:
             await self._redis.rpush(
-                key, json.dumps(entry, ensure_ascii=False, sort_keys=True),
+                key,
+                json.dumps(entry, ensure_ascii=False, sort_keys=True),
             )
 
         logger.info(
@@ -389,7 +395,9 @@ class WorkingMemory:
     # ------------------------------------------------------------------ #
 
     async def forget(
-        self, user_id: UUID, conv_id: UUID | None = None,
+        self,
+        user_id: UUID,
+        conv_id: UUID | None = None,
     ) -> int:
         """Delete one conversation or every conversation for ``user_id``.
 

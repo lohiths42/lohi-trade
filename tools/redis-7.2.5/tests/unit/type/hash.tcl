@@ -668,7 +668,7 @@ start_server {tags {"hash"}} {
     test {HINCRBYFLOAT over hash-max-listpack-value encoded with a listpack} {
         set original_max_value [lindex [r config get hash-max-ziplist-value] 1]
         r config set hash-max-listpack-value 8
-        
+
         # hash's value exceeds hash-max-listpack-value
         r del smallhash
         r del bighash

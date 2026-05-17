@@ -207,8 +207,7 @@ class CanonicalDoc(BaseModel):
     )
     sha256: str = Field(
         ...,
-        description="64-char lowercase hex SHA-256 over the canonical "
-        "payload (Req 3.5).",
+        description="64-char lowercase hex SHA-256 over the canonical " "payload (Req 3.5).",
     )
     published_at: datetime = Field(
         ...,
@@ -223,8 +222,7 @@ class CanonicalDoc(BaseModel):
     )
     sections: list[SectionSpan] = Field(
         default_factory=list,
-        description="Tagged section spans over ``canonical_text`` "
-        "(Req 10.6).",
+        description="Tagged section spans over ``canonical_text`` " "(Req 10.6).",
     )
     metadata: dict[str, Any] = Field(
         default_factory=dict,
@@ -246,7 +244,8 @@ class CanonicalDoc(BaseModel):
     @field_validator("sections")
     @classmethod
     def _sections_are_wellformed(
-        cls, value: list[SectionSpan],
+        cls,
+        value: list[SectionSpan],
     ) -> list[SectionSpan]:
         """Reject overlapping, reversed, or duplicate-name section spans.
 
@@ -263,8 +262,7 @@ class CanonicalDoc(BaseModel):
         for span in ordered:
             if span.end < span.start:
                 raise ValueError(
-                    f"section {span.name!r} has end < start "
-                    f"({span.end} < {span.start})",
+                    f"section {span.name!r} has end < start " f"({span.end} < {span.start})",
                 )
             if span.start < prev_end:
                 raise ValueError(
@@ -461,7 +459,8 @@ def _isoformat_utc(value: datetime) -> str:
 
 
 def _inject_section_markers(
-    canonical_text: str, sections: list[SectionSpan],
+    canonical_text: str,
+    sections: list[SectionSpan],
 ) -> str:
     """Return ``canonical_text`` with start/end HTML comments inserted.
 
@@ -638,8 +637,7 @@ def _extract_sections(
 
     if pending_starts:
         raise ValueError(
-            "unterminated section start marker(s): "
-            f"{sorted(pending_starts.keys())}",
+            "unterminated section start marker(s): " f"{sorted(pending_starts.keys())}",
         )
 
     # Sort by ``start`` so the round-trip yields the same ordering as a

@@ -11,7 +11,7 @@ import io
 import json
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime
 from decimal import Decimal
 from typing import Any, Optional
 
@@ -24,13 +24,35 @@ DEFAULT_PAGE_SIZE = 50
 MAX_PAGE_SIZE = 100
 
 VALID_SORT_COLUMNS = {
-    "symbol", "company_name", "sector", "market_cap", "pe_ratio", "pb_ratio",
-    "dividend_yield", "eps", "roe", "debt_to_equity", "revenue_growth_1y",
-    "revenue_growth_3y", "profit_growth_1y", "profit_growth_3y",
-    "rsi_14", "avg_volume_20d", "price_change_1d", "price_change_1w",
-    "price_change_1m", "price_change_3m", "price_change_6m",
-    "price_change_1y", "price_change_3y", "price_change_5y",
-    "return_1y", "cagr_3y", "cagr_5y", "high_52w", "low_52w",
+    "symbol",
+    "company_name",
+    "sector",
+    "market_cap",
+    "pe_ratio",
+    "pb_ratio",
+    "dividend_yield",
+    "eps",
+    "roe",
+    "debt_to_equity",
+    "revenue_growth_1y",
+    "revenue_growth_3y",
+    "profit_growth_1y",
+    "profit_growth_3y",
+    "rsi_14",
+    "avg_volume_20d",
+    "price_change_1d",
+    "price_change_1w",
+    "price_change_1m",
+    "price_change_3m",
+    "price_change_6m",
+    "price_change_1y",
+    "price_change_3y",
+    "price_change_5y",
+    "return_1y",
+    "cagr_3y",
+    "cagr_5y",
+    "high_52w",
+    "low_52w",
 }
 
 VALID_SORT_ORDERS = {"asc", "desc"}
@@ -42,6 +64,7 @@ VALID_SORT_ORDERS = {"asc", "desc"}
 @dataclass
 class Range:
     """Min/max range for a numeric filter."""
+
     min: Optional[float] = None
     max: Optional[float] = None
 
@@ -49,6 +72,7 @@ class Range:
 @dataclass
 class ScreenerFilters:
     """All supported screener filter parameters."""
+
     # Fundamental
     pe_ratio: Optional[Range] = None
     pb_ratio: Optional[Range] = None
@@ -88,6 +112,7 @@ class ScreenerFilters:
 @dataclass
 class ScreenerResultItem:
     """A single row in screener results."""
+
     security_id: int
     symbol: str = ""
     company_name: str = ""
@@ -129,6 +154,7 @@ class ScreenerResultItem:
 @dataclass
 class ScreenerResult:
     """Paginated screener results."""
+
     items: list[ScreenerResultItem] = field(default_factory=list)
     total: int = 0
     page: int = 1
@@ -139,6 +165,7 @@ class ScreenerResult:
 @dataclass
 class ScreenerPreset:
     """A saved screener preset (custom or pre-built)."""
+
     id: Optional[str] = None
     user_id: Optional[str] = None
     name: str = ""
@@ -210,12 +237,30 @@ def filters_to_dict(filters: ScreenerFilters) -> dict:
     """Serialize ScreenerFilters to a JSON-compatible dict."""
     result: dict[str, Any] = {}
     for fld_name in [
-        "pe_ratio", "pb_ratio", "market_cap", "dividend_yield", "eps", "roe",
-        "debt_to_equity", "revenue_growth_1y", "revenue_growth_3y",
-        "profit_growth_1y", "profit_growth_3y", "rsi_14", "avg_volume",
-        "price_change_1d", "price_change_1w", "price_change_1m",
-        "price_change_3m", "price_change_6m", "price_change_1y",
-        "price_change_3y", "price_change_5y", "return_1y", "cagr_3y", "cagr_5y",
+        "pe_ratio",
+        "pb_ratio",
+        "market_cap",
+        "dividend_yield",
+        "eps",
+        "roe",
+        "debt_to_equity",
+        "revenue_growth_1y",
+        "revenue_growth_3y",
+        "profit_growth_1y",
+        "profit_growth_3y",
+        "rsi_14",
+        "avg_volume",
+        "price_change_1d",
+        "price_change_1w",
+        "price_change_1m",
+        "price_change_3m",
+        "price_change_6m",
+        "price_change_1y",
+        "price_change_3y",
+        "price_change_5y",
+        "return_1y",
+        "cagr_3y",
+        "cagr_5y",
     ]:
         val = getattr(filters, fld_name, None)
         if val is not None:
@@ -241,12 +286,30 @@ def dict_to_filters(data: dict) -> ScreenerFilters:
     """Deserialize a dict to ScreenerFilters."""
     filters = ScreenerFilters()
     range_fields = [
-        "pe_ratio", "pb_ratio", "market_cap", "dividend_yield", "eps", "roe",
-        "debt_to_equity", "revenue_growth_1y", "revenue_growth_3y",
-        "profit_growth_1y", "profit_growth_3y", "rsi_14", "avg_volume",
-        "price_change_1d", "price_change_1w", "price_change_1m",
-        "price_change_3m", "price_change_6m", "price_change_1y",
-        "price_change_3y", "price_change_5y", "return_1y", "cagr_3y", "cagr_5y",
+        "pe_ratio",
+        "pb_ratio",
+        "market_cap",
+        "dividend_yield",
+        "eps",
+        "roe",
+        "debt_to_equity",
+        "revenue_growth_1y",
+        "revenue_growth_3y",
+        "profit_growth_1y",
+        "profit_growth_3y",
+        "rsi_14",
+        "avg_volume",
+        "price_change_1d",
+        "price_change_1w",
+        "price_change_1m",
+        "price_change_3m",
+        "price_change_6m",
+        "price_change_1y",
+        "price_change_3y",
+        "price_change_5y",
+        "return_1y",
+        "cagr_3y",
+        "cagr_5y",
     ]
     for fld_name in range_fields:
         val = data.get(fld_name)
@@ -403,7 +466,8 @@ class ScreenerEngine:
                 if count >= MAX_PRESETS_PER_USER:
                     logger.warning(
                         "User %s has reached max %d presets",
-                        user_id, MAX_PRESETS_PER_USER,
+                        user_id,
+                        MAX_PRESETS_PER_USER,
                     )
                     return None
 
@@ -544,9 +608,7 @@ class ScreenerEngine:
 
     # ── Query builder ────────────────────────────────────────────────────
 
-    def _build_where_clauses(
-        self, filters: ScreenerFilters
-    ) -> tuple[list[str], list[Any], int]:
+    def _build_where_clauses(self, filters: ScreenerFilters) -> tuple[list[str], list[Any], int]:
         """Build WHERE clauses and params from ScreenerFilters.
 
         Returns (clauses, params, next_param_idx).
@@ -666,8 +728,7 @@ class ScreenerEngine:
         # "near" = within 5% of the 52-week high or low
         if filters.near_52w_high is True:
             clauses.append(
-                "sf.high_52w IS NOT NULL AND sf.high_52w > 0 "
-                "AND st.price_change_1d IS NOT NULL"
+                "sf.high_52w IS NOT NULL AND sf.high_52w > 0 " "AND st.price_change_1d IS NOT NULL"
             )
             # We approximate: current price is close to 52w high
             # Using: high_52w - (high_52w * 0.05) <= current implied price
@@ -680,22 +741,19 @@ class ScreenerEngine:
 
         if filters.near_52w_low is True:
             clauses.append(
-                "sf.low_52w IS NOT NULL AND sf.low_52w > 0 "
-                "AND st.price_change_1d IS NOT NULL"
+                "sf.low_52w IS NOT NULL AND sf.low_52w > 0 " "AND st.price_change_1d IS NOT NULL"
             )
 
         # ── MA crossover ─────────────────────────────────────────────
         if filters.ma_crossover_50_200 == "golden":
             # Golden cross: SMA 50 > SMA 200
             clauses.append(
-                "st.sma_50 IS NOT NULL AND st.sma_200 IS NOT NULL "
-                "AND st.sma_50 > st.sma_200"
+                "st.sma_50 IS NOT NULL AND st.sma_200 IS NOT NULL " "AND st.sma_50 > st.sma_200"
             )
         elif filters.ma_crossover_50_200 == "death":
             # Death cross: SMA 50 < SMA 200
             clauses.append(
-                "st.sma_50 IS NOT NULL AND st.sma_200 IS NOT NULL "
-                "AND st.sma_50 < st.sma_200"
+                "st.sma_50 IS NOT NULL AND st.sma_200 IS NOT NULL " "AND st.sma_50 < st.sma_200"
             )
 
         return clauses, params, idx
@@ -707,15 +765,34 @@ class ScreenerEngine:
         """Map a sort column name to the correct table-qualified column."""
         securities_cols = {"symbol", "company_name", "sector"}
         fundamental_cols = {
-            "pe_ratio", "pb_ratio", "market_cap", "dividend_yield", "eps",
-            "roe", "debt_to_equity", "revenue_growth_1y", "revenue_growth_3y",
-            "profit_growth_1y", "profit_growth_3y", "return_1y", "cagr_3y",
-            "cagr_5y", "high_52w", "low_52w",
+            "pe_ratio",
+            "pb_ratio",
+            "market_cap",
+            "dividend_yield",
+            "eps",
+            "roe",
+            "debt_to_equity",
+            "revenue_growth_1y",
+            "revenue_growth_3y",
+            "profit_growth_1y",
+            "profit_growth_3y",
+            "return_1y",
+            "cagr_3y",
+            "cagr_5y",
+            "high_52w",
+            "low_52w",
         }
         technical_cols = {
-            "rsi_14", "avg_volume_20d", "price_change_1d", "price_change_1w",
-            "price_change_1m", "price_change_3m", "price_change_6m",
-            "price_change_1y", "price_change_3y", "price_change_5y",
+            "rsi_14",
+            "avg_volume_20d",
+            "price_change_1d",
+            "price_change_1w",
+            "price_change_1m",
+            "price_change_3m",
+            "price_change_6m",
+            "price_change_1y",
+            "price_change_3y",
+            "price_change_5y",
         }
 
         if sort_by in securities_cols:
@@ -794,53 +871,80 @@ class ScreenerEngine:
         writer = csv.writer(output)
 
         headers = [
-            "Symbol", "Company Name", "Exchange", "Sector", "Market Cap Category",
-            "PE Ratio", "PB Ratio", "Market Cap", "Dividend Yield", "EPS",
-            "ROE", "Debt to Equity", "Revenue Growth 1Y", "Revenue Growth 3Y",
-            "Profit Growth 1Y", "Profit Growth 3Y", "Return 1Y", "CAGR 3Y",
-            "CAGR 5Y", "52W High", "52W Low", "RSI 14", "SMA 50", "SMA 200",
-            "Avg Volume 20D", "Price Change 1D", "Price Change 1W",
-            "Price Change 1M", "Price Change 3M", "Price Change 6M",
-            "Price Change 1Y", "Price Change 3Y", "Price Change 5Y",
+            "Symbol",
+            "Company Name",
+            "Exchange",
+            "Sector",
+            "Market Cap Category",
+            "PE Ratio",
+            "PB Ratio",
+            "Market Cap",
+            "Dividend Yield",
+            "EPS",
+            "ROE",
+            "Debt to Equity",
+            "Revenue Growth 1Y",
+            "Revenue Growth 3Y",
+            "Profit Growth 1Y",
+            "Profit Growth 3Y",
+            "Return 1Y",
+            "CAGR 3Y",
+            "CAGR 5Y",
+            "52W High",
+            "52W Low",
+            "RSI 14",
+            "SMA 50",
+            "SMA 200",
+            "Avg Volume 20D",
+            "Price Change 1D",
+            "Price Change 1W",
+            "Price Change 1M",
+            "Price Change 3M",
+            "Price Change 6M",
+            "Price Change 1Y",
+            "Price Change 3Y",
+            "Price Change 5Y",
         ]
         writer.writerow(headers)
 
         for row in rows:
-            writer.writerow([
-                row.get("symbol", ""),
-                row.get("company_name", ""),
-                row.get("exchange", ""),
-                row.get("sector", ""),
-                row.get("market_cap_category", ""),
-                _fmt(row.get("pe_ratio")),
-                _fmt(row.get("pb_ratio")),
-                _fmt(row.get("market_cap")),
-                _fmt(row.get("dividend_yield")),
-                _fmt(row.get("eps")),
-                _fmt(row.get("roe")),
-                _fmt(row.get("debt_to_equity")),
-                _fmt(row.get("revenue_growth_1y")),
-                _fmt(row.get("revenue_growth_3y")),
-                _fmt(row.get("profit_growth_1y")),
-                _fmt(row.get("profit_growth_3y")),
-                _fmt(row.get("return_1y")),
-                _fmt(row.get("cagr_3y")),
-                _fmt(row.get("cagr_5y")),
-                _fmt(row.get("high_52w")),
-                _fmt(row.get("low_52w")),
-                _fmt(row.get("rsi_14")),
-                _fmt(row.get("sma_50")),
-                _fmt(row.get("sma_200")),
-                row.get("avg_volume_20d", ""),
-                _fmt(row.get("price_change_1d")),
-                _fmt(row.get("price_change_1w")),
-                _fmt(row.get("price_change_1m")),
-                _fmt(row.get("price_change_3m")),
-                _fmt(row.get("price_change_6m")),
-                _fmt(row.get("price_change_1y")),
-                _fmt(row.get("price_change_3y")),
-                _fmt(row.get("price_change_5y")),
-            ])
+            writer.writerow(
+                [
+                    row.get("symbol", ""),
+                    row.get("company_name", ""),
+                    row.get("exchange", ""),
+                    row.get("sector", ""),
+                    row.get("market_cap_category", ""),
+                    _fmt(row.get("pe_ratio")),
+                    _fmt(row.get("pb_ratio")),
+                    _fmt(row.get("market_cap")),
+                    _fmt(row.get("dividend_yield")),
+                    _fmt(row.get("eps")),
+                    _fmt(row.get("roe")),
+                    _fmt(row.get("debt_to_equity")),
+                    _fmt(row.get("revenue_growth_1y")),
+                    _fmt(row.get("revenue_growth_3y")),
+                    _fmt(row.get("profit_growth_1y")),
+                    _fmt(row.get("profit_growth_3y")),
+                    _fmt(row.get("return_1y")),
+                    _fmt(row.get("cagr_3y")),
+                    _fmt(row.get("cagr_5y")),
+                    _fmt(row.get("high_52w")),
+                    _fmt(row.get("low_52w")),
+                    _fmt(row.get("rsi_14")),
+                    _fmt(row.get("sma_50")),
+                    _fmt(row.get("sma_200")),
+                    row.get("avg_volume_20d", ""),
+                    _fmt(row.get("price_change_1d")),
+                    _fmt(row.get("price_change_1w")),
+                    _fmt(row.get("price_change_1m")),
+                    _fmt(row.get("price_change_3m")),
+                    _fmt(row.get("price_change_6m")),
+                    _fmt(row.get("price_change_1y")),
+                    _fmt(row.get("price_change_3y")),
+                    _fmt(row.get("price_change_5y")),
+                ]
+            )
 
         return output.getvalue().encode("utf-8")
 

@@ -104,19 +104,36 @@ LOHI-TRADE ingests live market data and financial news, derives trading signals 
 
 | Dependency | Minimum Version | Purpose |
 |------------|----------------|---------|
-| **Docker** | 20.10+ | Container runtime for PostgreSQL and Redis |
-| **Docker Compose** | 2.0+ | Multi-container orchestration |
-| **Node.js** | 18.0+ | Frontend build and dev server |
 | **Python** | 3.11+ | Backend gateway and trading engine |
+| **Node.js** | 18.0+ | Frontend build and dev server |
+| **Docker** | 20.10+ | Container runtime for PostgreSQL and Redis |
 | **npm** | 9.0+ | Frontend package management |
 | **Git** | 2.0+ | Source control |
+| **ta-lib** | 0.4.0+ | Technical analysis C headers |
+
+### OS-Specific Setup Commands
+
+**macOS:**
+```bash
+brew install python@3.11 node@18 git curl lsof ta-lib
+brew install --cask docker
+```
+
+**Ubuntu/Debian:**
+```bash
+sudo apt update
+sudo apt install -y python3.11 python3.11-venv nodejs npm git curl lsof
+# ta-lib requires building from source on Ubuntu:
+wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz
+tar -xzf ta-lib-0.4.0-src.tar.gz && cd ta-lib/
+./configure --prefix=/usr && make && sudo make install
+```
 
 ### Optional
 
 | Dependency | Purpose |
 |------------|---------|
 | **Ollama** | Local AI inference (alternative to NVIDIA NIM cloud) |
-| **shellcheck** | Linting for shell scripts |
 
 ---
 
@@ -126,20 +143,35 @@ The fastest way to get LOHI-TRADE running:
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/your-org/Lohi-Trade-OpenSource.git
+git clone https://github.com/AdhirU/Lohi-Trade-OpenSource.git
 cd Lohi-Trade-OpenSource
 
-# 2. Install LOHI-TRADE
-pip install lohi-trade
+# 2. Check Prerequisites (Optional but recommended)
+./scripts/check_prereqs.sh
 
-# 3. Run the setup command
+# 3. Install LOHI-TRADE
+pip install ".[all]"
+
+# 4. Run the setup command
+# If you don't want to use Docker, use: lohi setup --skip-docker
 lohi setup
 
-# 4. Configure external services in the browser wizard
+# 5. Configure external services in the browser wizard
 #    (opens automatically at http://localhost:3000/setup/integrations)
 
-# 5. Start trading (or paper trading)!
+# 6. Start trading!
 ```
+
+### 🧠 NVIDIA NIM Integration (Optional)
+LOHI-TRADE supports **NVIDIA NIM** for high-performance AI inference and research generation without running heavy local models.
+To enable it:
+1. Obtain an API key from [build.nvidia.com](https://build.nvidia.com/).
+2. Set it in your `.env` or `.env.research` file:
+   ```env
+   NIM_API_KEY=nvapi-your-key-here
+   NIM_MODEL=meta/llama3.1-8b-instruct
+   ```
+If provided, LOHI-TRADE will use NVIDIA NIM instead of falling back to Ollama.
 
 The `lohi setup` command handles the runtime bootstrap:
 - Checks system dependencies and reports any missing ones with install commands

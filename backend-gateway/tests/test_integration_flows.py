@@ -11,36 +11,20 @@ Requirements: 1-6, 10-11, 18-21
 import base64
 from datetime import datetime
 from decimal import Decimal
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
-import pytest
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-
-from app.routers import auth_v2, verification, bank, screener, chatbot
+from app.routers import auth_v2, bank, chatbot, screener, verification
 from app.routers.auth_v2 import get_current_user_id, get_current_user_payload
-from app.middleware.rbac import require_role
 from app.services.account_service import AccountService, TokenPair, User, UserRole
-from app.services.verification_service import (
-    PANVerificationService,
-    PANVerificationResult,
-    PANStatus,
-    KYCService,
-    KYCSubmissionResult,
-    KYCStatus,
-    DMATService,
-    DMATVerificationResult,
-    DMATStatus,
-)
 from app.services.bank_service import (
-    BankAccountService,
     BankAccount,
-    BankAccountDetails,
+    BankAccountService,
     BankAccountStatus,
 )
+from app.services.chatbot_service import ChatbotService, ChatResponse
 from app.services.fund_service import (
-    FundService,
     DepositTransaction,
+    FundService,
     PaymentMethod,
     TransactionStatus,
 )
@@ -49,8 +33,19 @@ from app.services.screener_service import (
     ScreenerResult,
     ScreenerResultItem,
 )
-from app.services.chatbot_service import ChatbotService, ChatResponse
-
+from app.services.verification_service import (
+    DMATService,
+    DMATStatus,
+    DMATVerificationResult,
+    KYCService,
+    KYCStatus,
+    KYCSubmissionResult,
+    PANStatus,
+    PANVerificationResult,
+    PANVerificationService,
+)
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -232,8 +227,8 @@ class TestRegistrationToDepositFlow:
 
         # Wire service dependencies
         from app.routers.auth_v2 import get_account_service
-        from app.routers.verification import get_pan_service, get_kyc_service, get_dmat_service
         from app.routers.bank import get_bank_service, get_fund_service
+        from app.routers.verification import get_dmat_service, get_kyc_service, get_pan_service
 
         self.app.dependency_overrides[get_account_service] = lambda: self.mock_account
         self.app.dependency_overrides[get_pan_service] = lambda: self.mock_pan
@@ -251,12 +246,15 @@ class TestRegistrationToDepositFlow:
         """End-to-end: register → PAN → KYC → DMAT → bank → deposit."""
 
         # Step 1: Register with email
-        resp = self.client.post("/api/v2/auth/register", json={
-            "email": TEST_EMAIL,
-            "password": "Str0ng!Pass",
-            "phone": "9876543210",
-            "name": "Test User",
-        })
+        resp = self.client.post(
+            "/api/v2/auth/register",
+            json={
+                "email": TEST_EMAIL,
+                "password": "Str0ng!Pass",
+                "phone": "9876543210",
+                "name": "Test User",
+            },
+        )
         assert resp.status_code == 201
         reg_data = resp.json()
         assert reg_data["user_id"] == TEST_USER_ID
@@ -264,19 +262,25 @@ class TestRegistrationToDepositFlow:
         self.mock_account.register_email.assert_called_once()
 
         # Step 2: Login to get tokens
-        resp = self.client.post("/api/v2/auth/login", json={
-            "email": TEST_EMAIL,
-            "password": "Str0ng!Pass",
-        })
+        resp = self.client.post(
+            "/api/v2/auth/login",
+            json={
+                "email": TEST_EMAIL,
+                "password": "Str0ng!Pass",
+            },
+        )
         assert resp.status_code == 200
         login_data = resp.json()
         assert "access_token" in login_data
         assert login_data["token_type"] == "bearer"
 
         # Step 3: Verify PAN
-        resp = self.client.post("/api/v2/verify/pan", json={
-            "pan": "ABCDE1234Z",
-        })
+        resp = self.client.post(
+            "/api/v2/verify/pan",
+            json={
+                "pan": "ABCDE1234Z",
+            },
+        )
         assert resp.status_code == 200
         pan_data = resp.json()
         assert pan_data["status"] == "VERIFIED"
@@ -292,7 +296,11 @@ class TestRegistrationToDepositFlow:
                 "address": "123 Test Street, Mumbai",
             },
             files={
-                "government_id_photo": ("id.jpg", b"\xff\xd8\xff\xe0" + b"\x00" * 1000, "image/jpeg"),
+                "government_id_photo": (
+                    "id.jpg",
+                    b"\xff\xd8\xff\xe0" + b"\x00" * 1000,
+                    "image/jpeg",
+                ),
             },
         )
         assert resp.status_code == 200
@@ -302,9 +310,12 @@ class TestRegistrationToDepositFlow:
         self.mock_kyc.submit_kyc.assert_called_once()
 
         # Step 5: Link DMAT account
-        resp = self.client.post("/api/v2/verify/dmat", json={
-            "account_number": "1234567890123456",
-        })
+        resp = self.client.post(
+            "/api/v2/verify/dmat",
+            json={
+                "account_number": "1234567890123456",
+            },
+        )
         assert resp.status_code == 200
         dmat_data = resp.json()
         assert dmat_data["status"] == "LINKED"
@@ -313,13 +324,16 @@ class TestRegistrationToDepositFlow:
         self.mock_dmat.verify_dmat.assert_called_once_with(TEST_USER_ID, "1234567890123456")
 
         # Step 6: Register bank account
-        resp = self.client.post("/api/v2/bank/register", json={
-            "account_holder_name": "Test User",
-            "account_number": "12345678901234",
-            "ifsc_code": "HDFC0001234",
-            "bank_name": "HDFC Bank",
-            "account_type": "savings",
-        })
+        resp = self.client.post(
+            "/api/v2/bank/register",
+            json={
+                "account_holder_name": "Test User",
+                "account_number": "12345678901234",
+                "ifsc_code": "HDFC0001234",
+                "bank_name": "HDFC Bank",
+                "account_type": "savings",
+            },
+        )
         assert resp.status_code == 200
         bank_data = resp.json()
         assert bank_data["status"] == "VERIFIED"
@@ -328,10 +342,13 @@ class TestRegistrationToDepositFlow:
         self.mock_bank.register_bank_account.assert_called_once()
 
         # Step 7: Deposit funds
-        resp = self.client.post("/api/v2/fund/deposit", json={
-            "amount": "5000.00",
-            "payment_method": "UPI",
-        })
+        resp = self.client.post(
+            "/api/v2/fund/deposit",
+            json={
+                "amount": "5000.00",
+                "payment_method": "UPI",
+            },
+        )
         assert resp.status_code == 200
         dep_data = resp.json()
         assert dep_data["status"] == "COMPLETED"
@@ -342,12 +359,15 @@ class TestRegistrationToDepositFlow:
 
     def test_registration_returns_correct_response_shape(self):
         """Verify the registration response has all required fields."""
-        resp = self.client.post("/api/v2/auth/register", json={
-            "email": TEST_EMAIL,
-            "password": "Str0ng!Pass",
-            "phone": "9876543210",
-            "name": "Test User",
-        })
+        resp = self.client.post(
+            "/api/v2/auth/register",
+            json={
+                "email": TEST_EMAIL,
+                "password": "Str0ng!Pass",
+                "phone": "9876543210",
+                "name": "Test User",
+            },
+        )
         data = resp.json()
         assert "user_id" in data
         assert "email" in data
@@ -367,18 +387,24 @@ class TestRegistrationToDepositFlow:
 
     def test_deposit_invalid_amount_returns_400(self):
         """Non-numeric deposit amount returns 400."""
-        resp = self.client.post("/api/v2/fund/deposit", json={
-            "amount": "not-a-number",
-            "payment_method": "UPI",
-        })
+        resp = self.client.post(
+            "/api/v2/fund/deposit",
+            json={
+                "amount": "not-a-number",
+                "payment_method": "UPI",
+            },
+        )
         assert resp.status_code == 400
 
     def test_deposit_invalid_payment_method_returns_400(self):
         """Invalid payment method returns 400."""
-        resp = self.client.post("/api/v2/fund/deposit", json={
-            "amount": "1000.00",
-            "payment_method": "BITCOIN",
-        })
+        resp = self.client.post(
+            "/api/v2/fund/deposit",
+            json={
+                "amount": "1000.00",
+                "payment_method": "BITCOIN",
+            },
+        )
         assert resp.status_code == 400
 
 
@@ -406,7 +432,8 @@ class TestScreenerToStockDetailFlow:
         acm.__aexit__ = AsyncMock(return_value=False)
         self.mock_db_pool.acquire.return_value = acm
 
-        from app.routers.screener import get_screener_engine, get_db_pool
+        from app.routers.screener import get_db_pool, get_screener_engine
+
         self.app.dependency_overrides[get_screener_engine] = lambda: self.mock_screener
         self.app.dependency_overrides[get_db_pool] = lambda: self.mock_db_pool
 
@@ -417,15 +444,18 @@ class TestScreenerToStockDetailFlow:
 
     def test_screener_search_returns_filtered_results(self):
         """Apply screener filters and verify results match expected shape."""
-        resp = self.client.post("/api/v2/screener/search", json={
-            "pe_ratio": {"min": 10, "max": 35},
-            "market_cap": {"min": 100000000000},
-            "sector": "Energy",
-            "sort_by": "market_cap",
-            "order": "desc",
-            "page": 1,
-            "page_size": 50,
-        })
+        resp = self.client.post(
+            "/api/v2/screener/search",
+            json={
+                "pe_ratio": {"min": 10, "max": 35},
+                "market_cap": {"min": 100000000000},
+                "sector": "Energy",
+                "sort_by": "market_cap",
+                "order": "desc",
+                "page": 1,
+                "page_size": 50,
+            },
+        )
         assert resp.status_code == 200
         data = resp.json()
 
@@ -453,9 +483,12 @@ class TestScreenerToStockDetailFlow:
 
     def test_screener_results_contain_correct_data(self):
         """Verify screener results contain the mocked stock data."""
-        resp = self.client.post("/api/v2/screener/search", json={
-            "sector": "IT/Technology",
-        })
+        resp = self.client.post(
+            "/api/v2/screener/search",
+            json={
+                "sector": "IT/Technology",
+            },
+        )
         assert resp.status_code == 200
         data = resp.json()
 
@@ -466,9 +499,12 @@ class TestScreenerToStockDetailFlow:
     def test_screener_to_stock_detail_navigation(self):
         """After getting screener results, navigate to stock detail for a result."""
         # Step 1: Search
-        resp = self.client.post("/api/v2/screener/search", json={
-            "pe_ratio": {"min": 10, "max": 35},
-        })
+        resp = self.client.post(
+            "/api/v2/screener/search",
+            json={
+                "pe_ratio": {"min": 10, "max": 35},
+            },
+        )
         assert resp.status_code == 200
         first_symbol = resp.json()["items"][0]["symbol"]
 
@@ -569,6 +605,7 @@ class TestChatbotFlow:
         self.mock_chatbot = _mock_chatbot_service()
 
         from app.routers.chatbot import get_chatbot_service
+
         self.app.dependency_overrides[get_chatbot_service] = lambda: self.mock_chatbot
 
         self.client = TestClient(self.app)
@@ -584,9 +621,12 @@ class TestChatbotFlow:
             response_time_ms=320,
         )
 
-        resp = self.client.post("/api/v2/chatbot/message", json={
-            "message": "What was my P&L last month?",
-        })
+        resp = self.client.post(
+            "/api/v2/chatbot/message",
+            json={
+                "message": "What was my P&L last month?",
+            },
+        )
         assert resp.status_code == 200
         data = resp.json()
 
@@ -609,7 +649,9 @@ class TestChatbotFlow:
 
     def test_chart_query_returns_base64_image(self):
         """Query requesting a chart returns base64-encoded chart data."""
-        chart_svg = b'<svg xmlns="http://www.w3.org/2000/svg"><rect width="400" height="200"/></svg>'
+        chart_svg = (
+            b'<svg xmlns="http://www.w3.org/2000/svg"><rect width="400" height="200"/></svg>'
+        )
         self.mock_chatbot.chat.return_value = ChatResponse(
             text="Here is your equity curve for the last 3 months.",
             chart_data=chart_svg,
@@ -618,9 +660,12 @@ class TestChatbotFlow:
             response_time_ms=1500,
         )
 
-        resp = self.client.post("/api/v2/chatbot/message", json={
-            "message": "Show my equity curve for last 3 months",
-        })
+        resp = self.client.post(
+            "/api/v2/chatbot/message",
+            json={
+                "message": "Show my equity curve for last 3 months",
+            },
+        )
         assert resp.status_code == 200
         data = resp.json()
 
@@ -639,9 +684,12 @@ class TestChatbotFlow:
             sources=["trades (5 records)"],
             response_time_ms=200,
         )
-        resp1 = self.client.post("/api/v2/chatbot/message", json={
-            "message": "How many trades did I have on RELIANCE last week?",
-        })
+        resp1 = self.client.post(
+            "/api/v2/chatbot/message",
+            json={
+                "message": "How many trades did I have on RELIANCE last week?",
+            },
+        )
         assert resp1.status_code == 200
         assert "5 trades" in resp1.json()["text"]
 
@@ -651,18 +699,37 @@ class TestChatbotFlow:
             sources=["trades (1 record)"],
             response_time_ms=180,
         )
-        resp2 = self.client.post("/api/v2/chatbot/message", json={
-            "message": "Which was the best one?",
-        })
+        resp2 = self.client.post(
+            "/api/v2/chatbot/message",
+            json={
+                "message": "Which was the best one?",
+            },
+        )
         assert resp2.status_code == 200
         assert "₹2,300" in resp2.json()["text"]
 
         # Turn 3: Check history
         self.mock_chatbot.get_history.return_value = [
-            {"role": "user", "content": "How many trades did I have on RELIANCE last week?", "timestamp": "2024-01-15T10:00:00"},
-            {"role": "assistant", "content": "You had 5 trades on RELIANCE last week.", "timestamp": "2024-01-15T10:00:01"},
-            {"role": "user", "content": "Which was the best one?", "timestamp": "2024-01-15T10:00:05"},
-            {"role": "assistant", "content": "Your best RELIANCE trade was on Monday with ₹2,300 profit.", "timestamp": "2024-01-15T10:00:06"},
+            {
+                "role": "user",
+                "content": "How many trades did I have on RELIANCE last week?",
+                "timestamp": "2024-01-15T10:00:00",
+            },
+            {
+                "role": "assistant",
+                "content": "You had 5 trades on RELIANCE last week.",
+                "timestamp": "2024-01-15T10:00:01",
+            },
+            {
+                "role": "user",
+                "content": "Which was the best one?",
+                "timestamp": "2024-01-15T10:00:05",
+            },
+            {
+                "role": "assistant",
+                "content": "Your best RELIANCE trade was on Monday with ₹2,300 profit.",
+                "timestamp": "2024-01-15T10:00:06",
+            },
         ]
         resp3 = self.client.get("/api/v2/chatbot/history")
         assert resp3.status_code == 200
@@ -682,9 +749,12 @@ class TestChatbotFlow:
             response_time_ms=2100,
         )
 
-        resp = self.client.post("/api/v2/chatbot/message", json={
-            "message": "Show my daily P&L this week",
-        })
+        resp = self.client.post(
+            "/api/v2/chatbot/message",
+            json={
+                "message": "Show my daily P&L this week",
+            },
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert data["chart_type"] == "daily_pnl"
@@ -711,9 +781,12 @@ class TestChatbotFlow:
             response_time_ms=350,
         )
 
-        resp = self.client.post("/api/v2/chatbot/message", json={
-            "message": "Mera last week ka P&L kya hai?",
-        })
+        resp = self.client.post(
+            "/api/v2/chatbot/message",
+            json={
+                "message": "Mera last week ka P&L kya hai?",
+            },
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert "₹8,000" in data["text"]
@@ -740,8 +813,8 @@ class TestAuthRequiredOnAllFlows:
         self.mock_screener = _mock_screener_engine()
         self.mock_chatbot = _mock_chatbot_service()
 
-        from app.routers.screener import get_screener_engine
         from app.routers.chatbot import get_chatbot_service
+        from app.routers.screener import get_screener_engine
 
         self.app.dependency_overrides[get_screener_engine] = lambda: self.mock_screener
         self.app.dependency_overrides[get_chatbot_service] = lambda: self.mock_chatbot
@@ -764,18 +837,24 @@ class TestAuthRequiredOnAllFlows:
         assert resp.status_code == 401
 
     def test_fund_deposit_requires_auth(self):
-        resp = self.client.post("/api/v2/fund/deposit", json={
-            "amount": "1000.00",
-            "payment_method": "UPI",
-        })
+        resp = self.client.post(
+            "/api/v2/fund/deposit",
+            json={
+                "amount": "1000.00",
+                "payment_method": "UPI",
+            },
+        )
         assert resp.status_code == 401
 
     def test_bank_register_requires_auth(self):
-        resp = self.client.post("/api/v2/bank/register", json={
-            "account_holder_name": "Test",
-            "account_number": "123",
-            "ifsc_code": "HDFC0001234",
-            "bank_name": "HDFC",
-            "account_type": "savings",
-        })
+        resp = self.client.post(
+            "/api/v2/bank/register",
+            json={
+                "account_holder_name": "Test",
+                "account_number": "123",
+                "ifsc_code": "HDFC0001234",
+                "bank_name": "HDFC",
+                "account_type": "savings",
+            },
+        )
         assert resp.status_code == 401

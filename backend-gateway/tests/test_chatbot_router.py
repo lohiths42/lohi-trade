@@ -7,15 +7,12 @@ Requirements: 18.1, 18.4
 """
 
 import base64
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock
 
-import pytest
+from app.routers.chatbot import get_chatbot_service, router, set_chatbot_service
+from app.services.chatbot_service import ChatbotService, ChatResponse
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-
-from app.routers.chatbot import router, set_chatbot_service, get_chatbot_service
-from app.services.chatbot_service import ChatbotService, ChatResponse
-
 
 # ── Test app setup ───────────────────────────────────────────────────────────
 
@@ -29,8 +26,10 @@ def _create_test_app() -> FastAPI:
 
 def _mock_auth_user(user_id: str = "test-user-123"):
     """Return a dependency override for get_current_user_id."""
+
     def override():
         return user_id
+
     return override
 
 
@@ -48,6 +47,7 @@ class TestSendMessage:
         self.app = _create_test_app()
         self.mock_svc = _make_mock_service()
         from app.routers.auth_v2 import get_current_user_id
+
         self.app.dependency_overrides[get_current_user_id] = _mock_auth_user()
         self.app.dependency_overrides[get_chatbot_service] = lambda: self.mock_svc
         self.client = TestClient(self.app)
@@ -145,6 +145,7 @@ class TestGetHistory:
         self.app = _create_test_app()
         self.mock_svc = _make_mock_service()
         from app.routers.auth_v2 import get_current_user_id
+
         self.app.dependency_overrides[get_current_user_id] = _mock_auth_user()
         self.app.dependency_overrides[get_chatbot_service] = lambda: self.mock_svc
         self.client = TestClient(self.app)
@@ -211,6 +212,7 @@ class TestClearSession:
         self.app = _create_test_app()
         self.mock_svc = _make_mock_service()
         from app.routers.auth_v2 import get_current_user_id
+
         self.app.dependency_overrides[get_current_user_id] = _mock_auth_user()
         self.app.dependency_overrides[get_chatbot_service] = lambda: self.mock_svc
         self.client = TestClient(self.app)
@@ -270,10 +272,12 @@ class TestServiceDependency:
     def test_service_not_initialized_returns_503(self):
         app = _create_test_app()
         from app.routers.auth_v2 import get_current_user_id
+
         app.dependency_overrides[get_current_user_id] = _mock_auth_user()
         # Do NOT override get_chatbot_service — let it use the real one
         # Reset the module-level service to None
         from app.routers import chatbot as chatbot_module
+
         original = chatbot_module._chatbot_service
         chatbot_module._chatbot_service = None
         client = TestClient(app)
@@ -290,6 +294,7 @@ class TestServiceDependency:
 
     def test_set_chatbot_service(self):
         from app.routers import chatbot as chatbot_module
+
         original = chatbot_module._chatbot_service
         try:
             mock_svc = _make_mock_service()

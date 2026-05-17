@@ -8,6 +8,7 @@ Revision ID: 001
 Revises: None
 Create Date: 2025-01-01 00:00:00.000000
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -22,7 +23,8 @@ def upgrade() -> None:
     # ═══════════════════════════════════════════════════════════════
     # Users & Authentication
     # ═══════════════════════════════════════════════════════════════
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE users (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         email VARCHAR(255) UNIQUE NOT NULL,
@@ -35,9 +37,11 @@ def upgrade() -> None:
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
-    """)
+    """
+    )
 
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE social_logins (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         user_id UUID NOT NULL REFERENCES users(id),
@@ -46,9 +50,11 @@ def upgrade() -> None:
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         UNIQUE(provider, provider_id)
     );
-    """)
+    """
+    )
 
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE refresh_tokens (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         user_id UUID NOT NULL REFERENCES users(id),
@@ -56,12 +62,14 @@ def upgrade() -> None:
         expires_at TIMESTAMPTZ NOT NULL,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
-    """)
+    """
+    )
 
     # ═══════════════════════════════════════════════════════════════
     # Verification & Compliance
     # ═══════════════════════════════════════════════════════════════
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE pan_verifications (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         user_id UUID NOT NULL REFERENCES users(id),
@@ -73,9 +81,11 @@ def upgrade() -> None:
         verified_at TIMESTAMPTZ,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
-    """)
+    """
+    )
 
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE kyc_verifications (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         user_id UUID NOT NULL REFERENCES users(id),
@@ -91,9 +101,11 @@ def upgrade() -> None:
         verified_at TIMESTAMPTZ,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
-    """)
+    """
+    )
 
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE dmat_accounts (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         user_id UUID NOT NULL REFERENCES users(id),
@@ -104,9 +116,11 @@ def upgrade() -> None:
         linked_at TIMESTAMPTZ,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
-    """)
+    """
+    )
 
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE bank_accounts (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         user_id UUID NOT NULL REFERENCES users(id),
@@ -120,12 +134,14 @@ def upgrade() -> None:
         verified_at TIMESTAMPTZ,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
-    """)
+    """
+    )
 
     # ═══════════════════════════════════════════════════════════════
     # Fund Management
     # ═══════════════════════════════════════════════════════════════
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE fund_transactions (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         user_id UUID NOT NULL REFERENCES users(id),
@@ -139,21 +155,25 @@ def upgrade() -> None:
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         completed_at TIMESTAMPTZ
     );
-    """)
+    """
+    )
 
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE trading_balances (
         user_id UUID PRIMARY KEY REFERENCES users(id),
         available_balance DECIMAL(15,2) NOT NULL DEFAULT 0,
         blocked_margin DECIMAL(15,2) NOT NULL DEFAULT 0,
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
-    """)
+    """
+    )
 
     # ═══════════════════════════════════════════════════════════════
     # Stock Universe
     # ═══════════════════════════════════════════════════════════════
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE securities (
         id SERIAL PRIMARY KEY,
         symbol VARCHAR(30) NOT NULL,
@@ -168,18 +188,22 @@ def upgrade() -> None:
         status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
-    """)
+    """
+    )
 
     op.execute("CREATE INDEX idx_securities_symbol ON securities(symbol);")
     op.execute("CREATE INDEX idx_securities_sector ON securities(sector);")
     op.execute("CREATE INDEX idx_securities_status ON securities(status);")
-    op.execute("""
+    op.execute(
+        """
     CREATE INDEX idx_securities_search ON securities USING gin(
         to_tsvector('english', symbol || ' ' || company_name || ' ' || isin)
     );
-    """)
+    """
+    )
 
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE security_fundamentals (
         security_id INT PRIMARY KEY REFERENCES securities(id),
         pe_ratio DECIMAL(10,2),
@@ -200,9 +224,11 @@ def upgrade() -> None:
         low_52w DECIMAL(12,2),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
-    """)
+    """
+    )
 
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE security_technicals (
         security_id INT PRIMARY KEY REFERENCES securities(id),
         rsi_14 DECIMAL(6,2),
@@ -219,12 +245,14 @@ def upgrade() -> None:
         price_change_5y DECIMAL(8,4),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
-    """)
+    """
+    )
 
     # ═══════════════════════════════════════════════════════════════
     # Watchlists
     # ═══════════════════════════════════════════════════════════════
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE watchlists (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         user_id UUID REFERENCES users(id),
@@ -233,9 +261,11 @@ def upgrade() -> None:
         sort_order INT NOT NULL DEFAULT 0,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
-    """)
+    """
+    )
 
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE watchlist_items (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         watchlist_id UUID NOT NULL REFERENCES watchlists(id) ON DELETE CASCADE,
@@ -244,12 +274,14 @@ def upgrade() -> None:
         added_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         UNIQUE(watchlist_id, security_id)
     );
-    """)
+    """
+    )
 
     # ═══════════════════════════════════════════════════════════════
     # Screener Presets
     # ═══════════════════════════════════════════════════════════════
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE screener_presets (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         user_id UUID REFERENCES users(id),
@@ -258,12 +290,14 @@ def upgrade() -> None:
         is_prebuilt BOOLEAN NOT NULL DEFAULT FALSE,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
-    """)
+    """
+    )
 
     # ═══════════════════════════════════════════════════════════════
     # Corporate Actions
     # ═══════════════════════════════════════════════════════════════
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE corporate_actions (
         id SERIAL PRIMARY KEY,
         security_id INT NOT NULL REFERENCES securities(id),
@@ -273,12 +307,14 @@ def upgrade() -> None:
         details JSONB NOT NULL,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
-    """)
+    """
+    )
 
     # ═══════════════════════════════════════════════════════════════
     # Broker Connections (per-user)
     # ═══════════════════════════════════════════════════════════════
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE broker_connections (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         user_id UUID NOT NULL REFERENCES users(id),
@@ -291,12 +327,14 @@ def upgrade() -> None:
         last_connected_at TIMESTAMPTZ,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
-    """)
+    """
+    )
 
     # ═══════════════════════════════════════════════════════════════
     # Chatbot
     # ═══════════════════════════════════════════════════════════════
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE chatbot_sessions (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         user_id UUID NOT NULL REFERENCES users(id),
@@ -304,12 +342,14 @@ def upgrade() -> None:
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
-    """)
+    """
+    )
 
     # ═══════════════════════════════════════════════════════════════
     # Existing tables (migrated from SQLite, now with user_id)
     # ═══════════════════════════════════════════════════════════════
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE trades (
         id SERIAL PRIMARY KEY,
         trade_id TEXT UNIQUE NOT NULL,
@@ -328,13 +368,15 @@ def upgrade() -> None:
         exit_reason TEXT,
         created_at TIMESTAMPTZ DEFAULT NOW()
     );
-    """)
+    """
+    )
     op.execute("CREATE INDEX idx_trades_symbol ON trades(symbol);")
     op.execute("CREATE INDEX idx_trades_entry_time ON trades(entry_time);")
     op.execute("CREATE INDEX idx_trades_strategy ON trades(strategy);")
     op.execute("CREATE INDEX idx_trades_user_id ON trades(user_id);")
 
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE orders (
         id SERIAL PRIMARY KEY,
         order_id TEXT UNIQUE NOT NULL,
@@ -354,13 +396,15 @@ def upgrade() -> None:
         created_at TIMESTAMPTZ DEFAULT NOW(),
         updated_at TIMESTAMPTZ DEFAULT NOW()
     );
-    """)
+    """
+    )
     op.execute("CREATE INDEX idx_orders_status ON orders(status);")
     op.execute("CREATE INDEX idx_orders_created_at ON orders(created_at);")
     op.execute("CREATE INDEX idx_orders_symbol ON orders(symbol);")
     op.execute("CREATE INDEX idx_orders_user_id ON orders(user_id);")
 
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE sentiment_log (
         id SERIAL PRIMARY KEY,
         user_id UUID NOT NULL REFERENCES users(id),
@@ -374,13 +418,15 @@ def upgrade() -> None:
         news_source TEXT NOT NULL,
         created_at TIMESTAMPTZ DEFAULT NOW()
     );
-    """)
+    """
+    )
     op.execute("CREATE INDEX idx_sentiment_ticker ON sentiment_log(ticker);")
     op.execute("CREATE INDEX idx_sentiment_created_at ON sentiment_log(created_at);")
     op.execute("CREATE INDEX idx_sentiment_ticker_time ON sentiment_log(ticker, created_at);")
     op.execute("CREATE INDEX idx_sentiment_user_id ON sentiment_log(user_id);")
 
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE bias_log (
         id SERIAL PRIMARY KEY,
         user_id UUID NOT NULL REFERENCES users(id),
@@ -391,13 +437,15 @@ def upgrade() -> None:
         article_count INTEGER NOT NULL,
         created_at TIMESTAMPTZ DEFAULT NOW()
     );
-    """)
+    """
+    )
     op.execute("CREATE INDEX idx_bias_ticker_time ON bias_log(ticker, created_at);")
     op.execute("CREATE INDEX idx_bias_ticker ON bias_log(ticker);")
     op.execute("CREATE INDEX idx_bias_user_id ON bias_log(user_id);")
 
     # news_articles: shared table, no user_id needed
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE news_articles (
         id SERIAL PRIMARY KEY,
         article_id TEXT UNIQUE NOT NULL,
@@ -411,12 +459,14 @@ def upgrade() -> None:
         sentiment TEXT,
         created_at TIMESTAMPTZ DEFAULT NOW()
     );
-    """)
+    """
+    )
     op.execute("CREATE INDEX idx_news_articles_article_id ON news_articles(article_id);")
     op.execute("CREATE INDEX idx_news_articles_source ON news_articles(source);")
     op.execute("CREATE INDEX idx_news_articles_created_at ON news_articles(created_at);")
 
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE audit_log (
         id SERIAL PRIMARY KEY,
         user_id UUID NOT NULL REFERENCES users(id),
@@ -426,13 +476,15 @@ def upgrade() -> None:
         metadata TEXT,
         created_at TIMESTAMPTZ DEFAULT NOW()
     );
-    """)
+    """
+    )
     op.execute("CREATE INDEX idx_audit_event_type ON audit_log(event_type);")
     op.execute("CREATE INDEX idx_audit_created_at ON audit_log(created_at);")
     op.execute("CREATE INDEX idx_audit_component ON audit_log(component);")
     op.execute("CREATE INDEX idx_audit_user_id ON audit_log(user_id);")
 
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE ml_training_samples (
         id SERIAL PRIMARY KEY,
         user_id UUID NOT NULL REFERENCES users(id),
@@ -446,13 +498,15 @@ def upgrade() -> None:
         atr_at_entry DOUBLE PRECISION NOT NULL,
         created_at TIMESTAMPTZ DEFAULT NOW()
     );
-    """)
+    """
+    )
     op.execute("CREATE INDEX idx_ml_samples_symbol ON ml_training_samples(symbol);")
     op.execute("CREATE INDEX idx_ml_samples_created_at ON ml_training_samples(created_at);")
     op.execute("CREATE INDEX idx_ml_samples_user_id ON ml_training_samples(user_id);")
 
     # ml_model_metrics: shared table, no user_id needed
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE ml_model_metrics (
         id SERIAL PRIMARY KEY,
         model_type TEXT NOT NULL,
@@ -465,11 +519,13 @@ def upgrade() -> None:
         trained_at TIMESTAMPTZ NOT NULL,
         created_at TIMESTAMPTZ DEFAULT NOW()
     );
-    """)
+    """
+    )
     op.execute("CREATE INDEX idx_ml_metrics_model_type ON ml_model_metrics(model_type);")
     op.execute("CREATE INDEX idx_ml_metrics_trained_at ON ml_model_metrics(trained_at);")
 
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE ml_predictions (
         id SERIAL PRIMARY KEY,
         user_id UUID NOT NULL REFERENCES users(id),
@@ -484,7 +540,8 @@ def upgrade() -> None:
         regime_confidence DOUBLE PRECISION,
         created_at TIMESTAMPTZ DEFAULT NOW()
     );
-    """)
+    """
+    )
     op.execute("CREATE INDEX idx_ml_predictions_symbol ON ml_predictions(symbol);")
     op.execute("CREATE INDEX idx_ml_predictions_created_at ON ml_predictions(created_at);")
     op.execute("CREATE INDEX idx_ml_predictions_user_id ON ml_predictions(user_id);")
@@ -492,7 +549,8 @@ def upgrade() -> None:
     # ═══════════════════════════════════════════════════════════════
     # API Rate Limiting Log
     # ═══════════════════════════════════════════════════════════════
-    op.execute("""
+    op.execute(
+        """
     CREATE TABLE api_request_log (
         id BIGSERIAL PRIMARY KEY,
         user_id UUID NOT NULL,
@@ -502,7 +560,8 @@ def upgrade() -> None:
         response_time_ms INT NOT NULL,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
-    """)
+    """
+    )
     op.execute("CREATE INDEX idx_api_log_user_time ON api_request_log(user_id, created_at);")
 
     # ═══════════════════════════════════════════════════════════════

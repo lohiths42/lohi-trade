@@ -84,7 +84,7 @@ LUA_LDFLAGS+= $(LDFLAGS)
 ifeq ($(LUA_DEBUG),yes)
 	LUA_CFLAGS+= -O0 -g -DLUA_USE_APICHECK
 else
-	LUA_CFLAGS+= -O2 
+	LUA_CFLAGS+= -O2
 endif
 ifeq ($(LUA_COVERAGE),yes)
 	LUA_CFLAGS += -fprofile-arcs -ftest-coverage

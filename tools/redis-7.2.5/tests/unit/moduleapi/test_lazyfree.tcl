@@ -13,7 +13,7 @@ start_server {tags {"modules"}} {
         }
 
         for {set j 0} {$j < 10000} {incr j} {
-            $rd read 
+            $rd read
         }
 
         assert {[r lazyfreelink.len lazykey] == 10000}

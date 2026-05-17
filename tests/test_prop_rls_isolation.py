@@ -233,8 +233,7 @@ class TestRLSIsolationProperty:
             filtered = apply_nullable_rls_policy(rows, uid)
             other_user_ids = {u for u in user_ids if u != uid}
             leaked = [
-                r for r in filtered
-                if r["user_id"] is not None and r["user_id"] in other_user_ids
+                r for r in filtered if r["user_id"] is not None and r["user_id"] in other_user_ids
             ]
             assert len(leaked) == 0, (
                 f"Table '{table}': {len(leaked)} user-specific rows leaked "
@@ -253,10 +252,7 @@ class TestRLSIsolationProperty:
 
         for uid in user_ids:
             filtered = apply_nullable_rls_policy(rows, uid)
-            expected = [
-                r for r in rows
-                if r["user_id"] is None or r["user_id"] == uid
-            ]
+            expected = [r for r in rows if r["user_id"] is None or r["user_id"] == uid]
             assert len(filtered) == len(expected), (
                 f"Table '{table}': expected {len(expected)} rows for user {uid}, "
                 f"got {len(filtered)}"
@@ -278,9 +274,9 @@ class TestRLSIsolationProperty:
             return
 
         filtered = apply_strict_rls_policy(rows, unknown_uid)
-        assert len(filtered) == 0, (
-            f"Table '{table}': unknown user {unknown_uid} saw {len(filtered)} rows"
-        )
+        assert (
+            len(filtered) == 0
+        ), f"Table '{table}': unknown user {unknown_uid} saw {len(filtered)} rows"
 
     @given(
         unknown_uid=user_id_strategy,

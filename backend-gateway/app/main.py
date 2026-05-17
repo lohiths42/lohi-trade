@@ -21,39 +21,65 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
+import socketio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.gzip import GZipMiddleware
-import socketio
 
 from app.config import CORS_ORIGINS
 from app.middleware.caching import CacheHeadersMiddleware
 from app.middleware.errors import register_research_exception_handlers
 from app.middleware.jwt_auth import JWTAuthMiddleware
 from app.middleware.security import InputSanitizationMiddleware, RequestLoggingMiddleware
-from app.routers import auth, auth_v2, health, positions, orders, trades, bias, signals, analytics, config, kill_switch, logs, paper_trading, broker, trade_notes, verification, bank, stock_universe, watchlist, screener, broker_v2, market_data, chatbot, users, admin, public_stocks
+from app.routers import (
+    admin,
+    analytics,
+    auth,
+    auth_v2,
+    bank,
+    bias,
+    broker,
+    broker_v2,
+    chatbot,
+    config,
+    health,
+    kill_switch,
+    logs,
+    market_data,
+    orders,
+    paper_trading,
+    positions,
+    public_stocks,
+    screener,
+    signals,
+    stock_universe,
+    trade_notes,
+    trades,
+    users,
+    verification,
+    watchlist,
+)
+from app.routers import market as market_router
 from app.routers import research as research_router
 from app.routers import setup as setup_router
-from app.routers import market as market_router
-from app.services.feature_gate import initialize_registry
-from app.websocket import consume_research_streams, register_events
-from app.services.redis_consumer import consume_streams
-from app.services.push_notification_service import PushNotificationService
-from app.services.db_service import (
-    ensure_trade_notes_table,
-    create_pg_pool,
-    get_pg_pool,
-    close_pg_pool,
-    create_redis_pool,
-    create_async_redis_pool,
-    close_redis_pools,
-)
-from app.services.stock_universe_service import StockUniverseService
-from app.services.sector_service import SectorService
-from app.services.screener_service import ScreenerEngine
-from app.services.live_data_service import LiveDataService
-from app.routers.stock_universe import set_stock_universe_services
 from app.routers.screener import set_screener_service
+from app.routers.stock_universe import set_stock_universe_services
+from app.services.db_service import (
+    close_pg_pool,
+    close_redis_pools,
+    create_async_redis_pool,
+    create_pg_pool,
+    create_redis_pool,
+    ensure_trade_notes_table,
+)
+from app.services.feature_gate import initialize_registry
+from app.services.live_data_service import LiveDataService
+from app.services.push_notification_service import PushNotificationService
+from app.services.redis_consumer import consume_streams
+from app.services.screener_service import ScreenerEngine
+from app.services.sector_service import SectorService
+from app.services.stock_universe_service import StockUniverseService
+from app.websocket import consume_research_streams, register_events
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -68,7 +94,9 @@ app = FastAPI(title="Lohi-TRADE Gateway", version="1.0.0")
 app.add_middleware(InputSanitizationMiddleware)
 app.add_middleware(CacheHeadersMiddleware)
 app.add_middleware(GZipMiddleware, minimum_size=1024)
-app.add_middleware(JWTAuthMiddleware)  # Sets request.state.user_id + app.state.current_user_id for RLS
+app.add_middleware(
+    JWTAuthMiddleware
+)  # Sets request.state.user_id + app.state.current_user_id for RLS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
@@ -114,15 +142,20 @@ app.include_router(market_router.router, prefix="/api", tags=["market"])
 # the flag here avoids a hard dependency on the research package before the
 # rest of Phase 1–20 lands. Requirements: 7.7, 8.2 | Design: §3.12, §5.1.
 
+
 def _research_enabled() -> bool:
     """Return True if ``settings.research.enabled`` is truthy (default True)."""
     import yaml
+
     from app.config import CONFIG_PATH
+
     try:
         with open(CONFIG_PATH, "r") as f:
             settings = yaml.safe_load(f) or {}
     except FileNotFoundError:
-        logger.warning("settings.yaml not found at %s; defaulting research.enabled=true", CONFIG_PATH)
+        logger.warning(
+            "settings.yaml not found at %s; defaulting research.enabled=true", CONFIG_PATH
+        )
         return True
     except Exception:
         logger.exception("Failed to parse settings.yaml; defaulting research.enabled=true")
@@ -160,14 +193,14 @@ def _build_orchestrator(llm_provider, emb_provider, vs_provider):
     This factory is called lazily on each ``POST /runs`` request.
     It constructs the orchestrator with the providers wired at startup.
     """
-    from src.research.agents.orchestrator import ResearchOrchestrator
     from src.research.agents.filings import FilingsAgent
     from src.research.agents.fundamentals import FundamentalsAgent
-    from src.research.agents.news_sentiment import NewsSentimentAgent
-    from src.research.agents.technicals import TechnicalsAgent
-    from src.research.agents.peer_sector import PeerSectorAgent
     from src.research.agents.macro import MacroAgent
+    from src.research.agents.news_sentiment import NewsSentimentAgent
+    from src.research.agents.orchestrator import ResearchOrchestrator
+    from src.research.agents.peer_sector import PeerSectorAgent
     from src.research.agents.synthesizer import Synthesizer
+    from src.research.agents.technicals import TechnicalsAgent
     from src.research.index.retriever import HybridRetriever
 
     # Build retriever (hybrid BM25 + dense)
@@ -198,6 +231,7 @@ def _build_orchestrator(llm_provider, emb_provider, vs_provider):
 
     async def _judge_fn(*, brief, retry_count=0, **kwargs):
         from src.research.judge.rule_based import invoke_rule_based
+
         return await invoke_rule_based(
             run_id=_uuid4(),
             brief=brief,
@@ -263,9 +297,10 @@ async def lifespan(app: FastAPI):
             "Start docker-compose up -d postgres for the full experience."
         )
         from app.services.stock_universe_fallback import (
-            FallbackStockUniverseService,
             FallbackSectorService,
+            FallbackStockUniverseService,
         )
+
         fallback_stock = FallbackStockUniverseService()
         fallback_sector = FallbackSectorService()
         set_stock_universe_services(fallback_stock, fallback_sector)  # type: ignore[arg-type]
@@ -273,8 +308,9 @@ async def lifespan(app: FastAPI):
         # Also initialize a pool-less WatchlistService so the UI gets empty
         # arrays instead of 503 when browsing watchlists.
         try:
-            from app.services.watchlist_service import WatchlistService
             from app.routers.watchlist import set_watchlist_service
+            from app.services.watchlist_service import WatchlistService
+
             set_watchlist_service(WatchlistService(db_pool=None))
         except Exception:
             logger.exception("Failed to init fallback WatchlistService")
@@ -292,24 +328,26 @@ async def lifespan(app: FastAPI):
     # ── Wire ResearchService with real providers ─────────────────────
     if _research_enabled():
         try:
+            import yaml as _yaml
+
+            from app.config import CONFIG_PATH as _CFG_PATH
             from app.routers.research import set_research_service
+            from app.services.db_service import (
+                get_async_redis_client as _get_async_redis,
+            )
             from app.services.research_service import ResearchService
-            from app.services.db_service import get_pg_pool as _get_pg_pool, get_async_redis_client as _get_async_redis
 
             # Lazy-import provider registry so the gateway still starts
             # even if research deps are partially missing.
             from src.research.providers.registry import (
-                get_llm,
                 get_embeddings,
+                get_llm,
                 get_vector_store,
             )
 
-            import yaml as _yaml
-            from app.config import CONFIG_PATH as _cfg_path
-
             _settings = {}
             try:
-                with open(_cfg_path, "r") as _f:
+                with open(_CFG_PATH, "r") as _f:
                     _settings = _yaml.safe_load(_f) or {}
             except Exception:
                 pass
@@ -319,10 +357,18 @@ async def lifespan(app: FastAPI):
 
             # Detect offline mode — override providers to local-only
             import os as _os
-            _offline = _os.environ.get("LOHI_RESEARCH_OFFLINE", "").strip().lower() in ("true", "1", "yes")
+
+            _offline = _os.environ.get("LOHI_RESEARCH_OFFLINE", "").strip().lower() in (
+                "true",
+                "1",
+                "yes",
+            )
             if _offline:
                 logger.info("Research offline mode active — using Ollama + sentence-transformers")
-                _chat_cfg = {"provider": "ollama", "model": _os.environ.get("LOHI_RESEARCH_OLLAMA_MODEL", "llama3.1:8b")}
+                _chat_cfg = {
+                    "provider": "ollama",
+                    "model": _os.environ.get("LOHI_RESEARCH_OLLAMA_MODEL", "llama3.1:8b"),
+                }
                 _emb_cfg = {"provider": "sentence_transformers", "model": "BAAI/bge-small-en-v1.5"}
             else:
                 _chat_cfg = _providers_cfg.get("chat", {})
@@ -348,6 +394,7 @@ async def lifespan(app: FastAPI):
                 # In offline mode, force chroma to avoid async probe issues
                 if _offline:
                     import pathlib as _pathlib
+
                     _chroma_path = str(_pathlib.Path(_REPO_ROOT) / "data" / "research" / "chroma")
                     _vs_cfg_resolved = {"backend": "chroma", "chroma": {"path": _chroma_path}}
                 else:
@@ -376,7 +423,9 @@ async def lifespan(app: FastAPI):
             set_research_service(svc)
             logger.info("ResearchService wired with providers + orchestrator")
         except Exception:
-            logger.exception("Failed to wire ResearchService — research endpoints will return 'pending'")
+            logger.exception(
+                "Failed to wire ResearchService — research endpoints will return 'pending'"
+            )
 
     logger.info("Lohi-TRADE Gateway started")
 

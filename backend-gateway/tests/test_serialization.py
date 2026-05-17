@@ -10,8 +10,6 @@ Requirements: 21.1, 21.2, 21.4, 21.5
 import json
 from datetime import datetime, timezone
 
-import pytest
-
 from app.services.chatbot_service import (
     ChatbotService,
     PerformanceSummary,
@@ -19,7 +17,6 @@ from app.services.chatbot_service import (
     StockInfo,
     TradeDetail,
 )
-
 
 # ── serialize_query_results tests (Req 21.1) ────────────────────────────────
 
@@ -37,10 +34,16 @@ class TestSerializeQueryResults:
 
     def test_serialize_trade_detail_dataclass(self):
         trade = TradeDetail(
-            trade_id="t1", symbol="RELIANCE", strategy="mean_reversion",
-            entry_price=2500.0, exit_price=2550.0, quantity=10,
-            realized_pnl=500.0, entry_time="2024-01-15T10:00:00",
-            exit_time="2024-01-15T14:00:00", holding_period="4h",
+            trade_id="t1",
+            symbol="RELIANCE",
+            strategy="mean_reversion",
+            entry_price=2500.0,
+            exit_price=2550.0,
+            quantity=10,
+            realized_pnl=500.0,
+            entry_time="2024-01-15T10:00:00",
+            exit_time="2024-01-15T14:00:00",
+            holding_period="4h",
         )
         json_str = ChatbotService.serialize_query_results(trade)
         parsed = json.loads(json_str)
@@ -53,15 +56,25 @@ class TestSerializeQueryResults:
     def test_serialize_list_of_trade_details(self):
         trades = [
             TradeDetail(
-                trade_id="t1", symbol="RELIANCE", strategy="mean_reversion",
-                entry_price=2500.0, exit_price=2550.0, quantity=10,
-                realized_pnl=500.0, entry_time="2024-01-15T10:00:00",
+                trade_id="t1",
+                symbol="RELIANCE",
+                strategy="mean_reversion",
+                entry_price=2500.0,
+                exit_price=2550.0,
+                quantity=10,
+                realized_pnl=500.0,
+                entry_time="2024-01-15T10:00:00",
                 exit_time="2024-01-15T14:00:00",
             ),
             TradeDetail(
-                trade_id="t2", symbol="TCS", strategy="trend_following",
-                entry_price=3500.0, exit_price=3400.0, quantity=5,
-                realized_pnl=-500.0, entry_time="2024-01-16T10:00:00",
+                trade_id="t2",
+                symbol="TCS",
+                strategy="trend_following",
+                entry_price=3500.0,
+                exit_price=3400.0,
+                quantity=5,
+                realized_pnl=-500.0,
+                entry_time="2024-01-16T10:00:00",
                 exit_time="2024-01-16T14:00:00",
             ),
         ]
@@ -73,10 +86,17 @@ class TestSerializeQueryResults:
 
     def test_serialize_performance_summary(self):
         summary = PerformanceSummary(
-            total_pnl=5000.0, trade_count=20, win_count=12, loss_count=8,
-            win_rate=60.0, avg_profit=250.0, best_trade_pnl=1500.0,
-            best_trade_symbol="RELIANCE", worst_trade_pnl=-800.0,
-            worst_trade_symbol="TCS", sharpe_ratio=1.5,
+            total_pnl=5000.0,
+            trade_count=20,
+            win_count=12,
+            loss_count=8,
+            win_rate=60.0,
+            avg_profit=250.0,
+            best_trade_pnl=1500.0,
+            best_trade_symbol="RELIANCE",
+            worst_trade_pnl=-800.0,
+            worst_trade_symbol="TCS",
+            sharpe_ratio=1.5,
         )
         json_str = ChatbotService.serialize_query_results(summary)
         parsed = json.loads(json_str)
@@ -86,9 +106,12 @@ class TestSerializeQueryResults:
 
     def test_serialize_signal_explanation(self):
         signal = SignalExplanation(
-            symbol="RELIANCE", signal_type="BUY", strategy="mean_reversion",
+            symbol="RELIANCE",
+            signal_type="BUY",
+            strategy="mean_reversion",
             indicator_values={"rsi": 28.5, "sma_20": 2480.0},
-            bias_state="BULLISH", signal_time="2024-01-15T09:30:00",
+            bias_state="BULLISH",
+            signal_time="2024-01-15T09:30:00",
         )
         json_str = ChatbotService.serialize_query_results(signal)
         parsed = json.loads(json_str)
@@ -117,9 +140,14 @@ class TestSerializeQueryResults:
 
     def test_serialize_handles_none_values(self):
         trade = TradeDetail(
-            trade_id="t1", symbol="RELIANCE", strategy="mean_reversion",
-            entry_price=2500.0, exit_price=None, quantity=10,
-            realized_pnl=None, entry_time="2024-01-15T10:00:00",
+            trade_id="t1",
+            symbol="RELIANCE",
+            strategy="mean_reversion",
+            entry_price=2500.0,
+            exit_price=None,
+            quantity=10,
+            realized_pnl=None,
+            entry_time="2024-01-15T10:00:00",
             exit_time=None,
         )
         json_str = ChatbotService.serialize_query_results(trade)
@@ -150,9 +178,14 @@ class TestDeserializeLLMResponse:
 
     def test_deserialize_to_trade_detail(self):
         data = {
-            "trade_id": "t1", "symbol": "RELIANCE", "strategy": "mean_reversion",
-            "entry_price": 2500.0, "exit_price": 2550.0, "quantity": 10,
-            "realized_pnl": 500.0, "entry_time": "2024-01-15T10:00:00",
+            "trade_id": "t1",
+            "symbol": "RELIANCE",
+            "strategy": "mean_reversion",
+            "entry_price": 2500.0,
+            "exit_price": 2550.0,
+            "quantity": 10,
+            "realized_pnl": 500.0,
+            "entry_time": "2024-01-15T10:00:00",
             "exit_time": "2024-01-15T14:00:00",
         }
         result = ChatbotService.deserialize_llm_response(
@@ -166,15 +199,25 @@ class TestDeserializeLLMResponse:
     def test_deserialize_to_list_of_trade_details(self):
         data = [
             {
-                "trade_id": "t1", "symbol": "RELIANCE", "strategy": "mr",
-                "entry_price": 2500.0, "exit_price": 2550.0, "quantity": 10,
-                "realized_pnl": 500.0, "entry_time": "2024-01-15T10:00:00",
+                "trade_id": "t1",
+                "symbol": "RELIANCE",
+                "strategy": "mr",
+                "entry_price": 2500.0,
+                "exit_price": 2550.0,
+                "quantity": 10,
+                "realized_pnl": 500.0,
+                "entry_time": "2024-01-15T10:00:00",
                 "exit_time": "2024-01-15T14:00:00",
             },
             {
-                "trade_id": "t2", "symbol": "TCS", "strategy": "tf",
-                "entry_price": 3500.0, "exit_price": 3400.0, "quantity": 5,
-                "realized_pnl": -500.0, "entry_time": "2024-01-16T10:00:00",
+                "trade_id": "t2",
+                "symbol": "TCS",
+                "strategy": "tf",
+                "entry_price": 3500.0,
+                "exit_price": 3400.0,
+                "quantity": 5,
+                "realized_pnl": -500.0,
+                "entry_time": "2024-01-16T10:00:00",
                 "exit_time": "2024-01-16T14:00:00",
             },
         ]
@@ -187,10 +230,16 @@ class TestDeserializeLLMResponse:
 
     def test_deserialize_to_performance_summary(self):
         data = {
-            "total_pnl": 5000.0, "trade_count": 20, "win_count": 12,
-            "loss_count": 8, "win_rate": 60.0, "avg_profit": 250.0,
-            "best_trade_pnl": 1500.0, "best_trade_symbol": "RELIANCE",
-            "worst_trade_pnl": -800.0, "worst_trade_symbol": "TCS",
+            "total_pnl": 5000.0,
+            "trade_count": 20,
+            "win_count": 12,
+            "loss_count": 8,
+            "win_rate": 60.0,
+            "avg_profit": 250.0,
+            "best_trade_pnl": 1500.0,
+            "best_trade_symbol": "RELIANCE",
+            "worst_trade_pnl": -800.0,
+            "worst_trade_symbol": "TCS",
             "sharpe_ratio": 1.5,
         }
         result = ChatbotService.deserialize_llm_response(
@@ -202,10 +251,12 @@ class TestDeserializeLLMResponse:
 
     def test_deserialize_to_signal_explanation(self):
         data = {
-            "symbol": "RELIANCE", "signal_type": "BUY",
+            "symbol": "RELIANCE",
+            "signal_type": "BUY",
             "strategy": "mean_reversion",
             "indicator_values": {"rsi": 28.5},
-            "bias_state": "BULLISH", "signal_time": "2024-01-15T09:30:00",
+            "bias_state": "BULLISH",
+            "signal_time": "2024-01-15T09:30:00",
         }
         result = ChatbotService.deserialize_llm_response(
             json.dumps(data), expected_type=SignalExplanation
@@ -221,9 +272,7 @@ class TestDeserializeLLMResponse:
             "open_positions": [],
             "recent_trades": [],
         }
-        result = ChatbotService.deserialize_llm_response(
-            json.dumps(data), expected_type=StockInfo
-        )
+        result = ChatbotService.deserialize_llm_response(json.dumps(data), expected_type=StockInfo)
         assert isinstance(result, StockInfo)
         assert result.symbol == "RELIANCE"
 
@@ -256,15 +305,19 @@ class TestSerializationRoundTrip:
 
     def test_round_trip_trade_detail(self):
         original = TradeDetail(
-            trade_id="t1", symbol="RELIANCE", strategy="mean_reversion",
-            entry_price=2500.50, exit_price=2550.75, quantity=10,
-            realized_pnl=502.50, entry_time="2024-01-15T10:00:00",
-            exit_time="2024-01-15T14:00:00", holding_period="4h",
+            trade_id="t1",
+            symbol="RELIANCE",
+            strategy="mean_reversion",
+            entry_price=2500.50,
+            exit_price=2550.75,
+            quantity=10,
+            realized_pnl=502.50,
+            entry_time="2024-01-15T10:00:00",
+            exit_time="2024-01-15T14:00:00",
+            holding_period="4h",
         )
         json_str = ChatbotService.serialize_query_results(original)
-        restored = ChatbotService.deserialize_llm_response(
-            json_str, expected_type=TradeDetail
-        )
+        restored = ChatbotService.deserialize_llm_response(json_str, expected_type=TradeDetail)
         assert isinstance(restored, TradeDetail)
         assert restored.trade_id == original.trade_id
         assert restored.symbol == original.symbol
@@ -274,10 +327,17 @@ class TestSerializationRoundTrip:
 
     def test_round_trip_performance_summary(self):
         original = PerformanceSummary(
-            total_pnl=5000.0, trade_count=20, win_count=12, loss_count=8,
-            win_rate=60.0, avg_profit=250.0, best_trade_pnl=1500.0,
-            best_trade_symbol="RELIANCE", worst_trade_pnl=-800.0,
-            worst_trade_symbol="TCS", sharpe_ratio=1.5,
+            total_pnl=5000.0,
+            trade_count=20,
+            win_count=12,
+            loss_count=8,
+            win_rate=60.0,
+            avg_profit=250.0,
+            best_trade_pnl=1500.0,
+            best_trade_symbol="RELIANCE",
+            worst_trade_pnl=-800.0,
+            worst_trade_symbol="TCS",
+            sharpe_ratio=1.5,
         )
         json_str = ChatbotService.serialize_query_results(original)
         restored = ChatbotService.deserialize_llm_response(

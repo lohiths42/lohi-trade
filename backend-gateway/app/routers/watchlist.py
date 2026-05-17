@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.middleware.rbac import require_role
-from app.routers.auth_v2 import get_current_user_id, get_current_user_payload
+from app.routers.auth_v2 import get_current_user_id
 from app.services.watchlist_service import (
     WatchlistError,
     WatchlistService,
@@ -288,7 +288,9 @@ async def add_security(
         item = await svc.add_security(user_id, watchlist_id, req.symbol)
         logger.info(
             "WATCHLIST_EVENT add_security user=%s watchlist=%s symbol=%s",
-            user_id, watchlist_id, req.symbol,
+            user_id,
+            watchlist_id,
+            req.symbol,
         )
         return WatchlistSecurityResponse(
             id=item.id,
@@ -300,7 +302,8 @@ async def add_security(
     except WatchlistError as exc:
         logger.warning(
             "WATCHLIST_EVENT add_security_failed watchlist=%s reason=%s",
-            watchlist_id, exc.reason,
+            watchlist_id,
+            exc.reason,
         )
         raise HTTPException(status_code=400, detail=exc.message)
 
@@ -324,12 +327,15 @@ async def remove_security(
         await svc.remove_security(user_id, watchlist_id, symbol)
         logger.info(
             "WATCHLIST_EVENT remove_security user=%s watchlist=%s symbol=%s",
-            user_id, watchlist_id, symbol,
+            user_id,
+            watchlist_id,
+            symbol,
         )
         return MessageResponse(message=f"Security '{symbol.upper()}' removed from watchlist")
     except WatchlistError as exc:
         logger.warning(
             "WATCHLIST_EVENT remove_security_failed watchlist=%s reason=%s",
-            watchlist_id, exc.reason,
+            watchlist_id,
+            exc.reason,
         )
         raise HTTPException(status_code=400, detail=exc.message)

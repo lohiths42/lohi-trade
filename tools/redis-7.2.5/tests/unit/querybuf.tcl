@@ -63,7 +63,7 @@ start_server {tags {"querybuf slow"}} {
             # Write something smaller, so query buf peak can shrink
             $rd set x [string repeat A 100]
             set new_test_client_qbuf [client_query_buffer test_client]
-            if {$new_test_client_qbuf < $orig_test_client_qbuf} { break } 
+            if {$new_test_client_qbuf < $orig_test_client_qbuf} { break }
             if {[expr [clock milliseconds] - $t] > 1000} { break }
             after 10
         }
@@ -77,19 +77,19 @@ start_server {tags {"querybuf slow"}} {
         $rd client setname test_client
         $rd write "*3\r\n\$3\r\nset\r\n\$1\r\na\r\n\$1000000\r\n"
         $rd flush
-        
+
         after 20
         if {[client_query_buffer test_client] < 1000000} {
             fail "query buffer should not be resized when client idle time smaller than 2s"
         }
-     
+
         # Check that the query buffer is resized after 2 sec
         wait_for_condition 1000 10 {
             [client_idle_sec test_client] >= 3 && [client_query_buffer test_client] < 1000000
         } else {
             fail "query buffer should be resized when client idle time bigger than 2s"
         }
-     
+
         $rd close
     }
 

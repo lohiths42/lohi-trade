@@ -83,14 +83,14 @@ _CHARS_PER_TOKEN: Final[int] = 4
 # (design §3.2: paragraphs + Markdown tables + occasional bullet lists).
 _DEFAULT_SEPARATORS: Final[tuple[str, ...]] = (
     "\n\n",  # paragraph break
-    "\n",    # line break (table rows, bullet items)
-    ". ",    # sentence end
+    "\n",  # line break (table rows, bullet items)
+    ". ",  # sentence end
     "? ",
     "! ",
     "; ",
     ", ",
     " ",
-    "",      # character-level fallback
+    "",  # character-level fallback
 )
 
 
@@ -120,7 +120,10 @@ def _approx_token_count(text: str) -> int:
 
 
 def _derive_chunk_id(
-    *, document_sha256: str, chunker_version: str, position: int,
+    *,
+    document_sha256: str,
+    chunker_version: str,
+    position: int,
 ) -> str:
     """Compute the stable chunk id (design §3.3, Req 3.12).
 

@@ -121,9 +121,19 @@ SINGAPORE_PROFILE = MarketProfile(
         ),
     ],
     news_sources=[
-        NewsSource(name="Business Times Singapore", url="https://www.businesstimes.com.sg/rss", category="general"),
-        NewsSource(name="SGX Announcements", url="https://www.sgx.com/securities/company-announcements", category="regulatory"),
-        NewsSource(name="Channel News Asia", url="https://www.channelnewsasia.com/rss", category="general"),
+        NewsSource(
+            name="Business Times Singapore",
+            url="https://www.businesstimes.com.sg/rss",
+            category="general",
+        ),
+        NewsSource(
+            name="SGX Announcements",
+            url="https://www.sgx.com/securities/company-announcements",
+            category="regulatory",
+        ),
+        NewsSource(
+            name="Channel News Asia", url="https://www.channelnewsasia.com/rss", category="general"
+        ),
     ],
     data_suffix=".SI",
     supports_short_selling=True,
@@ -133,9 +143,21 @@ SINGAPORE_PROFILE = MarketProfile(
     supports_after_hours=False,
     min_lot_size=100,  # SGX trades in board lots of 100
     default_symbols=[
-        "D05.SI", "O39.SI", "U11.SI", "Z74.SI", "BN4.SI",
-        "C6L.SI", "A17U.SI", "C38U.SI", "G13.SI", "S58.SI",
-        "V03.SI", "Y92.SI", "F34.SI", "BS6.SI", "S63.SI",
+        "D05.SI",
+        "O39.SI",
+        "U11.SI",
+        "Z74.SI",
+        "BN4.SI",
+        "C6L.SI",
+        "A17U.SI",
+        "C38U.SI",
+        "G13.SI",
+        "S58.SI",
+        "V03.SI",
+        "Y92.SI",
+        "F34.SI",
+        "BS6.SI",
+        "S63.SI",
     ],
     regulator="MAS (Monetary Authority of Singapore)",
     regulator_url="https://www.mas.gov.sg",

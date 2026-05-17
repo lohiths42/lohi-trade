@@ -20,6 +20,7 @@ from src.soldier.strategy_engine import Signal, Strategy, create_signal
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_indicator_set(symbol: str = "RELIANCE") -> IndicatorSet:
     """Create a minimal IndicatorSet for testing."""
     return IndicatorSet(
@@ -58,7 +59,9 @@ class _DummyStrategy(Strategy):
         return self._enabled
 
     def generate_signal(
-        self, indicators: IndicatorSet, candles: pd.DataFrame,
+        self,
+        indicators: IndicatorSet,
+        candles: pd.DataFrame,
     ) -> Signal | None:
         # Always returns None — just proves the interface works
         return None
@@ -75,6 +78,7 @@ class _IncompleteStrategy(Strategy):
 # ---------------------------------------------------------------------------
 # Signal dataclass tests
 # ---------------------------------------------------------------------------
+
 
 class TestSignal:
     def test_signal_fields(self):
@@ -125,6 +129,7 @@ class TestSignal:
 # ---------------------------------------------------------------------------
 # create_signal factory tests
 # ---------------------------------------------------------------------------
+
 
 class TestCreateSignal:
     def test_creates_valid_signal(self):
@@ -177,6 +182,7 @@ class TestCreateSignal:
 # ---------------------------------------------------------------------------
 # Strategy ABC tests
 # ---------------------------------------------------------------------------
+
 
 class TestStrategyABC:
     def test_cannot_instantiate_abc_directly(self):

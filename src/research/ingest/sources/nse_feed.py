@@ -246,7 +246,8 @@ class NseFeedPoller:
             ("attchmntFile", "attachmentFile", "attachment", "fileLink"),
         )
         published_at_raw = _first_nonempty(
-            row, ("an_dt", "exchdisstime", "sort_date", "published_at"),
+            row,
+            ("an_dt", "exchdisstime", "sort_date", "published_at"),
         )
 
         if not symbol or not document_url or not published_at_raw:

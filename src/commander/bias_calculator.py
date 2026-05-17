@@ -146,8 +146,7 @@ class BiasCalculator:
             )
             self._cache[ticker] = result
             logger.info(
-                f"Bias for {ticker}: NEUTRAL (no articles in last "
-                f"{self._lookback_hours}h)",
+                f"Bias for {ticker}: NEUTRAL (no articles in last " f"{self._lookback_hours}h)",
             )
             return result
 
@@ -238,7 +237,8 @@ class BiasCalculator:
                 # Parse the timestamp — SQLite stores as string
                 try:
                     created_at = datetime.strptime(
-                        created_str, "%Y-%m-%d %H:%M:%S",
+                        created_str,
+                        "%Y-%m-%d %H:%M:%S",
                     ).replace(tzinfo=UTC)
                 except (ValueError, TypeError):
                     # Try ISO format as fallback
@@ -254,8 +254,7 @@ class BiasCalculator:
                 result.append((score, created_at))
 
             logger.debug(
-                f"Fetched {len(result)} sentiment rows for {ticker} "
-                f"(cutoff={cutoff_str})",
+                f"Fetched {len(result)} sentiment rows for {ticker} " f"(cutoff={cutoff_str})",
             )
             return result
 

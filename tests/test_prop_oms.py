@@ -34,10 +34,12 @@ from src.ingestion.broker_interface import (
 # Helpers (mirrors patterns from tests/test_oms.py)
 # ---------------------------------------------------------------------------
 
+
 def _make_in_memory_db() -> MagicMock:
     conn = sqlite3.connect(":memory:")
     conn.row_factory = sqlite3.Row
-    conn.executescript("""
+    conn.executescript(
+        """
         CREATE TABLE orders (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             order_id TEXT UNIQUE NOT NULL,
@@ -56,7 +58,8 @@ def _make_in_memory_db() -> MagicMock:
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
-    """)
+    """
+    )
     conn.commit()
     db = MagicMock()
     db.connect_sqlite.return_value = conn
@@ -90,7 +93,8 @@ def _make_oms(
 def _get_order_row(db_manager: MagicMock, order_id: str) -> sqlite3.Row:
     conn = db_manager.connect_sqlite()
     return conn.execute(
-        "SELECT * FROM orders WHERE order_id=?", (order_id,),
+        "SELECT * FROM orders WHERE order_id=?",
+        (order_id,),
     ).fetchone()
 
 
@@ -98,10 +102,20 @@ def _get_order_row(db_manager: MagicMock, order_id: str) -> sqlite3.Row:
 # Hypothesis strategies
 # ---------------------------------------------------------------------------
 
-symbols = st.sampled_from([
-    "RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK",
-    "SBIN", "BHARTIARTL", "ITC", "KOTAKBANK", "LT",
-])
+symbols = st.sampled_from(
+    [
+        "RELIANCE",
+        "TCS",
+        "HDFCBANK",
+        "INFY",
+        "ICICIBANK",
+        "SBIN",
+        "BHARTIARTL",
+        "ITC",
+        "KOTAKBANK",
+        "LT",
+    ]
+)
 sides = st.sampled_from([OrderSide.BUY, OrderSide.SELL])
 order_types = st.sampled_from([OrderType.MARKET, OrderType.LIMIT, OrderType.SL])
 product_types = st.sampled_from([ProductType.MIS, ProductType.CNC, ProductType.NRML])
@@ -138,6 +152,7 @@ def orders(draw):
 # **Validates: Requirements 11.1**
 # ---------------------------------------------------------------------------
 
+
 class TestProperty45OrderPlacementLatency:
     """For any order placed, the placement should complete within 100ms
     (excluding network time, measured as local processing overhead).
@@ -158,15 +173,14 @@ class TestProperty45OrderPlacementLatency:
         elapsed_ms = (time.monotonic() - start) * 1000
 
         assert result.success is True
-        assert elapsed_ms < 100, (
-            f"Order placement took {elapsed_ms:.1f}ms, exceeds 100ms limit"
-        )
+        assert elapsed_ms < 100, f"Order placement took {elapsed_ms:.1f}ms, exceeds 100ms limit"
 
 
 # ---------------------------------------------------------------------------
 # Property 46: MIS Product Type
 # **Validates: Requirements 11.2**
 # ---------------------------------------------------------------------------
+
 
 class TestProperty46MISProductType:
     """For any order placed by OMS, the product type SHALL be MIS regardless
@@ -186,15 +200,16 @@ class TestProperty46MISProductType:
         oms.place_order(order)
 
         placed = broker.place_order.call_args[0][0]
-        assert placed.product_type == ProductType.MIS, (
-            f"Expected MIS, got {placed.product_type} for input {order.product_type}"
-        )
+        assert (
+            placed.product_type == ProductType.MIS
+        ), f"Expected MIS, got {placed.product_type} for input {order.product_type}"
 
 
 # ---------------------------------------------------------------------------
 # Property 48: Order Persistence
 # **Validates: Requirements 11.4**
 # ---------------------------------------------------------------------------
+
 
 class TestProperty48OrderPersistence:
     """For any order placed, it SHALL be stored in SQLite with all required
@@ -229,6 +244,7 @@ class TestProperty48OrderPersistence:
 # **Validates: Requirements 11.3**
 # ---------------------------------------------------------------------------
 
+
 class TestProperty47RateLimiting:
     """Token bucket rate limiter limits to 8 requests/second.  When tokens
     are exhausted, acquire() returns a positive wait time.
@@ -259,9 +275,7 @@ class TestProperty47RateLimiting:
         limiter = TokenBucketRateLimiter(rate=8.0, capacity=8.0)
         for _ in range(n_requests):
             wait = limiter.acquire()
-            assert wait == 0.0, (
-                f"Expected 0 wait within capacity, got {wait}"
-            )
+            assert wait == 0.0, f"Expected 0 wait within capacity, got {wait}"
 
     def test_default_rate_is_8_per_second(self):
         """Verify the default rate limiter allows exactly 8 immediate requests."""
@@ -290,6 +304,7 @@ class TestProperty47RateLimiting:
 # **Validates: Requirements 11.5**
 # ---------------------------------------------------------------------------
 
+
 class TestProperty49BrokerRejectionRetry:
     """On broker rejection, retry up to 2 times with delay between retries.
     Total attempts = 1 initial + 2 retries = 3.
@@ -309,9 +324,9 @@ class TestProperty49BrokerRejectionRetry:
 
         assert result.success is False
         # 1 initial + 2 retries = 3 total calls
-        assert broker.place_order.call_count == 3, (
-            f"Expected 3 attempts, got {broker.place_order.call_count}"
-        )
+        assert (
+            broker.place_order.call_count == 3
+        ), f"Expected 3 attempts, got {broker.place_order.call_count}"
 
     @given(
         order=orders(),
@@ -336,6 +351,7 @@ class TestProperty49BrokerRejectionRetry:
 # Property 50: Fill Event Handling
 # **Validates: Requirements 11.6**
 # ---------------------------------------------------------------------------
+
 
 class TestProperty50FillEventHandling:
     """When an order is filled, a fill event SHALL be published to the
@@ -403,6 +419,7 @@ class TestProperty50FillEventHandling:
 # Property 51: Order Timeout Cancellation
 # **Validates: Requirements 11.8**
 # ---------------------------------------------------------------------------
+
 
 class TestProperty51OrderTimeoutCancellation:
     """Orders unfilled after 60 seconds SHALL be cancelled and status

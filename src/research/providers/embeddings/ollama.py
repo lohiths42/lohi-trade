@@ -182,9 +182,7 @@ class OllamaEmbeddings:
             body = response.json()
 
         raw_vectors = body.get("embeddings") or []
-        vectors: list[list[float]] = [
-            [float(x) for x in (vec or [])] for vec in raw_vectors
-        ]
+        vectors: list[list[float]] = [[float(x) for x in (vec or [])] for vec in raw_vectors]
 
         # Cache the dim on first successful call so the ``dim`` property
         # can return synchronously after that. We deliberately check
@@ -251,9 +249,7 @@ def build(cfg: dict[str, Any]) -> EmbeddingsProvider:
     base_url = cfg.get("base_url") or _DEFAULT_BASE_URL
 
     timeout_ms = cfg.get("timeout_ms")
-    timeout_seconds = (
-        timeout_ms / 1000.0 if timeout_ms is not None else _DEFAULT_TIMEOUT_SECONDS
-    )
+    timeout_seconds = timeout_ms / 1000.0 if timeout_ms is not None else _DEFAULT_TIMEOUT_SECONDS
 
     dim_cfg = cfg.get("dim")
     dim = int(dim_cfg) if dim_cfg is not None else None

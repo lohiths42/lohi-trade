@@ -1,12 +1,9 @@
 """Broker / DMAT account connection endpoints."""
 
 import logging
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-
-from app.services.auth_service import verify_token
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -37,6 +34,7 @@ _broker_config = BrokerConfig()
 @router.get("/broker/status", response_model=BrokerStatus)
 async def get_broker_status():
     """Get broker connection status (masked credentials)."""
+
     def mask(cred: BrokerCredentials) -> dict:
         return {
             "configured": bool(cred.api_key and cred.client_id),

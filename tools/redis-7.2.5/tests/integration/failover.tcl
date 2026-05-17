@@ -150,7 +150,7 @@ start_server {overrides {save {}}} {
             fail "Failover from node 2 to node 0 did not timeout"
         }
 
-        # Quick check that everyone is a replica, we never want a 
+        # Quick check that everyone is a replica, we never want a
         # state where there are two masters.
         assert_match *slave* [$node_1 role]
         assert_match *slave* [$node_2 role]
@@ -188,7 +188,7 @@ start_server {overrides {save {}}} {
         # Stop replica so it never catches up
         pause_process [srv -1 pid]
         $node_0 SET CASE 1
-        
+
         $node_0 failover to [srv -1 host] [srv -1 port] TIMEOUT 500
         # Wait for failover to end
         wait_for_condition 50 20 {
@@ -216,11 +216,11 @@ start_server {overrides {save {}}} {
     test {failovers can be aborted} {
         set initial_psyncs [s 0 sync_partial_ok]
         set initial_syncs [s 0 sync_full]
-    
+
         # Stop replica so it never catches up
         pause_process [srv -1 pid]
         $node_0 SET CASE 2
-        
+
         $node_0 failover to [srv -1 host] [srv -1 port] TIMEOUT 60000
         assert_match [s 0 master_failover_state] "waiting-for-sync"
 

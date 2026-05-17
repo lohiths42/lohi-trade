@@ -96,7 +96,6 @@ if _totp:
 
 import redis  # noqa: E402
 
-
 # ─── SSL certificate bundle ────────────────────────────────────────────────
 # macOS Python framework installs often ship without a populated default
 # cafile, which makes ``aiohttp`` (used by the Nubra WS client) fail with
@@ -105,6 +104,7 @@ import redis  # noqa: E402
 # both ``aiohttp`` and the stdlib ``ssl`` module agree on where to look.
 try:
     import certifi
+
     _cert_path = certifi.where()
     os.environ.setdefault("SSL_CERT_FILE", _cert_path)
     os.environ.setdefault("SSL_CERT_DIR", os.path.dirname(_cert_path))
@@ -129,8 +129,16 @@ logger = logging.getLogger("nubra_ticker")
 # ─── Config ─────────────────────────────────────────────────────────────────
 
 DEFAULT_SYMBOLS = [
-    "RELIANCE", "TCS", "INFY", "HDFCBANK", "ICICIBANK",
-    "SBIN", "ITC", "LT", "AXISBANK", "BHARTIARTL",
+    "RELIANCE",
+    "TCS",
+    "INFY",
+    "HDFCBANK",
+    "ICICIBANK",
+    "SBIN",
+    "ITC",
+    "LT",
+    "AXISBANK",
+    "BHARTIARTL",
 ]
 
 AGGREGATE_STREAM = "stream:ticks"
@@ -273,14 +281,15 @@ def _sync_subscriptions() -> None:
                     exchange=ExchangeEnum.NSE,
                 )
                 _subscribed.update(
-                    s for s in to_add if any(rid for rid in ref_ids if _ref_id_to_symbol.get(rid) == s)
+                    s
+                    for s in to_add
+                    if any(rid for rid in ref_ids if _ref_id_to_symbol.get(rid) == s)
                 )
                 logger.info(
                     "Subscribed %d symbols: %s",
-                    len(ref_ids), sorted(
-                        s for s in to_add if any(
-                            _ref_id_to_symbol.get(rid) == s for rid in ref_ids
-                        )
+                    len(ref_ids),
+                    sorted(
+                        s for s in to_add if any(_ref_id_to_symbol.get(rid) == s for rid in ref_ids)
                     ),
                 )
             except Exception:
@@ -317,17 +326,15 @@ def main() -> int:
     global _socket, _instruments, _running
 
     if not _phone or not _mpin:
-        logger.error(
-            "NUBRA_PHONE_NO and NUBRA_MPIN must be set in backend-gateway/.env"
-        )
+        logger.error("NUBRA_PHONE_NO and NUBRA_MPIN must be set in backend-gateway/.env")
         return 1
 
     signal.signal(signal.SIGINT, _handle_signal)
     signal.signal(signal.SIGTERM, _handle_signal)
 
     logger.info("Initializing Nubra SDK (cached session or TOTP)")
-    from nubra_python_sdk.start_sdk import InitNubraSdk, NubraEnv
     from nubra_python_sdk.refdata.instruments import InstrumentData
+    from nubra_python_sdk.start_sdk import InitNubraSdk, NubraEnv
     from nubra_python_sdk.ticker.websocketdata import NubraDataSocket
 
     nubra_env_str = os.getenv("NUBRA_ENV", "PROD").upper()
@@ -337,7 +344,9 @@ def main() -> int:
     try:
         client = InitNubraSdk(nubra_env, totp_login=use_totp, env_creds=True)
     except Exception:
-        logger.exception("InitNubraSdk failed — ensure cached session is valid or set NUBRA_TOTP_SECRET")
+        logger.exception(
+            "InitNubraSdk failed — ensure cached session is valid or set NUBRA_TOTP_SECRET"
+        )
         return 2
 
     _instruments = InstrumentData(client)

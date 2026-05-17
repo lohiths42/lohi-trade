@@ -25,6 +25,7 @@ from src.ingestion.corporate_actions_collector import (
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_event_bus() -> MagicMock:
     """Create a mock EventBus."""
     bus = MagicMock()
@@ -85,6 +86,7 @@ def _make_announcement(
 # Tests: Initialization
 # ---------------------------------------------------------------------------
 
+
 class TestCorporateActionsCollectorInit:
     def test_initial_state(self):
         collector, bus = _make_collector()
@@ -118,6 +120,7 @@ class TestCorporateActionsCollectorInit:
 # ---------------------------------------------------------------------------
 # Tests: CorporateAction dataclass serialization
 # ---------------------------------------------------------------------------
+
 
 class TestCorporateActionSerialization:
     def test_to_dict(self):
@@ -171,6 +174,7 @@ class TestCorporateActionSerialization:
 # Tests: ExchangeAnnouncement serialization
 # ---------------------------------------------------------------------------
 
+
 class TestAnnouncementSerialization:
     def test_to_dict(self):
         ann = _make_announcement()
@@ -204,6 +208,7 @@ class TestAnnouncementSerialization:
 # ---------------------------------------------------------------------------
 # Tests: Fetching corporate actions (Req 27.1)
 # ---------------------------------------------------------------------------
+
 
 class TestFetchCorporateActions:
     @pytest.mark.asyncio
@@ -248,8 +253,10 @@ class TestFetchCorporateActions:
         # At least one publish call for the action
         assert bus.publish.called
         call_args_list = bus.publish.call_args_list
-        streams = [c.kwargs.get("stream_name") or c[1].get("stream_name", c[0][0] if c[0] else "")
-                    for c in call_args_list]
+        streams = [
+            c.kwargs.get("stream_name") or c[1].get("stream_name", c[0][0] if c[0] else "")
+            for c in call_args_list
+        ]
         assert CorporateActionsCollector.CORPORATE_ACTIONS_STREAM in streams
 
     @pytest.mark.asyncio
@@ -293,6 +300,7 @@ class TestFetchCorporateActions:
 # ---------------------------------------------------------------------------
 # Tests: Deduplication
 # ---------------------------------------------------------------------------
+
 
 class TestDeduplication:
     @pytest.mark.asyncio
@@ -350,6 +358,7 @@ class TestDeduplication:
 # ---------------------------------------------------------------------------
 # Tests: Exchange announcements (Req 27.2)
 # ---------------------------------------------------------------------------
+
 
 class TestFetchAnnouncements:
     @pytest.mark.asyncio
@@ -428,6 +437,7 @@ class TestFetchAnnouncements:
 # Tests: Notifications for watchlist securities (Req 27.3)
 # ---------------------------------------------------------------------------
 
+
 class TestWatchlistNotifications:
     @pytest.mark.asyncio
     async def test_notification_sent_for_watchlist_action(self):
@@ -442,7 +452,8 @@ class TestWatchlistNotifications:
         assert collector.total_notifications_sent == 1
         # Check notification was published to notifications stream
         notification_calls = [
-            c for c in bus.publish.call_args_list
+            c
+            for c in bus.publish.call_args_list
             if (c.kwargs.get("stream_name") or (c[0][0] if c[0] else ""))
             == CorporateActionsCollector.NOTIFICATIONS_STREAM
         ]
@@ -506,6 +517,7 @@ class TestWatchlistNotifications:
 # Tests: Corporate action history storage (Req 27.4)
 # ---------------------------------------------------------------------------
 
+
 class TestActionHistory:
     def test_store_action(self):
         """Actions are stored with all fields. (Req 27.4)"""
@@ -533,11 +545,13 @@ class TestActionHistory:
         """History can be filtered by action type."""
         collector, _ = _make_collector()
         collector._store_action(_make_action(action_type=CorporateActionType.DIVIDEND))
-        collector._store_action(_make_action(
-            symbol="TCS",
-            action_type=CorporateActionType.SPLIT,
-            ex_date=date(2024, 7, 1),
-        ))
+        collector._store_action(
+            _make_action(
+                symbol="TCS",
+                action_type=CorporateActionType.SPLIT,
+                ex_date=date(2024, 7, 1),
+            )
+        )
 
         result = collector.get_action_history(action_type=CorporateActionType.SPLIT)
         assert len(result) == 1
@@ -556,11 +570,13 @@ class TestActionHistory:
         """All corporate action types can be stored. (Req 27.1)"""
         collector, _ = _make_collector()
         for at in CorporateActionType:
-            collector._store_action(_make_action(
-                symbol=f"SYM_{at.value}",
-                action_type=at,
-                ex_date=date(2024, 6, 15 + list(CorporateActionType).index(at)),
-            ))
+            collector._store_action(
+                _make_action(
+                    symbol=f"SYM_{at.value}",
+                    action_type=at,
+                    ex_date=date(2024, 6, 15 + list(CorporateActionType).index(at)),
+                )
+            )
 
         assert len(collector.action_history) == 5
         stored_types = {a.action_type for a in collector.action_history}
@@ -570,6 +586,7 @@ class TestActionHistory:
 # ---------------------------------------------------------------------------
 # Tests: Announcement history
 # ---------------------------------------------------------------------------
+
 
 class TestAnnouncementHistory:
     def test_store_announcement(self):
@@ -605,6 +622,7 @@ class TestAnnouncementHistory:
 # ---------------------------------------------------------------------------
 # Tests: Price adjustments for splits/bonuses (Req 27.5)
 # ---------------------------------------------------------------------------
+
 
 class TestPriceAdjustments:
     def test_split_adjusts_price(self):
@@ -748,10 +766,18 @@ class TestPriceAdjustments:
         collector, _ = _make_collector(universe=universe)
 
         actions = [
-            _make_action(symbol="A", action_type=CorporateActionType.SPLIT,
-                         details={"ratio": "2:1"}, ex_date=date(2024, 6, 15)),
-            _make_action(symbol="B", action_type=CorporateActionType.BONUS,
-                         details={"ratio": "1:2"}, ex_date=date(2024, 6, 16)),
+            _make_action(
+                symbol="A",
+                action_type=CorporateActionType.SPLIT,
+                details={"ratio": "2:1"},
+                ex_date=date(2024, 6, 15),
+            ),
+            _make_action(
+                symbol="B",
+                action_type=CorporateActionType.BONUS,
+                details={"ratio": "1:2"},
+                ex_date=date(2024, 6, 16),
+            ),
         ]
         collector._apply_price_adjustments(actions)
 
@@ -770,6 +796,7 @@ class TestPriceAdjustments:
 # ---------------------------------------------------------------------------
 # Tests: Scheduling logic (Req 27.6)
 # ---------------------------------------------------------------------------
+
 
 class TestScheduling:
     def test_should_fetch_during_market_hours(self):
@@ -852,6 +879,7 @@ class TestScheduling:
 # Tests: Scheduled fetch integration
 # ---------------------------------------------------------------------------
 
+
 class TestScheduledFetch:
     @pytest.mark.asyncio
     async def test_run_scheduled_fetch_triggers(self):
@@ -881,6 +909,7 @@ class TestScheduledFetch:
 # Tests: Start/stop lifecycle
 # ---------------------------------------------------------------------------
 
+
 class TestLifecycle:
     @pytest.mark.asyncio
     async def test_start_sets_running(self):
@@ -899,6 +928,7 @@ class TestLifecycle:
 # ---------------------------------------------------------------------------
 # Tests: Event bus publishing
 # ---------------------------------------------------------------------------
+
 
 class TestEventBusPublishing:
     def test_publish_action(self):
@@ -944,6 +974,7 @@ class TestEventBusPublishing:
 # ---------------------------------------------------------------------------
 # Tests: Enum coverage
 # ---------------------------------------------------------------------------
+
 
 class TestEnums:
     def test_corporate_action_types(self):

@@ -24,6 +24,7 @@ from src.utils.config import MeanReversionStrategy as MeanReversionConfig
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _default_config(enabled: bool = True) -> MeanReversionConfig:
     return MeanReversionConfig(
         enabled=enabled,
@@ -82,6 +83,7 @@ def _make_candles(close: float = 93.0, volume: float = 80000.0) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 class TestMeanReversionProperties:
     def test_name(self):

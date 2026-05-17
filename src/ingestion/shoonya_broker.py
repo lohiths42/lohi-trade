@@ -35,7 +35,7 @@ logger = get_logger("ShoonyaBroker")
 
 class ShoonyaBroker(BrokerInterface):
     """Shoonya (Finvasia) broker adapter.
-    
+
     Implements WebSocket connection for live ticks and REST API for order placement.
     """
 
@@ -57,13 +57,13 @@ class ShoonyaBroker(BrokerInterface):
 
     def connect(self, credentials: BrokerCredentials) -> bool:
         """Connect to Shoonya API and authenticate.
-        
+
         Args:
             credentials: Shoonya authentication credentials
-            
+
         Returns:
             True if connection successful
-            
+
         Raises:
             ConnectionError: If connection fails
             AuthenticationError: If authentication fails
@@ -196,7 +196,7 @@ class ShoonyaBroker(BrokerInterface):
 
     def _handle_ws_message(self, data: dict) -> None:
         """Handle incoming WebSocket messages.
-        
+
         Args:
             data: Parsed JSON message from WebSocket
 
@@ -223,10 +223,10 @@ class ShoonyaBroker(BrokerInterface):
 
     def _parse_tick(self, data: dict) -> Tick | None:
         """Parse tick data from WebSocket message.
-        
+
         Args:
             data: WebSocket message data
-            
+
         Returns:
             Tick object or None if parsing fails
 
@@ -265,8 +265,10 @@ class ShoonyaBroker(BrokerInterface):
         """Handle WebSocket disconnection and attempt reconnection."""
         if self._reconnect_attempts < self._max_reconnect_attempts:
             self._reconnect_attempts += 1
-            backoff = min(2 ** self._reconnect_attempts, 30)  # Exponential backoff, max 30s
-            logger.info(f"Attempting WebSocket reconnection in {backoff}s (attempt {self._reconnect_attempts})")
+            backoff = min(2**self._reconnect_attempts, 30)  # Exponential backoff, max 30s
+            logger.info(
+                f"Attempting WebSocket reconnection in {backoff}s (attempt {self._reconnect_attempts})"
+            )
             time.sleep(backoff)
 
             try:
@@ -284,14 +286,14 @@ class ShoonyaBroker(BrokerInterface):
 
     def subscribe(self, symbols: list[str], on_tick: Callable[[Tick], None]) -> bool:
         """Subscribe to real-time tick data for given symbols.
-        
+
         Args:
             symbols: List of trading symbols to subscribe to
             on_tick: Callback function to handle incoming ticks
-            
+
         Returns:
             True if subscription successful
-            
+
         Raises:
             ConnectionError: If not connected to broker
 
@@ -329,10 +331,10 @@ class ShoonyaBroker(BrokerInterface):
 
     def unsubscribe(self, symbols: list[str]) -> bool:
         """Unsubscribe from real-time tick data for given symbols.
-        
+
         Args:
             symbols: List of trading symbols to unsubscribe from
-            
+
         Returns:
             True if unsubscription successful
 
@@ -356,13 +358,13 @@ class ShoonyaBroker(BrokerInterface):
 
     def place_order(self, order: Order) -> str:
         """Place an order with Shoonya broker.
-        
+
         Args:
             order: Order object with all required details
-            
+
         Returns:
             Broker order ID if successful
-            
+
         Raises:
             OrderRejectionError: If broker rejects the order
             ConnectionError: If not connected to broker
@@ -413,13 +415,13 @@ class ShoonyaBroker(BrokerInterface):
 
     def cancel_order(self, broker_order_id: str) -> bool:
         """Cancel a pending order.
-        
+
         Args:
             broker_order_id: Broker's order ID to cancel
-            
+
         Returns:
             True if cancellation successful
-            
+
         Raises:
             OrderNotFoundError: If order ID not found
 
@@ -460,13 +462,13 @@ class ShoonyaBroker(BrokerInterface):
 
     def get_order_status(self, broker_order_id: str) -> Order:
         """Get current status of an order.
-        
+
         Args:
             broker_order_id: Broker's order ID to query
-            
+
         Returns:
             Order object with updated status
-            
+
         Raises:
             OrderNotFoundError: If order ID not found
 
@@ -517,7 +519,9 @@ class ShoonyaBroker(BrokerInterface):
                 status=status,
                 broker_order_id=broker_order_id,
                 filled_qty=int(order_info.get("fillshares", 0)),
-                filled_price=float(order_info.get("avgprc", 0)) if order_info.get("avgprc") else None,
+                filled_price=(
+                    float(order_info.get("avgprc", 0)) if order_info.get("avgprc") else None
+                ),
                 timestamp=datetime.now(),
                 rejection_reason=order_info.get("rejreason"),
             )
@@ -527,7 +531,7 @@ class ShoonyaBroker(BrokerInterface):
 
     def get_positions(self) -> list[dict]:
         """Get all open positions.
-        
+
         Returns:
             List of position dictionaries
 
@@ -568,13 +572,15 @@ class ShoonyaBroker(BrokerInterface):
             positions = []
             if isinstance(positions_data, list):
                 for pos in positions_data:
-                    positions.append({
-                        "symbol": pos.get("tsym"),
-                        "quantity": int(pos.get("netqty", 0)),
-                        "avg_price": float(pos.get("netavgprc", 0)),
-                        "ltp": float(pos.get("lp", 0)),
-                        "pnl": float(pos.get("rpnl", 0)),
-                    })
+                    positions.append(
+                        {
+                            "symbol": pos.get("tsym"),
+                            "quantity": int(pos.get("netqty", 0)),
+                            "avg_price": float(pos.get("netavgprc", 0)),
+                            "ltp": float(pos.get("lp", 0)),
+                            "pnl": float(pos.get("rpnl", 0)),
+                        }
+                    )
 
             return positions
 
@@ -584,10 +590,10 @@ class ShoonyaBroker(BrokerInterface):
 
     def get_instrument_master(self) -> list[dict]:
         """Download instrument master with symbol tokens and trading details.
-        
+
         Returns:
             List of instrument dictionaries with symbol, token, exchange, lot_size, tick_size, trading_symbol
-            
+
         Requirements: 23.1, 23.2
 
         """
@@ -621,15 +627,17 @@ class ShoonyaBroker(BrokerInterface):
                         # Parse instrument data
                         # Shoonya CSV format: Exchange, Token, LotSize, Symbol, TradingSymbol, Expiry, Instrument, OptionType, StrikePrice, TickSize
                         try:
-                            instruments.append({
-                                "symbol": row.get("Symbol", "").strip(),
-                                "token": int(row.get("Token", 0)),
-                                "exchange": row.get("Exchange", "NSE").strip(),
-                                "lot_size": int(row.get("LotSize", 1)),
-                                "tick_size": float(row.get("TickSize", 0.05)),
-                                "trading_symbol": row.get("TradingSymbol", "").strip(),
-                                "instrument": row.get("Instrument", "").strip(),
-                            })
+                            instruments.append(
+                                {
+                                    "symbol": row.get("Symbol", "").strip(),
+                                    "token": int(row.get("Token", 0)),
+                                    "exchange": row.get("Exchange", "NSE").strip(),
+                                    "lot_size": int(row.get("LotSize", 1)),
+                                    "tick_size": float(row.get("TickSize", 0.05)),
+                                    "trading_symbol": row.get("TradingSymbol", "").strip(),
+                                    "instrument": row.get("Instrument", "").strip(),
+                                }
+                            )
                         except (ValueError, KeyError) as e:
                             logger.debug(f"Skipping invalid instrument row: {e}")
                             continue

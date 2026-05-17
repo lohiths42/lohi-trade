@@ -25,18 +25,12 @@ class ResearchAuditLog(Base):
 
     __tablename__ = "research_audit_log"
 
-    id: Mapped[int] = mapped_column(
-        BigInteger, primary_key=True, autoincrement=True
-    )
-    user_id: Mapped[Optional[UUID]] = mapped_column(
-        PG_UUID(as_uuid=True), nullable=True
-    )
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    user_id: Mapped[Optional[UUID]] = mapped_column(PG_UUID(as_uuid=True), nullable=True)
     # user | system | agent
     actor: Mapped[str] = mapped_column(String(16), nullable=False)
     action: Mapped[str] = mapped_column(String(64), nullable=False)
-    payload_json: Mapped[dict] = mapped_column(
-        JSONB, nullable=False, server_default="{}"
-    )
+    payload_json: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default="{}")
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True), nullable=False, server_default=func.now()
     )

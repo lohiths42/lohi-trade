@@ -809,7 +809,7 @@ start_server {tags {"stream"}} {
     test {XSETID cannot set the maximal tombstone with larger ID} {
         r DEL x
         r XADD x 1-0 a b
-        
+
         catch {r XSETID x "1-0" ENTRIESADDED 1 MAXDELETEDID "2-0" } err
         r XADD mystream MAXLEN 0 * a b
         set err
@@ -818,7 +818,7 @@ start_server {tags {"stream"}} {
     test {XSETID cannot set the offset to less than the length} {
         r DEL x
         r XADD x 1-0 a b
-        
+
         catch {r XSETID x "1-0" ENTRIESADDED 0 MAXDELETEDID "0-0" } err
         r XADD mystream MAXLEN 0 * a b
         set err

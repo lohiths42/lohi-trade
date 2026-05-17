@@ -10,16 +10,15 @@ Covers requirements:
   23.7 — AWS Secrets Manager for all sensitive credentials
 """
 
-import sys
 import os
+import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import aws_cdk as cdk
-from aws_cdk.assertions import Template, Match
-
-from stacks.vpc_stack import VpcStack
+from aws_cdk.assertions import Template
 from stacks.data_stack import DataStack
+from stacks.vpc_stack import VpcStack
 
 
 def _get_template() -> Template:
@@ -160,10 +159,7 @@ class TestS3Buckets:
     def test_all_buckets_block_public_access(self):
         template = _get_template()
         resources = template.to_json()["Resources"]
-        buckets = [
-            r for r in resources.values()
-            if r.get("Type") == "AWS::S3::Bucket"
-        ]
+        buckets = [r for r in resources.values() if r.get("Type") == "AWS::S3::Bucket"]
         for bucket in buckets:
             pba = bucket["Properties"].get("PublicAccessBlockConfiguration", {})
             assert pba.get("BlockPublicAcls") is True
@@ -176,7 +172,8 @@ class TestS3Buckets:
         template = _get_template()
         resources = template.to_json()["Resources"]
         buckets_with_lifecycle = [
-            r for r in resources.values()
+            r
+            for r in resources.values()
             if r.get("Type") == "AWS::S3::Bucket"
             and r.get("Properties", {}).get("LifecycleConfiguration")
         ]
@@ -184,10 +181,10 @@ class TestS3Buckets:
         lifecycle_config = buckets_with_lifecycle[0]["Properties"]["LifecycleConfiguration"]
         rules = lifecycle_config.get("Rules", [])
         ia_transitions = [
-            t for rule in rules
+            t
+            for rule in rules
             for t in rule.get("Transitions", [])
-            if t.get("StorageClass") == "STANDARD_IA"
-            and t.get("TransitionInDays") == 90
+            if t.get("StorageClass") == "STANDARD_IA" and t.get("TransitionInDays") == 90
         ]
         assert len(ia_transitions) >= 1, "Expected transition to STANDARD_IA after 90 days"
 
@@ -195,10 +192,7 @@ class TestS3Buckets:
         """All buckets use SSE-S3 encryption."""
         template = _get_template()
         resources = template.to_json()["Resources"]
-        buckets = [
-            r for r in resources.values()
-            if r.get("Type") == "AWS::S3::Bucket"
-        ]
+        buckets = [r for r in resources.values() if r.get("Type") == "AWS::S3::Bucket"]
         for bucket in buckets:
             enc = bucket["Properties"].get("BucketEncryption", {})
             rules = enc.get("ServerSideEncryptionConfiguration", [])
@@ -221,7 +215,8 @@ class TestSecretsManager:
         template = _get_template()
         resources = template.to_json()["Resources"]
         secrets_with_gen = [
-            r for r in resources.values()
+            r
+            for r in resources.values()
             if r.get("Type") == "AWS::SecretsManager::Secret"
             and "GenerateSecretString" in r.get("Properties", {})
         ]

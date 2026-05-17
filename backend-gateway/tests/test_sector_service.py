@@ -1,22 +1,19 @@
 """Unit tests for SectorService — sector classification, aggregation, and filtering."""
 
-from datetime import datetime, timezone
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-
 from app.services.sector_service import (
     SECTORS,
     SUB_INDUSTRIES,
+    ClassificationUpdate,
     SectorAggregate,
     SectorFilterParams,
+    SectorSecurity,
     SectorService,
     SecurityGainerLoser,
-    SectorSecurity,
-    ClassificationUpdate,
 )
-
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -50,8 +47,11 @@ def _make_agg_row(total_market_cap=1000000, stock_count=50):
 
 
 def _make_gainer_loser_row(
-    id=1, symbol="RELIANCE", company_name="Reliance Industries",
-    price_change_1d=Decimal("2.50"), market_cap=Decimal("1500000"),
+    id=1,
+    symbol="RELIANCE",
+    company_name="Reliance Industries",
+    price_change_1d=Decimal("2.50"),
+    market_cap=Decimal("1500000"),
 ):
     row = MagicMock()
     data = {
@@ -67,9 +67,13 @@ def _make_gainer_loser_row(
 
 
 def _make_sector_security_row(
-    id=1, symbol="RELIANCE", company_name="Reliance Industries",
-    industry="Oil & Gas", market_cap=Decimal("1500000"),
-    pe_ratio=Decimal("25.5"), dividend_yield=Decimal("1.2"),
+    id=1,
+    symbol="RELIANCE",
+    company_name="Reliance Industries",
+    industry="Oil & Gas",
+    market_cap=Decimal("1500000"),
+    pe_ratio=Decimal("25.5"),
+    dividend_yield=Decimal("1.2"),
     price_change_1d=Decimal("2.50"),
 ):
     row = MagicMock()
@@ -104,10 +108,21 @@ class TestSectorConstants:
 
     def test_all_expected_sectors_present(self):
         expected = [
-            "Pharma", "IT/Technology", "AI/Deep Tech", "Metals & Mining",
-            "Banking & Finance", "FMCG", "Energy", "Automobile", "Telecom",
-            "Real Estate", "Infrastructure", "Chemicals",
-            "Media & Entertainment", "Insurance", "Miscellaneous",
+            "Pharma",
+            "IT/Technology",
+            "AI/Deep Tech",
+            "Metals & Mining",
+            "Banking & Finance",
+            "FMCG",
+            "Energy",
+            "Automobile",
+            "Telecom",
+            "Real Estate",
+            "Infrastructure",
+            "Chemicals",
+            "Media & Entertainment",
+            "Insurance",
+            "Miscellaneous",
         ]
         for s in expected:
             assert s in SECTORS
@@ -219,12 +234,18 @@ class TestGetSectorAggregate:
         conn.fetchrow = AsyncMock(return_value=agg_row)
 
         gainer = _make_gainer_loser_row(
-            id=1, symbol="ONGC", company_name="ONGC Ltd",
-            price_change_1d=Decimal("5.0"), market_cap=Decimal("200000"),
+            id=1,
+            symbol="ONGC",
+            company_name="ONGC Ltd",
+            price_change_1d=Decimal("5.0"),
+            market_cap=Decimal("200000"),
         )
         loser = _make_gainer_loser_row(
-            id=2, symbol="BPCL", company_name="BPCL Ltd",
-            price_change_1d=Decimal("-3.0"), market_cap=Decimal("100000"),
+            id=2,
+            symbol="BPCL",
+            company_name="BPCL Ltd",
+            price_change_1d=Decimal("-3.0"),
+            market_cap=Decimal("100000"),
         )
         conn.fetch = AsyncMock(side_effect=[[gainer], [loser]])
 
@@ -439,10 +460,12 @@ class TestUpdateClassifications:
         conn.execute = AsyncMock(return_value="UPDATE 1")
 
         svc = _make_service(db_pool=pool)
-        result = await svc.update_classifications([
-            {"security_id": 1, "sector": "Energy", "industry": "Oil & Gas"},
-            {"security_id": 2, "sector": "Pharma", "industry": "Biotechnology"},
-        ])
+        result = await svc.update_classifications(
+            [
+                {"security_id": 1, "sector": "Energy", "industry": "Oil & Gas"},
+                {"security_id": 2, "sector": "Pharma", "industry": "Biotechnology"},
+            ]
+        )
 
         assert result.updated_count == 2
         assert result.timestamp is not None
@@ -454,9 +477,11 @@ class TestUpdateClassifications:
         conn.execute = AsyncMock(return_value="UPDATE 1")
 
         svc = _make_service(db_pool=pool)
-        result = await svc.update_classifications([
-            {"security_id": 1, "sector": "InvalidSector"},
-        ])
+        result = await svc.update_classifications(
+            [
+                {"security_id": 1, "sector": "InvalidSector"},
+            ]
+        )
 
         assert result.updated_count == 1
         # Verify "Miscellaneous" was passed to the query
@@ -469,10 +494,12 @@ class TestUpdateClassifications:
         conn.execute = AsyncMock(return_value="UPDATE 1")
 
         svc = _make_service(db_pool=pool)
-        result = await svc.update_classifications([
-            {"sector": "Energy"},  # no security_id
-            {"security_id": 2, "sector": "Pharma"},
-        ])
+        result = await svc.update_classifications(
+            [
+                {"sector": "Energy"},  # no security_id
+                {"security_id": 2, "sector": "Pharma"},
+            ]
+        )
 
         assert result.updated_count == 1
         assert conn.execute.call_count == 1
@@ -483,9 +510,11 @@ class TestUpdateClassifications:
         conn.execute = AsyncMock(return_value="UPDATE 0")
 
         svc = _make_service(db_pool=pool)
-        result = await svc.update_classifications([
-            {"security_id": 999, "sector": "Energy"},
-        ])
+        result = await svc.update_classifications(
+            [
+                {"security_id": 999, "sector": "Energy"},
+            ]
+        )
 
         assert result.updated_count == 0
 
@@ -495,9 +524,11 @@ class TestUpdateClassifications:
         conn.execute = AsyncMock(side_effect=Exception("DB error"))
 
         svc = _make_service(db_pool=pool)
-        result = await svc.update_classifications([
-            {"security_id": 1, "sector": "Energy"},
-        ])
+        result = await svc.update_classifications(
+            [
+                {"security_id": 1, "sector": "Energy"},
+            ]
+        )
 
         assert result.updated_count == 0
 
@@ -508,8 +539,11 @@ class TestUpdateClassifications:
 class TestRowMapping:
     def test_row_to_gainer_loser(self):
         row = _make_gainer_loser_row(
-            id=5, symbol="ONGC", company_name="ONGC Ltd",
-            price_change_1d=Decimal("3.5"), market_cap=Decimal("200000"),
+            id=5,
+            symbol="ONGC",
+            company_name="ONGC Ltd",
+            price_change_1d=Decimal("3.5"),
+            market_cap=Decimal("200000"),
         )
         result = SectorService._row_to_gainer_loser(row)
 
@@ -520,9 +554,13 @@ class TestRowMapping:
 
     def test_row_to_sector_security(self):
         row = _make_sector_security_row(
-            id=10, symbol="TCS", company_name="TCS Ltd",
-            industry="IT Services", market_cap=Decimal("1200000"),
-            pe_ratio=Decimal("30.0"), dividend_yield=Decimal("1.5"),
+            id=10,
+            symbol="TCS",
+            company_name="TCS Ltd",
+            industry="IT Services",
+            market_cap=Decimal("1200000"),
+            pe_ratio=Decimal("30.0"),
+            dividend_yield=Decimal("1.5"),
             price_change_1d=Decimal("-0.5"),
         )
         result = SectorService._row_to_sector_security(row)

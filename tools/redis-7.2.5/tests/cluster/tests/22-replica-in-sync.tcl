@@ -90,7 +90,7 @@ test "Replica in loading state is hidden" {
 
     # The master will be the last to know the replica
     # is loading, so we will wait on that and assert
-    # the replica is loading afterwards. 
+    # the replica is loading afterwards.
     wait_for_condition 100 50 {
         ![is_in_slots $master_id $replica]
     } else {
@@ -111,11 +111,11 @@ test "Replica in loading state is hidden" {
 
     # Check replica is back in cluster slots
     wait_for_condition 100 50 {
-        [is_in_slots $master_id $replica] 
+        [is_in_slots $master_id $replica]
     } else {
         fail "Replica is not back to slots"
     }
-    assert_equal 1 [is_in_slots $replica_id $replica] 
+    assert_equal 1 [is_in_slots $replica_id $replica]
 }
 
 test "Check disconnected replica not hidden from slots" {

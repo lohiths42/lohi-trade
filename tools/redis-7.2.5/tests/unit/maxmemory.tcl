@@ -21,13 +21,13 @@ start_server {tags {"maxmemory" "external:skip"}} {
         }
         assert_equal [r dbsize] 50
     }
-    
+
     # Return true if the eviction occurred (client or key) based on argument
     proc check_eviction_test {client_eviction} {
         set evicted_keys [s evicted_keys]
         set evicted_clients [s evicted_clients]
         set dbsize [r dbsize]
-        
+
         if $client_eviction {
             return [expr $evicted_clients > 0 && $evicted_keys == 0 && $dbsize == 50]
         } else {
@@ -40,7 +40,7 @@ start_server {tags {"maxmemory" "external:skip"}} {
         set evicted_keys [s evicted_keys]
         set evicted_clients [s evicted_clients]
         set dbsize [r dbsize]
-        
+
         if $::verbose {
             puts "evicted keys: $evicted_keys"
             puts "evicted clients: $evicted_clients"
@@ -59,8 +59,8 @@ start_server {tags {"maxmemory" "external:skip"}} {
                 set rr [redis_deferring_client]
                 lappend clients $rr
             }
-            
-            # Generate client output buffers via MGET until we can observe some effect on 
+
+            # Generate client output buffers via MGET until we can observe some effect on
             # keys / client eviction, or we time out.
             set t [clock seconds]
             while {![check_eviction_test $client_eviction] && [expr [clock seconds] - $t] < 20} {
@@ -83,7 +83,7 @@ start_server {tags {"maxmemory" "external:skip"}} {
         set clients {}
         test "eviction due to input buffer of a dead client, client eviction: $client_eviction" {
             init_test $client_eviction
-            
+
             for {set j 0} {$j < 30} {incr j} {
                 set rr [redis_deferring_client]
                 lappend clients $rr
@@ -122,7 +122,7 @@ start_server {tags {"maxmemory" "external:skip"}} {
                 $rr subscribe bla
             }
 
-            # Generate client output buffers via PUBLISH until we can observe some effect on 
+            # Generate client output buffers via PUBLISH until we can observe some effect on
             # keys / client eviction, or we time out.
             set bigstr [string repeat x 100000]
             set t [clock seconds]
@@ -583,7 +583,7 @@ start_server {tags {"maxmemory" "external:skip"}} {
         assert {[r object idletime foo] <= 2}
 
         r config set maxmemory-policy allkeys-lfu
-        r del foo 
+        r del foo
         r set foo a
         assert {[r object freq foo] == 5}
     }

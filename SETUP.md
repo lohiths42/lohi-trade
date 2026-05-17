@@ -108,11 +108,11 @@ All dependencies from `requirements.txt` have been successfully installed, inclu
    SHOONYA_API_KEY=your_key
    SHOONYA_CLIENT_ID=your_client_id
    SHOONYA_PASSWORD=your_password
-   
+
    ANGELONE_API_KEY=your_key
    ANGELONE_CLIENT_ID=your_client_id
    ANGELONE_PASSWORD=your_password
-   
+
    TELEGRAM_BOT_TOKEN=your_token
    TELEGRAM_CHAT_ID=your_chat_id
    ```

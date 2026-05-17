@@ -16,10 +16,9 @@ _TEST_KEY = Fernet.generate_key().decode()
 os.environ["PAN_ENCRYPTION_KEY"] = _TEST_KEY
 
 import pytest
+from app.services.verification_service import PANVerificationService
 from hypothesis import given, settings
 from hypothesis import strategies as st
-
-from app.services.verification_service import PANVerificationService
 
 # ── Strategies ───────────────────────────────────────────────────────────────
 
@@ -49,36 +48,36 @@ class TestPANMaskingCorrectnessProperty:
     def test_masked_pan_length_is_always_10(self, pan: str):
         """For any valid 10-char PAN, the masked result is always 10 characters."""
         masked = self.service.mask_pan(pan)
-        assert len(masked) == 10, (
-            f"Expected masked PAN length 10, got {len(masked)} for '{pan}' → '{masked}'"
-        )
+        assert (
+            len(masked) == 10
+        ), f"Expected masked PAN length 10, got {len(masked)} for '{pan}' → '{masked}'"
 
     @given(pan=valid_pan)
     @settings(max_examples=100)
     def test_first_two_chars_preserved(self, pan: str):
         """First 2 characters of masked PAN match first 2 characters of original."""
         masked = self.service.mask_pan(pan)
-        assert masked[:2] == pan[:2], (
-            f"First 2 chars mismatch: original '{pan[:2]}', masked '{masked[:2]}'"
-        )
+        assert (
+            masked[:2] == pan[:2]
+        ), f"First 2 chars mismatch: original '{pan[:2]}', masked '{masked[:2]}'"
 
     @given(pan=valid_pan)
     @settings(max_examples=100)
     def test_last_two_chars_preserved(self, pan: str):
         """Last 2 characters of masked PAN match last 2 characters of original."""
         masked = self.service.mask_pan(pan)
-        assert masked[8:] == pan[8:], (
-            f"Last 2 chars mismatch: original '{pan[8:]}', masked '{masked[8:]}'"
-        )
+        assert (
+            masked[8:] == pan[8:]
+        ), f"Last 2 chars mismatch: original '{pan[8:]}', masked '{masked[8:]}'"
 
     @given(pan=valid_pan)
     @settings(max_examples=100)
     def test_middle_six_chars_are_asterisks(self, pan: str):
         """Middle 6 characters of masked PAN are always asterisks."""
         masked = self.service.mask_pan(pan)
-        assert masked[2:8] == "******", (
-            f"Middle chars should be '******', got '{masked[2:8]}' for '{pan}' → '{masked}'"
-        )
+        assert (
+            masked[2:8] == "******"
+        ), f"Middle chars should be '******', got '{masked[2:8]}' for '{pan}' → '{masked}'"
 
     @given(s=st.text(min_size=0, max_size=50).filter(lambda x: len(x) != 10))
     @settings(max_examples=100)

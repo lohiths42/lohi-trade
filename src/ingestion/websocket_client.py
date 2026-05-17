@@ -52,10 +52,10 @@ class ConnectionStats:
 
 class WebSocketClient:
     """WebSocket client for real-time tick ingestion.
-    
+
     Manages connection to broker WebSocket, subscribes to symbols,
     handles incoming ticks, and publishes to Event Bus with latency tracking.
-    
+
     Requirements: 1.1, 1.2, 1.3, 1.4
     """
 
@@ -66,7 +66,7 @@ class WebSocketClient:
         config: Config,
     ):
         """Initialize WebSocket client.
-        
+
         Args:
             broker: Broker adapter (Shoonya or Angel One)
             event_bus: Event Bus for publishing ticks
@@ -99,16 +99,16 @@ class WebSocketClient:
 
     def connect(self, credentials: BrokerCredentials) -> bool:
         """Connect to broker WebSocket.
-        
+
         Args:
             credentials: Broker authentication credentials
-            
+
         Returns:
             True if connection successful
-            
+
         Raises:
             ConnectionError: If connection fails
-            
+
         Requirements: 1.1
 
         """
@@ -138,7 +138,7 @@ class WebSocketClient:
 
     def disconnect(self) -> None:
         """Disconnect from broker WebSocket and clean up resources.
-        
+
         Requirements: 1.1
         """
         logger.info("Disconnecting from broker WebSocket...")
@@ -160,7 +160,7 @@ class WebSocketClient:
 
     def is_connected(self) -> bool:
         """Check if WebSocket connection is active.
-        
+
         Returns:
             True if connected, False otherwise
 
@@ -169,16 +169,16 @@ class WebSocketClient:
 
     def subscribe(self, symbols: list[str]) -> bool:
         """Subscribe to real-time tick data for given symbols.
-        
+
         Args:
             symbols: List of trading symbols to subscribe to
-            
+
         Returns:
             True if subscription successful
-            
+
         Raises:
             ConnectionError: If not connected to broker
-            
+
         Requirements: 1.1
 
         """
@@ -204,10 +204,10 @@ class WebSocketClient:
 
     def unsubscribe(self, symbols: list[str]) -> bool:
         """Unsubscribe from real-time tick data for given symbols.
-        
+
         Args:
             symbols: List of trading symbols to unsubscribe from
-            
+
         Returns:
             True if unsubscription successful
 
@@ -222,9 +222,7 @@ class WebSocketClient:
 
             if success:
                 # Remove from subscribed list
-                self._subscribed_symbols = [
-                    s for s in self._subscribed_symbols if s not in symbols
-                ]
+                self._subscribed_symbols = [s for s in self._subscribed_symbols if s not in symbols]
                 logger.info(f"Successfully unsubscribed from {len(symbols)} symbols")
                 return True
             logger.error("Failed to unsubscribe from symbols")
@@ -236,13 +234,13 @@ class WebSocketClient:
 
     def _on_tick(self, tick: Tick) -> None:
         """Handle incoming tick from broker.
-        
+
         This callback is invoked by the broker adapter for each tick.
         It publishes the tick to Event Bus and tracks latency.
-        
+
         Args:
             tick: Tick object from broker
-            
+
         Requirements: 1.2
 
         """
@@ -317,10 +315,10 @@ class WebSocketClient:
 
     def _start_heartbeat_monitor(self) -> None:
         """Start heartbeat monitoring thread.
-        
+
         Monitors last tick timestamp and triggers alert if no ticks
         received for configured timeout period.
-        
+
         Requirements: 1.4
         """
         if self._heartbeat_thread and self._heartbeat_thread.is_alive():
@@ -345,7 +343,7 @@ class WebSocketClient:
 
     def _heartbeat_monitor_loop(self) -> None:
         """Heartbeat monitoring loop.
-        
+
         Runs in separate thread and checks for tick activity.
         """
         while not self._heartbeat_stop_event.is_set():
@@ -374,9 +372,9 @@ class WebSocketClient:
 
     def _attempt_reconnection(self) -> None:
         """Attempt to reconnect to broker WebSocket.
-        
+
         Implements exponential backoff strategy.
-        
+
         Requirements: 1.3
         """
         if self._reconnect_attempts >= self._max_reconnect_attempts:
@@ -436,10 +434,7 @@ class WebSocketClient:
     def _log_statistics(self) -> None:
         """Log connection statistics."""
         if self._stats.connected_at:
-            duration = (
-                (self._stats.disconnected_at or datetime.now()) -
-                self._stats.connected_at
-            )
+            duration = (self._stats.disconnected_at or datetime.now()) - self._stats.connected_at
 
             logger.info(
                 f"WebSocket session statistics:\n"
@@ -452,7 +447,7 @@ class WebSocketClient:
 
     def get_statistics(self) -> ConnectionStats:
         """Get current connection statistics.
-        
+
         Returns:
             ConnectionStats object with current statistics
 

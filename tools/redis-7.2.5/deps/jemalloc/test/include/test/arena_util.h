@@ -26,7 +26,7 @@ do_arena_create(ssize_t dirty_decay_ms, ssize_t muzzy_decay_ms) {
 
 static inline void
 do_arena_destroy(unsigned arena_ind) {
-	/* 
+	/*
 	 * For convenience, flush tcache in case there are cached items.
 	 * However not assert success since the tcache may be disabled.
 	 */
@@ -152,4 +152,3 @@ generate_dirty(unsigned arena_ind, size_t size) {
 	void *p = do_mallocx(size, flags);
 	dallocx(p, flags);
 }
-

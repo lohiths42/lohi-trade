@@ -46,7 +46,7 @@ start_server {tags {"obuf-limits external:skip logreqres:skip"}} {
         assert {$omem >= 70000 && $omem < 200000}
         $rd1 close
     }
-    
+
     foreach {soft_limit_time wait_for_timeout} {3 yes
                                                 4 no } {
         if $wait_for_timeout {

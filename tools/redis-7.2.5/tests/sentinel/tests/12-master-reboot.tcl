@@ -39,7 +39,7 @@ test "Master reboot in very short time" {
     set old_port [RPort $master_id]
     set addr [S 0 SENTINEL GET-MASTER-ADDR-BY-NAME mymaster]
     assert {[lindex $addr 1] == $old_port}
-    
+
     R $master_id debug populate 10000
     R $master_id bgsave
     R $master_id config set key-load-delay 1500
@@ -49,13 +49,13 @@ test "Master reboot in very short time" {
     foreach_sentinel_id id {
         S $id SENTINEL SET mymaster master-reboot-down-after-period 5000
         S $id sentinel debug ping-period 500
-        S $id sentinel debug ask-period 500 
+        S $id sentinel debug ask-period 500
     }
 
     kill_instance redis $master_id
     reboot_instance redis $master_id
-    
-    foreach_sentinel_id id {        
+
+    foreach_sentinel_id id {
         wait_for_condition 1000 100 {
             [lindex [S $id SENTINEL GET-MASTER-ADDR-BY-NAME mymaster] 1] != $old_port
         } else {

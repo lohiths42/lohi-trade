@@ -9,7 +9,7 @@ Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7
 
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
@@ -155,9 +155,7 @@ class WatchlistService:
 
     # ── Rename ───────────────────────────────────────────────────────────
 
-    async def rename_watchlist(
-        self, user_id: str, watchlist_id: str, new_name: str
-    ) -> Watchlist:
+    async def rename_watchlist(self, user_id: str, watchlist_id: str, new_name: str) -> Watchlist:
         """Rename an existing watchlist.
 
         Raises WatchlistError if watchlist not found or name is empty.
@@ -183,9 +181,7 @@ class WatchlistService:
                     user_id,
                 )
                 if row is None:
-                    raise WatchlistError(
-                        REASON_WATCHLIST_NOT_FOUND, "Watchlist not found"
-                    )
+                    raise WatchlistError(REASON_WATCHLIST_NOT_FOUND, "Watchlist not found")
                 return self._row_to_watchlist(row)
         except WatchlistError:
             raise
@@ -215,9 +211,7 @@ class WatchlistService:
                     user_id,
                 )
                 if result == "DELETE 0":
-                    raise WatchlistError(
-                        REASON_WATCHLIST_NOT_FOUND, "Watchlist not found"
-                    )
+                    raise WatchlistError(REASON_WATCHLIST_NOT_FOUND, "Watchlist not found")
                 return True
         except WatchlistError:
             raise
@@ -227,9 +221,7 @@ class WatchlistService:
 
     # ── Add security ─────────────────────────────────────────────────────
 
-    async def add_security(
-        self, user_id: str, watchlist_id: str, symbol: str
-    ) -> WatchlistItem:
+    async def add_security(self, user_id: str, watchlist_id: str, symbol: str) -> WatchlistItem:
         """Add a security to a watchlist.
 
         Validates:
@@ -252,9 +244,7 @@ class WatchlistService:
                     user_id,
                 )
                 if wl is None:
-                    raise WatchlistError(
-                        REASON_WATCHLIST_NOT_FOUND, "Watchlist not found"
-                    )
+                    raise WatchlistError(REASON_WATCHLIST_NOT_FOUND, "Watchlist not found")
 
                 # Validate security exists and is active
                 sec = await conn.fetchrow(
@@ -324,9 +314,7 @@ class WatchlistService:
 
     # ── Remove security ──────────────────────────────────────────────────
 
-    async def remove_security(
-        self, user_id: str, watchlist_id: str, symbol: str
-    ) -> bool:
+    async def remove_security(self, user_id: str, watchlist_id: str, symbol: str) -> bool:
         """Remove a security from a watchlist.
 
         Returns True if removed, raises WatchlistError if not found.
@@ -345,9 +333,7 @@ class WatchlistService:
                     user_id,
                 )
                 if wl is None:
-                    raise WatchlistError(
-                        REASON_WATCHLIST_NOT_FOUND, "Watchlist not found"
-                    )
+                    raise WatchlistError(REASON_WATCHLIST_NOT_FOUND, "Watchlist not found")
 
                 # Find security id
                 sec = await conn.fetchrow(
@@ -399,9 +385,7 @@ class WatchlistService:
                     user_id,
                 )
                 if wl is None:
-                    raise WatchlistError(
-                        REASON_WATCHLIST_NOT_FOUND, "Watchlist not found"
-                    )
+                    raise WatchlistError(REASON_WATCHLIST_NOT_FOUND, "Watchlist not found")
 
                 for idx, sec_id in enumerate(security_ids):
                     await conn.execute(
@@ -469,9 +453,7 @@ class WatchlistService:
                     user_id,
                 )
                 if wl is None:
-                    raise WatchlistError(
-                        REASON_WATCHLIST_NOT_FOUND, "Watchlist not found"
-                    )
+                    raise WatchlistError(REASON_WATCHLIST_NOT_FOUND, "Watchlist not found")
 
                 # Fetch items with security details
                 rows = await conn.fetch(
@@ -509,9 +491,7 @@ class WatchlistService:
         except WatchlistError:
             raise
         except Exception:
-            logger.exception(
-                "get_watchlist_with_prices failed for watchlist %s", watchlist_id
-            )
+            logger.exception("get_watchlist_with_prices failed for watchlist %s", watchlist_id)
             raise
 
     # ── Pre-built watchlists ─────────────────────────────────────────────

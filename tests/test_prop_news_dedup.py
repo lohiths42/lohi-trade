@@ -46,7 +46,9 @@ class MockRedisClient:
 # ---------------------------------------------------------------------------
 
 _title = st.text(min_size=1, max_size=120, alphabet=st.characters(categories=("L", "N", "P", "Z")))
-_content = st.text(min_size=0, max_size=500, alphabet=st.characters(categories=("L", "N", "P", "Z")))
+_content = st.text(
+    min_size=0, max_size=500, alphabet=st.characters(categories=("L", "N", "P", "Z"))
+)
 
 
 @st.composite
@@ -75,10 +77,7 @@ def articles_with_duplicates(draw):
     This naturally creates duplicate content hashes.
     """
     num_unique = draw(st.integers(min_value=1, max_value=8))
-    unique_pairs = [
-        (draw(_title), draw(_content))
-        for _ in range(num_unique)
-    ]
+    unique_pairs = [(draw(_title), draw(_content)) for _ in range(num_unique)]
 
     num_articles = draw(st.integers(min_value=1, max_value=20))
     articles: list[NewsArticle] = []
@@ -163,9 +162,9 @@ class TestNewsDeduplicationProperties:
         result = deduplicator.deduplicate(articles)
 
         distinct_hashes = len({a.content_hash for a in articles})
-        assert len(result) == distinct_hashes, (
-            f"Expected {distinct_hashes} unique articles, got {len(result)}"
-        )
+        assert (
+            len(result) == distinct_hashes
+        ), f"Expected {distinct_hashes} unique articles, got {len(result)}"
 
     @given(articles=articles_with_duplicates())
     @settings(max_examples=25)
@@ -180,6 +179,6 @@ class TestNewsDeduplicationProperties:
 
         input_ids = {a.article_id for a in articles}
         for article in result:
-            assert article.article_id in input_ids, (
-                f"Result article {article.article_id} not found in original input"
-            )
+            assert (
+                article.article_id in input_ids
+            ), f"Result article {article.article_id} not found in original input"

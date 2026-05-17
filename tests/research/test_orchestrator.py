@@ -124,16 +124,24 @@ def _canned_synthesizer(
     resynth_brief: dict[str, str] | None = None,
 ) -> Any:
     """Build a synthesiser stub with distinct first-pass + resynth outputs."""
-    first = brief if brief is not None else {
-        "summary": "First pass summary [cite:c1].",
-        "thesis": "First pass thesis [cite:c1].",
-        "risks": "First pass risks [cite:c1].",
-    }
-    second = resynth_brief if resynth_brief is not None else {
-        "summary": "Second pass summary [cite:c1].",
-        "thesis": "Second pass thesis [cite:c1].",
-        "risks": "Second pass risks [cite:c1].",
-    }
+    first = (
+        brief
+        if brief is not None
+        else {
+            "summary": "First pass summary [cite:c1].",
+            "thesis": "First pass thesis [cite:c1].",
+            "risks": "First pass risks [cite:c1].",
+        }
+    )
+    second = (
+        resynth_brief
+        if resynth_brief is not None
+        else {
+            "summary": "Second pass summary [cite:c1].",
+            "thesis": "Second pass thesis [cite:c1].",
+            "risks": "Second pass risks [cite:c1].",
+        }
+    )
 
     async def _synth(**kwargs: Any) -> dict[str, str]:
         if "prior_brief" in kwargs:
@@ -338,8 +346,7 @@ class TestConcurrencyCap:
         run_id = uuid4()
         latency = 0.05  # 50ms per agent
         agents = [
-            _StubAgent(name=f"a{i}", latency_sec=latency, section_name="summary")
-            for i in range(4)
+            _StubAgent(name=f"a{i}", latency_sec=latency, section_name="summary") for i in range(4)
         ]
         orchestrator = ResearchOrchestrator(
             sub_agents=agents,
@@ -384,8 +391,7 @@ class TestConcurrencyCap:
         """Default cap=6 must allow six in-flight agents."""
         run_id = uuid4()
         agents = [
-            _StubAgent(name=f"a{i}", latency_sec=0.03, section_name="summary")
-            for i in range(6)
+            _StubAgent(name=f"a{i}", latency_sec=0.03, section_name="summary") for i in range(6)
         ]
         orchestrator = ResearchOrchestrator(
             sub_agents=agents,
@@ -489,6 +495,7 @@ class TestPartialsPublishing:
         assert fields["run_id"] == str(run_id)
         # The payload JSON contains the agent name.
         import json as _json
+
         payload = _json.loads(fields["payload"])
         assert payload["agent_name"] == "filings"
 

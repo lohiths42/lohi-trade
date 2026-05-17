@@ -246,7 +246,9 @@ class LanceDbVectorStore:
                     # infer the schema from — caller must handle None.
                     return None
                 return self._db.create_table(
-                    _TABLE_NAME, data=seed_rows, mode="create",
+                    _TABLE_NAME,
+                    data=seed_rows,
+                    mode="create",
                 )
 
             table = await loop.run_in_executor(None, _open_or_create)
@@ -293,9 +295,7 @@ class LanceDbVectorStore:
             # then re-add. ``IN`` requires a SQL list literal — the
             # chunk_ids are trusted hex sha256 so quoting is
             # straightforward, but escape defensively anyway.
-            ids_sql = ", ".join(
-                f"'{_sql_quote(r['chunk_id'])}'" for r in rows
-            )
+            ids_sql = ", ".join(f"'{_sql_quote(r['chunk_id'])}'" for r in rows)
             table.delete(f"chunk_id IN ({ids_sql})")
             table.add(rows)
 
@@ -326,13 +326,7 @@ class LanceDbVectorStore:
         loop = asyncio.get_event_loop()
 
         def _do_search() -> list[dict[str, Any]]:
-            return (
-                table.search(list(query_vec))
-                .metric("cosine")
-                .where(where)
-                .limit(k)
-                .to_list()
-            )
+            return table.search(list(query_vec)).metric("cosine").where(where).limit(k).to_list()
 
         rows = await loop.run_in_executor(None, _do_search)
 

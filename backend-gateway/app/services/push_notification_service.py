@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 
 class NotificationType(str, Enum):
     """Categories of push notifications."""
+
     TRADE_ALERT = "trade_alert"
     ORDER_UPDATE = "order_update"
     KILL_SWITCH = "kill_switch"
@@ -26,6 +27,7 @@ class NotificationType(str, Enum):
 @dataclass
 class PushNotification:
     """A push notification to be sent via FCM."""
+
     user_id: str
     title: str
     body: str
@@ -88,9 +90,7 @@ class PushNotificationService:
         )
         return True
 
-    async def _send_to_device(
-        self, device_token: str, notification: PushNotification
-    ) -> bool:
+    async def _send_to_device(self, device_token: str, notification: PushNotification) -> bool:
         """Send notification to a single device via FCM HTTP v1 API.
 
         In production, this would make an HTTP POST to
@@ -121,9 +121,7 @@ class PushNotificationService:
             PushNotification(
                 user_id=user_id,
                 title=f"Trade Alert: {symbol}",
-                body=f"{action} {symbol} at ₹{price:.2f}" + (
-                    f" ({strategy})" if strategy else ""
-                ),
+                body=f"{action} {symbol} at ₹{price:.2f}" + (f" ({strategy})" if strategy else ""),
                 notification_type=NotificationType.TRADE_ALERT,
                 data={
                     "symbol": symbol,

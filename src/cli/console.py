@@ -6,6 +6,7 @@ import sys
 
 # ── ANSI Colors ──────────────────────────────────────────────────────────────
 
+
 def _supports_color() -> bool:
     """Check if the terminal supports color output."""
     if not hasattr(sys.stdout, "isatty") or not sys.stdout.isatty():
@@ -47,6 +48,7 @@ def dim(text: str) -> str:
 
 
 # ── Structured Output ────────────────────────────────────────────────────────
+
 
 def success(msg: str) -> None:
     """Print a success message with green checkmark."""

@@ -19,13 +19,11 @@ caches, re-create missing directories).
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
-from typing import Any
 
 # ── Setup ───────────────────────────────────────────────────────────────────
 
@@ -99,7 +97,9 @@ def check_services() -> list[str]:
         try:
             result = subprocess.run(
                 ["pgrep", "-f", f"research.workers.{worker}"],
-                capture_output=True, text=True, timeout=5,
+                capture_output=True,
+                text=True,
+                timeout=5,
             )
             if result.returncode == 0 and result.stdout.strip():
                 ok(f"Research {worker}: running")
@@ -138,6 +138,7 @@ def check_data_integrity() -> list[str]:
         if backups:
             latest = backups[0]
             import time
+
             age_hours = (time.time() - os.path.getmtime(latest)) / 3600
             if age_hours < 48:
                 ok(f"Latest backup: {latest.name} ({age_hours:.1f}h ago)")
@@ -195,7 +196,7 @@ def check_config() -> list[str]:
     if env_research.exists():
         content = env_research.read_text()
         if "NVIDIA_NIM_API_KEY=" in content:
-            key_line = [l for l in content.splitlines() if "NVIDIA_NIM_API_KEY=" in l]
+            key_line = [line for line in content.splitlines() if "NVIDIA_NIM_API_KEY=" in line]
             if key_line:
                 val = key_line[0].split("=", 1)[1].strip()
                 if val and "placeholder" not in val.lower() and "demo" not in val.lower():
@@ -207,7 +208,9 @@ def check_config() -> list[str]:
             info("Offline mode: enabled (requires Ollama)")
             # Check Ollama
             try:
-                result = subprocess.run(["ollama", "list"], capture_output=True, text=True, timeout=5)
+                result = subprocess.run(
+                    ["ollama", "list"], capture_output=True, text=True, timeout=5
+                )
                 if result.returncode == 0:
                     ok("Ollama: available")
                 else:
@@ -296,7 +299,7 @@ def suggest_fixes(issues: list[str]) -> None:
         ),
         "Backup": (
             "Create a fresh backup:\n"
-            "  python -c \"from src.state.database_backup import DatabaseBackupManager; "
+            '  python -c "from src.state.database_backup import DatabaseBackupManager; '
             "m = DatabaseBackupManager('data/lohi_trade.db'); m.create_backup()\""
         ),
         "errors in recent logs": (
@@ -358,8 +361,13 @@ def main() -> int:
     if args.fix and all_issues:
         header("Auto-Fix Attempts")
         # Only safe operations: create missing dirs
-        for d in ("data/research/chroma", "data/research/uploads",
-                  "data/research/snapshots", "data/backups", "logs"):
+        for d in (
+            "data/research/chroma",
+            "data/research/uploads",
+            "data/research/snapshots",
+            "data/backups",
+            "logs",
+        ):
             p = ROOT / d
             if not p.exists():
                 p.mkdir(parents=True, exist_ok=True)

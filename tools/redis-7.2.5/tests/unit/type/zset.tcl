@@ -2230,7 +2230,7 @@ start_server {tags {"zset"}} {
         r hello 3
         assert_equal [r zrange z2{t} 0 -1 withscores] {{a 1.0} {b 2.0} {c 3.0} {d 4.0}}
         r hello 2
-    } 
+    }
 
     test {ZRANGESTORE range} {
         set res [r zrangestore z2{t} z1{t} 1 2]

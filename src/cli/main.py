@@ -33,7 +33,9 @@ def main() -> int:
         ),
     )
     parser.add_argument(
-        "--version", action="version", version=f"lohi-trade {__version__}",
+        "--version",
+        action="version",
+        version=f"lohi-trade {__version__}",
     )
 
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
@@ -58,6 +60,11 @@ def main() -> int:
         "--no-browser",
         action="store_true",
         help="Don't open the browser after setup",
+    )
+    setup_parser.add_argument(
+        "--offline",
+        action="store_true",
+        help="Run setup without network calls (skips pip install and npm install)",
     )
     setup_parser.add_argument(
         "--backend-port",

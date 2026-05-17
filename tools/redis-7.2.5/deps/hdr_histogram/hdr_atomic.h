@@ -27,7 +27,7 @@ static void hdr_atomic_store_pointer(void** pointer, void* value)
 }
 
 static int64_t __inline hdr_atomic_load_64(int64_t* field)
-{ 
+{
 	_ReadBarrier();
 	return *field;
 }

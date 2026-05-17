@@ -99,10 +99,7 @@ def _ok_result(
     chunk_ids: list[str] | None = None,
 ) -> AgentResult:
     """Construct an ``ok`` :class:`AgentResult` with optional cited chunks."""
-    chunks = [
-        _build_hit(chunk_id=cid)
-        for cid in (chunk_ids or [])
-    ]
+    chunks = [_build_hit(chunk_id=cid) for cid in (chunk_ids or [])]
     return AgentResult(
         agent_name=agent_name,
         kind="ok",
@@ -145,7 +142,9 @@ class _RecordingLLM(FakeLLMProvider):
         self.calls: list[tuple[list[Message], LLMParams]] = []
 
     async def complete(
-        self, messages: list[Message], params: LLMParams,
+        self,
+        messages: list[Message],
+        params: LLMParams,
     ):
         self.calls.append(([m.model_copy() for m in messages], params))
         return await super().complete(messages, params)
@@ -494,7 +493,8 @@ class TestNoDataAndErrorResults:
 
         results = [
             _no_data_result(
-                agent_name="filings", section_name="management_commentary",
+                agent_name="filings",
+                section_name="management_commentary",
             ),
             _no_data_result(agent_name="fundamentals", section_name="financial_highlights"),
             _no_data_result(agent_name="macro", section_name="macro_context"),
@@ -525,7 +525,8 @@ class TestNoDataAndErrorResults:
             ),
             _no_data_result(agent_name="macro", section_name="macro_context"),
             _error_result(
-                agent_name="peer_sector", section_name="peers",
+                agent_name="peer_sector",
+                section_name="peers",
             ),
         ]
         # Does not raise.
@@ -641,8 +642,10 @@ class TestResynthesisPath:
         llm = FakeLLMProvider(canned_completion=revised_json)
         synth = Synthesizer(llm=llm)
 
-        prior_brief = {"summary": "Old summary (revenue +99%).",
-                       "financial_highlights": "Old highlights."}
+        prior_brief = {
+            "summary": "Old summary (revenue +99%).",
+            "financial_highlights": "Old highlights.",
+        }
         brief = await synth(
             agent_results=[
                 _ok_result(
@@ -755,9 +758,7 @@ class TestJsonParsingFallback:
         """Code-fence / prose-wrapped JSON is still extracted."""
         content = (
             "Sure, here is the brief:\n\n"
-            "```json\n"
-            + _canned_sections_json()
-            + "\n```\n"
+            "```json\n" + _canned_sections_json() + "\n```\n"
             "Hope this helps."
         )
         llm = FakeLLMProvider(canned_completion=content)

@@ -6,18 +6,17 @@ Covers requirements:
   24.6 — AWS X-Ray for distributed tracing
 """
 
-import sys
 import os
+import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import aws_cdk as cdk
-from aws_cdk.assertions import Template, Match
-
-from stacks.vpc_stack import VpcStack
-from stacks.ecs_stack import EcsStack
+from aws_cdk.assertions import Template
 from stacks.data_stack import DataStack
+from stacks.ecs_stack import EcsStack
 from stacks.monitoring_stack import MonitoringStack
+from stacks.vpc_stack import VpcStack
 
 
 def _get_template() -> Template:
@@ -184,29 +183,23 @@ class TestCloudWatchAlarms:
         """Every alarm should notify the SNS topic."""
         template = _get_template()
         resources = template.to_json()["Resources"]
-        alarms = [
-            r for r in resources.values()
-            if r.get("Type") == "AWS::CloudWatch::Alarm"
-        ]
+        alarms = [r for r in resources.values() if r.get("Type") == "AWS::CloudWatch::Alarm"]
         for alarm in alarms:
             actions = alarm["Properties"].get("AlarmActions", [])
-            assert len(actions) >= 1, (
-                f"Alarm {alarm['Properties'].get('AlarmName')} has no alarm actions"
-            )
+            assert (
+                len(actions) >= 1
+            ), f"Alarm {alarm['Properties'].get('AlarmName')} has no alarm actions"
 
     def test_alarms_use_evaluation_periods_2(self):
         """All alarms should evaluate over 2 periods to avoid flapping."""
         template = _get_template()
         resources = template.to_json()["Resources"]
-        alarms = [
-            r for r in resources.values()
-            if r.get("Type") == "AWS::CloudWatch::Alarm"
-        ]
+        alarms = [r for r in resources.values() if r.get("Type") == "AWS::CloudWatch::Alarm"]
         for alarm in alarms:
             periods = alarm["Properties"].get("EvaluationPeriods")
-            assert periods == 2, (
-                f"Alarm {alarm['Properties'].get('AlarmName')} has EvaluationPeriods={periods}, expected 2"
-            )
+            assert (
+                periods == 2
+            ), f"Alarm {alarm['Properties'].get('AlarmName')} has EvaluationPeriods={periods}, expected 2"
 
 
 # ── Outputs ───────────────────────────────────────────────────────

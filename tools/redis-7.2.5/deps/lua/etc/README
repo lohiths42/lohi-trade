@@ -34,4 +34,3 @@ noparser.c
 strict.lua
 	Traps uses of undeclared global variables.
 	Do "make strict" for a demo.
-

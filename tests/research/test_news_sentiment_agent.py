@@ -110,20 +110,23 @@ def _build_context(
 class TestIdentity:
     def test_name_is_news_sentiment(self) -> None:
         agent = NewsSentimentAgent(
-            llm=FakeLLMProvider(), redis_reader=_StubRedisReader(),
+            llm=FakeLLMProvider(),
+            redis_reader=_StubRedisReader(),
         )
         assert agent.name == "news_sentiment"
 
     def test_section_name_is_summary(self) -> None:
         agent = NewsSentimentAgent(
-            llm=FakeLLMProvider(), redis_reader=_StubRedisReader(),
+            llm=FakeLLMProvider(),
+            redis_reader=_StubRedisReader(),
         )
         assert agent.section_name == "summary"
 
     def test_default_stream_names_match_req_8_3(self) -> None:
         """Req 8.3 enumerates ``news_clean``, ``sentiment``, ``bias``."""
         agent = NewsSentimentAgent(
-            llm=FakeLLMProvider(), redis_reader=_StubRedisReader(),
+            llm=FakeLLMProvider(),
+            redis_reader=_StubRedisReader(),
         )
         assert agent.news_clean_stream == "news_clean"
         assert agent.sentiment_stream == "sentiment"
@@ -131,7 +134,8 @@ class TestIdentity:
 
     def test_conforms_to_subagent_protocol(self) -> None:
         agent = NewsSentimentAgent(
-            llm=FakeLLMProvider(), redis_reader=_StubRedisReader(),
+            llm=FakeLLMProvider(),
+            redis_reader=_StubRedisReader(),
         )
         assert isinstance(agent, SubAgent)
 
@@ -224,7 +228,9 @@ class TestHappyPath:
             },
         )
         agent = NewsSentimentAgent(
-            llm=FakeLLMProvider(), redis_reader=reader, events_per_stream=5,
+            llm=FakeLLMProvider(),
+            redis_reader=reader,
+            events_per_stream=5,
         )
         await agent.invoke(
             _build_context(user_id=user_id, symbol="RELIANCE"),

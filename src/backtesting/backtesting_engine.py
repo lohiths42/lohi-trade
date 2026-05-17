@@ -21,12 +21,12 @@ logger = get_logger("BacktestingEngine")
 # ---------------------------------------------------------------------------
 # Indian market transaction cost constants
 # ---------------------------------------------------------------------------
-STT_RATE = 0.00025            # 0.025% on sell side
+STT_RATE = 0.00025  # 0.025% on sell side
 EXCHANGE_CHARGE_RATE = 0.0000345  # 0.00345% on both sides
-GST_RATE = 0.18               # 18% on (brokerage + exchange charges)
-STAMP_DUTY_RATE = 0.00003     # 0.003% on buy side
-BROKERAGE_PER_ORDER = 20.0    # ₹20 flat fee per order
-SLIPPAGE_PCT = 0.0005         # 0.05%
+GST_RATE = 0.18  # 18% on (brokerage + exchange charges)
+STAMP_DUTY_RATE = 0.00003  # 0.003% on buy side
+BROKERAGE_PER_ORDER = 20.0  # ₹20 flat fee per order
+SLIPPAGE_PCT = 0.0005  # 0.05%
 
 # Minimum performance thresholds
 MIN_SHARPE = 1.5
@@ -34,7 +34,7 @@ MIN_WIN_RATE = 45.0
 MAX_DRAWDOWN = 5.0
 MIN_PROFIT_FACTOR = 1.5
 
-RISK_FREE_RATE = 0.065        # ~6.5% Indian 10-year bond yield
+RISK_FREE_RATE = 0.065  # ~6.5% Indian 10-year bond yield
 TRADING_DAYS = 252
 
 
@@ -44,11 +44,11 @@ class TradeRecord:
 
     symbol: str
     strategy: str
-    side: str               # BUY or SELL
+    side: str  # BUY or SELL
     entry_price: float
     exit_price: float
     quantity: int
-    entry_date: Any         # date or Timestamp
+    entry_date: Any  # date or Timestamp
     exit_date: Any
     gross_pnl: float = 0.0
     transaction_costs: float = 0.0
@@ -116,7 +116,11 @@ class BacktestingEngine:
 
             total_cost = stt + exchange + gst + stamp + brokerage
             t.transaction_costs = total_cost
-            t.gross_pnl = (t.exit_price - t.entry_price) * t.quantity if t.side == "BUY" else (t.entry_price - t.exit_price) * t.quantity
+            t.gross_pnl = (
+                (t.exit_price - t.entry_price) * t.quantity
+                if t.side == "BUY"
+                else (t.entry_price - t.exit_price) * t.quantity
+            )
             t.net_pnl = t.gross_pnl - total_cost
 
         return trades
@@ -213,7 +217,9 @@ class BacktestingEngine:
 
             gross_profit = sum(t.net_pnl for t in wins) if wins else 0.0
             gross_loss = abs(sum(t.net_pnl for t in losses)) if losses else 0.0
-            metrics["profit_factor"] = (gross_profit / gross_loss) if gross_loss > 0 else float("inf")
+            metrics["profit_factor"] = (
+                (gross_profit / gross_loss) if gross_loss > 0 else float("inf")
+            )
 
         return metrics
 
@@ -229,28 +235,41 @@ class BacktestingEngine:
                  net_pnl, holding_period
         """
         if not trades:
-            return pd.DataFrame(columns=[
-                "symbol", "strategy", "side", "entry_price", "exit_price",
-                "quantity", "entry_date", "exit_date", "gross_pnl",
-                "transaction_costs", "net_pnl", "holding_period",
-            ])
+            return pd.DataFrame(
+                columns=[
+                    "symbol",
+                    "strategy",
+                    "side",
+                    "entry_price",
+                    "exit_price",
+                    "quantity",
+                    "entry_date",
+                    "exit_date",
+                    "gross_pnl",
+                    "transaction_costs",
+                    "net_pnl",
+                    "holding_period",
+                ]
+            )
 
         rows = []
         for t in trades:
-            rows.append({
-                "symbol": t.symbol,
-                "strategy": t.strategy,
-                "side": t.side,
-                "entry_price": t.entry_price,
-                "exit_price": t.exit_price,
-                "quantity": t.quantity,
-                "entry_date": t.entry_date,
-                "exit_date": t.exit_date,
-                "gross_pnl": t.gross_pnl,
-                "transaction_costs": t.transaction_costs,
-                "net_pnl": t.net_pnl,
-                "holding_period": t.holding_period,
-            })
+            rows.append(
+                {
+                    "symbol": t.symbol,
+                    "strategy": t.strategy,
+                    "side": t.side,
+                    "entry_price": t.entry_price,
+                    "exit_price": t.exit_price,
+                    "quantity": t.quantity,
+                    "entry_date": t.entry_date,
+                    "exit_date": t.exit_date,
+                    "gross_pnl": t.gross_pnl,
+                    "transaction_costs": t.transaction_costs,
+                    "net_pnl": t.net_pnl,
+                    "holding_period": t.holding_period,
+                }
+            )
         return pd.DataFrame(rows)
 
     # ------------------------------------------------------------------
@@ -292,19 +311,25 @@ class BacktestingEngine:
     # ------------------------------------------------------------------
 
     def _simulate_mean_reversion(
-        self, data: pd.DataFrame, initial_capital: float,
+        self,
+        data: pd.DataFrame,
+        initial_capital: float,
     ) -> BacktestResult:
         """Simulate mean reversion strategy on OHLCV data."""
         return self._simulate_generic(data, initial_capital, "mean_reversion")
 
     def _simulate_trend_following(
-        self, data: pd.DataFrame, initial_capital: float,
+        self,
+        data: pd.DataFrame,
+        initial_capital: float,
     ) -> BacktestResult:
         """Simulate trend following strategy on OHLCV data."""
         return self._simulate_generic(data, initial_capital, "trend_following")
 
     def _simulate_orb(
-        self, data: pd.DataFrame, initial_capital: float,
+        self,
+        data: pd.DataFrame,
+        initial_capital: float,
     ) -> BacktestResult:
         """Simulate opening range breakout strategy on OHLCV data."""
         return self._simulate_generic(data, initial_capital, "orb")
@@ -462,8 +487,16 @@ class BacktestingEngine:
             window = 15
             if len(df) < window:
                 return signals
-            rolling_high = df["high"].rolling(window).max() if "high" in df.columns else df["close"].rolling(window).max()
-            rolling_low = df["low"].rolling(window).min() if "low" in df.columns else df["close"].rolling(window).min()
+            rolling_high = (
+                df["high"].rolling(window).max()
+                if "high" in df.columns
+                else df["close"].rolling(window).max()
+            )
+            rolling_low = (
+                df["low"].rolling(window).min()
+                if "low" in df.columns
+                else df["close"].rolling(window).min()
+            )
 
             signals[df["close"] > rolling_high.shift(1)] = 1
             signals[df["close"] < rolling_low.shift(1)] = -1
@@ -491,10 +524,13 @@ class BacktestingEngine:
             BacktestResult with metrics, equity curve, and trade log.
 
         """
-        logger.info(f"Running backtest for {strategy_name}", extra={
-            "initial_capital": initial_capital,
-            "data_rows": len(data),
-        })
+        logger.info(
+            f"Running backtest for {strategy_name}",
+            extra={
+                "initial_capital": initial_capital,
+                "data_rows": len(data),
+            },
+        )
 
         dispatch = {
             "mean_reversion": self._simulate_mean_reversion,

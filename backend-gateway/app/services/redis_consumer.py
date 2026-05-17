@@ -7,7 +7,7 @@ from typing import Any, Dict, Optional
 
 import redis
 
-from app.config import REDIS_HOST, REDIS_PORT, REDIS_DB
+from app.config import REDIS_DB, REDIS_HOST, REDIS_PORT
 
 logger = logging.getLogger(__name__)
 
@@ -89,10 +89,11 @@ async def consume_streams(sio):
         try:
             result = await asyncio.to_thread(
                 r.xreadgroup,
-                group, consumer,
+                group,
+                consumer,
                 {s: ">" for s in streams_to_consume},
-                50,   # count
-                1000, # block ms
+                50,  # count
+                1000,  # block ms
             )
             if result:
                 for stream_name, messages in result:

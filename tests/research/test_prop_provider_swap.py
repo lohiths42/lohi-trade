@@ -148,10 +148,7 @@ def messages_strategy(draw: st.DrawFn) -> list[Message]:
     size = draw(st.integers(min_value=1, max_value=10))
     roles = st.sampled_from(["system", "user", "assistant"])
     contents = st.text(min_size=0, max_size=200)
-    return [
-        Message(role=draw(roles), content=draw(contents))
-        for _ in range(size)
-    ]
+    return [Message(role=draw(roles), content=draw(contents)) for _ in range(size)]
 
 
 @st.composite
@@ -229,7 +226,8 @@ def chunk_record_strategy(draw: st.DrawFn, *, dim: int) -> ChunkRecord:
 @given(messages=messages_strategy(), params=llm_params_strategy())
 @settings(max_examples=30, deadline=None)
 async def test_llm_complete_shape_invariant_across_providers(
-    messages: list[Message], params: LLMParams,
+    messages: list[Message],
+    params: LLMParams,
 ) -> None:
     """``LLMProvider.complete`` yields the same ``Completion`` shape across providers.
 
@@ -287,7 +285,8 @@ async def test_llm_complete_shape_invariant_across_providers(
 @given(messages=messages_strategy(), params=llm_params_strategy())
 @settings(max_examples=30, deadline=None)
 async def test_llm_stream_chunk_shape_invariant_across_providers(
-    messages: list[Message], params: LLMParams,
+    messages: list[Message],
+    params: LLMParams,
 ) -> None:
     """``LLMProvider.stream`` yields ``CompletionChunk``s with identical shape across providers.
 
@@ -429,8 +428,7 @@ async def test_vector_store_upsert_search_shape_invariant_across_backends(
     shared_user_id: UUID = uuid4()
     shared_symbol = "RELIANCE"
     normalised = [
-        c.model_copy(update={"user_id": shared_user_id, "symbol": shared_symbol})
-        for c in chunks
+        c.model_copy(update={"user_id": shared_user_id, "symbol": shared_symbol}) for c in chunks
     ]
 
     store_a = FakeVectorStore()

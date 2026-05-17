@@ -12,12 +12,6 @@ Requirements: 30.3, 30.4, 30.5, 30.7, 34.7
 
 import logging
 
-import pytest
-from fastapi import FastAPI, Request
-from fastapi.testclient import TestClient
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.middleware.gzip import GZipMiddleware
-
 from app.middleware.security import (
     InputSanitizationMiddleware,
     RequestLoggingMiddleware,
@@ -26,7 +20,10 @@ from app.middleware.security import (
     contains_xss,
     is_suspicious,
 )
-
+from fastapi import FastAPI, Request
+from fastapi.testclient import TestClient
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.gzip import GZipMiddleware
 
 # ── Helper: build a test app with the middleware stack ───────────────────────
 
@@ -40,10 +37,12 @@ def _build_app(with_auth_user: str = None) -> FastAPI:
     test_app.add_middleware(RequestLoggingMiddleware)
 
     if with_auth_user:
+
         class FakeAuthMiddleware(BaseHTTPMiddleware):
             async def dispatch(self, request, call_next):
                 request.state.user_id = with_auth_user
                 return await call_next(request)
+
         test_app.add_middleware(FakeAuthMiddleware)
 
     @test_app.get("/data")
@@ -93,7 +92,7 @@ class TestContainsXss:
         assert contains_xss("javascript:alert(1)") is True
 
     def test_event_handler(self):
-        assert contains_xss('onerror=alert(1)') is True
+        assert contains_xss("onerror=alert(1)") is True
 
     def test_iframe_tag(self):
         assert contains_xss("<iframe src='evil.com'>") is True
@@ -269,7 +268,9 @@ class TestCORSConfiguration:
         )
         # Re-import to pick up the new env var
         import importlib
+
         import app.config as cfg
+
         importlib.reload(cfg)
 
         assert "https://app.lohi-trade.com" in cfg.CORS_ORIGINS
@@ -279,7 +280,9 @@ class TestCORSConfiguration:
         """Without env var, defaults include localhost dev origins."""
         monkeypatch.delenv("CORS_ORIGINS", raising=False)
         import importlib
+
         import app.config as cfg
+
         importlib.reload(cfg)
 
         assert "http://localhost:3000" in cfg.CORS_ORIGINS

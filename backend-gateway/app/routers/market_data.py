@@ -17,7 +17,7 @@ from datetime import date
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from app.middleware.rbac import require_role
 from app.routers.auth_v2 import get_current_user_id
@@ -31,6 +31,7 @@ router = APIRouter()
 
 class PriceResponse(BaseModel):
     """Real-time price data for a security (Req 25.2)."""
+
     symbol: str
     ltp: float
     last_traded_qty: int = 0
@@ -55,6 +56,7 @@ class OrderBookLevelResponse(BaseModel):
 
 class DepthResponse(BaseModel):
     """Order book depth — top 5 bid/ask levels (Req 25.3)."""
+
     symbol: str
     bids: List[OrderBookLevelResponse] = []
     asks: List[OrderBookLevelResponse] = []
@@ -63,6 +65,7 @@ class DepthResponse(BaseModel):
 
 class CorporateActionResponse(BaseModel):
     """A single corporate action record (Req 27.4)."""
+
     symbol: str
     action_type: str
     ex_date: Optional[str] = None
@@ -79,6 +82,7 @@ class CorporateActionsListResponse(BaseModel):
 
 class OHLCVResponse(BaseModel):
     """A single OHLCV bar."""
+
     symbol: str
     date: str
     open: float
@@ -90,6 +94,7 @@ class OHLCVResponse(BaseModel):
 
 class HistoricalDataResponse(BaseModel):
     """Historical OHLCV data response (Req 28.4)."""
+
     symbol: str
     timeframe: str
     start_date: str
@@ -234,7 +239,9 @@ async def get_depth(
 @router.get("/market/corporate-actions", response_model=CorporateActionsListResponse)
 async def get_corporate_actions(
     symbol: Optional[str] = Query(None, description="Filter by symbol"),
-    action_type: Optional[str] = Query(None, description="Filter by action type (DIVIDEND, SPLIT, BONUS, RIGHTS, BUYBACK)"),
+    action_type: Optional[str] = Query(
+        None, description="Filter by action type (DIVIDEND, SPLIT, BONUS, RIGHTS, BUYBACK)"
+    ),
     user_id: str = Depends(get_current_user_id),
     _rbac: dict = Depends(require_role("TRADER", "ADMIN")),
     collector=Depends(get_corporate_actions_collector),
@@ -303,14 +310,21 @@ async def get_historical(
         try:
             sd = date.fromisoformat(start_date)
         except ValueError:
-            raise HTTPException(status_code=400, detail=f"Invalid start_date format: '{start_date}'. Use YYYY-MM-DD.")
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid start_date format: '{start_date}'. Use YYYY-MM-DD.",
+            )
         try:
             ed = date.fromisoformat(end_date)
         except ValueError:
-            raise HTTPException(status_code=400, detail=f"Invalid end_date format: '{end_date}'. Use YYYY-MM-DD.")
+            raise HTTPException(
+                status_code=400, detail=f"Invalid end_date format: '{end_date}'. Use YYYY-MM-DD."
+            )
 
         if sd > ed:
-            raise HTTPException(status_code=400, detail="start_date must be before or equal to end_date")
+            raise HTTPException(
+                status_code=400, detail="start_date must be before or equal to end_date"
+            )
 
         # Parse timeframe
         try:

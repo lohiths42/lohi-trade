@@ -293,9 +293,16 @@ symbols:
         finally:
             Path(temp_config_path).unlink()
             # Clean up environment variables
-            for var in ["SHOONYA_API_KEY", "SHOONYA_CLIENT_ID", "SHOONYA_PASSWORD",
-                       "ANGELONE_API_KEY", "ANGELONE_CLIENT_ID", "ANGELONE_PASSWORD",
-                       "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID"]:
+            for var in [
+                "SHOONYA_API_KEY",
+                "SHOONYA_CLIENT_ID",
+                "SHOONYA_PASSWORD",
+                "ANGELONE_API_KEY",
+                "ANGELONE_CLIENT_ID",
+                "ANGELONE_PASSWORD",
+                "TELEGRAM_BOT_TOKEN",
+                "TELEGRAM_CHAT_ID",
+            ]:
                 if var in os.environ:
                     del os.environ[var]
 
@@ -467,9 +474,16 @@ symbols:
             assert "time format" in str(exc_info.value).lower()
         finally:
             Path(temp_config_path).unlink()
-            for var in ["SHOONYA_API_KEY", "SHOONYA_CLIENT_ID", "SHOONYA_PASSWORD",
-                       "ANGELONE_API_KEY", "ANGELONE_CLIENT_ID", "ANGELONE_PASSWORD",
-                       "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID"]:
+            for var in [
+                "SHOONYA_API_KEY",
+                "SHOONYA_CLIENT_ID",
+                "SHOONYA_PASSWORD",
+                "ANGELONE_API_KEY",
+                "ANGELONE_CLIENT_ID",
+                "ANGELONE_PASSWORD",
+                "TELEGRAM_BOT_TOKEN",
+                "TELEGRAM_CHAT_ID",
+            ]:
                 if var in os.environ:
                     del os.environ[var]
 
@@ -584,9 +598,16 @@ symbols:
             assert "logging level" in str(exc_info.value).lower()
         finally:
             Path(temp_config_path).unlink()
-            for var in ["SHOONYA_API_KEY", "SHOONYA_CLIENT_ID", "SHOONYA_PASSWORD",
-                       "ANGELONE_API_KEY", "ANGELONE_CLIENT_ID", "ANGELONE_PASSWORD",
-                       "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID"]:
+            for var in [
+                "SHOONYA_API_KEY",
+                "SHOONYA_CLIENT_ID",
+                "SHOONYA_PASSWORD",
+                "ANGELONE_API_KEY",
+                "ANGELONE_CLIENT_ID",
+                "ANGELONE_PASSWORD",
+                "TELEGRAM_BOT_TOKEN",
+                "TELEGRAM_CHAT_ID",
+            ]:
                 if var in os.environ:
                     del os.environ[var]
 
@@ -700,8 +721,15 @@ symbols: []
             assert "symbol" in str(exc_info.value).lower()
         finally:
             Path(temp_config_path).unlink()
-            for var in ["SHOONYA_API_KEY", "SHOONYA_CLIENT_ID", "SHOONYA_PASSWORD",
-                       "ANGELONE_API_KEY", "ANGELONE_CLIENT_ID", "ANGELONE_PASSWORD",
-                       "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID"]:
+            for var in [
+                "SHOONYA_API_KEY",
+                "SHOONYA_CLIENT_ID",
+                "SHOONYA_PASSWORD",
+                "ANGELONE_API_KEY",
+                "ANGELONE_CLIENT_ID",
+                "ANGELONE_PASSWORD",
+                "TELEGRAM_BOT_TOKEN",
+                "TELEGRAM_CHAT_ID",
+            ]:
                 if var in os.environ:
                     del os.environ[var]

@@ -180,11 +180,11 @@ def _chunk_id_text(min_size: int, max_size: int) -> st.SearchStrategy[str]:
 def _citation_mix(
     draw: st.DrawFn,
 ) -> tuple[
-    list[ChunkRecord],            # corpus seeded under the run namespace
-    list[ChunkRecord],            # extra chunks under other user/symbol
-    list[_FakeCitation],          # brief citations, mixed real + fake
-    set[str],                     # every chunk_id expected to VIOLATE
-    set[str],                     # every chunk_id expected to PASS
+    list[ChunkRecord],  # corpus seeded under the run namespace
+    list[ChunkRecord],  # extra chunks under other user/symbol
+    list[_FakeCitation],  # brief citations, mixed real + fake
+    set[str],  # every chunk_id expected to VIOLATE
+    set[str],  # every chunk_id expected to PASS
 ]:
     """Draw a (corpus, brief) pair plus the expected violation partition.
 
@@ -373,9 +373,9 @@ def test_citation_validator_flags_every_fake_and_no_real(
         # shape — a different reason would mean the validator is
         # misclassifying, which is a Req 14.1 regression.
         for v in violations:
-            assert isinstance(v, UnsupportedClaim), (
-                f"expected UnsupportedClaim, got {type(v).__name__}"
-            )
+            assert isinstance(
+                v, UnsupportedClaim
+            ), f"expected UnsupportedClaim, got {type(v).__name__}"
             assert v.reason == "citation_mismatch", (
                 f"violation {v.claim_text!r} has reason {v.reason!r}; "
                 f"expected 'citation_mismatch'"
@@ -398,8 +398,7 @@ def test_citation_validator_flags_every_fake_and_no_real(
         # trigger spurious re-synthesis loops in production.
         false_positives = expected_pass_ids & violated_ids
         assert not false_positives, (
-            f"validator flagged real in-namespace ids as mismatches: "
-            f"{sorted(false_positives)}"
+            f"validator flagged real in-namespace ids as mismatches: " f"{sorted(false_positives)}"
         )
 
         # --- Exact violation count -----------------------------------
@@ -447,9 +446,7 @@ def test_all_real_citations_produce_no_violations() -> None:
             symbol=_RUN_SYMBOL,
             embedding_dim=_DIM,
         )
-        assert violations == [], (
-            f"expected no violations for all-real brief, got {violations!r}"
-        )
+        assert violations == [], f"expected no violations for all-real brief, got {violations!r}"
 
     asyncio.run(_body())
 
@@ -472,12 +469,8 @@ def test_all_fake_citations_are_all_flagged() -> None:
             symbol=_RUN_SYMBOL,
             embedding_dim=_DIM,
         )
-        assert len(violations) == 7, (
-            f"expected 7 violations (all ghosts), got {len(violations)}"
-        )
-        assert {v.claim_text for v in violations} == {
-            f"ghost-{i}" for i in range(7)
-        }
+        assert len(violations) == 7, f"expected 7 violations (all ghosts), got {len(violations)}"
+        assert {v.claim_text for v in violations} == {f"ghost-{i}" for i in range(7)}
         assert all(v.reason == "citation_mismatch" for v in violations)
 
     asyncio.run(_body())

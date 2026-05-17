@@ -17,7 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.middleware.rbac import require_role
-from app.routers.auth_v2 import get_current_user_id, get_current_user_payload
+from app.routers.auth_v2 import get_current_user_id
 from app.services.bank_service import (
     BankAccountDetails,
     BankAccountService,
@@ -76,7 +76,9 @@ class SetPrimaryResponse(BaseModel):
 
 class DepositRequest(BaseModel):
     amount: str = Field(..., description="Deposit amount in INR (e.g. '5000.00')")
-    payment_method: str = Field(..., description="Payment method: UPI, NET_BANKING, NEFT, RTGS, IMPS")
+    payment_method: str = Field(
+        ..., description="Payment method: UPI, NET_BANKING, NEFT, RTGS, IMPS"
+    )
 
 
 class DepositResponse(BaseModel):
@@ -184,7 +186,8 @@ async def register_bank_account(
         result = await svc.register_bank_account(user_id, details)
         logger.info(
             "BANK_EVENT register user=%s status=%s",
-            user_id, result.status.value,
+            user_id,
+            result.status.value,
         )
         account_item = BankAccountItem(
             id=result.id,
@@ -274,7 +277,8 @@ async def set_primary_bank_account(
             # Verify the account exists, belongs to user, and is VERIFIED
             row = await conn.fetchrow(
                 "SELECT id, status FROM bank_accounts WHERE id = $1 AND user_id = $2",
-                bank_id, user_id,
+                bank_id,
+                user_id,
             )
             if row is None:
                 return SetPrimaryResponse(success=False, message="Bank account not found")
@@ -291,7 +295,8 @@ async def set_primary_bank_account(
             )
             await conn.execute(
                 "UPDATE bank_accounts SET is_primary = TRUE WHERE id = $1 AND user_id = $2",
-                bank_id, user_id,
+                bank_id,
+                user_id,
             )
 
         logger.info("BANK_EVENT set_primary user=%s bank_id=%s", user_id, bank_id)
@@ -332,7 +337,10 @@ async def deposit_funds(
         result = await svc.initiate_deposit(user_id, amount, method)
         logger.info(
             "FUND_EVENT deposit user=%s amount=%s method=%s status=%s",
-            user_id, amount, method.value, result.status.value,
+            user_id,
+            amount,
+            method.value,
+            result.status.value,
         )
         if result.status == TransactionStatus.FAILED:
             message = f"Deposit failed: {result.failure_reason}"
@@ -375,7 +383,10 @@ async def withdraw_funds(
         result = await svc.initiate_withdrawal(user_id, amount, req.bank_account_id)
         logger.info(
             "FUND_EVENT withdraw user=%s amount=%s bank=%s status=%s",
-            user_id, amount, req.bank_account_id, result.status.value,
+            user_id,
+            amount,
+            req.bank_account_id,
+            result.status.value,
         )
         if result.status == WithdrawalStatus.FAILED:
             message = f"Withdrawal failed: {result.failure_reason}"

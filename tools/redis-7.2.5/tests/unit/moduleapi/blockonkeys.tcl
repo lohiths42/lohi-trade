@@ -311,7 +311,7 @@ start_server {tags {"modules"}} {
         assert_equal {gg ff ee dd cc} [$rd read]
         $rd close
     }
-    
+
     test {Module explicit unblock when blocked on keys} {
         r del k
         r set somekey someval

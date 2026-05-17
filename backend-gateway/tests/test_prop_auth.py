@@ -13,10 +13,6 @@ import string
 import time
 
 import jwt as pyjwt
-import pytest
-from hypothesis import given, settings, assume
-from hypothesis import strategies as st
-
 from app.services.account_service import (
     ACCESS_TOKEN_EXPIRY_SECONDS,
     JWT_ALGORITHM,
@@ -26,35 +22,37 @@ from app.services.account_service import (
     validate_password,
     verify_access_token,
 )
-
+from hypothesis import assume, given, settings
+from hypothesis import strategies as st
 
 # ── Strategies ───────────────────────────────────────────────────────────────
 
 # Strategy: arbitrary text strings (may or may not satisfy password policy)
 any_string = st.text(min_size=0, max_size=128)
 
+
 # Strategy: strings that are guaranteed to satisfy the password policy
 def _valid_password_strategy():
     """Generate strings that always satisfy the password policy."""
-    return st.tuples(
-        st.text(
-            alphabet=string.ascii_uppercase, min_size=1, max_size=10
-        ),
-        st.text(
-            alphabet=string.ascii_lowercase, min_size=1, max_size=10
-        ),
-        st.text(alphabet=string.digits, min_size=1, max_size=10),
-        st.text(
-            alphabet="!@#$%^&*()-_=+[]{}|;:',.<>?/`~",
-            min_size=1,
-            max_size=10,
-        ),
-        st.text(
-            alphabet=string.ascii_letters + string.digits + "!@#$%^&*()-_=+",
-            min_size=0,
-            max_size=20,
-        ),
-    ).map(lambda parts: "".join(parts)).filter(lambda s: len(s) >= 8)
+    return (
+        st.tuples(
+            st.text(alphabet=string.ascii_uppercase, min_size=1, max_size=10),
+            st.text(alphabet=string.ascii_lowercase, min_size=1, max_size=10),
+            st.text(alphabet=string.digits, min_size=1, max_size=10),
+            st.text(
+                alphabet="!@#$%^&*()-_=+[]{}|;:',.<>?/`~",
+                min_size=1,
+                max_size=10,
+            ),
+            st.text(
+                alphabet=string.ascii_letters + string.digits + "!@#$%^&*()-_=+",
+                min_size=0,
+                max_size=20,
+            ),
+        )
+        .map(lambda parts: "".join(parts))
+        .filter(lambda s: len(s) >= 8)
+    )
 
 
 valid_password = _valid_password_strategy()
@@ -81,9 +79,7 @@ class TestPasswordPolicyProperty:
             assert re.search(r"[A-Z]", password), "Accepted password missing uppercase"
             assert re.search(r"[a-z]", password), "Accepted password missing lowercase"
             assert re.search(r"\d", password), "Accepted password missing digit"
-            assert re.search(
-                r"[^A-Za-z0-9]", password
-            ), "Accepted password missing special char"
+            assert re.search(r"[^A-Za-z0-9]", password), "Accepted password missing special char"
 
     @given(password=valid_password)
     @settings(max_examples=100)
@@ -92,7 +88,11 @@ class TestPasswordPolicyProperty:
         ok, msg = validate_password(password)
         assert ok is True, f"Valid password rejected: {msg}"
 
-    @given(password=st.text(alphabet=string.ascii_lowercase + string.digits + "!@#$%", min_size=8, max_size=30))
+    @given(
+        password=st.text(
+            alphabet=string.ascii_lowercase + string.digits + "!@#$%", min_size=8, max_size=30
+        )
+    )
     @settings(max_examples=50)
     def test_no_uppercase_rejected(self, password: str):
         """Passwords without any uppercase letter must be rejected."""
@@ -167,21 +167,16 @@ class TestJWTTokenLifecycleProperty:
         role=st.sampled_from(["ADMIN", "TRADER", "VIEWER"]),
     )
     @settings(max_examples=50)
-    def test_access_token_expiry_is_15_minutes(
-        self, user_id: str, email: str, role: str
-    ):
+    def test_access_token_expiry_is_15_minutes(self, user_id: str, email: str, role: str):
         """The exp claim in an access token must be exactly
         ACCESS_TOKEN_EXPIRY_SECONDS (900s / 15 min) after iat."""
         token = _create_access_token(user_id, email, role)
-        payload = pyjwt.decode(
-            token, JWT_SECRET, algorithms=[JWT_ALGORITHM]
-        )
+        payload = pyjwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
 
         iat = payload["iat"]
         exp = payload["exp"]
         assert exp - iat == ACCESS_TOKEN_EXPIRY_SECONDS, (
-            f"Expected exp - iat == {ACCESS_TOKEN_EXPIRY_SECONDS}, "
-            f"got {exp - iat}"
+            f"Expected exp - iat == {ACCESS_TOKEN_EXPIRY_SECONDS}, " f"got {exp - iat}"
         )
 
     @given(
@@ -190,9 +185,7 @@ class TestJWTTokenLifecycleProperty:
         role=st.sampled_from(["ADMIN", "TRADER", "VIEWER"]),
     )
     @settings(max_examples=50)
-    def test_access_token_verifiable_before_expiry(
-        self, user_id: str, email: str, role: str
-    ):
+    def test_access_token_verifiable_before_expiry(self, user_id: str, email: str, role: str):
         """A freshly created access token must be verifiable and contain
         the correct sub, email, and role claims."""
         token = _create_access_token(user_id, email, role)
@@ -210,9 +203,7 @@ class TestJWTTokenLifecycleProperty:
         role=st.sampled_from(["ADMIN", "TRADER", "VIEWER"]),
     )
     @settings(max_examples=25)
-    def test_expired_access_token_rejected(
-        self, user_id: str, email: str, role: str
-    ):
+    def test_expired_access_token_rejected(self, user_id: str, email: str, role: str):
         """An access token whose exp is in the past must be rejected
         by verify_access_token."""
         now = int(time.time())

@@ -134,10 +134,12 @@ class TestConnect:
     def test_connect_success(self, mock_post, mock_scheduler):
         mock_post.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={
-                "status": "success",
-                "data": {"access_token": "tok123"},
-            }),
+            json=MagicMock(
+                return_value={
+                    "status": "success",
+                    "data": {"access_token": "tok123"},
+                }
+            ),
         )
         broker = KiteBroker()
         result = broker.connect(_make_credentials())
@@ -157,11 +159,13 @@ class TestConnect:
     def test_connect_api_error(self, mock_post):
         mock_post.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={
-                "status": "error",
-                "error_type": "TokenException",
-                "message": "Invalid request token",
-            }),
+            json=MagicMock(
+                return_value={
+                    "status": "error",
+                    "error_type": "TokenException",
+                    "message": "Invalid request token",
+                }
+            ),
         )
         broker = KiteBroker()
         with pytest.raises(AuthenticationError):
@@ -170,6 +174,7 @@ class TestConnect:
     @patch("src.ingestion.kite_broker.requests.post")
     def test_connect_network_error(self, mock_post):
         import requests as req
+
         mock_post.side_effect = req.exceptions.ConnectionError("timeout")
         broker = KiteBroker()
         with pytest.raises(ConnectionError):
@@ -194,10 +199,12 @@ class TestPlaceOrder:
     def test_place_limit_order(self, mock_post):
         mock_post.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={
-                "status": "success",
-                "data": {"order_id": "220101000001"},
-            }),
+            json=MagicMock(
+                return_value={
+                    "status": "success",
+                    "data": {"order_id": "220101000001"},
+                }
+            ),
         )
         broker = _connected_broker()
         order = _make_order()
@@ -218,10 +225,12 @@ class TestPlaceOrder:
     def test_place_market_order(self, mock_post):
         mock_post.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={
-                "status": "success",
-                "data": {"order_id": "220101000002"},
-            }),
+            json=MagicMock(
+                return_value={
+                    "status": "success",
+                    "data": {"order_id": "220101000002"},
+                }
+            ),
         )
         broker = _connected_broker()
         order = _make_order(order_type=OrderType.MARKET, price=None)
@@ -236,10 +245,12 @@ class TestPlaceOrder:
     def test_place_sl_order(self, mock_post):
         mock_post.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={
-                "status": "success",
-                "data": {"order_id": "220101000003"},
-            }),
+            json=MagicMock(
+                return_value={
+                    "status": "success",
+                    "data": {"order_id": "220101000003"},
+                }
+            ),
         )
         broker = _connected_broker()
         order = _make_order(
@@ -258,10 +269,12 @@ class TestPlaceOrder:
     def test_place_slm_order(self, mock_post):
         mock_post.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={
-                "status": "success",
-                "data": {"order_id": "220101000004"},
-            }),
+            json=MagicMock(
+                return_value={
+                    "status": "success",
+                    "data": {"order_id": "220101000004"},
+                }
+            ),
         )
         broker = _connected_broker()
         order = _make_order(
@@ -284,11 +297,13 @@ class TestPlaceOrder:
     def test_place_order_rejected(self, mock_post):
         mock_post.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={
-                "status": "error",
-                "error_type": "OrderException",
-                "message": "Insufficient margin",
-            }),
+            json=MagicMock(
+                return_value={
+                    "status": "error",
+                    "error_type": "OrderException",
+                    "message": "Insufficient margin",
+                }
+            ),
         )
         broker = _connected_broker()
         with pytest.raises(OrderRejectionError, match="Insufficient margin"):
@@ -303,24 +318,26 @@ class TestGetOrderStatus:
     def test_get_order_status_complete(self, mock_get):
         mock_get.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={
-                "status": "success",
-                "data": [
-                    {
-                        "tradingsymbol": "RELIANCE",
-                        "transaction_type": "BUY",
-                        "order_type": "LIMIT",
-                        "product": "CNC",
-                        "quantity": 10,
-                        "filled_quantity": 10,
-                        "average_price": 2500.5,
-                        "price": 2500.0,
-                        "trigger_price": 0,
-                        "status": "COMPLETE",
-                        "status_message": None,
-                    },
-                ],
-            }),
+            json=MagicMock(
+                return_value={
+                    "status": "success",
+                    "data": [
+                        {
+                            "tradingsymbol": "RELIANCE",
+                            "transaction_type": "BUY",
+                            "order_type": "LIMIT",
+                            "product": "CNC",
+                            "quantity": 10,
+                            "filled_quantity": 10,
+                            "average_price": 2500.5,
+                            "price": 2500.0,
+                            "trigger_price": 0,
+                            "status": "COMPLETE",
+                            "status_message": None,
+                        },
+                    ],
+                }
+            ),
         )
         broker = _connected_broker()
         order = broker.get_order_status("oid-1")
@@ -333,24 +350,26 @@ class TestGetOrderStatus:
     def test_get_order_status_rejected(self, mock_get):
         mock_get.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={
-                "status": "success",
-                "data": [
-                    {
-                        "tradingsymbol": "INFY",
-                        "transaction_type": "SELL",
-                        "order_type": "MARKET",
-                        "product": "MIS",
-                        "quantity": 5,
-                        "filled_quantity": 0,
-                        "average_price": 0,
-                        "price": 0,
-                        "trigger_price": 0,
-                        "status": "REJECTED",
-                        "status_message": "Insufficient margin",
-                    },
-                ],
-            }),
+            json=MagicMock(
+                return_value={
+                    "status": "success",
+                    "data": [
+                        {
+                            "tradingsymbol": "INFY",
+                            "transaction_type": "SELL",
+                            "order_type": "MARKET",
+                            "product": "MIS",
+                            "quantity": 5,
+                            "filled_quantity": 0,
+                            "average_price": 0,
+                            "price": 0,
+                            "trigger_price": 0,
+                            "status": "REJECTED",
+                            "status_message": "Insufficient margin",
+                        },
+                    ],
+                }
+            ),
         )
         broker = _connected_broker()
         order = broker.get_order_status("oid-2")
@@ -362,11 +381,13 @@ class TestGetOrderStatus:
     def test_get_order_status_not_found(self, mock_get):
         mock_get.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={
-                "status": "error",
-                "error_type": "GeneralException",
-                "message": "No order found",
-            }),
+            json=MagicMock(
+                return_value={
+                    "status": "error",
+                    "error_type": "GeneralException",
+                    "message": "No order found",
+                }
+            ),
         )
         broker = _connected_broker()
         with pytest.raises(OrderNotFoundError):
@@ -386,14 +407,22 @@ class TestPollOrderStatus:
     @patch.object(KiteBroker, "get_order_status")
     def test_poll_reaches_terminal(self, mock_status, mock_sleep):
         pending = Order(
-            order_id="", symbol="X", side=OrderSide.BUY,
-            order_type=OrderType.MARKET, quantity=1,
-            product_type=ProductType.MIS, status=OrderStatus.PENDING,
+            order_id="",
+            symbol="X",
+            side=OrderSide.BUY,
+            order_type=OrderType.MARKET,
+            quantity=1,
+            product_type=ProductType.MIS,
+            status=OrderStatus.PENDING,
         )
         filled = Order(
-            order_id="", symbol="X", side=OrderSide.BUY,
-            order_type=OrderType.MARKET, quantity=1,
-            product_type=ProductType.MIS, status=OrderStatus.FILLED,
+            order_id="",
+            symbol="X",
+            side=OrderSide.BUY,
+            order_type=OrderType.MARKET,
+            quantity=1,
+            product_type=ProductType.MIS,
+            status=OrderStatus.FILLED,
         )
         mock_status.side_effect = [pending, pending, filled]
 
@@ -406,9 +435,13 @@ class TestPollOrderStatus:
     @patch.object(KiteBroker, "get_order_status")
     def test_poll_cancelled(self, mock_status, mock_sleep):
         cancelled = Order(
-            order_id="", symbol="X", side=OrderSide.BUY,
-            order_type=OrderType.MARKET, quantity=1,
-            product_type=ProductType.MIS, status=OrderStatus.CANCELLED,
+            order_id="",
+            symbol="X",
+            side=OrderSide.BUY,
+            order_type=OrderType.MARKET,
+            quantity=1,
+            product_type=ProductType.MIS,
+            status=OrderStatus.CANCELLED,
         )
         mock_status.return_value = cancelled
 
@@ -420,9 +453,13 @@ class TestPollOrderStatus:
     @patch.object(KiteBroker, "get_order_status")
     def test_poll_max_polls_exceeded(self, mock_status, mock_sleep):
         pending = Order(
-            order_id="", symbol="X", side=OrderSide.BUY,
-            order_type=OrderType.MARKET, quantity=1,
-            product_type=ProductType.MIS, status=OrderStatus.PENDING,
+            order_id="",
+            symbol="X",
+            side=OrderSide.BUY,
+            order_type=OrderType.MARKET,
+            quantity=1,
+            product_type=ProductType.MIS,
+            status=OrderStatus.PENDING,
         )
         mock_status.return_value = pending
 
@@ -441,10 +478,12 @@ class TestCancelOrder:
     def test_cancel_success(self, mock_delete):
         mock_delete.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={
-                "status": "success",
-                "data": {"order_id": "oid-1"},
-            }),
+            json=MagicMock(
+                return_value={
+                    "status": "success",
+                    "data": {"order_id": "oid-1"},
+                }
+            ),
         )
         broker = _connected_broker()
         assert broker.cancel_order("oid-1") is True
@@ -453,11 +492,13 @@ class TestCancelOrder:
     def test_cancel_failure(self, mock_delete):
         mock_delete.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={
-                "status": "error",
-                "error_type": "GeneralException",
-                "message": "Something went wrong",
-            }),
+            json=MagicMock(
+                return_value={
+                    "status": "error",
+                    "error_type": "GeneralException",
+                    "message": "Something went wrong",
+                }
+            ),
         )
         broker = _connected_broker()
         assert broker.cancel_order("oid-1") is False
@@ -476,21 +517,23 @@ class TestGetPositions:
     def test_get_positions_success(self, mock_get):
         mock_get.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={
-                "status": "success",
-                "data": {
-                    "net": [
-                        {
-                            "tradingsymbol": "RELIANCE",
-                            "quantity": 10,
-                            "average_price": 2500.0,
-                            "last_price": 2520.0,
-                            "pnl": 200.0,
-                        },
-                    ],
-                    "day": [],
-                },
-            }),
+            json=MagicMock(
+                return_value={
+                    "status": "success",
+                    "data": {
+                        "net": [
+                            {
+                                "tradingsymbol": "RELIANCE",
+                                "quantity": 10,
+                                "average_price": 2500.0,
+                                "last_price": 2520.0,
+                                "pnl": 200.0,
+                            },
+                        ],
+                        "day": [],
+                    },
+                }
+            ),
         )
         broker = _connected_broker()
         positions = broker.get_positions()
@@ -502,10 +545,12 @@ class TestGetPositions:
     def test_get_positions_empty(self, mock_get):
         mock_get.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={
-                "status": "success",
-                "data": {"net": [], "day": []},
-            }),
+            json=MagicMock(
+                return_value={
+                    "status": "success",
+                    "data": {"net": [], "day": []},
+                }
+            ),
         )
         broker = _connected_broker()
         assert broker.get_positions() == []
@@ -524,19 +569,21 @@ class TestGetHoldings:
     def test_get_holdings_success(self, mock_get):
         mock_get.return_value = MagicMock(
             status_code=200,
-            json=MagicMock(return_value={
-                "status": "success",
-                "data": [
-                    {
-                        "tradingsymbol": "TCS",
-                        "quantity": 5,
-                        "average_price": 3400.0,
-                        "last_price": 3450.0,
-                        "pnl": 250.0,
-                        "isin": "INE467B01029",
-                    },
-                ],
-            }),
+            json=MagicMock(
+                return_value={
+                    "status": "success",
+                    "data": [
+                        {
+                            "tradingsymbol": "TCS",
+                            "quantity": 5,
+                            "average_price": 3400.0,
+                            "last_price": 3450.0,
+                            "pnl": 250.0,
+                            "isin": "INE467B01029",
+                        },
+                    ],
+                }
+            ),
         )
         broker = _connected_broker()
         holdings = broker.get_holdings()
@@ -553,7 +600,10 @@ class TestRetryLogic:
     @patch("src.ingestion.kite_broker.requests.post")
     def test_post_retries_on_503(self, mock_post, mock_sleep):
         """Transient 503 should be retried up to _MAX_RETRIES times (Req 15.8)."""
-        fail_resp = MagicMock(status_code=503, json=MagicMock(return_value={"status": "error", "message": "unavailable"}))
+        fail_resp = MagicMock(
+            status_code=503,
+            json=MagicMock(return_value={"status": "error", "message": "unavailable"}),
+        )
         ok_resp = MagicMock(
             status_code=200,
             json=MagicMock(return_value={"status": "success", "data": {"order_id": "ok"}}),
@@ -570,6 +620,7 @@ class TestRetryLogic:
     def test_get_retries_on_network_error(self, mock_get, mock_sleep):
         """Network errors should be retried (Req 15.8)."""
         import requests as req
+
         mock_get.side_effect = [
             req.exceptions.ConnectionError("timeout"),
             MagicMock(
@@ -587,6 +638,7 @@ class TestRetryLogic:
     def test_post_exhausts_retries(self, mock_post, mock_sleep):
         """After _MAX_RETRIES+1 attempts, should raise ConnectionError."""
         import requests as req
+
         mock_post.side_effect = req.exceptions.ConnectionError("down")
 
         broker = _connected_broker()

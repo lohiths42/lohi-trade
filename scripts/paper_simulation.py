@@ -17,13 +17,11 @@ import argparse
 import json
 import math
 import os
-import random
 import sqlite3
 import sys
 import time
 import uuid
-from collections import defaultdict
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -37,18 +35,17 @@ import numpy as np
 import pandas as pd
 import yfinance as yf
 
-from src.soldier.candle_builder import CandleBuilder, Candle
+from src.execution.paper_trading import PaperTradingEngine
+from src.execution.position_sizer import PositionSizer
+from src.ingestion.broker_interface import Tick
+from src.soldier.candle_builder import Candle, CandleBuilder
 from src.soldier.indicator_engine import IndicatorEngine, IndicatorSet
 from src.soldier.strategy_engine import (
     MeanReversionStrategy,
-    TrendFollowingStrategy,
     OpeningRangeBreakoutStrategy,
     Signal,
-    create_signal,
+    TrendFollowingStrategy,
 )
-from src.ingestion.broker_interface import Tick, OrderSide, OrderStatus, OrderType
-from src.execution.paper_trading import PaperTradingEngine
-from src.execution.position_sizer import PositionSizer
 from src.utils.config import load_config
 from src.utils.logger import get_logger
 
@@ -57,16 +54,16 @@ logger = get_logger("PaperSimulation")
 # ─── Realistic NSE stock profiles ────────────────────────────────────────────
 
 STOCK_PROFILES = {
-    "RELIANCE":   {"base": 2450, "volatility": 0.012, "volume_base": 50000, "sector": "Energy"},
-    "TCS":        {"base": 3550, "volatility": 0.010, "volume_base": 30000, "sector": "IT"},
-    "HDFCBANK":   {"base": 1620, "volatility": 0.009, "volume_base": 60000, "sector": "Banking"},
-    "INFY":       {"base": 1480, "volatility": 0.011, "volume_base": 40000, "sector": "IT"},
-    "ICICIBANK":  {"base": 1050, "volatility": 0.010, "volume_base": 55000, "sector": "Banking"},
+    "RELIANCE": {"base": 2450, "volatility": 0.012, "volume_base": 50000, "sector": "Energy"},
+    "TCS": {"base": 3550, "volatility": 0.010, "volume_base": 30000, "sector": "IT"},
+    "HDFCBANK": {"base": 1620, "volatility": 0.009, "volume_base": 60000, "sector": "Banking"},
+    "INFY": {"base": 1480, "volatility": 0.011, "volume_base": 40000, "sector": "IT"},
+    "ICICIBANK": {"base": 1050, "volatility": 0.010, "volume_base": 55000, "sector": "Banking"},
     "HINDUNILVR": {"base": 2380, "volatility": 0.007, "volume_base": 20000, "sector": "FMCG"},
-    "ITC":        {"base": 435,  "volatility": 0.008, "volume_base": 80000, "sector": "FMCG"},
-    "SBIN":       {"base": 780,  "volatility": 0.013, "volume_base": 90000, "sector": "Banking"},
+    "ITC": {"base": 435, "volatility": 0.008, "volume_base": 80000, "sector": "FMCG"},
+    "SBIN": {"base": 780, "volatility": 0.013, "volume_base": 90000, "sector": "Banking"},
     "BHARTIARTL": {"base": 1150, "volatility": 0.011, "volume_base": 35000, "sector": "Telecom"},
-    "KOTAKBANK":  {"base": 1780, "volatility": 0.009, "volume_base": 25000, "sector": "Banking"},
+    "KOTAKBANK": {"base": 1780, "volatility": 0.009, "volume_base": 25000, "sector": "Banking"},
 }
 
 # News headlines for sentiment simulation
@@ -97,6 +94,7 @@ NEWS_SOURCES = ["MoneyControl", "Economic Times", "LiveMint", "Business Standard
 
 # ─── Market Data Generator ───────────────────────────────────────────────────
 
+
 class MarketDataGenerator:
     """Generates realistic synthetic tick data using geometric Brownian motion."""
 
@@ -107,7 +105,9 @@ class MarketDataGenerator:
         self._intraday_trends: Dict[str, float] = {}
 
         for sym in symbols:
-            profile = STOCK_PROFILES.get(sym, {"base": 1000, "volatility": 0.01, "volume_base": 30000})
+            profile = STOCK_PROFILES.get(
+                sym, {"base": 1000, "volatility": 0.01, "volume_base": 30000}
+            )
             # Randomize starting price within ±3% of base
             self._prices[sym] = profile["base"] * (1 + self._rng.uniform(-0.03, 0.03))
             self._cum_volumes[sym] = 0
@@ -116,7 +116,9 @@ class MarketDataGenerator:
     def reset_day(self, date: datetime):
         """Reset daily state — reset prices to realistic base with gap, new intraday trend."""
         for sym in self._prices:
-            profile = STOCK_PROFILES.get(sym, {"base": 1000, "volatility": 0.01, "volume_base": 30000})
+            profile = STOCK_PROFILES.get(
+                sym, {"base": 1000, "volatility": 0.01, "volume_base": 30000}
+            )
             # Reset to base price with a small daily gap (±1.5%) to prevent compounding drift
             gap = self._rng.normal(0, 0.008)
             self._prices[sym] = profile["base"] * (1 + gap)
@@ -127,7 +129,9 @@ class MarketDataGenerator:
 
     def generate_tick(self, symbol: str, timestamp: datetime) -> Tick:
         """Generate a single tick with realistic price movement and occasional patterns."""
-        profile = STOCK_PROFILES.get(symbol, {"base": 1000, "volatility": 0.01, "volume_base": 30000})
+        profile = STOCK_PROFILES.get(
+            symbol, {"base": 1000, "volatility": 0.01, "volume_base": 30000}
+        )
         vol = profile["volatility"]
 
         # Time-of-day volume pattern (U-shaped: high at open/close, low midday)
@@ -210,7 +214,9 @@ class MarketDataGenerator:
             self._prices[symbol] += revert_force
 
         # Volume per tick
-        tick_volume = max(1, int(self._rng.poisson(profile["volume_base"] * volume_multiplier / 60)))
+        tick_volume = max(
+            1, int(self._rng.poisson(profile["volume_base"] * volume_multiplier / 60))
+        )
         self._cum_volumes[symbol] = self._cum_volumes.get(symbol, 0) + tick_volume
 
         return Tick(
@@ -227,6 +233,7 @@ class MarketDataGenerator:
 
 
 # ─── Real Market Data Generator (yfinance) ───────────────────────────────────
+
 
 class RealMarketDataGenerator:
     """Replays real historical intraday data from Yahoo Finance as ticks.
@@ -306,7 +313,9 @@ class RealMarketDataGenerator:
                 else:
                     logger.warning(f"[RealData] No data for {ticker}, will use synthetic fallback")
             except Exception as e:
-                logger.warning(f"[RealData] Failed to download {ticker}: {e}, using synthetic fallback")
+                logger.warning(
+                    f"[RealData] Failed to download {ticker}: {e}, using synthetic fallback"
+                )
 
     def _get_day_data(self, symbol: str, date: datetime) -> Optional[List[Dict]]:
         """Extract bars for a specific date from the downloaded data."""
@@ -383,17 +392,17 @@ class RealMarketDataGenerator:
         # Interpolate within the bar: simulate tick as a point between OHLC
         # Use a simple pattern: O → H → L → C within each minute
         seconds_in_bar = timestamp.second % 60
-        o, h, l, c = bar["open"], bar["high"], bar["low"], bar["close"]
+        open_val, high_val, low_val, close_val = bar["open"], bar["high"], bar["low"], bar["close"]
         if seconds_in_bar < 15:
-            price = o + (h - o) * (seconds_in_bar / 15)
+            price = open_val + (high_val - open_val) * (seconds_in_bar / 15)
         elif seconds_in_bar < 30:
-            price = h + (l - h) * ((seconds_in_bar - 15) / 15)
+            price = high_val + (low_val - high_val) * ((seconds_in_bar - 15) / 15)
         elif seconds_in_bar < 45:
-            price = l + (c - l) * ((seconds_in_bar - 30) / 15)
+            price = low_val + (close_val - low_val) * ((seconds_in_bar - 30) / 15)
         else:
             # Add small noise near close
-            noise = self._rng.normal(0, abs(c - o) * 0.01 + 0.01)
-            price = c + noise
+            noise = self._rng.normal(0, abs(close_val - open_val) * 0.01 + 0.01)
+            price = close_val + noise
 
         price = max(0.01, round(price, 2))
         self._prices[symbol] = price
@@ -417,6 +426,7 @@ class RealMarketDataGenerator:
 
 
 # ─── Sentiment / Bias Simulator ──────────────────────────────────────────────
+
 
 class SentimentSimulator:
     """Generates synthetic news and bias data with per-symbol daily regimes.
@@ -447,9 +457,9 @@ class SentimentSimulator:
     def reset_day(self):
         """Assign fresh sentiment regimes for each symbol for the new day."""
         for sym in self._symbols:
-            self._regimes[sym] = str(self._rng.choice(
-                ["BULLISH", "BEARISH", "NEUTRAL"], p=[0.30, 0.30, 0.40]
-            ))
+            self._regimes[sym] = str(
+                self._rng.choice(["BULLISH", "BEARISH", "NEUTRAL"], p=[0.30, 0.30, 0.40])
+            )
         regime_summary = {s: r for s, r in self._regimes.items() if r != "NEUTRAL"}
         if regime_summary:
             logger.info(f"[Sentiment] Daily regimes: {regime_summary}")
@@ -479,24 +489,32 @@ class SentimentSimulator:
                 1 if sentiment == "BULLISH" else -1 if sentiment == "BEARISH" else 0
             )
             self._article_counter += 1
-            articles.append({
-                "article_id": f"ART{self._article_counter}",
-                "ticker": symbol,
-                "sentiment": sentiment,
-                "confidence": round(float(self._rng.uniform(0.55, 0.95)), 3),
-                "raw_score": round(float(raw_score), 3),
-                "boosted_score": round(float(raw_score + boost), 3),
-                "news_title": title,
-                "news_source": str(self._rng.choice(NEWS_SOURCES)),
-                "created_at": timestamp.isoformat(),
-            })
+            articles.append(
+                {
+                    "article_id": f"ART{self._article_counter}",
+                    "ticker": symbol,
+                    "sentiment": sentiment,
+                    "confidence": round(float(self._rng.uniform(0.55, 0.95)), 3),
+                    "raw_score": round(float(raw_score), 3),
+                    "boosted_score": round(float(raw_score + boost), 3),
+                    "news_title": title,
+                    "news_source": str(self._rng.choice(NEWS_SOURCES)),
+                    "created_at": timestamp.isoformat(),
+                }
+            )
         return articles
 
     def compute_bias(self, symbol: str, articles: List[Dict]) -> Dict[str, Any]:
         """Compute bias from recent articles for a symbol."""
         sym_articles = [a for a in articles if a["ticker"] == symbol]
         if not sym_articles:
-            return {"ticker": symbol, "bias": "NEUTRAL", "score": 0.0, "confidence": 0.5, "article_count": 0}
+            return {
+                "ticker": symbol,
+                "bias": "NEUTRAL",
+                "score": 0.0,
+                "confidence": 0.5,
+                "article_count": 0,
+            }
         # Use only the most recent 20 articles per symbol for sharper signal
         recent = sym_articles[-20:]
         avg_score = np.mean([a["boosted_score"] for a in recent])
@@ -513,6 +531,7 @@ class SentimentSimulator:
 
 # ─── Database Writer ─────────────────────────────────────────────────────────
 
+
 class SimulationDB:
     """Writes simulation data directly to the production SQLite DB."""
 
@@ -525,6 +544,7 @@ class SimulationDB:
 
     def _init_schema(self):
         from src.state.database_schema import get_sqlite_schema
+
         self._conn.executescript(get_sqlite_schema())
         self._conn.commit()
 
@@ -539,14 +559,28 @@ class SimulationDB:
         self._conn.execute(
             "INSERT INTO trades (trade_id, symbol, side, strategy, entry_price, quantity, "
             "entry_time, stop_loss, target) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (trade["trade_id"], trade["symbol"], trade["side"], trade["strategy"],
-             trade["entry_price"], trade["quantity"], trade["entry_time"],
-             trade["stop_loss"], trade["target"]),
+            (
+                trade["trade_id"],
+                trade["symbol"],
+                trade["side"],
+                trade["strategy"],
+                trade["entry_price"],
+                trade["quantity"],
+                trade["entry_time"],
+                trade["stop_loss"],
+                trade["target"],
+            ),
         )
         self._conn.commit()
 
-    def close_trade(self, trade_id: str, exit_price: float, exit_time: str,
-                    realized_pnl: float, exit_reason: str):
+    def close_trade(
+        self,
+        trade_id: str,
+        exit_price: float,
+        exit_time: str,
+        realized_pnl: float,
+        exit_reason: str,
+    ):
         self._conn.execute(
             "UPDATE trades SET exit_price=?, exit_time=?, realized_pnl=?, exit_reason=? "
             "WHERE trade_id=?",
@@ -560,11 +594,23 @@ class SimulationDB:
             "price, trigger_price, status, broker_order_id, filled_qty, filled_price, "
             "rejection_reason, created_at, updated_at) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (order["order_id"], order.get("trade_id"), order["symbol"], order["side"],
-             order["order_type"], order["quantity"], order.get("price"),
-             order.get("trigger_price"), order["status"], order.get("broker_order_id"),
-             order.get("filled_qty", 0), order.get("filled_price"),
-             order.get("rejection_reason"), order["created_at"], order["updated_at"]),
+            (
+                order["order_id"],
+                order.get("trade_id"),
+                order["symbol"],
+                order["side"],
+                order["order_type"],
+                order["quantity"],
+                order.get("price"),
+                order.get("trigger_price"),
+                order["status"],
+                order.get("broker_order_id"),
+                order.get("filled_qty", 0),
+                order.get("filled_price"),
+                order.get("rejection_reason"),
+                order["created_at"],
+                order["updated_at"],
+            ),
         )
         self._conn.commit()
 
@@ -573,9 +619,17 @@ class SimulationDB:
             "INSERT INTO sentiment_log (article_id, ticker, sentiment, confidence, "
             "raw_score, boosted_score, news_title, news_source, created_at) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (article["article_id"], article["ticker"], article["sentiment"],
-             article["confidence"], article["raw_score"], article["boosted_score"],
-             article["news_title"], article["news_source"], article["created_at"]),
+            (
+                article["article_id"],
+                article["ticker"],
+                article["sentiment"],
+                article["confidence"],
+                article["raw_score"],
+                article["boosted_score"],
+                article["news_title"],
+                article["news_source"],
+                article["created_at"],
+            ),
         )
         self._conn.commit()
 
@@ -583,13 +637,25 @@ class SimulationDB:
         self._conn.execute(
             "INSERT INTO bias_log (ticker, bias, score, confidence, article_count, created_at) "
             "VALUES (?, ?, ?, ?, ?, ?)",
-            (bias["ticker"], bias["bias"], bias["score"], bias["confidence"],
-             bias["article_count"], timestamp),
+            (
+                bias["ticker"],
+                bias["bias"],
+                bias["score"],
+                bias["confidence"],
+                bias["article_count"],
+                timestamp,
+            ),
         )
         self._conn.commit()
 
-    def insert_audit(self, event_type: str, component: str, message: str,
-                     metadata: Optional[str] = None, timestamp: Optional[str] = None):
+    def insert_audit(
+        self,
+        event_type: str,
+        component: str,
+        message: str,
+        metadata: Optional[str] = None,
+        timestamp: Optional[str] = None,
+    ):
         self._conn.execute(
             "INSERT INTO audit_log (event_type, component, message, metadata, created_at) "
             "VALUES (?, ?, ?, ?, ?)",
@@ -603,6 +669,7 @@ class SimulationDB:
 
 # ─── Redis Publisher ─────────────────────────────────────────────────────────
 
+
 class RedisPublisher:
     """Publishes simulation events to Redis streams for the gateway."""
 
@@ -610,6 +677,7 @@ class RedisPublisher:
         self._redis = None
         try:
             import redis
+
             self._redis = redis.Redis(host="localhost", port=6379, db=0, decode_responses=True)
             self._redis.ping()
             logger.info("Redis connected for live event publishing")
@@ -621,10 +689,16 @@ class RedisPublisher:
         if not self._redis:
             return
         try:
-            self._redis.xadd(f"stream:ticks:{tick.symbol}", {
-                "symbol": tick.symbol, "ltp": str(tick.ltp),
-                "volume": str(tick.volume), "timestamp": tick.timestamp.isoformat(),
-            }, maxlen=500)
+            self._redis.xadd(
+                f"stream:ticks:{tick.symbol}",
+                {
+                    "symbol": tick.symbol,
+                    "ltp": str(tick.ltp),
+                    "volume": str(tick.volume),
+                    "timestamp": tick.timestamp.isoformat(),
+                },
+                maxlen=500,
+            )
         except Exception:
             pass
 
@@ -632,7 +706,9 @@ class RedisPublisher:
         if not self._redis:
             return
         try:
-            self._redis.xadd("stream:signals", {k: str(v) for k, v in signal_data.items()}, maxlen=200)
+            self._redis.xadd(
+                "stream:signals", {k: str(v) for k, v in signal_data.items()}, maxlen=200
+            )
         except Exception:
             pass
 
@@ -648,16 +724,20 @@ class RedisPublisher:
         if not self._redis:
             return
         try:
-            self._redis.xadd(f"stream:bias:{data['ticker']}", {k: str(v) for k, v in data.items()}, maxlen=100)
+            self._redis.xadd(
+                f"stream:bias:{data['ticker']}", {k: str(v) for k, v in data.items()}, maxlen=100
+            )
         except Exception:
             pass
 
 
 # ─── Position Tracker (lightweight, no broker dependency) ────────────────────
 
+
 @dataclass
 class SimPosition:
     """Lightweight position for simulation."""
+
     trade_id: str
     symbol: str
     side: str
@@ -704,11 +784,19 @@ class SimPosition:
 
 # ─── Main Simulation Engine ──────────────────────────────────────────────────
 
+
 class PaperSimulation:
     """Orchestrates the full paper trading simulation."""
 
-    def __init__(self, config, db: SimulationDB, redis_pub: RedisPublisher,
-                 speed: float = 1.0, days: int = 5, use_real_data: bool = False):
+    def __init__(
+        self,
+        config,
+        db: SimulationDB,
+        redis_pub: RedisPublisher,
+        speed: float = 1.0,
+        days: int = 5,
+        use_real_data: bool = False,
+    ):
         self._config = config
         self._db = db
         self._redis = redis_pub
@@ -744,7 +832,9 @@ class PaperSimulation:
         if config.strategies.trend_following.enabled:
             self._strategies.append(TrendFollowingStrategy(config.strategies.trend_following))
         if config.strategies.opening_range_breakout.enabled:
-            self._strategies.append(OpeningRangeBreakoutStrategy(config.strategies.opening_range_breakout))
+            self._strategies.append(
+                OpeningRangeBreakoutStrategy(config.strategies.opening_range_breakout)
+            )
 
         # Position sizer
         self._position_sizer = PositionSizer(config)
@@ -786,9 +876,12 @@ class PaperSimulation:
         print("=" * 70 + "\n")
 
         self._db.clear_simulation_data()
-        self._db.insert_audit("INFO", "simulation", "Paper trading simulation started",
-                              json.dumps({"capital": self._capital, "days": self._days,
-                                          "data_source": data_source}))
+        self._db.insert_audit(
+            "INFO",
+            "simulation",
+            "Paper trading simulation started",
+            json.dumps({"capital": self._capital, "days": self._days, "data_source": data_source}),
+        )
 
         if self._use_real_data:
             # Use actual trading dates from the downloaded data
@@ -798,11 +891,13 @@ class PaperSimulation:
 
         if self._use_real_data and trading_dates:
             # Replay real trading dates (up to self._days)
-            for date in trading_dates[:self._days]:
+            for date in trading_dates[: self._days]:
                 self._simulate_day(date)
         else:
             # Synthetic mode: generate dates going back from today
-            start_date = datetime.now().replace(hour=9, minute=15, second=0, microsecond=0) - timedelta(days=self._days)
+            start_date = datetime.now().replace(
+                hour=9, minute=15, second=0, microsecond=0
+            ) - timedelta(days=self._days)
             for day_offset in range(self._days):
                 current_date = start_date + timedelta(days=day_offset)
                 if current_date.weekday() >= 5:
@@ -819,7 +914,11 @@ class PaperSimulation:
         for sym, df in self._market._all_data.items():
             dates = df["datetime"].dt.normalize().unique()
             for d in dates:
-                all_dates.add(pd.Timestamp(d).to_pydatetime().replace(hour=9, minute=15, second=0, microsecond=0))
+                all_dates.add(
+                    pd.Timestamp(d)
+                    .to_pydatetime()
+                    .replace(hour=9, minute=15, second=0, microsecond=0)
+                )
         return sorted(all_dates)
 
     def _simulate_day(self, date: datetime):
@@ -838,8 +937,12 @@ class PaperSimulation:
         print(f"  📅 {day_str} ({date.strftime('%A')})")
         print(f"{'─' * 50}")
 
-        self._db.insert_audit("INFO", "simulation", f"Trading day started: {day_str}",
-                              timestamp=date.replace(hour=9, minute=15).isoformat())
+        self._db.insert_audit(
+            "INFO",
+            "simulation",
+            f"Trading day started: {day_str}",
+            timestamp=date.replace(hour=9, minute=15).isoformat(),
+        )
 
         # Generate pre-market news burst (larger batch to establish initial bias)
         for _ in range(3):
@@ -882,14 +985,14 @@ class PaperSimulation:
                     if sym not in orb_ranges:
                         orb_ranges[sym] = (tick.ltp, tick.ltp)
                     else:
-                        h, l = orb_ranges[sym]
-                        orb_ranges[sym] = (max(h, tick.ltp), min(l, tick.ltp))
+                        high_val, low_val = orb_ranges[sym]
+                        orb_ranges[sym] = (max(high_val, tick.ltp), min(low_val, tick.ltp))
                 elif current_time == date.replace(hour=9, minute=30):
                     # Set ORB ranges on strategies
                     for strat in self._strategies:
                         if isinstance(strat, OpeningRangeBreakoutStrategy):
-                            for s, (h, l) in orb_ranges.items():
-                                strat.set_opening_range(s, h, l)
+                            for s, (high_val, low_val) in orb_ranges.items():
+                                strat.set_opening_range(s, high_val, low_val)
 
                 # Update open positions
                 self._update_positions(sym, tick.ltp, current_time)
@@ -923,9 +1026,12 @@ class PaperSimulation:
             # Check daily loss kill switch
             if self._daily_pnl < -(self._capital * self._max_daily_loss_pct / 100):
                 self._kill_switch_active = True
-                self._db.insert_audit("ERROR", "kill_switch",
+                self._db.insert_audit(
+                    "ERROR",
+                    "kill_switch",
                     f"Kill switch activated: daily loss ₹{self._daily_pnl:,.0f} exceeds limit",
-                    timestamp=current_time.isoformat())
+                    timestamp=current_time.isoformat(),
+                )
                 print(f"  🛑 KILL SWITCH: Daily loss ₹{self._daily_pnl:,.0f}")
                 self._square_off_all(current_time)
 
@@ -945,15 +1051,21 @@ class PaperSimulation:
             if isinstance(strat, OpeningRangeBreakoutStrategy):
                 strat.clear_opening_ranges()
 
-        self._db.insert_audit("INFO", "simulation",
+        self._db.insert_audit(
+            "INFO",
+            "simulation",
             f"Day ended: P&L ₹{self._daily_pnl:,.0f}, Orders: {self._daily_orders}",
-            timestamp=market_close.isoformat())
+            timestamp=market_close.isoformat(),
+        )
 
-        print(f"  📊 Day P&L: {'₹' + f'{self._daily_pnl:+,.0f}' if self._daily_pnl != 0 else '₹0'} | "
-              f"Trades: {self._daily_orders} | Signals: {signals_generated}")
+        print(
+            f"  📊 Day P&L: {'₹' + f'{self._daily_pnl:+,.0f}' if self._daily_pnl != 0 else '₹0'} | "
+            f"Trades: {self._daily_orders} | Signals: {signals_generated}"
+        )
 
-    def _try_generate_signal(self, indicators: IndicatorSet, symbol: str,
-                             timestamp: datetime) -> Optional[Signal]:
+    def _try_generate_signal(
+        self, indicators: IndicatorSet, symbol: str, timestamp: datetime
+    ) -> Optional[Signal]:
         """Try to generate a signal from indicators."""
         if self._kill_switch_active:
             return None
@@ -984,16 +1096,26 @@ class PaperSimulation:
                 recent_bias = self._get_latest_bias(symbol)
                 if recent_bias:
                     if signal.side == "BUY" and recent_bias == "BEARISH":
-                        print(f"  🚫 BIAS BLOCK: {symbol} BUY rejected — BEARISH sentiment [{signal.strategy}]")
-                        self._db.insert_audit("INFO", "rms",
+                        print(
+                            f"  🚫 BIAS BLOCK: {symbol} BUY rejected — BEARISH sentiment [{signal.strategy}]"
+                        )
+                        self._db.insert_audit(
+                            "INFO",
+                            "rms",
                             f"Signal rejected: {symbol} BUY blocked by BEARISH bias",
-                            timestamp=timestamp.isoformat())
+                            timestamp=timestamp.isoformat(),
+                        )
                         continue
                     if signal.side == "SELL" and recent_bias == "BULLISH":
-                        print(f"  🚫 BIAS BLOCK: {symbol} SELL rejected — BULLISH sentiment [{signal.strategy}]")
-                        self._db.insert_audit("INFO", "rms",
+                        print(
+                            f"  🚫 BIAS BLOCK: {symbol} SELL rejected — BULLISH sentiment [{signal.strategy}]"
+                        )
+                        self._db.insert_audit(
+                            "INFO",
+                            "rms",
                             f"Signal rejected: {symbol} SELL blocked by BULLISH bias",
-                            timestamp=timestamp.isoformat())
+                            timestamp=timestamp.isoformat(),
+                        )
                         continue
 
                 # Position sizing
@@ -1004,11 +1126,15 @@ class PaperSimulation:
                 signal.quantity = size_result.quantity
                 self._execute_paper_trade(signal, timestamp)
 
-                self._redis.publish_signal({
-                    "symbol": signal.symbol, "strategy": signal.strategy,
-                    "side": signal.side, "price": signal.entry_price,
-                    "timestamp": timestamp.isoformat(),
-                })
+                self._redis.publish_signal(
+                    {
+                        "symbol": signal.symbol,
+                        "strategy": signal.strategy,
+                        "side": signal.side,
+                        "price": signal.entry_price,
+                        "timestamp": timestamp.isoformat(),
+                    }
+                )
 
                 return signal
 
@@ -1056,38 +1182,62 @@ class PaperSimulation:
         self._position_symbols.add(signal.symbol)
 
         # Write to DB
-        self._db.insert_trade({
-            "trade_id": trade_id, "symbol": signal.symbol, "side": signal.side,
-            "strategy": signal.strategy, "entry_price": fill_price,
-            "quantity": signal.quantity, "entry_time": timestamp.isoformat(),
-            "stop_loss": signal.stop_loss, "target": signal.target,
-        })
+        self._db.insert_trade(
+            {
+                "trade_id": trade_id,
+                "symbol": signal.symbol,
+                "side": signal.side,
+                "strategy": signal.strategy,
+                "entry_price": fill_price,
+                "quantity": signal.quantity,
+                "entry_time": timestamp.isoformat(),
+                "stop_loss": signal.stop_loss,
+                "target": signal.target,
+            }
+        )
 
         order_id = f"PAPER-{uuid.uuid4().hex[:8].upper()}"
-        self._db.insert_order({
-            "order_id": order_id, "trade_id": trade_id, "symbol": signal.symbol,
-            "side": signal.side, "order_type": "MARKET", "quantity": signal.quantity,
-            "price": fill_price, "status": "FILLED", "broker_order_id": f"PAPER-{order_id}",
-            "filled_qty": signal.quantity, "filled_price": fill_price,
-            "created_at": timestamp.isoformat(), "updated_at": timestamp.isoformat(),
-        })
+        self._db.insert_order(
+            {
+                "order_id": order_id,
+                "trade_id": trade_id,
+                "symbol": signal.symbol,
+                "side": signal.side,
+                "order_type": "MARKET",
+                "quantity": signal.quantity,
+                "price": fill_price,
+                "status": "FILLED",
+                "broker_order_id": f"PAPER-{order_id}",
+                "filled_qty": signal.quantity,
+                "filled_price": fill_price,
+                "created_at": timestamp.isoformat(),
+                "updated_at": timestamp.isoformat(),
+            }
+        )
 
         self._daily_orders += 1
-        self._db.insert_audit("INFO", "soldier",
+        self._db.insert_audit(
+            "INFO",
+            "soldier",
             f"Position opened: {trade_id} {signal.symbol} {signal.side} "
             f"qty={signal.quantity} @ ₹{fill_price:,.2f} [{signal.strategy}]",
-            timestamp=timestamp.isoformat())
+            timestamp=timestamp.isoformat(),
+        )
 
-        print(f"  {'🟢' if signal.side == 'BUY' else '🔴'} {signal.side} {signal.symbol} "
-              f"qty={signal.quantity} @ ₹{fill_price:,.2f} "
-              f"SL=₹{signal.stop_loss:,.2f} TGT=₹{signal.target:,.2f} [{signal.strategy}]")
+        print(
+            f"  {'🟢' if signal.side == 'BUY' else '🔴'} {signal.side} {signal.symbol} "
+            f"qty={signal.quantity} @ ₹{fill_price:,.2f} "
+            f"SL=₹{signal.stop_loss:,.2f} TGT=₹{signal.target:,.2f} [{signal.strategy}]"
+        )
 
         # Show current holdings summary
         total_shares = sum(p.quantity for p in self._open_positions.values())
         total_invested = sum(p.entry_price * p.quantity for p in self._open_positions.values())
         holdings = ", ".join(f"{p.symbol}×{p.quantity}" for p in self._open_positions.values())
-        print(f"    📦 Holdings: {len(self._open_positions)} pos | {total_shares} shares | "
-              f"₹{total_invested:,.0f} invested [{holdings}]")
+        print(
+            f"    📦 Holdings: {len(self._open_positions)} pos | {total_shares} shares | "
+            f"₹{total_invested:,.0f} invested [{holdings}]"
+        )
 
     def _update_positions(self, symbol: str, price: float, timestamp: datetime):
         """Update positions for a symbol and check exits."""
@@ -1103,8 +1253,7 @@ class PaperSimulation:
         for trade_id, exit_price, reason in to_close:
             self._close_position(trade_id, exit_price, reason, timestamp)
 
-    def _close_position(self, trade_id: str, exit_price: float, reason: str,
-                        timestamp: datetime):
+    def _close_position(self, trade_id: str, exit_price: float, reason: str, timestamp: datetime):
         """Close a position and record P&L."""
         pos = self._open_positions.pop(trade_id, None)
         if not pos:
@@ -1131,32 +1280,47 @@ class PaperSimulation:
         # Exit order
         exit_order_id = f"PAPER-{uuid.uuid4().hex[:8].upper()}"
         exit_side = "SELL" if pos.side == "BUY" else "BUY"
-        self._db.insert_order({
-            "order_id": exit_order_id, "trade_id": trade_id, "symbol": pos.symbol,
-            "side": exit_side, "order_type": "MARKET", "quantity": pos.quantity,
-            "price": exit_price, "status": "FILLED",
-            "broker_order_id": f"PAPER-{exit_order_id}",
-            "filled_qty": pos.quantity, "filled_price": exit_price,
-            "created_at": timestamp.isoformat(), "updated_at": timestamp.isoformat(),
-        })
+        self._db.insert_order(
+            {
+                "order_id": exit_order_id,
+                "trade_id": trade_id,
+                "symbol": pos.symbol,
+                "side": exit_side,
+                "order_type": "MARKET",
+                "quantity": pos.quantity,
+                "price": exit_price,
+                "status": "FILLED",
+                "broker_order_id": f"PAPER-{exit_order_id}",
+                "filled_qty": pos.quantity,
+                "filled_price": exit_price,
+                "created_at": timestamp.isoformat(),
+                "updated_at": timestamp.isoformat(),
+            }
+        )
 
         emoji = "✅" if pnl >= 0 else "❌"
         self._db.insert_audit(
-            "INFO" if pnl >= 0 else "WARNING", "execution",
+            "INFO" if pnl >= 0 else "WARNING",
+            "execution",
             f"Position closed: {trade_id} {pos.symbol} {reason} "
             f"P&L=₹{pnl:+,.2f} (entry=₹{pos.entry_price:,.2f} exit=₹{exit_price:,.2f})",
-            timestamp=timestamp.isoformat())
+            timestamp=timestamp.isoformat(),
+        )
 
-        print(f"  {emoji} CLOSE {pos.symbol} [{reason}] P&L: ₹{pnl:+,.2f} "
-              f"(₹{pos.entry_price:,.2f} → ₹{exit_price:,.2f})")
+        print(
+            f"  {emoji} CLOSE {pos.symbol} [{reason}] P&L: ₹{pnl:+,.2f} "
+            f"(₹{pos.entry_price:,.2f} → ₹{exit_price:,.2f})"
+        )
 
         # Show remaining holdings
         if self._open_positions:
             total_shares = sum(p.quantity for p in self._open_positions.values())
             holdings = ", ".join(f"{p.symbol}×{p.quantity}" for p in self._open_positions.values())
-            print(f"    📦 Remaining: {len(self._open_positions)} pos | {total_shares} shares [{holdings}]")
+            print(
+                f"    📦 Remaining: {len(self._open_positions)} pos | {total_shares} shares [{holdings}]"
+            )
         else:
-            print(f"    📦 No open positions")
+            print("    📦 No open positions")
 
     def _square_off_all(self, timestamp: datetime):
         """Force close all open positions."""
@@ -1181,34 +1345,49 @@ class PaperSimulation:
         print(f"  Avg P&L per Trade: ₹{(self._total_pnl / max(1, self._total_trades)):>+12,.2f}")
         print("=" * 70)
         print(f"\n  Data written to: {self._db._db_path}")
-        print(f"  Open http://localhost:3000 to view results in the dashboard\n")
+        print("  Open http://localhost:3000 to view results in the dashboard\n")
 
-        self._db.insert_audit("INFO", "simulation",
+        self._db.insert_audit(
+            "INFO",
+            "simulation",
             f"Simulation complete: P&L=₹{self._total_pnl:+,.2f}, "
-            f"Trades={self._total_trades}, WinRate={win_rate:.1f}%")
+            f"Trades={self._total_trades}, WinRate={win_rate:.1f}%",
+        )
 
 
 # ─── Entry Point ─────────────────────────────────────────────────────────────
 
+
 def main():
     parser = argparse.ArgumentParser(description="LOHI-TRADE Paper Trading Simulation")
-    parser.add_argument("--speed", type=float, default=50,
-                        help="Simulation speed multiplier (default: 50)")
-    parser.add_argument("--days", type=int, default=5,
-                        help="Number of trading days to simulate (default: 5)")
-    parser.add_argument("--capital", type=float, default=None,
-                        help="Starting capital (default: from config)")
-    parser.add_argument("--db", type=str, default="data/lohi_trade.db",
-                        help="SQLite database path")
-    parser.add_argument("--real-data", action="store_true", default=False,
-                        help="Use real historical data from Yahoo Finance instead of synthetic")
+    parser.add_argument(
+        "--speed", type=float, default=50, help="Simulation speed multiplier (default: 50)"
+    )
+    parser.add_argument(
+        "--days", type=int, default=5, help="Number of trading days to simulate (default: 5)"
+    )
+    parser.add_argument(
+        "--capital", type=float, default=None, help="Starting capital (default: from config)"
+    )
+    parser.add_argument("--db", type=str, default="data/lohi_trade.db", help="SQLite database path")
+    parser.add_argument(
+        "--real-data",
+        action="store_true",
+        default=False,
+        help="Use real historical data from Yahoo Finance instead of synthetic",
+    )
     args = parser.parse_args()
 
     # Set dummy broker env vars for paper trading (no real broker needed)
     dummy_vars = [
-        "SHOONYA_API_KEY", "SHOONYA_CLIENT_ID", "SHOONYA_PASSWORD",
-        "ANGELONE_API_KEY", "ANGELONE_CLIENT_ID", "ANGELONE_PASSWORD",
-        "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID",
+        "SHOONYA_API_KEY",
+        "SHOONYA_CLIENT_ID",
+        "SHOONYA_PASSWORD",
+        "ANGELONE_API_KEY",
+        "ANGELONE_CLIENT_ID",
+        "ANGELONE_PASSWORD",
+        "TELEGRAM_BOT_TOKEN",
+        "TELEGRAM_CHAT_ID",
     ]
     for var in dummy_vars:
         if not os.environ.get(var):
@@ -1227,8 +1406,9 @@ def main():
     db = SimulationDB(args.db)
     redis_pub = RedisPublisher()
 
-    sim = PaperSimulation(config, db, redis_pub, speed=args.speed, days=args.days,
-                          use_real_data=args.real_data)
+    sim = PaperSimulation(
+        config, db, redis_pub, speed=args.speed, days=args.days, use_real_data=args.real_data
+    )
 
     try:
         sim.run()

@@ -10,7 +10,6 @@ Usage:
     python scripts/convert_finbert_onnx.py
 """
 
-import os
 import sys
 from pathlib import Path
 
@@ -25,10 +24,7 @@ def download_and_convert() -> None:
         import torch
         from transformers import AutoModelForSequenceClassification, AutoTokenizer
     except ImportError:
-        print(
-            "ERROR: torch and transformers are required.\n"
-            "  pip install torch transformers"
-        )
+        print("ERROR: torch and transformers are required.\n" "  pip install torch transformers")
         sys.exit(1)
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)

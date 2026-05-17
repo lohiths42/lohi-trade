@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
+import argparse
 import glob
 import json
 import os
-import argparse
 
 ARG_TYPES = {
     "string": "ARG_TYPE_STRING",
@@ -41,11 +41,13 @@ def get_optional_desc_string(desc, field, force_uppercase=False):
     v = desc.get(field, None)
     if v and force_uppercase:
         v = v.upper()
-    ret = "\"%s\"" % v if v else "NULL"
+    ret = '"%s"' % v if v else "NULL"
     return ret.replace("\n", "\\n")
 
 
-def check_command_args_key_specs(args, command_key_specs_index_set, command_arg_key_specs_index_set):
+def check_command_args_key_specs(
+    args, command_key_specs_index_set, command_arg_key_specs_index_set
+):
     if not args:
         return True
 
@@ -59,10 +61,13 @@ def check_command_args_key_specs(args, command_key_specs_index_set, command_arg_
 
             command_arg_key_specs_index_set.add(arg.key_spec_index)
 
-        if not check_command_args_key_specs(arg.subargs, command_key_specs_index_set, command_arg_key_specs_index_set):
+        if not check_command_args_key_specs(
+            arg.subargs, command_key_specs_index_set, command_arg_key_specs_index_set
+        ):
             return False
 
     return True
+
 
 def check_command_key_specs(command):
     if not command.key_specs:
@@ -83,7 +88,9 @@ def check_command_key_specs(command):
     command_arg_key_specs_index_set = set()
 
     # Collect key_spec used for each arg, including arg.subarg
-    if not check_command_args_key_specs(command.args, command_key_specs_index_set, command_arg_key_specs_index_set):
+    if not check_command_args_key_specs(
+        command.args, command_key_specs_index_set, command_arg_key_specs_index_set
+    ):
         return False
 
     # Check if we have key_specs not used
@@ -112,11 +119,9 @@ class KeySpec(object):
 
         def _begin_search_code():
             if self.spec["begin_search"].get("index"):
-                return "KSPEC_BS_INDEX,.bs.index={%d}" % (
-                    self.spec["begin_search"]["index"]["pos"]
-                )
+                return "KSPEC_BS_INDEX,.bs.index={%d}" % (self.spec["begin_search"]["index"]["pos"])
             elif self.spec["begin_search"].get("keyword"):
-                return "KSPEC_BS_KEYWORD,.bs.keyword={\"%s\",%d}" % (
+                return 'KSPEC_BS_KEYWORD,.bs.keyword={"%s",%d}' % (
                     self.spec["begin_search"]["keyword"]["keyword"],
                     self.spec["begin_search"]["keyword"]["startfrom"],
                 )
@@ -131,13 +136,13 @@ class KeySpec(object):
                 return "KSPEC_FK_RANGE,.fk.range={%d,%d,%d}" % (
                     self.spec["find_keys"]["range"]["lastkey"],
                     self.spec["find_keys"]["range"]["step"],
-                    self.spec["find_keys"]["range"]["limit"]
+                    self.spec["find_keys"]["range"]["limit"],
                 )
             elif self.spec["find_keys"].get("keynum"):
                 return "KSPEC_FK_KEYNUM,.fk.keynum={%d,%d,%d}" % (
                     self.spec["find_keys"]["keynum"]["keynumidx"],
                     self.spec["find_keys"]["keynum"]["firstkey"],
-                    self.spec["find_keys"]["keynum"]["step"]
+                    self.spec["find_keys"]["keynum"]["step"],
                 )
             elif "unknown" in self.spec["find_keys"]:
                 return "KSPEC_FK_UNKNOWN,{{0}}"
@@ -149,7 +154,7 @@ class KeySpec(object):
             get_optional_desc_string(self.spec, "notes"),
             _flags_code(),
             _begin_search_code(),
-            _find_keys_code()
+            _find_keys_code(),
         )
 
 
@@ -177,7 +182,9 @@ class Argument(object):
             for subdesc in self.desc["arguments"]:
                 self.subargs.append(Argument(self.fullname(), subdesc))
             if len(self.subargs) < 2:
-                print("{}: oneof or block arg contains less than two subargs".format(self.fullname()))
+                print(
+                    "{}: oneof or block arg contains less than two subargs".format(self.fullname())
+                )
                 exit(1)
             verify_no_dup_names(self.fullname(), self.subargs)
         else:
@@ -210,7 +217,7 @@ class Argument(object):
                 s += "CMD_ARG_MULTIPLE_TOKEN|"
             return s[:-1] if s else "CMD_ARG_NONE"
 
-        s = "MAKE_ARG(\"%s\",%s,%d,%s,%s,%s,%s,%d,%s)" % (
+        s = 'MAKE_ARG("%s",%s,%d,%s,%s,%s,%s,%d,%s)' % (
             self.name,
             ARG_TYPES[self.type],
             self.desc.get("key_spec_index", -1),
@@ -222,7 +229,7 @@ class Argument(object):
             get_optional_desc_string(self.desc, "deprecated_since"),
         )
         if "display" in self.desc:
-            s += ",.display_text=\"%s\"" % self.desc["display"].lower()
+            s += ',.display_text="%s"' % self.desc["display"].lower()
         if self.subargs:
             s += ",.subargs=%s" % self.subarg_table_name()
 
@@ -241,8 +248,14 @@ class Argument(object):
 
 
 def to_c_name(str):
-    return str.replace(":", "").replace(".", "_").replace("$", "_")\
-        .replace("^", "_").replace("*", "_").replace("-", "_")
+    return (
+        str.replace(":", "")
+        .replace(".", "_")
+        .replace("$", "_")
+        .replace("^", "_")
+        .replace("*", "_")
+        .replace("-", "_")
+    )
 
 
 class ReplySchema(object):
@@ -251,11 +264,21 @@ class ReplySchema(object):
         self.schema = {}
         if desc.get("type") == "object":
             if desc.get("properties") and desc.get("additionalProperties") is None:
-                print("%s: Any object that has properties should have the additionalProperties field" % self.name)
+                print(
+                    "%s: Any object that has properties should have the additionalProperties field"
+                    % self.name
+                )
                 exit(1)
         elif desc.get("type") == "array":
-            if desc.get("items") and isinstance(desc["items"], list) and any([desc.get(k) is None for k in ["minItems", "maxItems"]]):
-                print("%s: Any array that has items should have the minItems and maxItems fields" % self.name)
+            if (
+                desc.get("items")
+                and isinstance(desc["items"], list)
+                and any([desc.get(k) is None for k in ["minItems", "maxItems"]])
+            ):
+                print(
+                    "%s: Any array that has items should have the minItems and maxItems fields"
+                    % self.name
+                )
                 exit(1)
         for k, v in desc.items():
             if isinstance(v, dict):
@@ -263,10 +286,10 @@ class ReplySchema(object):
             elif isinstance(v, list):
                 self.schema[k] = []
                 for i, subdesc in enumerate(v):
-                    self.schema[k].append(ReplySchema("%s_%s_%i" % (self.name, k,i), subdesc))
+                    self.schema[k].append(ReplySchema("%s_%s_%i" % (self.name, k, i), subdesc))
             else:
                 self.schema[k] = v
-    
+
     def write(self, f):
         def struct_code(name, k, v):
             if isinstance(v, ReplySchema):
@@ -280,12 +303,12 @@ class ReplySchema(object):
                 vstr = ".value.boolean=%d" % int(v)
             elif isinstance(v, str):
                 t = "JSON_TYPE_STRING"
-                vstr = ".value.string=\"%s\"" % v
+                vstr = '.value.string="%s"' % v
             elif isinstance(v, int):
                 t = "JSON_TYPE_INTEGER"
                 vstr = ".value.integer=%d" % v
-            
-            return "%s,\"%s\",%s" % (t, k, vstr)
+
+            return '%s,"%s",%s' % (t, k, vstr)
 
         for k, v in self.schema.items():
             if isinstance(v, ReplySchema):
@@ -299,14 +322,17 @@ class ReplySchema(object):
                 for i, schema in enumerate(v):
                     f.write("&%s,\n" % schema.name)
                 f.write("};\n\n")
-            
+
         f.write("/* %s reply schema */\n" % self.name)
         f.write("struct jsonObjectElement %s_elements[] = {\n" % self.name)
         for k, v in self.schema.items():
             name = to_c_name("%s_%s" % (self.name, k))
             f.write("{%s},\n" % struct_code(name, k, v))
         f.write("};\n\n")
-        f.write("struct jsonObject %s = {%s_elements,.length=%d};\n\n" % (self.name, self.name, len(self.schema)))
+        f.write(
+            "struct jsonObject %s = {%s_elements,.length=%d};\n\n"
+            % (self.name, self.name, len(self.schema))
+        )
 
 
 class Command(object):
@@ -357,7 +383,7 @@ class Command(object):
             return ""
         s = ""
         for tupl in self.desc["history"]:
-            s += "{\"%s\",\"%s\"},\n" % (tupl[0], tupl[1])
+            s += '{"%s","%s"},\n' % (tupl[0], tupl[1])
         return s
 
     def num_history(self):
@@ -370,7 +396,7 @@ class Command(object):
             return ""
         s = ""
         for hint in self.desc["command_tips"]:
-            s += "\"%s\",\n" % hint.lower()
+            s += '"%s",\n' % hint.lower()
         return s
 
     def num_tips(self):
@@ -383,7 +409,6 @@ class Command(object):
         for spec in self.key_specs:
             s += "{%s}," % KeySpec(spec).struct_code()
         return s[:-1]
-
 
     def struct_code(self):
         """
@@ -409,7 +434,7 @@ class Command(object):
                 s += "CMD_DOC_%s|" % flag
             return s[:-1] if s else "CMD_DOC_NONE"
 
-        s = "MAKE_CMD(\"%s\",%s,%s,%s,%s,%s,%s,%s,%s,%s,%d,%s,%d,%s,%d,%s,%s,%s,%d,%s,%d)," % (
+        s = 'MAKE_CMD("%s",%s,%s,%s,%s,%s,%s,%s,%s,%s,%d,%s,%d,%s,%d,%s,%s,%s,%d,%s,%d),' % (
             self.name.lower(),
             get_optional_desc_string(self.desc, "summary"),
             get_optional_desc_string(self.desc, "complexity"),
@@ -417,7 +442,7 @@ class Command(object):
             _doc_flags_code(),
             get_optional_desc_string(self.desc, "replaced_by"),
             get_optional_desc_string(self.desc, "deprecated_since"),
-            "\"%s\"" % self.group,
+            '"%s"' % self.group,
             GROUPS[self.group],
             self.history_table_name(),
             self.num_history(),
@@ -530,12 +555,12 @@ def create_command(name, desc):
 srcdir = os.path.abspath(os.path.dirname(os.path.abspath(__file__)) + "/../src")
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--with-reply-schema', action='store_true')
+parser.add_argument("--with-reply-schema", action="store_true")
 args = parser.parse_args()
 
 # Create all command objects
 print("Processing json files...")
-for filename in glob.glob('%s/commands/*.json' % srcdir):
+for filename in glob.glob("%s/commands/*.json" % srcdir):
     with open(filename, "r") as f:
         try:
             d = json.load(f)
@@ -572,7 +597,7 @@ print("Generating %s.def..." % commands_filename)
 with open("%s/%s.def" % (srcdir, commands_filename), "w") as f:
     f.write("/* Automatically generated by %s, do not edit. */\n\n" % os.path.basename(__file__))
     f.write(
-"""
+        """
 /* We have fabulous commands from
  * the fantastic
  * Redis Command Table! */

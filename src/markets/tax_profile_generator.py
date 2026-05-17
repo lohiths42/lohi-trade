@@ -111,7 +111,9 @@ class TaxProfileGenerator:
         return self._parse_response(response, country)
 
     async def refresh(
-        self, existing: TaxProfile, country_name: str,
+        self,
+        existing: TaxProfile,
+        country_name: str,
     ) -> TaxProfileDiff:
         """Refresh an existing tax profile and return the diff.
 
@@ -151,7 +153,7 @@ class TaxProfileGenerator:
         if cleaned.startswith("```"):
             lines = cleaned.split("\n")
             # Remove first and last lines (```json and ```)
-            lines = [l for l in lines if not l.strip().startswith("```")]
+            lines = [line for line in lines if not line.strip().startswith("```")]
             cleaned = "\n".join(lines)
 
         try:
@@ -259,4 +261,3 @@ class TaxProfileDiff:
 
 class TaxGenerationError(Exception):
     """Raised when AI tax profile generation fails."""
-

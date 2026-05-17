@@ -165,7 +165,8 @@ class SentimentAnalyzer:
             providers.append("CPUExecutionProvider")
 
             self._session = ort.InferenceSession(
-                self._model_path, providers=providers,
+                self._model_path,
+                providers=providers,
             )
             self._model_loaded = True
             logger.info(
@@ -376,7 +377,9 @@ class SentimentAnalyzer:
     # ------------------------------------------------------------------
 
     def _neutral_fallback(
-        self, article_id: str = "", ticker: str = "",
+        self,
+        article_id: str = "",
+        ticker: str = "",
     ) -> SentimentResult:
         """Return NEUTRAL sentiment as fallback on inference failure.
 
@@ -412,7 +415,9 @@ class SentimentAnalyzer:
             "timestamp": result.timestamp.isoformat(),
         }
         msg_id = self._event_bus.publish(
-            SENTIMENT_STREAM_NAME, message, maxlen=SENTIMENT_STREAM_MAXLEN,
+            SENTIMENT_STREAM_NAME,
+            message,
+            maxlen=SENTIMENT_STREAM_MAXLEN,
         )
         logger.debug(
             f"Published sentiment to {SENTIMENT_STREAM_NAME}: {msg_id}",
@@ -421,7 +426,10 @@ class SentimentAnalyzer:
         return msg_id
 
     def _store_in_sqlite(
-        self, result: SentimentResult, news_title: str, news_source: str,
+        self,
+        result: SentimentResult,
+        news_title: str,
+        news_source: str,
     ) -> None:
         """Persist sentiment result in sentiment_log table. Requirements: 7.6"""
         self._db_manager.execute_with_retry(

@@ -28,6 +28,7 @@ from src.utils.config import OpeningRangeBreakoutStrategy as ORBConfig
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _default_config(enabled: bool = True) -> ORBConfig:
     return ORBConfig(
         enabled=enabled,
@@ -89,6 +90,7 @@ def _make_candles(
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 class TestORBProperties:
     def test_name(self):
@@ -254,7 +256,8 @@ class TestORBNoSignal:
         indicators = _make_indicators()
         # 9:20 AM is before trade window start (9:30)
         candles = _make_candles(
-            close=110.0, volume=120000.0,
+            close=110.0,
+            volume=120000.0,
             timestamp=datetime(2024, 1, 15, 9, 20, 0),
         )
 
@@ -266,7 +269,8 @@ class TestORBNoSignal:
         indicators = _make_indicators()
         # 11:00 AM is after trade window end (10:30)
         candles = _make_candles(
-            close=110.0, volume=120000.0,
+            close=110.0,
+            volume=120000.0,
             timestamp=datetime(2024, 1, 15, 11, 0, 0),
         )
 
@@ -334,7 +338,8 @@ class TestORBBoundaryConditions:
         strat.set_opening_range("RELIANCE", 108.0, 102.0)
         indicators = _make_indicators()
         candles = _make_candles(
-            close=110.0, volume=120000.0,
+            close=110.0,
+            volume=120000.0,
             timestamp=datetime(2024, 1, 15, 9, 30, 0),
         )
 
@@ -348,7 +353,8 @@ class TestORBBoundaryConditions:
         strat.set_opening_range("RELIANCE", 108.0, 102.0)
         indicators = _make_indicators()
         candles = _make_candles(
-            close=110.0, volume=120000.0,
+            close=110.0,
+            volume=120000.0,
             timestamp=datetime(2024, 1, 15, 10, 30, 0),
         )
 

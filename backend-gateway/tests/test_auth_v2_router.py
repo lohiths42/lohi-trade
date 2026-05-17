@@ -1,18 +1,14 @@
 """Unit tests for auth_v2 router endpoints and JWT auth dependency."""
 
-import uuid
-from unittest.mock import AsyncMock, MagicMock, patch
+from datetime import datetime, timezone
+from unittest.mock import AsyncMock
 
 import pytest
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-
 from app.routers.auth_v2 import (
-    router,
     get_account_service,
     get_current_user_id,
     get_current_user_payload,
-    set_account_service,
+    router,
 )
 from app.services.account_service import (
     AccountService,
@@ -20,12 +16,12 @@ from app.services.account_service import (
     User,
     UserRole,
     _create_access_token,
-    verify_access_token,
 )
-from datetime import datetime, timezone
-
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 # ── Test app setup ───────────────────────────────────────────────────────────
+
 
 def _create_test_app(mock_svc: AccountService = None) -> FastAPI:
     """Create a minimal FastAPI app with the auth_v2 router for testing."""
@@ -53,24 +49,28 @@ class TestGetCurrentUserId:
 
     def test_missing_header_raises_401(self):
         from fastapi import HTTPException
+
         with pytest.raises(HTTPException) as exc_info:
             get_current_user_id(authorization=None)
         assert exc_info.value.status_code == 401
 
     def test_no_bearer_prefix_raises_401(self):
         from fastapi import HTTPException
+
         with pytest.raises(HTTPException) as exc_info:
             get_current_user_id(authorization="Token abc123")
         assert exc_info.value.status_code == 401
 
     def test_invalid_token_raises_401(self):
         from fastapi import HTTPException
+
         with pytest.raises(HTTPException) as exc_info:
             get_current_user_id(authorization="Bearer invalid.token.here")
         assert exc_info.value.status_code == 401
 
     def test_empty_bearer_raises_401(self):
         from fastapi import HTTPException
+
         with pytest.raises(HTTPException) as exc_info:
             get_current_user_id(authorization="Bearer ")
         assert exc_info.value.status_code == 401
@@ -87,6 +87,7 @@ class TestGetCurrentUserPayload:
 
     def test_missing_header_raises_401(self):
         from fastapi import HTTPException
+
         with pytest.raises(HTTPException):
             get_current_user_payload(authorization=None)
 
@@ -97,28 +98,33 @@ class TestGetCurrentUserPayload:
 class TestRegisterEndpoint:
     def test_successful_registration(self):
         mock_svc = AsyncMock(spec=AccountService)
-        mock_svc.register_email = AsyncMock(return_value={
-            "user": User(
-                id="new-user-id",
-                email="new@test.com",
-                phone="9876543210",
-                name="New User",
-                role=UserRole.TRADER,
-                is_onboarded=False,
-                created_at=datetime.now(timezone.utc),
-            ),
-            "otp": "123456",
-            "otp_expires_at": 9999999999.0,
-        })
+        mock_svc.register_email = AsyncMock(
+            return_value={
+                "user": User(
+                    id="new-user-id",
+                    email="new@test.com",
+                    phone="9876543210",
+                    name="New User",
+                    role=UserRole.TRADER,
+                    is_onboarded=False,
+                    created_at=datetime.now(timezone.utc),
+                ),
+                "otp": "123456",
+                "otp_expires_at": 9999999999.0,
+            }
+        )
 
         app = _create_test_app(mock_svc)
         client = TestClient(app)
-        resp = client.post("/api/v2/auth/register", json={
-            "email": "new@test.com",
-            "password": "Str0ng!Pass",
-            "phone": "9876543210",
-            "name": "New User",
-        })
+        resp = client.post(
+            "/api/v2/auth/register",
+            json={
+                "email": "new@test.com",
+                "password": "Str0ng!Pass",
+                "phone": "9876543210",
+                "name": "New User",
+            },
+        )
 
         assert resp.status_code == 201
         data = resp.json()
@@ -134,12 +140,15 @@ class TestRegisterEndpoint:
 
         app = _create_test_app(mock_svc)
         client = TestClient(app)
-        resp = client.post("/api/v2/auth/register", json={
-            "email": "bad",
-            "password": "Str0ng!Pass",
-            "phone": "9876543210",
-            "name": "Test",
-        })
+        resp = client.post(
+            "/api/v2/auth/register",
+            json={
+                "email": "bad",
+                "password": "Str0ng!Pass",
+                "phone": "9876543210",
+                "name": "Test",
+            },
+        )
 
         assert resp.status_code == 400
         assert "Invalid email" in resp.json()["detail"]
@@ -155,17 +164,22 @@ class TestRegisterEndpoint:
 class TestLoginEndpoint:
     def test_successful_login(self):
         mock_svc = AsyncMock(spec=AccountService)
-        mock_svc.login_email = AsyncMock(return_value=TokenPair(
-            access_token="access-tok",
-            refresh_token="refresh-tok",
-        ))
+        mock_svc.login_email = AsyncMock(
+            return_value=TokenPair(
+                access_token="access-tok",
+                refresh_token="refresh-tok",
+            )
+        )
 
         app = _create_test_app(mock_svc)
         client = TestClient(app)
-        resp = client.post("/api/v2/auth/login", json={
-            "email": "user@test.com",
-            "password": "Str0ng!Pass",
-        })
+        resp = client.post(
+            "/api/v2/auth/login",
+            json={
+                "email": "user@test.com",
+                "password": "Str0ng!Pass",
+            },
+        )
 
         assert resp.status_code == 200
         data = resp.json()
@@ -179,10 +193,13 @@ class TestLoginEndpoint:
 
         app = _create_test_app(mock_svc)
         client = TestClient(app)
-        resp = client.post("/api/v2/auth/login", json={
-            "email": "user@test.com",
-            "password": "wrong",
-        })
+        resp = client.post(
+            "/api/v2/auth/login",
+            json={
+                "email": "user@test.com",
+                "password": "wrong",
+            },
+        )
 
         assert resp.status_code == 401
 
@@ -190,10 +207,12 @@ class TestLoginEndpoint:
 class TestGoogleLoginEndpoint:
     def test_successful_google_login(self):
         mock_svc = AsyncMock(spec=AccountService)
-        mock_svc.login_google = AsyncMock(return_value=TokenPair(
-            access_token="g-access",
-            refresh_token="g-refresh",
-        ))
+        mock_svc.login_google = AsyncMock(
+            return_value=TokenPair(
+                access_token="g-access",
+                refresh_token="g-refresh",
+            )
+        )
 
         app = _create_test_app(mock_svc)
         client = TestClient(app)
@@ -217,17 +236,22 @@ class TestGoogleLoginEndpoint:
 class TestAppleLoginEndpoint:
     def test_successful_apple_login(self):
         mock_svc = AsyncMock(spec=AccountService)
-        mock_svc.login_apple = AsyncMock(return_value=TokenPair(
-            access_token="a-access",
-            refresh_token="a-refresh",
-        ))
+        mock_svc.login_apple = AsyncMock(
+            return_value=TokenPair(
+                access_token="a-access",
+                refresh_token="a-refresh",
+            )
+        )
 
         app = _create_test_app(mock_svc)
         client = TestClient(app)
-        resp = client.post("/api/v2/auth/apple", json={
-            "auth_code": "apple-code",
-            "user_name": "Apple User",
-        })
+        resp = client.post(
+            "/api/v2/auth/apple",
+            json={
+                "auth_code": "apple-code",
+                "user_name": "Apple User",
+            },
+        )
 
         assert resp.status_code == 200
         assert resp.json()["access_token"] == "a-access"
@@ -235,9 +259,12 @@ class TestAppleLoginEndpoint:
 
     def test_apple_without_name(self):
         mock_svc = AsyncMock(spec=AccountService)
-        mock_svc.login_apple = AsyncMock(return_value=TokenPair(
-            access_token="a2", refresh_token="r2",
-        ))
+        mock_svc.login_apple = AsyncMock(
+            return_value=TokenPair(
+                access_token="a2",
+                refresh_token="r2",
+            )
+        )
 
         app = _create_test_app(mock_svc)
         client = TestClient(app)
@@ -260,10 +287,12 @@ class TestAppleLoginEndpoint:
 class TestRefreshEndpoint:
     def test_successful_refresh(self):
         mock_svc = AsyncMock(spec=AccountService)
-        mock_svc.refresh_token = AsyncMock(return_value=TokenPair(
-            access_token="new-access",
-            refresh_token="new-refresh",
-        ))
+        mock_svc.refresh_token = AsyncMock(
+            return_value=TokenPair(
+                access_token="new-access",
+                refresh_token="new-refresh",
+            )
+        )
 
         app = _create_test_app(mock_svc)
         client = TestClient(app)
@@ -309,9 +338,10 @@ class TestLogoutEndpoint:
         assert resp.status_code == 401
 
     def test_logout_with_expired_token_returns_401(self):
-        import jwt as pyjwt
         import time
-        from app.services.account_service import JWT_SECRET, JWT_ALGORITHM
+
+        import jwt as pyjwt
+        from app.services.account_service import JWT_ALGORITHM, JWT_SECRET
 
         expired_payload = {
             "sub": "user-expired",
@@ -343,8 +373,11 @@ class TestServiceNotInitialized:
         app.include_router(router, prefix="/api/v2")
         # Don't override the dependency — it should return 503
         client = TestClient(app)
-        resp = client.post("/api/v2/auth/login", json={
-            "email": "a@b.com",
-            "password": "test",
-        })
+        resp = client.post(
+            "/api/v2/auth/login",
+            json={
+                "email": "a@b.com",
+                "password": "test",
+            },
+        )
         assert resp.status_code == 503

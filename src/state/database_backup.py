@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class DatabaseBackupManager:
     """Manages database backups with retention policy.
-    
+
     Features:
     - Creates timestamped backups of SQLite database
     - Retains backups for configurable number of days (default: 30)
@@ -31,7 +31,7 @@ class DatabaseBackupManager:
         retention_days: int = 30,
     ):
         """Initialize database backup manager.
-        
+
         Args:
             sqlite_path: Path to SQLite database file
             backup_dir: Directory to store backups
@@ -52,9 +52,9 @@ class DatabaseBackupManager:
 
     def create_backup(self) -> Path | None:
         """Create a backup of the SQLite database.
-        
+
         Uses SQLite's backup API for safe online backup without locking.
-        
+
         Returns:
             Path: Path to created backup file, or None if backup failed
 
@@ -81,8 +81,7 @@ class DatabaseBackupManager:
 
             backup_size = backup_path.stat().st_size / (1024 * 1024)  # MB
             logger.info(
-                f"Database backup created: {backup_filename} "
-                f"({backup_size:.2f} MB)",
+                f"Database backup created: {backup_filename} " f"({backup_size:.2f} MB)",
             )
 
             return backup_path
@@ -93,7 +92,7 @@ class DatabaseBackupManager:
 
     def cleanup_old_backups(self) -> int:
         """Remove backups older than retention period.
-        
+
         Returns:
             int: Number of backups deleted
 
@@ -131,9 +130,9 @@ class DatabaseBackupManager:
 
     def perform_backup_with_cleanup(self) -> bool:
         """Perform backup and cleanup old backups.
-        
+
         This is the main method to call for scheduled backups.
-        
+
         Returns:
             bool: True if backup was successful, False otherwise
 
@@ -151,15 +150,14 @@ class DatabaseBackupManager:
         deleted_count = self.cleanup_old_backups()
 
         logger.info(
-            f"Backup completed successfully. "
-            f"Deleted {deleted_count} old backup(s).",
+            f"Backup completed successfully. " f"Deleted {deleted_count} old backup(s).",
         )
 
         return True
 
     def list_backups(self) -> list[Path]:
         """List all available backups sorted by date (newest first).
-        
+
         Returns:
             list[Path]: List of backup file paths
 
@@ -176,12 +174,12 @@ class DatabaseBackupManager:
 
     def restore_from_backup(self, backup_path: Path) -> bool:
         """Restore database from a backup file.
-        
+
         WARNING: This will overwrite the current database!
-        
+
         Args:
             backup_path: Path to backup file to restore from
-        
+
         Returns:
             bool: True if restore was successful, False otherwise
 
@@ -214,10 +212,10 @@ def schedule_daily_backup(
     retention_days: int = 30,
 ) -> None:
     """Schedule daily database backup at specified time.
-    
+
     This function should be called from the main application startup.
     It will run the backup at the specified time each day.
-    
+
     Args:
         sqlite_path: Path to SQLite database file
         backup_dir: Directory to store backups

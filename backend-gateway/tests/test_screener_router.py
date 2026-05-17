@@ -1,30 +1,25 @@
 """Unit tests for screener API router endpoints."""
 
-import io
 from datetime import datetime, timezone
 from decimal import Decimal
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
-import pytest
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-
-from app.routers.screener import (
-    router,
-    get_screener_engine,
-    get_db_pool,
-)
 from app.routers.auth_v2 import get_current_user_id, get_current_user_payload
+from app.routers.screener import (
+    get_db_pool,
+    get_screener_engine,
+    router,
+)
 from app.services.screener_service import (
+    Range,
     ScreenerEngine,
     ScreenerFilters,
     ScreenerPreset,
     ScreenerResult,
     ScreenerResultItem,
-    Range,
-    filters_to_dict,
 )
-
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -102,19 +97,29 @@ def _make_preset(**overrides) -> ScreenerPreset:
 class TestScreenerSearch:
     def test_search_returns_results(self):
         mock_engine = AsyncMock(spec=ScreenerEngine)
-        mock_engine.screen = AsyncMock(return_value=ScreenerResult(
-            items=[_make_result_item(security_id=1, symbol="RELIANCE"),
-                   _make_result_item(security_id=2, symbol="TCS")],
-            total=2, page=1, page_size=50, total_pages=1,
-        ))
+        mock_engine.screen = AsyncMock(
+            return_value=ScreenerResult(
+                items=[
+                    _make_result_item(security_id=1, symbol="RELIANCE"),
+                    _make_result_item(security_id=2, symbol="TCS"),
+                ],
+                total=2,
+                page=1,
+                page_size=50,
+                total_pages=1,
+            )
+        )
 
         app = _create_test_app(engine=mock_engine)
         client = TestClient(app)
-        resp = client.post("/api/v2/screener/search", json={
-            "pe_ratio": {"min": 5, "max": 30},
-            "sort_by": "market_cap",
-            "order": "desc",
-        })
+        resp = client.post(
+            "/api/v2/screener/search",
+            json={
+                "pe_ratio": {"min": 5, "max": 30},
+                "sort_by": "market_cap",
+                "order": "desc",
+            },
+        )
 
         assert resp.status_code == 200
         data = resp.json()
@@ -138,15 +143,25 @@ class TestScreenerSearch:
 
     def test_search_with_pagination(self):
         mock_engine = AsyncMock(spec=ScreenerEngine)
-        mock_engine.screen = AsyncMock(return_value=ScreenerResult(
-            items=[], total=200, page=3, page_size=20, total_pages=10,
-        ))
+        mock_engine.screen = AsyncMock(
+            return_value=ScreenerResult(
+                items=[],
+                total=200,
+                page=3,
+                page_size=20,
+                total_pages=10,
+            )
+        )
 
         app = _create_test_app(engine=mock_engine)
         client = TestClient(app)
-        resp = client.post("/api/v2/screener/search", json={
-            "page": 3, "page_size": 20,
-        })
+        resp = client.post(
+            "/api/v2/screener/search",
+            json={
+                "page": 3,
+                "page_size": 20,
+            },
+        )
 
         assert resp.status_code == 200
         data = resp.json()
@@ -156,19 +171,28 @@ class TestScreenerSearch:
 
     def test_search_with_multiple_filters(self):
         mock_engine = AsyncMock(spec=ScreenerEngine)
-        mock_engine.screen = AsyncMock(return_value=ScreenerResult(
-            items=[_make_result_item()], total=1, page=1, page_size=50, total_pages=1,
-        ))
+        mock_engine.screen = AsyncMock(
+            return_value=ScreenerResult(
+                items=[_make_result_item()],
+                total=1,
+                page=1,
+                page_size=50,
+                total_pages=1,
+            )
+        )
 
         app = _create_test_app(engine=mock_engine)
         client = TestClient(app)
-        resp = client.post("/api/v2/screener/search", json={
-            "pe_ratio": {"min": 5, "max": 30},
-            "dividend_yield": {"min": 2.0},
-            "sector": "Energy",
-            "market_cap_category": "large-cap",
-            "rsi_14": {"min": 30, "max": 70},
-        })
+        resp = client.post(
+            "/api/v2/screener/search",
+            json={
+                "pe_ratio": {"min": 5, "max": 30},
+                "dividend_yield": {"min": 2.0},
+                "sector": "Energy",
+                "market_cap_category": "large-cap",
+                "rsi_14": {"min": 30, "max": 70},
+            },
+        )
 
         assert resp.status_code == 200
         # Verify the engine was called with correct filters
@@ -186,7 +210,10 @@ class TestScreenerSearch:
         app.include_router(router, prefix="/api/v2")
         app.dependency_overrides[get_current_user_id] = lambda: TEST_USER_ID
         app.dependency_overrides[get_current_user_payload] = lambda: {
-            "sub": TEST_USER_ID, "email": "t@t.com", "role": "TRADER", "type": "access",
+            "sub": TEST_USER_ID,
+            "email": "t@t.com",
+            "role": "TRADER",
+            "type": "access",
         }
         client = TestClient(app)
         resp = client.post("/api/v2/screener/search", json={})
@@ -199,10 +226,12 @@ class TestScreenerSearch:
 class TestGetPresets:
     def test_get_presets_returns_list(self):
         mock_engine = AsyncMock(spec=ScreenerEngine)
-        mock_engine.get_user_presets = AsyncMock(return_value=[
-            _make_preset(id="p1", name="Preset A"),
-            _make_preset(id="p2", name="Preset B"),
-        ])
+        mock_engine.get_user_presets = AsyncMock(
+            return_value=[
+                _make_preset(id="p1", name="Preset A"),
+                _make_preset(id="p2", name="Preset B"),
+            ]
+        )
 
         app = _create_test_app(engine=mock_engine)
         client = TestClient(app)
@@ -231,16 +260,22 @@ class TestGetPresets:
 class TestSavePreset:
     def test_save_preset_success(self):
         mock_engine = AsyncMock(spec=ScreenerEngine)
-        mock_engine.save_preset = AsyncMock(return_value=_make_preset(
-            id="new-preset", name="My New Preset",
-        ))
+        mock_engine.save_preset = AsyncMock(
+            return_value=_make_preset(
+                id="new-preset",
+                name="My New Preset",
+            )
+        )
 
         app = _create_test_app(engine=mock_engine)
         client = TestClient(app)
-        resp = client.post("/api/v2/screener/presets", json={
-            "name": "My New Preset",
-            "filters": {"pe_ratio": {"min": 5, "max": 25}},
-        })
+        resp = client.post(
+            "/api/v2/screener/presets",
+            json={
+                "name": "My New Preset",
+                "filters": {"pe_ratio": {"min": 5, "max": 25}},
+            },
+        )
 
         assert resp.status_code == 201
         data = resp.json()
@@ -253,10 +288,13 @@ class TestSavePreset:
 
         app = _create_test_app(engine=mock_engine)
         client = TestClient(app)
-        resp = client.post("/api/v2/screener/presets", json={
-            "name": "Overflow Preset",
-            "filters": {},
-        })
+        resp = client.post(
+            "/api/v2/screener/presets",
+            json={
+                "name": "Overflow Preset",
+                "filters": {},
+            },
+        )
 
         assert resp.status_code == 400
         assert "Maximum 10" in resp.json()["detail"]
@@ -265,9 +303,12 @@ class TestSavePreset:
         mock_engine = AsyncMock(spec=ScreenerEngine)
         app = _create_test_app(engine=mock_engine)
         client = TestClient(app)
-        resp = client.post("/api/v2/screener/presets", json={
-            "filters": {},
-        })
+        resp = client.post(
+            "/api/v2/screener/presets",
+            json={
+                "filters": {},
+            },
+        )
         assert resp.status_code == 422
 
 
@@ -300,10 +341,20 @@ class TestDeletePreset:
 class TestGetTemplates:
     def test_get_templates_returns_prebuilt(self):
         mock_engine = AsyncMock(spec=ScreenerEngine)
-        mock_engine.get_prebuilt_templates = MagicMock(return_value=[
-            ScreenerPreset(name="High Dividend Yield", filters=ScreenerFilters(dividend_yield=Range(min=3.0)), is_prebuilt=True),
-            ScreenerPreset(name="Momentum Stocks", filters=ScreenerFilters(price_change_1m=Range(min=5.0)), is_prebuilt=True),
-        ])
+        mock_engine.get_prebuilt_templates = MagicMock(
+            return_value=[
+                ScreenerPreset(
+                    name="High Dividend Yield",
+                    filters=ScreenerFilters(dividend_yield=Range(min=3.0)),
+                    is_prebuilt=True,
+                ),
+                ScreenerPreset(
+                    name="Momentum Stocks",
+                    filters=ScreenerFilters(price_change_1m=Range(min=5.0)),
+                    is_prebuilt=True,
+                ),
+            ]
+        )
 
         app = _create_test_app(engine=mock_engine)
         client = TestClient(app)
@@ -382,25 +433,44 @@ class TestStockDetail:
 
     def test_stock_detail_found(self):
         row = {
-            "id": 42, "symbol": "INFY", "company_name": "Infosys Limited",
-            "exchange": "NSE", "sector": "IT/Technology", "industry": "IT Services",
-            "market_cap_category": "large-cap", "listing_date": None,
-            "face_value": Decimal("5"), "status": "ACTIVE",
-            "pe_ratio": Decimal("28.5"), "pb_ratio": Decimal("7.2"),
-            "market_cap": Decimal("600000000000"), "dividend_yield": Decimal("2.1"),
-            "eps": Decimal("55.3"), "roe": Decimal("30.1"),
+            "id": 42,
+            "symbol": "INFY",
+            "company_name": "Infosys Limited",
+            "exchange": "NSE",
+            "sector": "IT/Technology",
+            "industry": "IT Services",
+            "market_cap_category": "large-cap",
+            "listing_date": None,
+            "face_value": Decimal("5"),
+            "status": "ACTIVE",
+            "pe_ratio": Decimal("28.5"),
+            "pb_ratio": Decimal("7.2"),
+            "market_cap": Decimal("600000000000"),
+            "dividend_yield": Decimal("2.1"),
+            "eps": Decimal("55.3"),
+            "roe": Decimal("30.1"),
             "debt_to_equity": Decimal("0.1"),
-            "revenue_growth_1y": Decimal("12.5"), "revenue_growth_3y": Decimal("10.0"),
-            "profit_growth_1y": Decimal("15.0"), "profit_growth_3y": Decimal("11.0"),
-            "return_1y": Decimal("20.0"), "cagr_3y": Decimal("15.0"),
+            "revenue_growth_1y": Decimal("12.5"),
+            "revenue_growth_3y": Decimal("10.0"),
+            "profit_growth_1y": Decimal("15.0"),
+            "profit_growth_3y": Decimal("11.0"),
+            "return_1y": Decimal("20.0"),
+            "cagr_3y": Decimal("15.0"),
             "cagr_5y": Decimal("12.0"),
-            "high_52w": Decimal("1800"), "low_52w": Decimal("1200"),
-            "rsi_14": Decimal("60.0"), "sma_50": Decimal("1600"),
-            "sma_200": Decimal("1500"), "avg_volume_20d": 3000000,
-            "price_change_1d": Decimal("1.5"), "price_change_1w": Decimal("3.0"),
-            "price_change_1m": Decimal("5.0"), "price_change_3m": Decimal("8.0"),
-            "price_change_6m": Decimal("12.0"), "price_change_1y": Decimal("20.0"),
-            "price_change_3y": Decimal("45.0"), "price_change_5y": Decimal("80.0"),
+            "high_52w": Decimal("1800"),
+            "low_52w": Decimal("1200"),
+            "rsi_14": Decimal("60.0"),
+            "sma_50": Decimal("1600"),
+            "sma_200": Decimal("1500"),
+            "avg_volume_20d": 3000000,
+            "price_change_1d": Decimal("1.5"),
+            "price_change_1w": Decimal("3.0"),
+            "price_change_1m": Decimal("5.0"),
+            "price_change_3m": Decimal("8.0"),
+            "price_change_6m": Decimal("12.0"),
+            "price_change_1y": Decimal("20.0"),
+            "price_change_3y": Decimal("45.0"),
+            "price_change_5y": Decimal("80.0"),
         }
         mock_pool = self._make_mock_db_pool(row=row)
         mock_engine = AsyncMock(spec=ScreenerEngine)
@@ -436,7 +506,10 @@ class TestStockDetail:
         app.include_router(router, prefix="/api/v2")
         app.dependency_overrides[get_current_user_id] = lambda: TEST_USER_ID
         app.dependency_overrides[get_current_user_payload] = lambda: {
-            "sub": TEST_USER_ID, "email": "t@t.com", "role": "TRADER", "type": "access",
+            "sub": TEST_USER_ID,
+            "email": "t@t.com",
+            "role": "TRADER",
+            "type": "access",
         }
         app.dependency_overrides[get_screener_engine] = lambda: mock_engine
         client = TestClient(app)

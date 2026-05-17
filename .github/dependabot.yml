@@ -23,7 +23,7 @@ updates:
     allow:
       - dependency-type: "production"
       - dependency-type: "development"
-  
+
   # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"

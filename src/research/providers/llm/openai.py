@@ -154,7 +154,9 @@ class OpenAILLM:
     # ------------------------------------------------------------------ #
 
     async def complete(
-        self, messages: list[Message], params: LLMParams,
+        self,
+        messages: list[Message],
+        params: LLMParams,
     ) -> Completion:
         """Single non-streamed chat completion (Req 2.11)."""
         payload = self._build_payload(messages, params, stream=False)
@@ -186,7 +188,9 @@ class OpenAILLM:
         )
 
     async def stream(
-        self, messages: list[Message], params: LLMParams,
+        self,
+        messages: list[Message],
+        params: LLMParams,
     ) -> AsyncIterator[CompletionChunk]:
         """Async iterator over server-sent deltas (design §3.1)."""
         payload = self._build_payload(messages, params, stream=True)

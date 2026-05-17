@@ -15,10 +15,6 @@ import io
 from unittest.mock import AsyncMock
 from uuid import UUID, uuid4
 
-import pytest
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-
 from app.middleware.errors import (
     ConfigMissingError,
     register_research_exception_handlers,
@@ -26,8 +22,10 @@ from app.middleware.errors import (
 from app.routers.auth_v2 import get_current_user_id
 from app.routers.research import get_research_service, router
 from app.services.research_service import ResearchService, RunRecord
-from src.research.providers.errors import ProviderAuthError
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
+from src.research.providers.errors import ProviderAuthError
 
 # --------------------------------------------------------------------------- #
 # Test harness                                                                #
@@ -115,9 +113,7 @@ class TestStartRun:
 
     def test_config_missing_envelope(self) -> None:
         svc = AsyncMock(spec=ResearchService)
-        svc.start_run.side_effect = ConfigMissingError(
-            "research.providers.chat.api_key"
-        )
+        svc.start_run.side_effect = ConfigMissingError("research.providers.chat.api_key")
         app = _build_app(svc)
         client = TestClient(app, raise_server_exceptions=False)
 
@@ -132,9 +128,7 @@ class TestStartRun:
 
     def test_provider_auth_error_envelope(self) -> None:
         svc = AsyncMock(spec=ResearchService)
-        svc.start_run.side_effect = ProviderAuthError(
-            "nvidia_nim", "llama", "invalid_api_key"
-        )
+        svc.start_run.side_effect = ProviderAuthError("nvidia_nim", "llama", "invalid_api_key")
         app = _build_app(svc)
         client = TestClient(app, raise_server_exceptions=False)
 
@@ -339,9 +333,7 @@ class TestForgetMemory:
 
     def test_invalid_scope_returns_400(self) -> None:
         svc = AsyncMock(spec=ResearchService)
-        svc.forget_memory.side_effect = ValueError(
-            "unknown memory.forget scope: 'weird'"
-        )
+        svc.forget_memory.side_effect = ValueError("unknown memory.forget scope: 'weird'")
         app = _build_app(svc)
         client = TestClient(app)
 

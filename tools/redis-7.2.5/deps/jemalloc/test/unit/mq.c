@@ -86,4 +86,3 @@ main(void) {
 	    test_mq_basic,
 	    test_mq_threaded);
 }
-

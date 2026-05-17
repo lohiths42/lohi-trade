@@ -9,21 +9,17 @@ Tests cover:
 - Redis key naming convention
 """
 
-import asyncio
 import time
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 from app.middleware.rate_limiter import (
     READ_LIMIT,
-    WRITE_LIMIT,
     WINDOW_SECONDS,
+    WRITE_LIMIT,
+    RateLimitMiddleware,
     check_rate_limit,
     classify_method,
-    RateLimitMiddleware,
 )
-
 
 # ── classify_method tests ───────────────────────────────────────────────────
 
@@ -221,9 +217,7 @@ class TestCheckRateLimit:
 
         # 61 seconds later, window has slid past all old entries
         future = now + WINDOW_SECONDS + 1
-        allowed, retry_after = await check_rate_limit(
-            redis, "user1", "write", now=future
-        )
+        allowed, retry_after = await check_rate_limit(redis, "user1", "write", now=future)
         assert allowed is True
         assert retry_after == 0
 

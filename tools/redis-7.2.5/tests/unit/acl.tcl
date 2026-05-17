@@ -246,7 +246,7 @@ start_server {tags {"acl external:skip"}} {
         catch {$rd read} e
         set e
     } {*NOPERM*channel*}
-    
+
     test {Subscribers are killed when revoked of channel permission} {
         set rd [redis_deferring_client]
         r ACL setuser psuser resetchannels &foo:1
@@ -457,7 +457,7 @@ start_server {tags {"acl external:skip"}} {
         # Appending to the existing access string of bob.
         r ACL setuser bob +@all +client|id
         # Although this does nothing, we retain it anyways so we can reproduce
-        # the original ACL. 
+        # the original ACL.
         set cmdstr [dict get [r ACL getuser bob] commands]
         assert_equal {+@all +client|id} $cmdstr
 
@@ -898,7 +898,7 @@ start_server {tags {"acl external:skip"}} {
         set current_invalid_cmd_accesses [s acl_access_denied_cmd]
         set current_invalid_key_accesses [s acl_access_denied_key]
         set current_invalid_channel_accesses [s acl_access_denied_channel]
-        assert_error "*WRONGPASS*" {r AUTH notrealuser 1233456} 
+        assert_error "*WRONGPASS*" {r AUTH notrealuser 1233456}
         assert {[s acl_access_denied_auth] eq [expr $current_auth_failures + 1]}
         assert_error "*WRONGPASS*" {r HELLO 3 AUTH notrealuser 1233456}
         assert {[s acl_access_denied_auth] eq [expr $current_auth_failures + 2]}
@@ -939,7 +939,7 @@ start_server {tags {"acl external:skip"}} {
         assert {[s acl_access_denied_cmd] eq $current_invalid_cmd_accesses}
         assert {[s acl_access_denied_key] eq [expr $current_invalid_key_accesses + 1]}
         assert {[s acl_access_denied_channel] eq $current_invalid_channel_accesses}
-    }   
+    }
 
     # If a user try to access an unauthorized channel the metric increases
     test {ACL-Metrics invalid channels accesses} {
@@ -1124,11 +1124,11 @@ start_server [list overrides [list "dir" $server_path "aclfile" "user.acl"] tags
         set corruption "\nuser alice on nopass ~* -@all"
         exec echo $corruption >> $server_path/user.acl
         catch {r ACL LOAD} err
-        assert_match {*Duplicate user 'alice' found*} $err 
+        assert_match {*Duplicate user 'alice' found*} $err
 
         # Verify the previous users still exist
         # NOTE: A missing user evaluates to an empty
-        # string. 
+        # string.
         assert {[r ACL GETUSER alice] != ""}
         assert_equal [dict get [r ACL GETUSER alice] commands] "+@all"
         assert {[r ACL GETUSER bob] != ""}
@@ -1142,17 +1142,17 @@ start_server [list overrides [list "dir" $server_path "aclfile" "user.acl"] tags
         set corruption "\nuser default on nopass ~* -@all"
         exec echo $corruption >> $server_path/user.acl
         catch {r ACL LOAD} err
-        assert_match {*Duplicate user 'default' found*} $err 
+        assert_match {*Duplicate user 'default' found*} $err
 
         # Verify the previous users still exist
         # NOTE: A missing user evaluates to an empty
-        # string. 
+        # string.
         assert {[r ACL GETUSER alice] != ""}
         assert_equal [dict get [r ACL GETUSER alice] commands] "+@all"
         assert {[r ACL GETUSER bob] != ""}
         assert {[r ACL GETUSER default] != ""}
     }
-    
+
     test {Test loading duplicate users in config on startup} {
         catch {exec src/redis-server --user foo --user foo} err
         assert_match {*Duplicate user*} $err
@@ -1170,4 +1170,3 @@ start_server {overrides {user "default on nopass ~* +@all -flushdb"} tags {acl e
         assert_error {NOPERM *} {r flushdb}
     }
 }
-

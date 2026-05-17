@@ -22,6 +22,7 @@ from src.utils.config import CapitalConfig, Config
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_indicator_set(symbol: str = "RELIANCE") -> IndicatorSet:
     return IndicatorSet(
         symbol=symbol,
@@ -95,6 +96,7 @@ stop_offsets = st.floats(min_value=0.01, max_value=5000, allow_nan=False, allow_
 # Property 39: Position Size Calculation Formula
 # ---------------------------------------------------------------------------
 
+
 class TestProperty39PositionSizeCalculationFormula:
     """**Validates: Requirements 10.1**
 
@@ -113,7 +115,12 @@ class TestProperty39PositionSizeCalculationFormula:
     )
     @settings(max_examples=100)
     def test_formula_matches_expected(
-        self, capital, entry_price, stop_offset, risk_pct, max_pos_pct,
+        self,
+        capital,
+        entry_price,
+        stop_offset,
+        risk_pct,
+        max_pos_pct,
     ):
         stop_loss = entry_price - stop_offset
         risk_per_share = abs(entry_price - stop_loss)
@@ -141,6 +148,7 @@ class TestProperty39PositionSizeCalculationFormula:
 # Property 40: Maximum Risk Per Trade
 # ---------------------------------------------------------------------------
 
+
 class TestProperty40MaximumRiskPerTrade:
     """**Validates: Requirements 10.2**
 
@@ -158,7 +166,12 @@ class TestProperty40MaximumRiskPerTrade:
     )
     @settings(max_examples=100)
     def test_risk_does_not_exceed_limit(
-        self, capital, entry_price, stop_offset, risk_pct, max_pos_pct,
+        self,
+        capital,
+        entry_price,
+        stop_offset,
+        risk_pct,
+        max_pos_pct,
     ):
         stop_loss = entry_price - stop_offset
         risk_per_share = abs(entry_price - stop_loss)
@@ -181,6 +194,7 @@ class TestProperty40MaximumRiskPerTrade:
 # Property 41: Maximum Position Size
 # ---------------------------------------------------------------------------
 
+
 class TestProperty41MaximumPositionSize:
     """**Validates: Requirements 10.3**
 
@@ -196,7 +210,12 @@ class TestProperty41MaximumPositionSize:
     )
     @settings(max_examples=100)
     def test_position_value_within_limit(
-        self, capital, entry_price, stop_offset, risk_pct, max_pos_pct,
+        self,
+        capital,
+        entry_price,
+        stop_offset,
+        risk_pct,
+        max_pos_pct,
     ):
         stop_loss = entry_price - stop_offset
         risk_per_share = abs(entry_price - stop_loss)
@@ -219,6 +238,7 @@ class TestProperty41MaximumPositionSize:
 # Property 42: Quantity Capping
 # ---------------------------------------------------------------------------
 
+
 class TestProperty42QuantityCapping:
     """**Validates: Requirements 10.4**
 
@@ -235,7 +255,12 @@ class TestProperty42QuantityCapping:
     )
     @settings(max_examples=100)
     def test_quantity_capped_by_position_value(
-        self, capital, entry_price, stop_offset, risk_pct, max_pos_pct,
+        self,
+        capital,
+        entry_price,
+        stop_offset,
+        risk_pct,
+        max_pos_pct,
     ):
         stop_loss = entry_price - stop_offset
         risk_per_share = abs(entry_price - stop_loss)
@@ -255,6 +280,7 @@ class TestProperty42QuantityCapping:
 # Property 43: Quantity Rounding
 # ---------------------------------------------------------------------------
 
+
 class TestProperty43QuantityRounding:
     """**Validates: Requirements 10.5**
 
@@ -270,7 +296,12 @@ class TestProperty43QuantityRounding:
     )
     @settings(max_examples=100)
     def test_quantity_is_integer(
-        self, capital, entry_price, stop_offset, risk_pct, max_pos_pct,
+        self,
+        capital,
+        entry_price,
+        stop_offset,
+        risk_pct,
+        max_pos_pct,
     ):
         stop_loss = entry_price - stop_offset
         risk_per_share = abs(entry_price - stop_loss)
@@ -280,14 +311,15 @@ class TestProperty43QuantityRounding:
         sizer = PositionSizer(_make_config(capital, risk_pct, max_pos_pct))
         result = sizer.calculate_quantity(signal)
 
-        assert isinstance(result.quantity, int), (
-            f"quantity should be int, got {type(result.quantity)}"
-        )
+        assert isinstance(
+            result.quantity, int
+        ), f"quantity should be int, got {type(result.quantity)}"
 
 
 # ---------------------------------------------------------------------------
 # Property 44: Minimum Quantity Rejection
 # ---------------------------------------------------------------------------
+
 
 class TestProperty44MinimumQuantityRejection:
     """**Validates: Requirements 10.7**
@@ -296,14 +328,22 @@ class TestProperty44MinimumQuantityRejection:
     """
 
     @given(
-        capital=st.floats(min_value=10_000, max_value=50_000, allow_nan=False, allow_infinity=False),
-        entry_price=st.floats(min_value=5_000, max_value=10_000, allow_nan=False, allow_infinity=False),
+        capital=st.floats(
+            min_value=10_000, max_value=50_000, allow_nan=False, allow_infinity=False
+        ),
+        entry_price=st.floats(
+            min_value=5_000, max_value=10_000, allow_nan=False, allow_infinity=False
+        ),
         risk_pct=st.floats(min_value=0.5, max_value=1.0, allow_nan=False, allow_infinity=False),
         max_pos_pct=st.floats(min_value=10, max_value=20, allow_nan=False, allow_infinity=False),
     )
     @settings(max_examples=100)
     def test_rejected_when_quantity_rounds_to_zero(
-        self, capital, entry_price, risk_pct, max_pos_pct,
+        self,
+        capital,
+        entry_price,
+        risk_pct,
+        max_pos_pct,
     ):
         # Use a very wide stop loss so risk_per_share is large, making quantity tiny
         # risk_per_share > max_risk ensures quantity < 1

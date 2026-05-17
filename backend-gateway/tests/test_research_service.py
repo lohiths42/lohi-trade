@@ -16,10 +16,8 @@ from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
-
 from app.middleware.errors import ConfigMissingError
-from app.services.research_service import ResearchService, RunRecord
-
+from app.services.research_service import ResearchService
 
 # --------------------------------------------------------------------------- #
 # Test doubles                                                                #
@@ -45,7 +43,9 @@ class _FakeOrchestrator:
         # Exception causes ``run`` to raise (tests assert the service's
         # error-handling path).
         self._brief: dict[str, Any] | Exception = (
-            brief if brief is not None else {
+            brief
+            if brief is not None
+            else {
                 "run_id": "",
                 "summary": "ok",
                 "partial": False,
@@ -127,9 +127,7 @@ class TestStartRun:
         assert "research:runs" in stream_names
 
         # And the request carried the tenant + prompt verbatim.
-        runs_fields = next(
-            fields for name, fields in redis.xadd_calls if name == "research:runs"
-        )
+        runs_fields = next(fields for name, fields in redis.xadd_calls if name == "research:runs")
         assert runs_fields["run_id"] == str(record.run_id)
         assert runs_fields["user_id"] == str(user_id)
         assert runs_fields["symbol"] == "RELIANCE"

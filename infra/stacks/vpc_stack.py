@@ -7,9 +7,11 @@ Requirements covered:
 """
 
 from aws_cdk import (
-    Stack,
-    aws_ec2 as ec2,
     CfnOutput,
+    Stack,
+)
+from aws_cdk import (
+    aws_ec2 as ec2,
 )
 from constructs import Construct
 

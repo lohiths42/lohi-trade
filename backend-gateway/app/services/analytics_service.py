@@ -1,8 +1,8 @@
 """Analytics computations from trade data."""
 
-from typing import Any, Dict, List
 from collections import defaultdict
 from datetime import date, timedelta
+from typing import Any, Dict, List
 
 from app.services.db_service import get_trades
 
@@ -75,12 +75,14 @@ def get_strategy_performance() -> List[Dict[str, Any]]:
             dd = peak - cumulative
             max_dd = max(max_dd, dd)
 
-        results.append({
-            "strategy": strategy,
-            "total_pnl": round(total, 2),
-            "win_rate": round(win_rate, 1),
-            "avg_profit": round(avg_profit, 2),
-            "max_drawdown": round(max_dd, 2),
-            "trades_count": count,
-        })
+        results.append(
+            {
+                "strategy": strategy,
+                "total_pnl": round(total, 2),
+                "win_rate": round(win_rate, 1),
+                "avg_profit": round(avg_profit, 2),
+                "max_drawdown": round(max_dd, 2),
+                "trades_count": count,
+            }
+        )
     return results

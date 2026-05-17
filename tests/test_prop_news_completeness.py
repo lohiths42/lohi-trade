@@ -34,7 +34,9 @@ _non_empty_text = st.text(
     alphabet=st.characters(categories=("L", "N", "P", "Z")),
 )
 
-_source_name = st.sampled_from(["MoneyControl", "EconomicTimes", "LiveMint", "Reuters", "Bloomberg"])
+_source_name = st.sampled_from(
+    ["MoneyControl", "EconomicTimes", "LiveMint", "Reuters", "Bloomberg"]
+)
 
 _url = st.from_regex(r"https://[a-z]{3,12}\.[a-z]{2,4}/[a-z0-9]{1,20}", fullmatch=True)
 
@@ -135,9 +137,9 @@ class TestNewsArticleCompletenessProperties:
         """
         article = parse_entry(entry, source_name)
 
-        assert SHA256_HEX_PATTERN.match(article.content_hash), (
-            f"content_hash '{article.content_hash}' is not a valid SHA256 hex string"
-        )
+        assert SHA256_HEX_PATTERN.match(
+            article.content_hash
+        ), f"content_hash '{article.content_hash}' is not a valid SHA256 hex string"
 
     @given(entry=rss_entry_strategy(), source_name=_source_name)
     @settings(max_examples=25)
@@ -149,9 +151,9 @@ class TestNewsArticleCompletenessProperties:
         article = parse_entry(entry, source_name)
 
         assert article.article_id, "article_id must be non-empty"
-        assert UUID_PATTERN.match(article.article_id), (
-            f"article_id '{article.article_id}' is not a valid UUID"
-        )
+        assert UUID_PATTERN.match(
+            article.article_id
+        ), f"article_id '{article.article_id}' is not a valid UUID"
 
     @given(entry=rss_entry_strategy(), source_name=_source_name)
     @settings(max_examples=25)
@@ -163,18 +165,14 @@ class TestNewsArticleCompletenessProperties:
         """
         article = parse_entry(entry, source_name)
 
-        assert isinstance(article.published_at, datetime), (
-            f"published_at must be a datetime, got {type(article.published_at)}"
-        )
-        assert isinstance(article.fetched_at, datetime), (
-            f"fetched_at must be a datetime, got {type(article.fetched_at)}"
-        )
-        assert article.published_at.tzinfo is not None, (
-            "published_at must have timezone info"
-        )
-        assert article.fetched_at.tzinfo is not None, (
-            "fetched_at must have timezone info"
-        )
+        assert isinstance(
+            article.published_at, datetime
+        ), f"published_at must be a datetime, got {type(article.published_at)}"
+        assert isinstance(
+            article.fetched_at, datetime
+        ), f"fetched_at must be a datetime, got {type(article.fetched_at)}"
+        assert article.published_at.tzinfo is not None, "published_at must have timezone info"
+        assert article.fetched_at.tzinfo is not None, "fetched_at must have timezone info"
 
     @given(entry=rss_entry_strategy(), source_name=_source_name)
     @settings(max_examples=25)
@@ -186,6 +184,6 @@ class TestNewsArticleCompletenessProperties:
         """
         article = parse_entry(entry, source_name)
 
-        assert article.source == source_name, (
-            f"Expected source '{source_name}', got '{article.source}'"
-        )
+        assert (
+            article.source == source_name
+        ), f"Expected source '{source_name}', got '{article.source}'"

@@ -29,6 +29,7 @@ from src.utils.config import TrendFollowingStrategy as TrendFollowingConfig
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _default_config(
     stop_loss_atr_multiplier: float = 2.0,
     target_atr_multiplier: float = 3.0,
@@ -60,26 +61,48 @@ def valid_trend_following_inputs(draw):
     6. volume > volume_avg_20
     """
     # EMA crossover: ema_9 > ema_21
-    ema_21 = draw(st.floats(min_value=1.0, max_value=50_000.0, allow_nan=False, allow_infinity=False))
-    ema_9 = draw(st.floats(min_value=ema_21 + 0.01, max_value=ema_21 + 10_000.0, allow_nan=False, allow_infinity=False))
+    ema_21 = draw(
+        st.floats(min_value=1.0, max_value=50_000.0, allow_nan=False, allow_infinity=False)
+    )
+    ema_9 = draw(
+        st.floats(
+            min_value=ema_21 + 0.01,
+            max_value=ema_21 + 10_000.0,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
 
     # MACD positive and rising
     macd = draw(st.floats(min_value=0.01, max_value=1000.0, allow_nan=False, allow_infinity=False))
-    macd_hist = draw(st.floats(min_value=0.01, max_value=1000.0, allow_nan=False, allow_infinity=False))
+    macd_hist = draw(
+        st.floats(min_value=0.01, max_value=1000.0, allow_nan=False, allow_infinity=False)
+    )
 
     # Price above VWAP
     vwap = draw(st.floats(min_value=1.0, max_value=50_000.0, allow_nan=False, allow_infinity=False))
-    close = draw(st.floats(min_value=vwap + 0.01, max_value=vwap + 10_000.0, allow_nan=False, allow_infinity=False))
+    close = draw(
+        st.floats(
+            min_value=vwap + 0.01, max_value=vwap + 10_000.0, allow_nan=False, allow_infinity=False
+        )
+    )
 
     # Volume above average
-    volume_avg_20 = draw(st.floats(min_value=100.0, max_value=1e8, allow_nan=False, allow_infinity=False))
-    volume = draw(st.floats(
-        min_value=volume_avg_20 + 1.0,
-        max_value=volume_avg_20 + 1e8,
-        allow_nan=False, allow_infinity=False,
-    ))
+    volume_avg_20 = draw(
+        st.floats(min_value=100.0, max_value=1e8, allow_nan=False, allow_infinity=False)
+    )
+    volume = draw(
+        st.floats(
+            min_value=volume_avg_20 + 1.0,
+            max_value=volume_avg_20 + 1e8,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
 
-    atr_14 = draw(st.floats(min_value=0.01, max_value=1000.0, allow_nan=False, allow_infinity=False))
+    atr_14 = draw(
+        st.floats(min_value=0.01, max_value=1000.0, allow_nan=False, allow_infinity=False)
+    )
 
     indicators = IndicatorSet(
         symbol="TEST",
@@ -101,14 +124,16 @@ def valid_trend_following_inputs(draw):
         volume_avg_20=volume_avg_20,
     )
 
-    candles = pd.DataFrame({
-        "open": [close - 1.0],
-        "high": [close + 1.0],
-        "low": [close - 2.0],
-        "close": [close],
-        "volume": [volume],
-        "timestamp": [datetime(2024, 1, 15, 10, 0, 0)],
-    })
+    candles = pd.DataFrame(
+        {
+            "open": [close - 1.0],
+            "high": [close + 1.0],
+            "low": [close - 2.0],
+            "close": [close],
+            "volume": [volume],
+            "timestamp": [datetime(2024, 1, 15, 10, 0, 0)],
+        }
+    )
 
     return indicators, candles, atr_14, close
 
@@ -120,42 +145,59 @@ def invalid_trend_following_inputs(draw):
     We first generate a valid set, then deliberately break one condition.
     """
     # Start with valid values
-    ema_21 = draw(st.floats(min_value=1.0, max_value=50_000.0, allow_nan=False, allow_infinity=False))
+    ema_21 = draw(
+        st.floats(min_value=1.0, max_value=50_000.0, allow_nan=False, allow_infinity=False)
+    )
     ema_9 = ema_21 + 1.0
     macd = 1.0
     macd_hist = 1.0
     vwap = draw(st.floats(min_value=1.0, max_value=50_000.0, allow_nan=False, allow_infinity=False))
     close = vwap + 1.0
     supertrend_direction = 1
-    volume_avg_20 = draw(st.floats(min_value=100.0, max_value=1e8, allow_nan=False, allow_infinity=False))
+    volume_avg_20 = draw(
+        st.floats(min_value=100.0, max_value=1e8, allow_nan=False, allow_infinity=False)
+    )
     volume = volume_avg_20 + 1.0
-    atr_14 = draw(st.floats(min_value=0.01, max_value=1000.0, allow_nan=False, allow_infinity=False))
+    atr_14 = draw(
+        st.floats(min_value=0.01, max_value=1000.0, allow_nan=False, allow_infinity=False)
+    )
 
     # Pick which condition to break (0-5)
     condition_to_break = draw(st.integers(min_value=0, max_value=5))
 
     if condition_to_break == 0:
         # Break EMA crossover: ema_9 <= ema_21
-        ema_9 = draw(st.floats(min_value=0.1, max_value=ema_21, allow_nan=False, allow_infinity=False))
+        ema_9 = draw(
+            st.floats(min_value=0.1, max_value=ema_21, allow_nan=False, allow_infinity=False)
+        )
     elif condition_to_break == 1:
         # Break MACD positive: macd <= 0
-        macd = draw(st.floats(min_value=-1000.0, max_value=0.0, allow_nan=False, allow_infinity=False))
+        macd = draw(
+            st.floats(min_value=-1000.0, max_value=0.0, allow_nan=False, allow_infinity=False)
+        )
     elif condition_to_break == 2:
         # Break MACD rising: macd_hist <= 0
-        macd_hist = draw(st.floats(min_value=-1000.0, max_value=0.0, allow_nan=False, allow_infinity=False))
+        macd_hist = draw(
+            st.floats(min_value=-1000.0, max_value=0.0, allow_nan=False, allow_infinity=False)
+        )
     elif condition_to_break == 3:
         # Break price > VWAP: close <= vwap
-        close = draw(st.floats(min_value=0.1, max_value=vwap, allow_nan=False, allow_infinity=False))
+        close = draw(
+            st.floats(min_value=0.1, max_value=vwap, allow_nan=False, allow_infinity=False)
+        )
     elif condition_to_break == 4:
         # Break supertrend bullish: direction != 1
         supertrend_direction = -1
     else:
         # Break volume above avg: volume <= volume_avg_20
-        volume = draw(st.floats(
-            min_value=0.0,
-            max_value=volume_avg_20,
-            allow_nan=False, allow_infinity=False,
-        ))
+        volume = draw(
+            st.floats(
+                min_value=0.0,
+                max_value=volume_avg_20,
+                allow_nan=False,
+                allow_infinity=False,
+            )
+        )
 
     indicators = IndicatorSet(
         symbol="TEST",
@@ -177,14 +219,16 @@ def invalid_trend_following_inputs(draw):
         volume_avg_20=volume_avg_20,
     )
 
-    candles = pd.DataFrame({
-        "open": [close - 1.0],
-        "high": [close + 1.0],
-        "low": [close - 2.0],
-        "close": [close],
-        "volume": [volume],
-        "timestamp": [datetime(2024, 1, 15, 10, 0, 0)],
-    })
+    candles = pd.DataFrame(
+        {
+            "open": [close - 1.0],
+            "high": [close + 1.0],
+            "low": [close - 2.0],
+            "close": [close],
+            "volume": [volume],
+            "timestamp": [datetime(2024, 1, 15, 10, 0, 0)],
+        }
+    )
 
     return indicators, candles
 
@@ -192,6 +236,7 @@ def invalid_trend_following_inputs(draw):
 # ---------------------------------------------------------------------------
 # Property Tests
 # ---------------------------------------------------------------------------
+
 
 class TestTrendFollowingProperties:
     """**Validates: Requirements 4.3**
@@ -242,9 +287,9 @@ class TestTrendFollowingProperties:
         signal = strategy.generate_signal(indicators, candles)
 
         assert signal is not None
-        assert signal.stop_loss < signal.entry_price, (
-            f"stop_loss ({signal.stop_loss}) must be below entry_price ({signal.entry_price})"
-        )
+        assert (
+            signal.stop_loss < signal.entry_price
+        ), f"stop_loss ({signal.stop_loss}) must be below entry_price ({signal.entry_price})"
 
     @given(data=valid_trend_following_inputs())
     @settings(max_examples=100)
@@ -259,9 +304,9 @@ class TestTrendFollowingProperties:
         signal = strategy.generate_signal(indicators, candles)
 
         assert signal is not None
-        assert signal.target > signal.entry_price, (
-            f"target ({signal.target}) must be above entry_price ({signal.entry_price})"
-        )
+        assert (
+            signal.target > signal.entry_price
+        ), f"target ({signal.target}) must be above entry_price ({signal.entry_price})"
 
     @given(data=valid_trend_following_inputs())
     @settings(max_examples=100)

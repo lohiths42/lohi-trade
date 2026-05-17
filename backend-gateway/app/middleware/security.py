@@ -28,7 +28,9 @@ logger = logging.getLogger(__name__)
 
 # SQL injection patterns (case-insensitive)
 SQL_INJECTION_PATTERNS: list[re.Pattern] = [
-    re.compile(r"(\b(SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|EXEC|UNION)\b\s)", re.IGNORECASE),
+    re.compile(
+        r"(\b(SELECT|INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|EXEC|UNION)\b\s)", re.IGNORECASE
+    ),
     re.compile(r"(--|;)\s*$", re.MULTILINE),
     re.compile(r"'\s*(OR|AND)\s+'", re.IGNORECASE),
     re.compile(r"'\s*(OR|AND)\s+\d+\s*=\s*\d+", re.IGNORECASE),

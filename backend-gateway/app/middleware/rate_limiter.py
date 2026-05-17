@@ -15,7 +15,7 @@ import time
 import uuid
 from typing import Optional
 
-from fastapi import HTTPException, Request
+from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
@@ -128,9 +128,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         endpoint_type = classify_method(request.method)
-        allowed, retry_after = await check_rate_limit(
-            self.redis, user_id, endpoint_type
-        )
+        allowed, retry_after = await check_rate_limit(self.redis, user_id, endpoint_type)
 
         if not allowed:
             logger.warning(

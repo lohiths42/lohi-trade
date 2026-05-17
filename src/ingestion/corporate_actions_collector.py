@@ -44,7 +44,6 @@ class AnnouncementType(Enum):
     NEW_LISTING = "NEW_LISTING"
 
 
-
 @dataclass
 class CorporateAction:
     """A corporate action record.
@@ -77,13 +76,25 @@ class CorporateAction:
         """Deserialize from dict."""
         ex_date = None
         if data.get("ex_date"):
-            ex_date = date.fromisoformat(data["ex_date"]) if isinstance(data["ex_date"], str) else data["ex_date"]
+            ex_date = (
+                date.fromisoformat(data["ex_date"])
+                if isinstance(data["ex_date"], str)
+                else data["ex_date"]
+            )
         record_date = None
         if data.get("record_date"):
-            record_date = date.fromisoformat(data["record_date"]) if isinstance(data["record_date"], str) else data["record_date"]
+            record_date = (
+                date.fromisoformat(data["record_date"])
+                if isinstance(data["record_date"], str)
+                else data["record_date"]
+            )
         fetched_at = None
         if data.get("fetched_at"):
-            fetched_at = datetime.fromisoformat(data["fetched_at"]) if isinstance(data["fetched_at"], str) else data["fetched_at"]
+            fetched_at = (
+                datetime.fromisoformat(data["fetched_at"])
+                if isinstance(data["fetched_at"], str)
+                else data["fetched_at"]
+            )
         details = data.get("details", {})
         if isinstance(details, str):
             details = json.loads(details)
@@ -126,7 +137,11 @@ class ExchangeAnnouncement:
         """Deserialize from dict."""
         announced_at = None
         if data.get("announced_at"):
-            announced_at = datetime.fromisoformat(data["announced_at"]) if isinstance(data["announced_at"], str) else data["announced_at"]
+            announced_at = (
+                datetime.fromisoformat(data["announced_at"])
+                if isinstance(data["announced_at"], str)
+                else data["announced_at"]
+            )
         details = data.get("details", {})
         if isinstance(details, str):
             details = json.loads(details)
@@ -137,7 +152,6 @@ class ExchangeAnnouncement:
             source=data.get("source", "NSE"),
             announced_at=announced_at,
         )
-
 
 
 class CorporateActionsCollector:
@@ -401,7 +415,7 @@ class CorporateActionsCollector:
 
         t = now.hour * 60 + now.minute
 
-        market_open = self.MARKET_OPEN_HOUR * 60 + self.MARKET_OPEN_MIN   # 9:15 = 555
+        market_open = self.MARKET_OPEN_HOUR * 60 + self.MARKET_OPEN_MIN  # 9:15 = 555
         market_close = self.MARKET_CLOSE_HOUR * 60 + self.MARKET_CLOSE_MIN  # 15:30 = 930
         post_close = self.POST_CLOSE_FETCH_HOUR * 60 + self.POST_CLOSE_FETCH_MIN  # 19:00 = 1140
 
@@ -425,7 +439,9 @@ class CorporateActionsCollector:
 
         return True
 
-    async def run_scheduled_fetch(self, now: datetime | None = None) -> list[CorporateAction] | None:
+    async def run_scheduled_fetch(
+        self, now: datetime | None = None
+    ) -> list[CorporateAction] | None:
         """Run a fetch if the schedule says it's time.
 
         Args:
@@ -569,8 +585,7 @@ class CorporateActionsCollector:
         """Store a corporate action in history."""
         self._action_history.append(action)
         logger.debug(
-            f"Stored corporate action: {action.action_type.value} "
-            f"for {action.symbol}",
+            f"Stored corporate action: {action.action_type.value} " f"for {action.symbol}",
         )
 
     def _store_announcement(self, announcement: ExchangeAnnouncement) -> None:
@@ -636,8 +651,7 @@ class CorporateActionsCollector:
                     symbol=ann.symbol,
                     title=f"Exchange: {ann.announcement_type.value}",
                     message=(
-                        f"{ann.announcement_type.value} for {ann.symbol}. "
-                        f"Source: {ann.source}."
+                        f"{ann.announcement_type.value} for {ann.symbol}. " f"Source: {ann.source}."
                     ),
                     data=ann.to_dict(),
                 )

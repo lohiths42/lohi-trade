@@ -1,6 +1,5 @@
 """Unit tests for DMATService — format validation, encryption, verification, unlinking."""
 
-import asyncio
 import os
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -14,18 +13,13 @@ _TEST_KEY = Fernet.generate_key().decode()
 os.environ["PAN_ENCRYPTION_KEY"] = _TEST_KEY
 
 from app.services.verification_service import (
-    DMATService,
-    DMATVerificationResult,
-    DMATStatus,
-    DMATRejectionReason,
-    KYCStatus,
-    CDSL_REGEX,
-    NSDL_REGEX,
-    MAX_DMAT_ACCOUNTS_PER_USER,
-    MAX_RETRIES,
     DMAT_API_TIMEOUT_SECONDS,
+    MAX_RETRIES,
+    DMATRejectionReason,
+    DMATService,
+    DMATStatus,
+    DMATVerificationResult,
 )
-
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -405,7 +399,9 @@ class TestVerifyDMAT:
             mock_client.post = AsyncMock(side_effect=httpx.TimeoutException("timeout"))
             mock_cls.return_value = mock_client
 
-            with patch("app.services.verification_service.asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+            with patch(
+                "app.services.verification_service.asyncio.sleep", new_callable=AsyncMock
+            ) as mock_sleep:
                 result = await svc.verify_dmat("user-1", "1234567890123456")
 
         assert result.status == DMATStatus.REJECTED
@@ -425,7 +421,9 @@ class TestVerifyDMAT:
             mock_client.post = AsyncMock(side_effect=httpx.ConnectError("refused"))
             mock_cls.return_value = mock_client
 
-            with patch("app.services.verification_service.asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+            with patch(
+                "app.services.verification_service.asyncio.sleep", new_callable=AsyncMock
+            ) as mock_sleep:
                 await svc.verify_dmat("user-1", "1234567890123456")
 
         calls = [c.args[0] for c in mock_sleep.call_args_list]

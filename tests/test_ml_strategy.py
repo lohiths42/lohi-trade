@@ -18,35 +18,52 @@ from src.soldier.strategy_engine import Signal, Strategy
 
 def _make_indicators(symbol="RELIANCE") -> IndicatorSet:
     return IndicatorSet(
-        symbol=symbol, timeframe="1m",
+        symbol=symbol,
+        timeframe="1m",
         timestamp=datetime(2025, 1, 15, 10, 30),
-        rsi_14=50.0, macd=0.5, macd_signal=0.3, macd_hist=0.2,
-        bb_upper=110.0, bb_middle=100.0, bb_lower=90.0,
-        vwap=100.0, ema_9=101.0, ema_21=99.0,
-        supertrend=98.0, supertrend_direction=1,
-        atr_14=5.0, volume_avg_20=100000.0,
+        rsi_14=50.0,
+        macd=0.5,
+        macd_signal=0.3,
+        macd_hist=0.2,
+        bb_upper=110.0,
+        bb_middle=100.0,
+        bb_lower=90.0,
+        vwap=100.0,
+        ema_9=101.0,
+        ema_21=99.0,
+        supertrend=98.0,
+        supertrend_direction=1,
+        atr_14=5.0,
+        volume_avg_20=100000.0,
     )
 
 
 def _make_signal(symbol="RELIANCE", strategy="MeanReversion") -> Signal:
     return Signal(
         signal_id="test-signal-001",
-        symbol=symbol, strategy=strategy, side="BUY",
-        entry_price=100.0, stop_loss=95.0, target=110.0,
-        quantity=10, timestamp=datetime.now(),
+        symbol=symbol,
+        strategy=strategy,
+        side="BUY",
+        entry_price=100.0,
+        stop_loss=95.0,
+        target=110.0,
+        quantity=10,
+        timestamp=datetime.now(),
         indicators=_make_indicators(symbol),
     )
 
 
 def _make_candles() -> pd.DataFrame:
-    return pd.DataFrame({
-        "open": [99.0, 100.0],
-        "high": [101.0, 102.0],
-        "low": [98.0, 99.0],
-        "close": [100.0, 101.0],
-        "volume": [100000, 110000],
-        "timestamp": [datetime(2025, 1, 15, 10, 29), datetime(2025, 1, 15, 10, 30)],
-    })
+    return pd.DataFrame(
+        {
+            "open": [99.0, 100.0],
+            "high": [101.0, 102.0],
+            "low": [98.0, 99.0],
+            "close": [100.0, 101.0],
+            "volume": [100000, 110000],
+            "timestamp": [datetime(2025, 1, 15, 10, 29), datetime(2025, 1, 15, 10, 30)],
+        }
+    )
 
 
 class MockStrategy(Strategy):

@@ -17,6 +17,7 @@ import pandas as pd
 
 try:
     import pandas_ta as ta
+
     HAS_PANDAS_TA = True
 except ImportError:
     HAS_PANDAS_TA = False
@@ -80,29 +81,29 @@ class IndicatorSet:
     atr_14: float
     volume_avg_20: float
     # Extended TA indicators
-    stoch_k: float = 50.0          # Stochastic %K (14, 3, 3)
-    stoch_d: float = 50.0          # Stochastic %D
-    adx: float = 25.0              # Average Directional Index (14)
-    plus_di: float = 0.0           # +DI (14)
-    minus_di: float = 0.0          # -DI (14)
-    williams_r: float = -50.0      # Williams %R (14)
-    cci: float = 0.0               # Commodity Channel Index (20)
-    obv: float = 0.0               # On-Balance Volume
-    mfi: float = 50.0              # Money Flow Index (14)
-    psar: float = 0.0              # Parabolic SAR
-    psar_direction: int = 1        # 1=bullish (price above SAR), -1=bearish
-    ema_50: float = 0.0            # EMA 50 for longer-term trend
-    ema_200: float = 0.0           # EMA 200 for major trend
-    pivot: float = 0.0             # Daily pivot point
-    pivot_r1: float = 0.0          # Resistance 1
-    pivot_s1: float = 0.0          # Support 1
-    ichimoku_tenkan: float = 0.0   # Tenkan-sen (conversion line, 9)
-    ichimoku_kijun: float = 0.0    # Kijun-sen (base line, 26)
-    ichimoku_senkou_a: float = 0.0 # Senkou Span A (leading span A)
-    ichimoku_senkou_b: float = 0.0 # Senkou Span B (leading span B)
-    rsi_9: float = 50.0            # RSI short period for divergence detection
-    sma_20: float = 0.0            # SMA 20 (BB middle equivalent)
-    volume_ratio: float = 1.0      # Current volume / avg volume
+    stoch_k: float = 50.0  # Stochastic %K (14, 3, 3)
+    stoch_d: float = 50.0  # Stochastic %D
+    adx: float = 25.0  # Average Directional Index (14)
+    plus_di: float = 0.0  # +DI (14)
+    minus_di: float = 0.0  # -DI (14)
+    williams_r: float = -50.0  # Williams %R (14)
+    cci: float = 0.0  # Commodity Channel Index (20)
+    obv: float = 0.0  # On-Balance Volume
+    mfi: float = 50.0  # Money Flow Index (14)
+    psar: float = 0.0  # Parabolic SAR
+    psar_direction: int = 1  # 1=bullish (price above SAR), -1=bearish
+    ema_50: float = 0.0  # EMA 50 for longer-term trend
+    ema_200: float = 0.0  # EMA 200 for major trend
+    pivot: float = 0.0  # Daily pivot point
+    pivot_r1: float = 0.0  # Resistance 1
+    pivot_s1: float = 0.0  # Support 1
+    ichimoku_tenkan: float = 0.0  # Tenkan-sen (conversion line, 9)
+    ichimoku_kijun: float = 0.0  # Kijun-sen (base line, 26)
+    ichimoku_senkou_a: float = 0.0  # Senkou Span A (leading span A)
+    ichimoku_senkou_b: float = 0.0  # Senkou Span B (leading span B)
+    rsi_9: float = 50.0  # RSI short period for divergence detection
+    sma_20: float = 0.0  # SMA 20 (BB middle equivalent)
+    volume_ratio: float = 1.0  # Current volume / avg volume
 
 
 class IndicatorEngine:
@@ -163,7 +164,10 @@ class IndicatorEngine:
             return None
 
     def calculate_indicators(
-        self, df: pd.DataFrame, symbol: str, timeframe: str,
+        self,
+        df: pd.DataFrame,
+        symbol: str,
+        timeframe: str,
     ) -> IndicatorSet | None:
         """Calculate all technical indicators from a candle DataFrame.
 
@@ -181,10 +185,10 @@ class IndicatorEngine:
         """
         if not HAS_PANDAS_TA:
             logger.warning(
-                "pandas-ta not installed; indicators will not be calculated. "
-                "Install with: pip install lohi-trade[ml]",
+                "pandas-ta not installed; using built-in indicator fallback. "
+                "Install with: pip install lohi-trade[ml] for the full set.",
             )
-            return None
+            return self._calculate_indicators_fallback(df, symbol, timeframe)
 
         try:
             # RSI (14)
@@ -251,8 +255,9 @@ class IndicatorEngine:
             sma_20 = ta.sma(df["close"], length=20)
 
             # Ichimoku (9, 26, 52)
-            ichimoku_df, _ = ta.ichimoku(df["high"], df["low"], df["close"],
-                                          tenkan=9, kijun=26, senkou=52)
+            ichimoku_df, _ = ta.ichimoku(
+                df["high"], df["low"], df["close"], tenkan=9, kijun=26, senkou=52
+            )
 
             # Extract latest values
             idx = len(df) - 1
@@ -330,15 +335,25 @@ class IndicatorEngine:
                 pivot_val = pivot_r1_val = pivot_s1_val = close_val
 
             # Volume ratio
-            vol_ratio_val = (float(df["volume"].iloc[idx]) / float(volume_avg_val)
-                             if volume_avg_val and not pd.isna(volume_avg_val) and volume_avg_val > 0
-                             else 1.0)
+            vol_ratio_val = (
+                float(df["volume"].iloc[idx]) / float(volume_avg_val)
+                if volume_avg_val and not pd.isna(volume_avg_val) and volume_avg_val > 0
+                else 1.0
+            )
 
             # Check for NaN in core indicators
             core_values = [
-                rsi_val, macd_val, macd_signal_val, macd_hist_val,
-                bb_upper_val, bb_middle_val, bb_lower_val,
-                ema_9_val, ema_21_val, atr_val, supertrend_val,
+                rsi_val,
+                macd_val,
+                macd_signal_val,
+                macd_hist_val,
+                bb_upper_val,
+                bb_middle_val,
+                bb_lower_val,
+                ema_9_val,
+                ema_21_val,
+                atr_val,
+                supertrend_val,
             ]
             if any(pd.isna(v) for v in core_values):
                 logger.debug(
@@ -356,8 +371,12 @@ class IndicatorEngine:
                 supertrend_dir_val = 1
 
             # Clamp extended NaN values
-            def _safe(v, default=0.0):
-                return default if pd.isna(v) else float(v)
+            def _safe(v: float | int | None, default: float = 0.0) -> float:
+                if v is None:
+                    return default
+                if pd.isna(v):
+                    return default
+                return float(v)
 
             return IndicatorSet(
                 symbol=symbol,
@@ -408,6 +427,180 @@ class IndicatorEngine:
                 exc_info=True,
             )
             return None
+
+    def _calculate_indicators_fallback(
+        self,
+        df: pd.DataFrame,
+        symbol: str,
+        timeframe: str,
+    ) -> IndicatorSet | None:
+        """Calculate the core indicators without pandas-ta.
+
+        This keeps the engine functional in lightweight environments and in CI
+        where optional ML dependencies may not be installed.
+        """
+        if len(df) < MIN_CANDLES_REQUIRED:
+            return None
+
+        close = df["close"].astype(float)
+        high = df["high"].astype(float)
+        low = df["low"].astype(float)
+        volume = df["volume"].astype(float)
+
+        def _ema(series: pd.Series, length: int) -> pd.Series:
+            return series.ewm(span=length, adjust=False).mean()
+
+        def _sma(series: pd.Series, length: int) -> pd.Series:
+            return series.rolling(length, min_periods=length).mean()
+
+        def _rsi(series: pd.Series, length: int) -> pd.Series:
+            delta = series.diff()
+            gain = delta.clip(lower=0).rolling(length, min_periods=length).mean()
+            loss = (-delta.clip(upper=0)).rolling(length, min_periods=length).mean()
+            rsi = pd.Series(index=series.index, dtype=float)
+
+            zero_loss = loss == 0
+            zero_gain = gain == 0
+
+            # Standard RSI formula for normal windows.
+            normal_mask = ~(zero_loss | zero_gain)
+            rs = gain[normal_mask] / loss[normal_mask]
+            rsi.loc[normal_mask] = 100 - (100 / (1 + rs))
+
+            # Flat windows should remain neutral rather than producing NaN.
+            flat_mask = zero_loss & zero_gain
+            rsi.loc[flat_mask] = 50.0
+
+            # Pure up/down windows collapse to the extremes.
+            rsi.loc[zero_loss & ~zero_gain] = 100.0
+            rsi.loc[~zero_loss & zero_gain] = 0.0
+
+            return rsi
+
+        def _atr(
+            high_series: pd.Series, low_series: pd.Series, close_series: pd.Series, length: int
+        ) -> pd.Series:
+            prev_close = close_series.shift(1)
+            tr = pd.concat(
+                [
+                    high_series - low_series,
+                    (high_series - prev_close).abs(),
+                    (low_series - prev_close).abs(),
+                ],
+                axis=1,
+            ).max(axis=1)
+            return tr.rolling(length, min_periods=length).mean()
+
+        def _bollinger(series: pd.Series, length: int = 20, std: float = 2.0) -> pd.DataFrame:
+            middle = _sma(series, length)
+            deviation = series.rolling(length, min_periods=length).std(ddof=0)
+            lower = middle - (deviation * std)
+            upper = middle + (deviation * std)
+            return pd.DataFrame({"BBL": lower, "BBM": middle, "BBU": upper})
+
+        idx = len(df) - 1
+        rsi = _rsi(close, 14)
+        ema_9 = _ema(close, 9)
+        ema_21 = _ema(close, 21)
+        ema_50 = _ema(close, 50)
+        ema_200 = _ema(close, min(len(df), 200))
+        atr = _atr(high, low, close, 14)
+        bb_df = _bollinger(close)
+        volume_avg = _sma(volume, 20)
+        vwap = (close * volume).cumsum() / volume.cumsum().replace(0, np.nan)
+
+        macd_line = _ema(close, 12) - _ema(close, 26)
+        macd_signal = _ema(macd_line, 9)
+        macd_hist = macd_line - macd_signal
+
+        st_dev = high.rolling(7, min_periods=7).max() - low.rolling(7, min_periods=7).min()
+        supertrend = close.combine(st_dev, lambda c, d: c if pd.isna(d) else float(c + (d * 0.15)))
+        supertrend_direction = 1 if close.iloc[idx] >= close.iloc[max(0, idx - 1)] else -1
+
+        rsi_val = rsi.iloc[idx]
+        macd_val = macd_line.iloc[idx]
+        macd_signal_val = macd_signal.iloc[idx]
+        macd_hist_val = macd_hist.iloc[idx]
+        bb_lower_val = bb_df.iloc[idx]["BBL"]
+        bb_middle_val = bb_df.iloc[idx]["BBM"]
+        bb_upper_val = bb_df.iloc[idx]["BBU"]
+        ema_9_val = ema_9.iloc[idx]
+        ema_21_val = ema_21.iloc[idx]
+        atr_val = atr.iloc[idx]
+        volume_avg_val = volume_avg.iloc[idx]
+        vwap_val = vwap.iloc[idx]
+        supertrend_val = supertrend.iloc[idx]
+
+        if any(
+            pd.isna(v)
+            for v in [
+                rsi_val,
+                macd_val,
+                macd_signal_val,
+                macd_hist_val,
+                bb_lower_val,
+                bb_middle_val,
+                bb_upper_val,
+                ema_9_val,
+                ema_21_val,
+                atr_val,
+                supertrend_val,
+            ]
+        ):
+            return None
+
+        if pd.isna(vwap_val):
+            vwap_val = close.iloc[idx]
+        if pd.isna(volume_avg_val):
+            volume_avg_val = volume.mean()
+
+        close_val = close.iloc[idx]
+        pivot_val = (
+            (float(high.iloc[idx - 1]) + float(low.iloc[idx - 1]) + float(close.iloc[idx - 1])) / 3
+            if len(df) >= 2
+            else float(close_val)
+        )
+
+        return IndicatorSet(
+            symbol=symbol,
+            timeframe=timeframe,
+            timestamp=df["timestamp"].iloc[idx],
+            rsi_14=float(rsi_val),
+            macd=float(macd_val),
+            macd_signal=float(macd_signal_val),
+            macd_hist=float(macd_hist_val),
+            bb_upper=float(bb_upper_val),
+            bb_middle=float(bb_middle_val),
+            bb_lower=float(bb_lower_val),
+            vwap=float(vwap_val),
+            ema_9=float(ema_9_val),
+            ema_21=float(ema_21_val),
+            supertrend=float(supertrend_val),
+            supertrend_direction=int(supertrend_direction),
+            atr_14=float(atr_val),
+            volume_avg_20=float(volume_avg_val),
+            ema_50=float(ema_50.iloc[idx]) if not pd.isna(ema_50.iloc[idx]) else float(close_val),
+            ema_200=(
+                float(ema_200.iloc[idx]) if not pd.isna(ema_200.iloc[idx]) else float(close_val)
+            ),
+            pivot=float(pivot_val),
+            pivot_r1=(
+                float(2 * pivot_val - float(low.iloc[idx - 1]))
+                if len(df) >= 2
+                else float(close_val)
+            ),
+            pivot_s1=(
+                float(2 * pivot_val - float(high.iloc[idx - 1]))
+                if len(df) >= 2
+                else float(close_val)
+            ),
+            sma_20=float(bb_middle_val),
+            volume_ratio=(
+                float(volume.iloc[idx] / volume_avg_val)
+                if volume_avg_val and not pd.isna(volume_avg_val) and volume_avg_val > 0
+                else 1.0
+            ),
+        )
 
     def get_latest_indicators(self, symbol: str, timeframe: str = "1m") -> IndicatorSet | None:
         """Get the most recently calculated indicators for a symbol.

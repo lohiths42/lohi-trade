@@ -53,7 +53,9 @@ class TelegramNotifier:
             self._bot_token: str | None = config.telegram.bot_token
             self._chat_id: str | None = config.telegram.chat_id
             self._rate_limit: int = getattr(
-                config.telegram, "rate_limit_messages_per_hour", DEFAULT_RATE_LIMIT,
+                config.telegram,
+                "rate_limit_messages_per_hour",
+                DEFAULT_RATE_LIMIT,
             )
         except AttributeError:
             logger.warning("Telegram configuration not available – notifications disabled")

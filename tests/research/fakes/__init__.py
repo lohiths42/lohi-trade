@@ -100,8 +100,8 @@ def _build_fake_vector_store(cfg: dict) -> FakeVectorStore:
 
 
 FAKE_FACTORIES: dict[str, dict[str, Callable[[dict], Any]]] = {
-    "llm":          {"fake": _build_fake_llm},
-    "embeddings":   {"fake": _build_fake_embeddings},
+    "llm": {"fake": _build_fake_llm},
+    "embeddings": {"fake": _build_fake_embeddings},
     "vector_store": {"fake": _build_fake_vector_store},
 }
 

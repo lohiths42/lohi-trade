@@ -410,4 +410,3 @@ script:
     else
       make check
     fi
-

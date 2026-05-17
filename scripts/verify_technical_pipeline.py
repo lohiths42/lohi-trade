@@ -17,7 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.ingestion.broker_interface import Tick
-from src.soldier.candle_builder import CandleBuilder, Candle
+from src.soldier.candle_builder import Candle, CandleBuilder
 from src.soldier.indicator_engine import IndicatorEngine, IndicatorSet
 from src.soldier.strategy_engine import MeanReversionStrategy
 from src.utils.config import MeanReversionStrategy as MeanRevConfig
@@ -25,8 +25,12 @@ from src.utils.config import MeanReversionStrategy as MeanRevConfig
 
 def make_tick(symbol: str, price: float, volume: int, ts: datetime) -> Tick:
     return Tick(
-        symbol=symbol, token=1234, ltp=price,
-        volume=volume, timestamp=ts, exchange="NSE",
+        symbol=symbol,
+        token=1234,
+        ltp=price,
+        volume=volume,
+        timestamp=ts,
+        exchange="NSE",
     )
 
 
@@ -91,9 +95,12 @@ def verify_indicator_calculation():
     for i in range(110):
         price = 100.0 + (i % 10) * 0.5 - 2.5  # oscillating price
         candle = Candle(
-            symbol="TCS", timeframe="1m",
-            open=price - 0.2, high=price + 0.5,
-            low=price - 0.5, close=price,
+            symbol="TCS",
+            timeframe="1m",
+            open=price - 0.2,
+            high=price + 0.5,
+            low=price - 0.5,
+            close=price,
             volume=10000 + i * 100,
             timestamp=base + timedelta(minutes=i),
             is_complete=True,
@@ -126,7 +133,7 @@ def verify_indicator_calculation():
         if not ok:
             all_pass = False
 
-    print(f"\n  Indicator snapshot:")
+    print("\n  Indicator snapshot:")
     print(f"    RSI(14)={result.rsi_14:.2f}  MACD={result.macd:.4f}")
     print(f"    BB: {result.bb_lower:.2f} / {result.bb_middle:.2f} / {result.bb_upper:.2f}")
     print(f"    EMA(9)={result.ema_9:.2f}  EMA(21)={result.ema_21:.2f}")
@@ -145,29 +152,47 @@ def verify_mean_reversion_signal():
     import pandas as pd
 
     config = MeanRevConfig(
-        enabled=True, rsi_oversold=30, rsi_overbought=65,
-        volume_multiplier=1.5, stop_loss_atr_multiplier=1.5,
+        enabled=True,
+        rsi_oversold=30,
+        rsi_overbought=65,
+        volume_multiplier=1.5,
+        stop_loss_atr_multiplier=1.5,
     )
     strategy = MeanReversionStrategy(config)
 
     # Craft indicators that satisfy all 4 entry conditions
     indicators = IndicatorSet(
-        symbol="INFY", timeframe="1m", timestamp=datetime.now(),
-        rsi_14=25.0,        # < 30 (oversold)
-        macd=0.5, macd_signal=0.3, macd_hist=0.2,
-        bb_upper=110.0, bb_middle=105.0, bb_lower=100.5,  # price < bb_lower
-        vwap=99.0,           # price > vwap
-        ema_9=101.0, ema_21=102.0,
-        supertrend=98.0, supertrend_direction=1,
-        atr_14=2.0, volume_avg_20=5000.0,
+        symbol="INFY",
+        timeframe="1m",
+        timestamp=datetime.now(),
+        rsi_14=25.0,  # < 30 (oversold)
+        macd=0.5,
+        macd_signal=0.3,
+        macd_hist=0.2,
+        bb_upper=110.0,
+        bb_middle=105.0,
+        bb_lower=100.5,  # price < bb_lower
+        vwap=99.0,  # price > vwap
+        ema_9=101.0,
+        ema_21=102.0,
+        supertrend=98.0,
+        supertrend_direction=1,
+        atr_14=2.0,
+        volume_avg_20=5000.0,
     )
 
-    candles_df = pd.DataFrame([{
-        "open": 99.8, "high": 100.2, "low": 99.5,
-        "close": 100.0,     # < bb_lower (100.5)
-        "volume": 8000.0,   # > 1.5 * 5000 = 7500
-        "timestamp": datetime.now(),
-    }])
+    candles_df = pd.DataFrame(
+        [
+            {
+                "open": 99.8,
+                "high": 100.2,
+                "low": 99.5,
+                "close": 100.0,  # < bb_lower (100.5)
+                "volume": 8000.0,  # > 1.5 * 5000 = 7500
+                "timestamp": datetime.now(),
+            }
+        ]
+    )
 
     signal = strategy.generate_signal(indicators, candles_df)
 
@@ -196,13 +221,23 @@ def verify_mean_reversion_signal():
 
     # Verify NO signal when conditions not met (RSI too high)
     indicators_no_signal = IndicatorSet(
-        symbol="INFY", timeframe="1m", timestamp=datetime.now(),
+        symbol="INFY",
+        timeframe="1m",
+        timestamp=datetime.now(),
         rsi_14=55.0,  # > 30, not oversold
-        macd=0.5, macd_signal=0.3, macd_hist=0.2,
-        bb_upper=110.0, bb_middle=105.0, bb_lower=100.5,
-        vwap=99.0, ema_9=101.0, ema_21=102.0,
-        supertrend=98.0, supertrend_direction=1,
-        atr_14=2.0, volume_avg_20=5000.0,
+        macd=0.5,
+        macd_signal=0.3,
+        macd_hist=0.2,
+        bb_upper=110.0,
+        bb_middle=105.0,
+        bb_lower=100.5,
+        vwap=99.0,
+        ema_9=101.0,
+        ema_21=102.0,
+        supertrend=98.0,
+        supertrend_direction=1,
+        atr_14=2.0,
+        volume_avg_20=5000.0,
     )
     no_signal = strategy.generate_signal(indicators_no_signal, candles_df)
     ok = no_signal is None
@@ -292,12 +327,13 @@ def verify_end_to_end_pipeline():
         if not ok:
             all_pass = False
 
-    print(f"\n  Pipeline stats:")
+    print("\n  Pipeline stats:")
     print(f"    Candles produced: {len(completed_candles)}")
     print(f"    Indicators produced: {len(indicator_results)}")
     if indicator_results:
-        first_idx = completed_candles.index(completed_candles[0])
-        print(f"    First indicator after candle #{len(completed_candles) - len(indicator_results) + 1}")
+        print(
+            f"    First indicator after candle #{len(completed_candles) - len(indicator_results) + 1}"
+        )
 
     return all_pass
 

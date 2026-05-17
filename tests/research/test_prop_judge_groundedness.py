@@ -106,7 +106,8 @@ _BRIEF_BLOCK_PATTERN = re.compile(r"<brief>\n(.*?)\n</brief>", re.DOTALL)
 # Cited chunks land between the fenced ``<|CONTEXT|>`` markers defined
 # in the judge template (``src/research/prompts/v1/judge.md``).
 _CHUNKS_BLOCK_PATTERN = re.compile(
-    r"<\|CONTEXT\|>\n(.*?)\n<\|END_CONTEXT\|>", re.DOTALL,
+    r"<\|CONTEXT\|>\n(.*?)\n<\|END_CONTEXT\|>",
+    re.DOTALL,
 )
 
 # Section headers inside the ``<brief>`` block follow the
@@ -227,7 +228,9 @@ class RuleBasedMimicLLM(LLMProvider):
     _model: str = "rule-based-v1"
 
     async def complete(
-        self, messages: list[Message], params: LLMParams,
+        self,
+        messages: list[Message],
+        params: LLMParams,
     ) -> Completion:
         """Inspect the system prompt, score the brief, emit JSON."""
         system_prompt = _system_prompt_from(messages)
@@ -297,7 +300,9 @@ class RuleBasedMimicLLM(LLMProvider):
         )
 
     async def stream(
-        self, messages: list[Message], params: LLMParams,
+        self,
+        messages: list[Message],
+        params: LLMParams,
     ) -> AsyncIterator[CompletionChunk]:  # pragma: no cover
         """Streaming path — not exercised by ``judge.invoke``."""
         completion = await self.complete(messages, params)
@@ -578,10 +583,7 @@ async def test_judge_flags_unsupported_claim(
     below, after Hypothesis has run all 100 examples.
     """
     brief, chunk_texts = case
-    chunks = [
-        _FakeChunk(chunk_id=f"c{i}", text=text)
-        for i, text in enumerate(chunk_texts)
-    ]
+    chunks = [_FakeChunk(chunk_id=f"c{i}", text=text) for i, text in enumerate(chunk_texts)]
 
     report = await invoke(
         run_id=uuid4(),
@@ -634,8 +636,7 @@ def test_judge_groundedness_recall_at_least_95_percent() -> None:
     # out. A lower count would mean the previous test failed to
     # collect, which is itself a bug.
     assert len(results) >= 100, (
-        f"Expected at least 100 recorded cases, got {len(results)}. "
-        "Did the @given test run?"
+        f"Expected at least 100 recorded cases, got {len(results)}. " "Did the @given test run?"
     )
     total = len(results)
     hits = sum(results)

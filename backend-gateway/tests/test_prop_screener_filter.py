@@ -14,17 +14,14 @@ of the screener without requiring a real database.
 from decimal import Decimal
 from typing import Optional
 
-import pytest
-from hypothesis import given, settings, HealthCheck
-from hypothesis import strategies as st
-
 from app.services.screener_service import (
     Range,
     ScreenerEngine,
     ScreenerFilters,
     ScreenerResultItem,
 )
-
+from hypothesis import HealthCheck, given, settings
+from hypothesis import strategies as st
 
 # ── Strategies ───────────────────────────────────────────────────────────────
 
@@ -68,20 +65,40 @@ def screener_filters_st(draw):
     num_range_filters = draw(st.integers(min_value=1, max_value=5))
 
     range_fields = [
-        "pe_ratio", "pb_ratio", "market_cap", "dividend_yield", "eps", "roe",
-        "debt_to_equity", "revenue_growth_1y", "revenue_growth_3y",
-        "profit_growth_1y", "profit_growth_3y", "rsi_14", "avg_volume",
-        "price_change_1d", "price_change_1w", "price_change_1m",
-        "price_change_3m", "price_change_6m", "price_change_1y",
-        "price_change_3y", "price_change_5y", "return_1y", "cagr_3y", "cagr_5y",
+        "pe_ratio",
+        "pb_ratio",
+        "market_cap",
+        "dividend_yield",
+        "eps",
+        "roe",
+        "debt_to_equity",
+        "revenue_growth_1y",
+        "revenue_growth_3y",
+        "profit_growth_1y",
+        "profit_growth_3y",
+        "rsi_14",
+        "avg_volume",
+        "price_change_1d",
+        "price_change_1w",
+        "price_change_1m",
+        "price_change_3m",
+        "price_change_6m",
+        "price_change_1y",
+        "price_change_3y",
+        "price_change_5y",
+        "return_1y",
+        "cagr_3y",
+        "cagr_5y",
     ]
 
-    chosen = draw(st.lists(
-        st.sampled_from(range_fields),
-        min_size=num_range_filters,
-        max_size=num_range_filters,
-        unique=True,
-    ))
+    chosen = draw(
+        st.lists(
+            st.sampled_from(range_fields),
+            min_size=num_range_filters,
+            max_size=num_range_filters,
+            unique=True,
+        )
+    )
     for field_name in chosen:
         setattr(filters, field_name, draw(range_st()))
 
@@ -103,7 +120,9 @@ def result_item_st(draw):
     """Generate a ScreenerResultItem with fast strategies."""
     return ScreenerResultItem(
         security_id=draw(st.integers(min_value=1, max_value=9999)),
-        symbol=draw(st.sampled_from(["RELIANCE", "TCS", "INFY", "HDFC", "ICICI", "SBIN", "ITC", "LT"])),
+        symbol=draw(
+            st.sampled_from(["RELIANCE", "TCS", "INFY", "HDFC", "ICICI", "SBIN", "ITC", "LT"])
+        ),
         company_name="Corp",
         exchange=draw(st.sampled_from(EXCHANGES)),
         sector=draw(st.one_of(st.none(), st.sampled_from(SECTORS))),
@@ -175,7 +194,10 @@ def item_satisfies_filters(item: ScreenerResultItem, filters: ScreenerFilters) -
         return False
     if filters.sector is not None and item.sector != filters.sector:
         return False
-    if filters.market_cap_category is not None and item.market_cap_category != filters.market_cap_category:
+    if (
+        filters.market_cap_category is not None
+        and item.market_cap_category != filters.market_cap_category
+    ):
         return False
 
     range_checks = [
@@ -260,8 +282,12 @@ class TestScreenerFilterConsistencyProperty:
             self._assert_range(item.eps, filters.eps, "eps")
             self._assert_range(item.roe, filters.roe, "roe")
             self._assert_range(item.debt_to_equity, filters.debt_to_equity, "debt_to_equity")
-            self._assert_range(item.revenue_growth_1y, filters.revenue_growth_1y, "revenue_growth_1y")
-            self._assert_range(item.revenue_growth_3y, filters.revenue_growth_3y, "revenue_growth_3y")
+            self._assert_range(
+                item.revenue_growth_1y, filters.revenue_growth_1y, "revenue_growth_1y"
+            )
+            self._assert_range(
+                item.revenue_growth_3y, filters.revenue_growth_3y, "revenue_growth_3y"
+            )
             self._assert_range(item.profit_growth_1y, filters.profit_growth_1y, "profit_growth_1y")
             self._assert_range(item.profit_growth_3y, filters.profit_growth_3y, "profit_growth_3y")
             self._assert_range(item.return_1y, filters.return_1y, "return_1y")
@@ -304,7 +330,10 @@ class TestScreenerFilterConsistencyProperty:
                 violations.append("exchange")
             if filters.sector is not None and item.sector != filters.sector:
                 violations.append("sector")
-            if filters.market_cap_category is not None and item.market_cap_category != filters.market_cap_category:
+            if (
+                filters.market_cap_category is not None
+                and item.market_cap_category != filters.market_cap_category
+            ):
                 violations.append("market_cap_category")
 
             range_checks = [
@@ -347,9 +376,9 @@ class TestScreenerFilterConsistencyProperty:
                 if item.sma_50 is None or item.sma_200 is None or item.sma_50 >= item.sma_200:
                     violations.append("ma_crossover_death")
 
-            assert len(violations) > 0, (
-                f"Item {item.symbol} was rejected but no filter violation found"
-            )
+            assert (
+                len(violations) > 0
+            ), f"Item {item.symbol} was rejected but no filter violation found"
 
     @given(
         items=st.lists(result_item_st(), min_size=0, max_size=10),
@@ -391,9 +420,7 @@ class TestWhereClauseConsistency:
         engine = ScreenerEngine()
         clauses, params, next_idx = engine._build_where_clauses(filters)
 
-        assert next_idx == len(params) + 1, (
-            f"next_idx={next_idx} but len(params)={len(params)}"
-        )
+        assert next_idx == len(params) + 1, f"next_idx={next_idx} but len(params)={len(params)}"
 
         for clause in clauses:
             if "$" in clause:

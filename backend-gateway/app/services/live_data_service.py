@@ -15,7 +15,7 @@ import csv
 import io
 import logging
 import math
-from datetime import date, datetime, time, timezone, timedelta
+from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from typing import Optional
 
@@ -50,88 +50,313 @@ NSE_HEADERS = {
 
 SECTOR_KEYWORDS: dict[str, list[str]] = {
     "Insurance": [
-        "insurance", "life insurance", "general insurance", "reinsurance",
+        "insurance",
+        "life insurance",
+        "general insurance",
+        "reinsurance",
     ],
     "Banking & Finance": [
-        "bank", "finance", "financial", "nbfc", "credit", "lending",
-        "microfinance", "wealth", "capital market", "stock exchange",
-        "mutual fund", "asset management", "housing finance",
-        "investment", "leasing", "securities", "fincorp", "finserv",
-        "fiscal", "holding", "trading", "equity", "etf",
-        "home loan", "mercantile", "networth", "corporate serv",
-        "advisor", "consult",
+        "bank",
+        "finance",
+        "financial",
+        "nbfc",
+        "credit",
+        "lending",
+        "microfinance",
+        "wealth",
+        "capital market",
+        "stock exchange",
+        "mutual fund",
+        "asset management",
+        "housing finance",
+        "investment",
+        "leasing",
+        "securities",
+        "fincorp",
+        "finserv",
+        "fiscal",
+        "holding",
+        "trading",
+        "equity",
+        "etf",
+        "home loan",
+        "mercantile",
+        "networth",
+        "corporate serv",
+        "advisor",
+        "consult",
     ],
     "IT/Technology": [
-        "software", "information technology", "it ", "computer",
-        "digital", "cloud", "saas", "internet", "e-commerce", "tech",
-        "data processing", "artificial intelligence", "infotech",
-        "network", "automation", "electronic", "semiconductor",
-        "online", "solution", "infoway", "systems ltd", "systems limited",
+        "software",
+        "information technology",
+        "it ",
+        "computer",
+        "digital",
+        "cloud",
+        "saas",
+        "internet",
+        "e-commerce",
+        "tech",
+        "data processing",
+        "artificial intelligence",
+        "infotech",
+        "network",
+        "automation",
+        "electronic",
+        "semiconductor",
+        "online",
+        "solution",
+        "infoway",
+        "systems ltd",
+        "systems limited",
     ],
     "Pharma": [
-        "pharma", "drug", "healthcare", "hospital", "diagnostic",
-        "medical", "biotech", "laboratory", "pathology", "health",
-        "bioscien", "lifescien", "therapeut", "surgical", "nutraceut",
-        "clinical", "nutri", "ayurved",
+        "pharma",
+        "drug",
+        "healthcare",
+        "hospital",
+        "diagnostic",
+        "medical",
+        "biotech",
+        "laboratory",
+        "pathology",
+        "health",
+        "bioscien",
+        "lifescien",
+        "therapeut",
+        "surgical",
+        "nutraceut",
+        "clinical",
+        "nutri",
+        "ayurved",
     ],
     "FMCG": [
-        "consumer", "fmcg", "food", "beverage", "personal care",
-        "tobacco", "dairy", "packaged", "household", "detergent",
-        "agro", "agri", "agricultur", "cotton", "textile", "garment",
-        "apparel", "fabric", "silk", "jute", "wool", "yarn", "fibre",
-        "flour", "edible", "rice", "wheat", "jewel", "diamond",
-        "cosmetic", "soap", "paper", "newsprint", "sugar", "tea",
-        "spice", "confection", "biscuit", "brewer", "footwear",
-        "leather", "fashion", "retail", "spirit", "liquor", "distiller",
-        "spinning", "weaving", "knit", "denim", "ceramic", "glass",
-        "stove", "kitchen", "appliance", "export", "import", "impex",
+        "consumer",
+        "fmcg",
+        "food",
+        "beverage",
+        "personal care",
+        "tobacco",
+        "dairy",
+        "packaged",
+        "household",
+        "detergent",
+        "agro",
+        "agri",
+        "agricultur",
+        "cotton",
+        "textile",
+        "garment",
+        "apparel",
+        "fabric",
+        "silk",
+        "jute",
+        "wool",
+        "yarn",
+        "fibre",
+        "flour",
+        "edible",
+        "rice",
+        "wheat",
+        "jewel",
+        "diamond",
+        "cosmetic",
+        "soap",
+        "paper",
+        "newsprint",
+        "sugar",
+        "tea",
+        "spice",
+        "confection",
+        "biscuit",
+        "brewer",
+        "footwear",
+        "leather",
+        "fashion",
+        "retail",
+        "spirit",
+        "liquor",
+        "distiller",
+        "spinning",
+        "weaving",
+        "knit",
+        "denim",
+        "ceramic",
+        "glass",
+        "stove",
+        "kitchen",
+        "appliance",
+        "export",
+        "import",
+        "impex",
     ],
     "Energy": [
-        "oil", "gas", "petroleum", "power", "energy", "electricity",
-        "solar", "wind", "renewable", "coal", "fuel", "refiner",
-        "petrochem", "thermal", "hydro", "transformer", "electrical",
-        "cable", "drilling", "pipeline", "electro", "switchgear",
-        "generator", "turbine", "boiler", "battery", "lamp", "lighting",
+        "oil",
+        "gas",
+        "petroleum",
+        "power",
+        "energy",
+        "electricity",
+        "solar",
+        "wind",
+        "renewable",
+        "coal",
+        "fuel",
+        "refiner",
+        "petrochem",
+        "thermal",
+        "hydro",
+        "transformer",
+        "electrical",
+        "cable",
+        "drilling",
+        "pipeline",
+        "electro",
+        "switchgear",
+        "generator",
+        "turbine",
+        "boiler",
+        "battery",
+        "lamp",
+        "lighting",
     ],
     "Automobile": [
-        "auto", "vehicle", "motor", "car", "tractor", "tyre", "tire",
-        "two wheeler", "scooter", "motorcycle", "automotive",
-        "transmission", "passenger vehicle", "bearing", "brake", "axle",
-        "mobility", "electric vehicl",
+        "auto",
+        "vehicle",
+        "motor",
+        "car",
+        "tractor",
+        "tyre",
+        "tire",
+        "two wheeler",
+        "scooter",
+        "motorcycle",
+        "automotive",
+        "transmission",
+        "passenger vehicle",
+        "bearing",
+        "brake",
+        "axle",
+        "mobility",
+        "electric vehicl",
     ],
     "Metals & Mining": [
-        "steel", "iron", "metal", "mining", "aluminium", "aluminum",
-        "copper", "zinc", "gold", "silver", "mineral", "ore",
-        "alloy", "stainless", "foundry", "casting", "forging",
-        "ferro", "tungsten", "titanium", "nickel", "ispat",
-        "wire", "precision", "fastener", "forge",
+        "steel",
+        "iron",
+        "metal",
+        "mining",
+        "aluminium",
+        "aluminum",
+        "copper",
+        "zinc",
+        "gold",
+        "silver",
+        "mineral",
+        "ore",
+        "alloy",
+        "stainless",
+        "foundry",
+        "casting",
+        "forging",
+        "ferro",
+        "tungsten",
+        "titanium",
+        "nickel",
+        "ispat",
+        "wire",
+        "precision",
+        "fastener",
+        "forge",
     ],
     "Infrastructure": [
-        "infrastructure", "construction", "cement", "road", "highway",
-        "railway", "port", "shipping", "logistics", "warehouse",
-        "engineering", "epc", "aviation", "airline", "airport",
-        "defence", "defense", "shipyard", "dock", "container",
-        "transport", "cargo", "freight", "pump", "floor", "tile",
-        "sanitar", "crane", "compressor", "project",
+        "infrastructure",
+        "construction",
+        "cement",
+        "road",
+        "highway",
+        "railway",
+        "port",
+        "shipping",
+        "logistics",
+        "warehouse",
+        "engineering",
+        "epc",
+        "aviation",
+        "airline",
+        "airport",
+        "defence",
+        "defense",
+        "shipyard",
+        "dock",
+        "container",
+        "transport",
+        "cargo",
+        "freight",
+        "pump",
+        "floor",
+        "tile",
+        "sanitar",
+        "crane",
+        "compressor",
+        "project",
     ],
     "Chemicals": [
-        "chemical", "specialty chemical", "agrochemical", "fertilizer",
-        "pesticide", "paint", "pigment", "dye", "polymer", "plastic",
-        "fluorochem", "resin", "solvent", "acid", "rubber", "latex",
-        "adhesive", "laminate", "plywood", "synthetic", "vinyl", "epoxy",
-        "nitrochem", "coating",
+        "chemical",
+        "specialty chemical",
+        "agrochemical",
+        "fertilizer",
+        "pesticide",
+        "paint",
+        "pigment",
+        "dye",
+        "polymer",
+        "plastic",
+        "fluorochem",
+        "resin",
+        "solvent",
+        "acid",
+        "rubber",
+        "latex",
+        "adhesive",
+        "laminate",
+        "plywood",
+        "synthetic",
+        "vinyl",
+        "epoxy",
+        "nitrochem",
+        "coating",
     ],
     "Telecom": [
-        "telecom", "communication", "tower", "fiber", "broadband",
-        "satellite", "wireless",
+        "telecom",
+        "communication",
+        "tower",
+        "fiber",
+        "broadband",
+        "satellite",
+        "wireless",
     ],
     "Real Estate": [
-        "real estate", "property", "housing", "realty", "reit",
-        "developer", "builder", "estate",
+        "real estate",
+        "property",
+        "housing",
+        "realty",
+        "reit",
+        "developer",
+        "builder",
+        "estate",
     ],
     "Media & Entertainment": [
-        "media", "entertainment", "broadcast", "film", "television",
-        "gaming", "advertising", "print", "publishing", "cinema", "studio",
+        "media",
+        "entertainment",
+        "broadcast",
+        "film",
+        "television",
+        "gaming",
+        "advertising",
+        "print",
+        "publishing",
+        "cinema",
+        "studio",
     ],
 }
 
@@ -301,26 +526,38 @@ class LiveDataService:
                             status = 'ACTIVE',
                             updated_at = EXCLUDED.updated_at
                         """,
-                        sec["symbol"], sec["isin"], sec["company_name"],
-                        sec["exchange"], sec["sector"], sec.get("industry"),
-                        sec.get("market_cap_category"), sec.get("listing_date"),
-                        sec.get("face_value"), now,
+                        sec["symbol"],
+                        sec["isin"],
+                        sec["company_name"],
+                        sec["exchange"],
+                        sec["sector"],
+                        sec.get("industry"),
+                        sec.get("market_cap_category"),
+                        sec.get("listing_date"),
+                        sec.get("face_value"),
+                        now,
                     )
                     inserted += 1
                 except Exception as e:
                     logger.debug("Upsert failed for %s: %s", sec.get("symbol"), e)
 
             # Ensure fundamentals/technicals rows exist
-            await conn.execute("""
+            await conn.execute(
+                """
                 INSERT INTO security_fundamentals (security_id, updated_at)
                 SELECT id, $1 FROM securities
                 WHERE id NOT IN (SELECT security_id FROM security_fundamentals)
-            """, now)
-            await conn.execute("""
+            """,
+                now,
+            )
+            await conn.execute(
+                """
                 INSERT INTO security_technicals (security_id, updated_at)
                 SELECT id, $1 FROM securities
                 WHERE id NOT IN (SELECT security_id FROM security_technicals)
-            """, now)
+            """,
+                now,
+            )
 
         logger.info("NSE CSV seed: %d securities upserted", inserted)
 
@@ -358,7 +595,8 @@ class LiveDataService:
                         if existing["exchange"] == "NSE":
                             await conn.execute(
                                 "UPDATE securities SET exchange = 'BOTH', updated_at = $1 WHERE id = $2",
-                                now, existing["id"],
+                                now,
+                                existing["id"],
                             )
                         # If already BOTH or BSE, skip
                     else:
@@ -371,26 +609,37 @@ class LiveDataService:
                             VALUES ($1, $2, $3, 'BSE', $4, $5, $6, $7, $8, 'ACTIVE', $9)
                             ON CONFLICT (isin) DO NOTHING
                             """,
-                            sec["symbol"], sec["isin"], sec["company_name"],
-                            sec["sector"], sec.get("industry"),
-                            sec.get("market_cap_category"), sec.get("listing_date"),
-                            sec.get("face_value"), now,
+                            sec["symbol"],
+                            sec["isin"],
+                            sec["company_name"],
+                            sec["sector"],
+                            sec.get("industry"),
+                            sec.get("market_cap_category"),
+                            sec.get("listing_date"),
+                            sec.get("face_value"),
+                            now,
                         )
                     inserted += 1
                 except Exception as e:
                     logger.debug("BSE upsert failed for %s: %s", sec.get("symbol"), e)
 
             # Ensure fundamentals/technicals rows exist for new securities
-            await conn.execute("""
+            await conn.execute(
+                """
                 INSERT INTO security_fundamentals (security_id, updated_at)
                 SELECT id, $1 FROM securities
                 WHERE id NOT IN (SELECT security_id FROM security_fundamentals)
-            """, now)
-            await conn.execute("""
+            """,
+                now,
+            )
+            await conn.execute(
+                """
                 INSERT INTO security_technicals (security_id, updated_at)
                 SELECT id, $1 FROM securities
                 WHERE id NOT IN (SELECT security_id FROM security_technicals)
-            """, now)
+            """,
+                now,
+            )
 
         logger.info("BSE API seed: %d securities processed", inserted)
 
@@ -417,8 +666,13 @@ class LiveDataService:
                 scrip_code = str(item.get("Scrip_Code") or item.get("SCRIP_CD") or "").strip()
                 symbol = (item.get("scrip_id") or item.get("SCRIP_ID") or "").strip()
                 isin = (item.get("ISIN_NUMBER") or item.get("Isin_Number") or "").strip()
-                company_name = (item.get("Scrip_Name") or item.get("SCRIP_NAME") or
-                                item.get("LongName") or item.get("LONG_NAME") or "").strip()
+                company_name = (
+                    item.get("Scrip_Name")
+                    or item.get("SCRIP_NAME")
+                    or item.get("LongName")
+                    or item.get("LONG_NAME")
+                    or ""
+                ).strip()
                 industry = (item.get("Industry") or item.get("INDUSTRY") or "").strip()
                 group = (item.get("Scrip_Group") or item.get("GROUP") or "").strip()
                 face_value_str = str(item.get("Face_Value") or item.get("FACE_VALUE") or "").strip()
@@ -440,17 +694,19 @@ class LiveDataService:
                 except (InvalidOperation, ValueError):
                     pass
 
-                securities.append({
-                    "symbol": symbol.upper(),
-                    "isin": isin.upper().strip(),
-                    "company_name": company_name or symbol,
-                    "exchange": "BSE",
-                    "sector": _classify_sector(industry, company_name),
-                    "industry": industry or None,
-                    "market_cap_category": None,
-                    "listing_date": None,
-                    "face_value": face_value,
-                })
+                securities.append(
+                    {
+                        "symbol": symbol.upper(),
+                        "isin": isin.upper().strip(),
+                        "company_name": company_name or symbol,
+                        "exchange": "BSE",
+                        "sector": _classify_sector(industry, company_name),
+                        "industry": industry or None,
+                        "market_cap_category": None,
+                        "listing_date": None,
+                        "face_value": face_value,
+                    }
+                )
 
             logger.info("Parsed %d securities from BSE API", len(securities))
         except Exception:
@@ -482,7 +738,9 @@ class LiveDataService:
                 isin = (row.get(" ISIN NUMBER") or row.get("ISIN NUMBER") or "").strip()
                 name = (row.get("NAME OF COMPANY") or "").strip()
                 industry = (row.get(" INDUSTRY") or row.get("INDUSTRY") or "").strip()
-                listing_str = (row.get(" DATE OF LISTING") or row.get("DATE OF LISTING") or "").strip()
+                listing_str = (
+                    row.get(" DATE OF LISTING") or row.get("DATE OF LISTING") or ""
+                ).strip()
                 fv_str = (row.get(" FACE VALUE") or row.get("FACE VALUE") or "").strip()
 
                 if not symbol or not isin:
@@ -502,17 +760,19 @@ class LiveDataService:
                 except (InvalidOperation, ValueError):
                     pass
 
-                securities.append({
-                    "symbol": symbol.upper(),
-                    "isin": isin.upper().strip(),
-                    "company_name": name or symbol,
-                    "exchange": "NSE",
-                    "sector": _classify_sector(industry, name),
-                    "industry": industry or None,
-                    "market_cap_category": None,
-                    "listing_date": listing_date,
-                    "face_value": face_value,
-                })
+                securities.append(
+                    {
+                        "symbol": symbol.upper(),
+                        "isin": isin.upper().strip(),
+                        "company_name": name or symbol,
+                        "exchange": "NSE",
+                        "sector": _classify_sector(industry, name),
+                        "industry": industry or None,
+                        "market_cap_category": None,
+                        "listing_date": listing_date,
+                        "face_value": face_value,
+                    }
+                )
 
             logger.info("Parsed %d securities from NSE CSV", len(securities))
         except Exception:
@@ -528,22 +788,25 @@ class LiveDataService:
         Prioritizes stocks that haven't been updated recently.
         Processes YFINANCE_BATCH_SIZE stocks per cycle to avoid rate limits.
         """
-        try:
-            import yfinance as yf
-        except ImportError:
+        import importlib.util
+
+        if importlib.util.find_spec("yfinance") is None:
             logger.error("yfinance not installed — cannot refresh live data")
             return
 
         # Get stocks needing refresh (oldest updated_at first)
         async with self.db_pool.acquire() as conn:
-            rows = await conn.fetch("""
+            rows = await conn.fetch(
+                """
                 SELECT s.id, s.symbol
                 FROM securities s
                 LEFT JOIN security_technicals st ON st.security_id = s.id
                 WHERE s.status = 'ACTIVE'
                 ORDER BY st.updated_at ASC NULLS FIRST
                 LIMIT $1
-            """, YFINANCE_BATCH_SIZE * 5)  # Fetch more, process in batches
+            """,
+                YFINANCE_BATCH_SIZE * 5,
+            )  # Fetch more, process in batches
 
         if not rows:
             return
@@ -552,7 +815,7 @@ class LiveDataService:
 
         # Process in batches
         for i in range(0, min(len(symbols), YFINANCE_BATCH_SIZE * 5), YFINANCE_BATCH_SIZE):
-            batch = symbols[i:i + YFINANCE_BATCH_SIZE]
+            batch = symbols[i : i + YFINANCE_BATCH_SIZE]
             yf_symbols = [f"{sym}.NS" for _, sym in batch]
 
             try:
@@ -576,7 +839,9 @@ class LiveDataService:
                         if mc_category:
                             await conn.execute(
                                 "UPDATE securities SET market_cap_category = $1, updated_at = $2 WHERE id = $3",
-                                mc_category, now, sec_id,
+                                mc_category,
+                                now,
+                                sec_id,
                             )
 
                         # Update sector/industry from yfinance if currently Miscellaneous/None
@@ -584,7 +849,8 @@ class LiveDataService:
                         yf_industry = info.get("yf_industry")
                         if yf_sector or yf_industry:
                             mapped_sector = _map_yfinance_sector(yf_sector)
-                            await conn.execute("""
+                            await conn.execute(
+                                """
                                 UPDATE securities SET
                                     sector = CASE WHEN sector = 'Miscellaneous' OR sector IS NULL
                                                   THEN $1 ELSE sector END,
@@ -592,10 +858,17 @@ class LiveDataService:
                                     market_cap_category = COALESCE($3, market_cap_category),
                                     updated_at = $4
                                 WHERE id = $5
-                            """, mapped_sector, yf_industry, mc_category, now, sec_id)
+                            """,
+                                mapped_sector,
+                                yf_industry,
+                                mc_category,
+                                now,
+                                sec_id,
+                            )
 
                         # Update fundamentals
-                        await conn.execute("""
+                        await conn.execute(
+                            """
                             UPDATE security_fundamentals SET
                                 pe_ratio = COALESCE($2, pe_ratio),
                                 pb_ratio = COALESCE($3, pb_ratio),
@@ -625,7 +898,8 @@ class LiveDataService:
                         )
 
                         # Update technicals
-                        await conn.execute("""
+                        await conn.execute(
+                            """
                             UPDATE security_technicals SET
                                 rsi_14 = COALESCE($2, rsi_14),
                                 sma_50 = COALESCE($3, sma_50),
@@ -654,8 +928,7 @@ class LiveDataService:
                             now,
                         )
 
-                logger.info("Refreshed batch %d-%d (%d symbols)",
-                            i + 1, i + len(batch), len(batch))
+                logger.info("Refreshed batch %d-%d (%d symbols)", i + 1, i + len(batch), len(batch))
 
             except Exception:
                 logger.exception("Failed to refresh batch %d-%d", i + 1, i + len(batch))
@@ -731,10 +1004,14 @@ class LiveDataService:
                     try:
                         if hist_data is not None and len(yf_symbols) > 1:
                             try:
-                                hist = hist_data[yf_sym] if yf_sym in hist_data.columns.get_level_values(0) else None
+                                hist = (
+                                    hist_data[yf_sym]
+                                    if yf_sym in hist_data.columns.get_level_values(0)
+                                    else None
+                                )
                             except Exception:
                                 hist = None
-                        if hist is None or (hasattr(hist, 'empty') and hist.empty):
+                        if hist is None or (hasattr(hist, "empty") and hist.empty):
                             hist = ticker.history(period="1y")
                     except Exception:
                         pass
@@ -836,9 +1113,12 @@ def _compute_rsi(hist, period=14) -> float | None:
 
 def _compute_price_changes(hist) -> dict:
     result = {
-        "price_change_1d": None, "price_change_1w": None,
-        "price_change_1m": None, "price_change_3m": None,
-        "price_change_6m": None, "price_change_1y": None,
+        "price_change_1d": None,
+        "price_change_1w": None,
+        "price_change_1m": None,
+        "price_change_3m": None,
+        "price_change_6m": None,
+        "price_change_1y": None,
     }
     if hist is None or len(hist) < 2:
         return result
@@ -846,9 +1126,12 @@ def _compute_price_changes(hist) -> dict:
         close = hist["Close"]
         current = float(close.iloc[-1])
         periods = {
-            "price_change_1d": 1, "price_change_1w": 5,
-            "price_change_1m": 21, "price_change_3m": 63,
-            "price_change_6m": 126, "price_change_1y": 252,
+            "price_change_1d": 1,
+            "price_change_1w": 5,
+            "price_change_1m": 21,
+            "price_change_3m": 63,
+            "price_change_6m": 126,
+            "price_change_1y": 252,
         }
         for key, days in periods.items():
             if len(close) > days:

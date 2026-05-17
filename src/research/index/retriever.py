@@ -200,7 +200,8 @@ class BM25Index:
     # ------------------------------------------------------------------ #
 
     def _score_with_rank_bm25(
-        self, query_tokens: list[str],
+        self,
+        query_tokens: list[str],
     ) -> list[float] | None:
         """Score the whole corpus with ``rank-bm25``, or ``None`` if unavailable.
 
@@ -255,8 +256,7 @@ class BM25Index:
         # Pre-compute idf per query token so we don't recompute in the
         # inner loop. Smoothing keeps idf strictly positive.
         idf: dict[str, float] = {
-            term: math.log((n_docs + 1) / (df.get(term, 0) + 1)) + 1.0
-            for term in set(query_tokens)
+            term: math.log((n_docs + 1) / (df.get(term, 0) + 1)) + 1.0 for term in set(query_tokens)
         }
 
         scores: list[float] = []
@@ -413,10 +413,7 @@ class HybridRetriever:
             dense_rank = entry["dense_rank"]
             bm25_rrf = 1.0 / (1.0 + bm25_rank) if bm25_rank is not None else 0.0
             dense_rrf = 1.0 / (1.0 + dense_rank) if dense_rank is not None else 0.0
-            score = (
-                self._bm25_weight * bm25_rrf
-                + self._dense_weight * dense_rrf
-            )
+            score = self._bm25_weight * bm25_rrf + self._dense_weight * dense_rrf
             results.append(
                 ChunkHit(
                     chunk=entry["chunk"],

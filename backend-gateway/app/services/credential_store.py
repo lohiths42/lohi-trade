@@ -22,9 +22,8 @@ import re
 import stat
 import tempfile
 from pathlib import Path
-from typing import Any
 
-from .service_registry import CREDENTIAL_GROUPS, _GROUPS_BY_ID
+from .service_registry import _GROUPS_BY_ID
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +76,8 @@ class CredentialStore:
 
         logger.info(
             "Credentials written for group '%s' (%d keys)",
-            group_id, len(credentials),
+            group_id,
+            len(credentials),
         )
 
     def read_credentials(self, group_id: str) -> dict[str, str]:
@@ -138,9 +138,7 @@ class CredentialStore:
         entries_needed = [".env", ".env.research"]
 
         if not gitignore_path.exists():
-            gitignore_path.write_text(
-                "\n".join(entries_needed) + "\n", encoding="utf-8"
-            )
+            gitignore_path.write_text("\n".join(entries_needed) + "\n", encoding="utf-8")
             logger.warning("Created .gitignore with .env entries")
             return True
 
@@ -171,9 +169,7 @@ class CredentialStore:
                 except OSError as exc:
                     logger.warning("Failed to set permissions on %s: %s", path, exc)
 
-    def validate_credentials(
-        self, group_id: str, credentials: dict[str, str]
-    ) -> dict[str, str]:
+    def validate_credentials(self, group_id: str, credentials: dict[str, str]) -> dict[str, str]:
         """Validate credential format against regex patterns.
 
         Returns a dict of field_name → error_message for invalid fields.
@@ -271,9 +267,7 @@ class CredentialStore:
 
         # Atomic write: write to temp, then rename
         path.parent.mkdir(parents=True, exist_ok=True)
-        fd, tmp_path = tempfile.mkstemp(
-            dir=str(path.parent), prefix=".env_tmp_", suffix=".tmp"
-        )
+        fd, tmp_path = tempfile.mkstemp(dir=str(path.parent), prefix=".env_tmp_", suffix=".tmp")
         try:
             with os.fdopen(fd, "w", encoding="utf-8") as f:
                 f.write("\n".join(output_lines) + "\n")

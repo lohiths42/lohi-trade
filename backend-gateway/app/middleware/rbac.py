@@ -48,7 +48,9 @@ def require_role(*roles: str) -> Callable:
         if user_role not in allowed:
             logger.warning(
                 "RBAC denied: user=%s role=%s required=%s endpoint accessed",
-                payload.get("sub"), user_role, allowed,
+                payload.get("sub"),
+                user_role,
+                allowed,
             )
             raise HTTPException(
                 status_code=403,

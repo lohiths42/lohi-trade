@@ -33,6 +33,7 @@ from src.ingestion.broker_manager import (
 
 # ---- Fixtures ----
 
+
 @pytest.fixture
 def primary_broker():
     broker = MagicMock(spec=BrokerInterface)
@@ -79,6 +80,7 @@ def connected_manager(manager, primary_creds, backup_creds):
 
 # ---- Connection Tests ----
 
+
 class TestBrokerManagerConnection:
     def test_connect_primary_success(self, manager, primary_broker, primary_creds, backup_creds):
         result = manager.connect(primary_creds, backup_creds)
@@ -88,7 +90,12 @@ class TestBrokerManagerConnection:
         assert manager.health["primary"].state == BrokerState.CONNECTED
 
     def test_connect_primary_fails_switches_to_backup(
-        self, manager, primary_broker, backup_broker, primary_creds, backup_creds,
+        self,
+        manager,
+        primary_broker,
+        backup_broker,
+        primary_creds,
+        backup_creds,
     ):
         primary_broker.connect.return_value = False
         result = manager.connect(primary_creds, backup_creds)
@@ -98,7 +105,12 @@ class TestBrokerManagerConnection:
         assert manager.health["primary"].state == BrokerState.FAILED
 
     def test_connect_primary_raises_switches_to_backup(
-        self, manager, primary_broker, backup_broker, primary_creds, backup_creds,
+        self,
+        manager,
+        primary_broker,
+        backup_broker,
+        primary_creds,
+        backup_creds,
     ):
         primary_broker.connect.side_effect = Exception("connection refused")
         result = manager.connect(primary_creds, backup_creds)
@@ -106,7 +118,12 @@ class TestBrokerManagerConnection:
         assert manager.active_broker_name == "backup"
 
     def test_connect_both_fail(
-        self, manager, primary_broker, backup_broker, primary_creds, backup_creds,
+        self,
+        manager,
+        primary_broker,
+        backup_broker,
+        primary_creds,
+        backup_creds,
     ):
         primary_broker.connect.return_value = False
         backup_broker.connect.return_value = False
@@ -132,6 +149,7 @@ class TestBrokerManagerConnection:
 
 
 # ---- Health Tracking Tests ----
+
 
 class TestHealthTracking:
     def test_success_resets_consecutive_failures(self, connected_manager, primary_broker):
@@ -188,9 +206,13 @@ class TestHealthTracking:
 
 # ---- Failover Tests ----
 
+
 class TestBrokerFailover:
     def test_switches_after_threshold_failures(
-        self, connected_manager, primary_broker, backup_broker,
+        self,
+        connected_manager,
+        primary_broker,
+        backup_broker,
     ):
         primary_broker.get_positions.side_effect = Exception("timeout")
         primary_broker.is_connected.return_value = False
@@ -209,7 +231,10 @@ class TestBrokerFailover:
         assert connected_manager.active_broker_name == "backup"
 
     def test_both_brokers_fail_raises(
-        self, connected_manager, primary_broker, backup_broker,
+        self,
+        connected_manager,
+        primary_broker,
+        backup_broker,
     ):
         primary_broker.get_positions.side_effect = Exception("primary down")
         primary_broker.is_connected.return_value = False
@@ -227,7 +252,10 @@ class TestBrokerFailover:
             connected_manager.get_positions()
 
     def test_switch_callback_called(
-        self, connected_manager, primary_broker, backup_broker,
+        self,
+        connected_manager,
+        primary_broker,
+        backup_broker,
     ):
         callback = MagicMock()
         connected_manager.on_switch(callback)
@@ -249,7 +277,10 @@ class TestBrokerFailover:
         assert args[1] == "backup"
 
     def test_switch_callback_error_does_not_propagate(
-        self, connected_manager, primary_broker, backup_broker,
+        self,
+        connected_manager,
+        primary_broker,
+        backup_broker,
     ):
         bad_callback = MagicMock(side_effect=Exception("callback error"))
         connected_manager.on_switch(bad_callback)
@@ -270,6 +301,7 @@ class TestBrokerFailover:
 
 
 # ---- Delegated Operations Tests ----
+
 
 class TestDelegatedOperations:
     def test_subscribe_delegates(self, connected_manager, primary_broker):
@@ -324,9 +356,14 @@ class TestDelegatedOperations:
 
 # ---- Recovery Monitor Tests ----
 
+
 class TestRecoveryMonitor:
     def test_recovery_switches_back_to_primary(
-        self, primary_broker, backup_broker, primary_creds, backup_creds,
+        self,
+        primary_broker,
+        backup_broker,
+        primary_creds,
+        backup_creds,
     ):
         manager = BrokerManager(
             primary_broker=primary_broker,
@@ -357,7 +394,10 @@ class TestRecoveryMonitor:
         manager.disconnect()
 
     def test_recovery_monitor_stops_on_disconnect(
-        self, connected_manager, primary_broker, backup_broker,
+        self,
+        connected_manager,
+        primary_broker,
+        backup_broker,
     ):
         # Force switch to backup to start recovery monitor
         primary_broker.get_positions.side_effect = Exception("down")
@@ -380,6 +420,7 @@ class TestRecoveryMonitor:
 
 
 # ---- Edge Cases ----
+
 
 class TestEdgeCases:
     def test_active_broker_property_thread_safe(self, connected_manager, primary_broker):
@@ -488,7 +529,13 @@ def test_property_broker_switch_data_continuity(
                 ltp=200.0 + i * 0.1,
                 volume=200 + i,
                 timestamp=datetime(
-                    2025, 1, 1, 9, 16, 0, i * 1000,
+                    2025,
+                    1,
+                    1,
+                    9,
+                    16,
+                    0,
+                    i * 1000,
                 ),
                 exchange="NSE",
             ),
@@ -553,9 +600,7 @@ def test_property_broker_switch_data_continuity(
         except BrokerError:
             pass
 
-    assert manager.active_broker_name == "backup", (
-        "Manager should have switched to backup broker"
-    )
+    assert manager.active_broker_name == "backup", "Manager should have switched to backup broker"
 
     # Backup broker delivers ticks after the switch.
     captured_backup_cb = None
@@ -589,42 +634,32 @@ def test_property_broker_switch_data_continuity(
     # Use (symbol, timestamp, ltp) as a unique key since tick objects
     # from different brokers have distinct price ranges.
     tick_keys = [(t.symbol, t.timestamp, t.ltp) for t in delivered_ticks]
-    assert len(tick_keys) == len(set(tick_keys)), (
-        "Duplicate ticks detected during broker switch"
-    )
+    assert len(tick_keys) == len(set(tick_keys)), "Duplicate ticks detected during broker switch"
 
     # 3. Primary ticks come first, then backup ticks (ordering preserved)
     primary_delivered = delivered_ticks[:num_ticks_before_switch]
     backup_delivered = delivered_ticks[num_ticks_before_switch:]
 
     for i, tick in enumerate(primary_delivered):
-        assert tick is primary_ticks[i], (
-            f"Primary tick {i} mismatch: ordering not preserved"
-        )
+        assert tick is primary_ticks[i], f"Primary tick {i} mismatch: ordering not preserved"
 
     for i, tick in enumerate(backup_delivered):
-        assert tick is backup_ticks[i], (
-            f"Backup tick {i} mismatch: ordering not preserved"
-        )
+        assert tick is backup_ticks[i], f"Backup tick {i} mismatch: ordering not preserved"
 
     # 4. Per-symbol ordering is preserved across the switch
     for sym in symbols:
         sym_ticks = [t for t in delivered_ticks if t.symbol == sym]
         sym_timestamps = [t.timestamp for t in sym_ticks]
-        assert sym_timestamps == sorted(sym_timestamps), (
-            f"Per-symbol tick ordering violated for {sym} during broker switch"
-        )
+        assert sym_timestamps == sorted(
+            sym_timestamps
+        ), f"Per-symbol tick ordering violated for {sym} during broker switch"
 
     # 5. All primary ticks have prices in the primary range,
     #    all backup ticks have prices in the backup range (no cross-contamination)
     for tick in primary_delivered:
-        assert 100.0 <= tick.ltp < 200.0, (
-            f"Primary tick has unexpected price {tick.ltp}"
-        )
+        assert 100.0 <= tick.ltp < 200.0, f"Primary tick has unexpected price {tick.ltp}"
     for tick in backup_delivered:
-        assert tick.ltp >= 200.0, (
-            f"Backup tick has unexpected price {tick.ltp}"
-        )
+        assert tick.ltp >= 200.0, f"Backup tick has unexpected price {tick.ltp}"
 
     # Cleanup
     manager._stop_recovery_monitor()

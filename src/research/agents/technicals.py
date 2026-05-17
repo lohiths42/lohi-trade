@@ -170,10 +170,7 @@ class TechnicalsAgent:
             stream_name,
             count=self.events_count,
         )
-        parsed = [
-            parse_stream_entry(stream=stream_name, entry=entry)
-            for entry in raw_entries
-        ]
+        parsed = [parse_stream_entry(stream=stream_name, entry=entry) for entry in raw_entries]
         # The indicators stream is sharded per symbol by name, but the
         # ``IndicatorSet`` serialisation does include ``symbol`` in the
         # fields dict (see
@@ -193,10 +190,7 @@ class TechnicalsAgent:
                 agent_name=self.name,
                 kind="no_data",
                 section_name=self.section_name,
-                reason=(
-                    f"no_data: no recent indicators events for "
-                    f"symbol={context.symbol}"
-                ),
+                reason=(f"no_data: no recent indicators events for " f"symbol={context.symbol}"),
                 wall_time_ms=int((time.perf_counter() - start) * 1000),
             )
 
@@ -210,8 +204,7 @@ class TechnicalsAgent:
         ]
         if self.llm is None:
             raise ValueError(
-                f"{self.name} agent requires an LLMProvider; "
-                "construct with ``llm=...``.",
+                f"{self.name} agent requires an LLMProvider; " "construct with ``llm=...``.",
             )
         completion = await self.llm.complete(messages, self._llm_params())
 

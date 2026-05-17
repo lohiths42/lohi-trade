@@ -185,7 +185,7 @@ We follow [PEP 8](https://www.python.org/dev/peps/pep-0008/) with these extensio
 from typing import Optional, Dict, List
 
 def process_signals(
-    signals: List[Dict[str, float]], 
+    signals: List[Dict[str, float]],
     rms_check: bool = True
 ) -> Optional[Dict[str, float]]:
     """Process trading signals with optional RMS validation."""
@@ -201,15 +201,15 @@ def calculate_position_size(
     stop_loss_distance: float
 ) -> float:
     """Calculate position size based on risk management.
-    
+
     Args:
         capital: Total trading capital in rupees.
         risk_percent: Risk per trade as percentage (e.g., 2.0 for 2%).
         stop_loss_distance: Distance to stop loss in rupees.
-    
+
     Returns:
         Position size in shares (quantity).
-    
+
     Raises:
         ValueError: If risk_percent > 100 or any input negative.
     """
@@ -303,9 +303,9 @@ from hypothesis import given, strategies as st
 def test_position_sizing_respects_capital_limit():
     """Position size should never exceed capital."""
     sizer = PositionSizer(capital=100_000)
-    
+
     size = sizer.calculate(risk_percent=2.0, stop_distance=50)
-    
+
     assert size * current_price <= 100_000
     assert size > 0
 
@@ -314,10 +314,10 @@ def test_position_sizing_respects_capital_limit():
 def test_position_size_scales_with_risk(risk_percent):
     """Larger risk should produce larger positions."""
     sizer = PositionSizer(capital=100_000)
-    
+
     small = sizer.calculate(risk_percent=1.0, stop_distance=100)
     large = sizer.calculate(risk_percent=risk_percent, stop_distance=100)
-    
+
     if risk_percent > 1.0:
         assert large >= small
 ```
@@ -477,4 +477,3 @@ Contributors will be:
 - Given credit in commit messages
 
 **Thank you for contributing to LOHI-TRADE!** 🙏
-

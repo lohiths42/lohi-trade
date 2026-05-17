@@ -30,6 +30,7 @@ from src.utils.config import OpeningRangeBreakoutStrategy as ORBConfig
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _default_config(
     volume_multiplier: float = 2.0,
     target_multiplier: float = 1.5,
@@ -49,6 +50,7 @@ def _default_config(
 # Composite strategies (hypothesis generators)
 # ---------------------------------------------------------------------------
 
+
 @st.composite
 def valid_buy_breakout_inputs(draw):
     """Generate inputs where BUY breakout conditions are met:
@@ -59,21 +61,44 @@ def valid_buy_breakout_inputs(draw):
     volume_multiplier = 2.0
 
     # Opening range: range_low < range_high
-    range_low = draw(st.floats(min_value=1.0, max_value=50_000.0, allow_nan=False, allow_infinity=False))
-    range_high = draw(st.floats(min_value=range_low + 0.01, max_value=range_low + 10_000.0, allow_nan=False, allow_infinity=False))
+    range_low = draw(
+        st.floats(min_value=1.0, max_value=50_000.0, allow_nan=False, allow_infinity=False)
+    )
+    range_high = draw(
+        st.floats(
+            min_value=range_low + 0.01,
+            max_value=range_low + 10_000.0,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
 
     # Close strictly above range_high
-    close = draw(st.floats(min_value=range_high + 0.01, max_value=range_high + 10_000.0, allow_nan=False, allow_infinity=False))
+    close = draw(
+        st.floats(
+            min_value=range_high + 0.01,
+            max_value=range_high + 10_000.0,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
 
     # Volume spike: volume > volume_multiplier × volume_avg_20
-    volume_avg_20 = draw(st.floats(min_value=100.0, max_value=1e8, allow_nan=False, allow_infinity=False))
-    volume = draw(st.floats(
-        min_value=volume_multiplier * volume_avg_20 + 1.0,
-        max_value=volume_multiplier * volume_avg_20 + 1e8,
-        allow_nan=False, allow_infinity=False,
-    ))
+    volume_avg_20 = draw(
+        st.floats(min_value=100.0, max_value=1e8, allow_nan=False, allow_infinity=False)
+    )
+    volume = draw(
+        st.floats(
+            min_value=volume_multiplier * volume_avg_20 + 1.0,
+            max_value=volume_multiplier * volume_avg_20 + 1e8,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
 
-    atr_14 = draw(st.floats(min_value=0.01, max_value=1000.0, allow_nan=False, allow_infinity=False))
+    atr_14 = draw(
+        st.floats(min_value=0.01, max_value=1000.0, allow_nan=False, allow_infinity=False)
+    )
 
     # Generate a time within trade window (9:30-10:30)
     hour = draw(st.sampled_from([9, 10]))
@@ -103,14 +128,16 @@ def valid_buy_breakout_inputs(draw):
         volume_avg_20=volume_avg_20,
     )
 
-    candles = pd.DataFrame({
-        "open": [close - 1.0],
-        "high": [close + 1.0],
-        "low": [close - 2.0],
-        "close": [close],
-        "volume": [volume],
-        "timestamp": [candle_time],
-    })
+    candles = pd.DataFrame(
+        {
+            "open": [close - 1.0],
+            "high": [close + 1.0],
+            "low": [close - 2.0],
+            "close": [close],
+            "volume": [volume],
+            "timestamp": [candle_time],
+        }
+    )
 
     return indicators, candles, range_high, range_low, close
 
@@ -125,21 +152,39 @@ def valid_sell_breakout_inputs(draw):
     volume_multiplier = 2.0
 
     # Opening range: range_low < range_high
-    range_low = draw(st.floats(min_value=10.0, max_value=50_000.0, allow_nan=False, allow_infinity=False))
-    range_high = draw(st.floats(min_value=range_low + 0.01, max_value=range_low + 10_000.0, allow_nan=False, allow_infinity=False))
+    range_low = draw(
+        st.floats(min_value=10.0, max_value=50_000.0, allow_nan=False, allow_infinity=False)
+    )
+    range_high = draw(
+        st.floats(
+            min_value=range_low + 0.01,
+            max_value=range_low + 10_000.0,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
 
     # Close strictly below range_low
-    close = draw(st.floats(min_value=0.01, max_value=range_low - 0.01, allow_nan=False, allow_infinity=False))
+    close = draw(
+        st.floats(min_value=0.01, max_value=range_low - 0.01, allow_nan=False, allow_infinity=False)
+    )
 
     # Volume spike: volume > volume_multiplier × volume_avg_20
-    volume_avg_20 = draw(st.floats(min_value=100.0, max_value=1e8, allow_nan=False, allow_infinity=False))
-    volume = draw(st.floats(
-        min_value=volume_multiplier * volume_avg_20 + 1.0,
-        max_value=volume_multiplier * volume_avg_20 + 1e8,
-        allow_nan=False, allow_infinity=False,
-    ))
+    volume_avg_20 = draw(
+        st.floats(min_value=100.0, max_value=1e8, allow_nan=False, allow_infinity=False)
+    )
+    volume = draw(
+        st.floats(
+            min_value=volume_multiplier * volume_avg_20 + 1.0,
+            max_value=volume_multiplier * volume_avg_20 + 1e8,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
 
-    atr_14 = draw(st.floats(min_value=0.01, max_value=1000.0, allow_nan=False, allow_infinity=False))
+    atr_14 = draw(
+        st.floats(min_value=0.01, max_value=1000.0, allow_nan=False, allow_infinity=False)
+    )
 
     # Generate a time within trade window (9:30-10:30)
     hour = draw(st.sampled_from([9, 10]))
@@ -169,14 +214,16 @@ def valid_sell_breakout_inputs(draw):
         volume_avg_20=volume_avg_20,
     )
 
-    candles = pd.DataFrame({
-        "open": [close - 1.0],
-        "high": [close + 1.0],
-        "low": [close - 2.0],
-        "close": [close],
-        "volume": [volume],
-        "timestamp": [candle_time],
-    })
+    candles = pd.DataFrame(
+        {
+            "open": [close - 1.0],
+            "high": [close + 1.0],
+            "low": [close - 2.0],
+            "close": [close],
+            "volume": [volume],
+            "timestamp": [candle_time],
+        }
+    )
 
     return indicators, candles, range_high, range_low, close
 
@@ -190,21 +237,39 @@ def price_within_range_inputs(draw):
     volume_multiplier = 2.0
 
     # Opening range
-    range_low = draw(st.floats(min_value=1.0, max_value=50_000.0, allow_nan=False, allow_infinity=False))
-    range_high = draw(st.floats(min_value=range_low + 0.01, max_value=range_low + 10_000.0, allow_nan=False, allow_infinity=False))
+    range_low = draw(
+        st.floats(min_value=1.0, max_value=50_000.0, allow_nan=False, allow_infinity=False)
+    )
+    range_high = draw(
+        st.floats(
+            min_value=range_low + 0.01,
+            max_value=range_low + 10_000.0,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
 
     # Close within range (inclusive)
-    close = draw(st.floats(min_value=range_low, max_value=range_high, allow_nan=False, allow_infinity=False))
+    close = draw(
+        st.floats(min_value=range_low, max_value=range_high, allow_nan=False, allow_infinity=False)
+    )
 
     # Volume spike (sufficient)
-    volume_avg_20 = draw(st.floats(min_value=100.0, max_value=1e8, allow_nan=False, allow_infinity=False))
-    volume = draw(st.floats(
-        min_value=volume_multiplier * volume_avg_20 + 1.0,
-        max_value=volume_multiplier * volume_avg_20 + 1e8,
-        allow_nan=False, allow_infinity=False,
-    ))
+    volume_avg_20 = draw(
+        st.floats(min_value=100.0, max_value=1e8, allow_nan=False, allow_infinity=False)
+    )
+    volume = draw(
+        st.floats(
+            min_value=volume_multiplier * volume_avg_20 + 1.0,
+            max_value=volume_multiplier * volume_avg_20 + 1e8,
+            allow_nan=False,
+            allow_infinity=False,
+        )
+    )
 
-    atr_14 = draw(st.floats(min_value=0.01, max_value=1000.0, allow_nan=False, allow_infinity=False))
+    atr_14 = draw(
+        st.floats(min_value=0.01, max_value=1000.0, allow_nan=False, allow_infinity=False)
+    )
 
     # Generate a time within trade window (9:30-10:30)
     hour = draw(st.sampled_from([9, 10]))
@@ -234,14 +299,16 @@ def price_within_range_inputs(draw):
         volume_avg_20=volume_avg_20,
     )
 
-    candles = pd.DataFrame({
-        "open": [close - 1.0],
-        "high": [close + 1.0],
-        "low": [close - 2.0],
-        "close": [close],
-        "volume": [volume],
-        "timestamp": [candle_time],
-    })
+    candles = pd.DataFrame(
+        {
+            "open": [close - 1.0],
+            "high": [close + 1.0],
+            "low": [close - 2.0],
+            "close": [close],
+            "volume": [volume],
+            "timestamp": [candle_time],
+        }
+    )
 
     return indicators, candles, range_high, range_low
 
@@ -249,6 +316,7 @@ def price_within_range_inputs(draw):
 # ---------------------------------------------------------------------------
 # Property Tests
 # ---------------------------------------------------------------------------
+
 
 class TestORBProperties:
     """**Validates: Requirements 4.4**
@@ -322,9 +390,9 @@ class TestORBProperties:
         signal = strategy.generate_signal(indicators, candles)
 
         assert signal is not None
-        assert signal.stop_loss == pytest.approx(range_low), (
-            f"BUY stop_loss ({signal.stop_loss}) must equal range_low ({range_low})"
-        )
+        assert signal.stop_loss == pytest.approx(
+            range_low
+        ), f"BUY stop_loss ({signal.stop_loss}) must equal range_low ({range_low})"
 
     @given(data=valid_sell_breakout_inputs())
     @settings(max_examples=25)
@@ -340,9 +408,9 @@ class TestORBProperties:
         signal = strategy.generate_signal(indicators, candles)
 
         assert signal is not None
-        assert signal.stop_loss == pytest.approx(range_high), (
-            f"SELL stop_loss ({signal.stop_loss}) must equal range_high ({range_high})"
-        )
+        assert signal.stop_loss == pytest.approx(
+            range_high
+        ), f"SELL stop_loss ({signal.stop_loss}) must equal range_high ({range_high})"
 
     @given(data=valid_buy_breakout_inputs())
     @settings(max_examples=25)
@@ -354,7 +422,9 @@ class TestORBProperties:
         """
         indicators, candles, range_high, range_low, close = data
         target_multiplier = 1.5
-        strategy = OpeningRangeBreakoutStrategy(_default_config(target_multiplier=target_multiplier))
+        strategy = OpeningRangeBreakoutStrategy(
+            _default_config(target_multiplier=target_multiplier)
+        )
         strategy.set_opening_range("TEST", range_high, range_low)
 
         signal = strategy.generate_signal(indicators, candles)
@@ -377,7 +447,9 @@ class TestORBProperties:
         """
         indicators, candles, range_high, range_low, close = data
         target_multiplier = 1.5
-        strategy = OpeningRangeBreakoutStrategy(_default_config(target_multiplier=target_multiplier))
+        strategy = OpeningRangeBreakoutStrategy(
+            _default_config(target_multiplier=target_multiplier)
+        )
         strategy.set_opening_range("TEST", range_high, range_low)
 
         signal = strategy.generate_signal(indicators, candles)

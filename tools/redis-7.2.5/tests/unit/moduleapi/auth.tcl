@@ -22,7 +22,7 @@ start_server {tags {"modules"}} {
         r auth.createmoduleuser
 
         # Catch the I/O exception that was thrown when Redis
-        # disconnected with us. 
+        # disconnected with us.
         catch { [r ping] } e
         assert_match {*I/O*} $e
 

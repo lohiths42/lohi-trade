@@ -1,6 +1,5 @@
 """Analytics response models."""
 
-from pydantic import BaseModel
 from datetime import date
 
 from app.models.base import CamelModel

@@ -282,9 +282,7 @@ def test_retriever_returns_only_existing_chunks(
         # The retriever's contract is "up to k"; a fusion bug that
         # merges two ranked lists without de-duplication could exceed
         # that bound even with all valid ids.
-        assert len(hits) <= k, (
-            f"retriever returned {len(hits)} hits; expected <= {k}"
-        )
+        assert len(hits) <= k, f"retriever returned {len(hits)} hits; expected <= {k}"
 
     _run(_body())
 

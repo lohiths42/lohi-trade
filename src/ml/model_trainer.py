@@ -31,6 +31,88 @@ MIN_TRAINING_SAMPLES = 30
 RETRAIN_THRESHOLD = 20  # retrain after this many new samples
 
 
+class _FallbackGradientBoostingClassifier:
+    """Lightweight binary classifier used when scikit-learn is unavailable."""
+
+    def __init__(self, **_kwargs) -> None:
+        self.classes_ = np.array([0, 1])
+        self._class_centroids: dict[int, np.ndarray] = {}
+        self.feature_importances_ = np.array([], dtype=float)
+
+    def fit(self, x: np.ndarray, y: np.ndarray):
+        self._class_centroids = {int(cls): x[y == cls].mean(axis=0) for cls in np.unique(y)}
+        positive = self._class_centroids.get(1)
+        negative = self._class_centroids.get(0)
+        if positive is None or negative is None:
+            raise ValueError("Fallback classifier requires both classes")
+
+        importances = np.abs(positive - negative)
+        total = float(importances.sum())
+        if total <= 0:
+            self.feature_importances_ = np.full(x.shape[1], 1.0 / x.shape[1])
+        else:
+            self.feature_importances_ = importances / total
+        return self
+
+    def predict_proba(self, x: np.ndarray) -> np.ndarray:
+        negative = self._class_centroids[0]
+        positive = self._class_centroids[1]
+        probabilities: list[list[float]] = []
+        for row in x:
+            dist_negative = float(np.linalg.norm(row - negative))
+            dist_positive = float(np.linalg.norm(row - positive))
+            score_negative = 1.0 / (dist_negative + 1e-8)
+            score_positive = 1.0 / (dist_positive + 1e-8)
+            total = score_negative + score_positive
+            probabilities.append([score_negative / total, score_positive / total])
+        return np.asarray(probabilities, dtype=float)
+
+    def predict(self, x: np.ndarray) -> np.ndarray:
+        return (self.predict_proba(x)[:, 1] >= 0.5).astype(int)
+
+
+def _stratified_train_test_split(
+    x: np.ndarray,
+    y: np.ndarray,
+    test_ratio: float = 0.2,
+    random_state: int = 42,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Deterministic stratified split without sklearn."""
+    rng = np.random.default_rng(random_state)
+    train_indices: list[int] = []
+    test_indices: list[int] = []
+
+    for cls in np.unique(y):
+        cls_indices = np.where(y == cls)[0]
+        rng.shuffle(cls_indices)
+        test_count = max(1, int(round(len(cls_indices) * test_ratio)))
+        test_count = min(test_count, len(cls_indices) - 1)
+        test_indices.extend(cls_indices[:test_count].tolist())
+        train_indices.extend(cls_indices[test_count:].tolist())
+
+    rng.shuffle(train_indices)
+    rng.shuffle(test_indices)
+
+    return (
+        x[train_indices],
+        x[test_indices],
+        y[train_indices],
+        y[test_indices],
+    )
+
+
+def _binary_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> tuple[float, float, float, float]:
+    accuracy = float(np.mean(y_true == y_pred)) if len(y_true) else 0.0
+    tp = float(np.sum((y_true == 1) & (y_pred == 1)))
+    fp = float(np.sum((y_true == 0) & (y_pred == 1)))
+    fn = float(np.sum((y_true == 1) & (y_pred == 0)))
+
+    precision = tp / (tp + fp) if tp + fp > 0 else 0.0
+    recall = tp / (tp + fn) if tp + fn > 0 else 0.0
+    f1 = (2 * precision * recall / (precision + recall)) if precision + recall > 0 else 0.0
+    return accuracy, precision, recall, f1
+
+
 @dataclass
 class ModelMetrics:
     """Performance metrics for the trained model."""
@@ -61,8 +143,8 @@ class ModelMetrics:
 class TrainingSample:
     """A single training example: features + outcome label."""
 
-    features: np.ndarray   # shape (NUM_FEATURES,)
-    label: float           # continuous in [-1, 1], binarized for classification
+    features: np.ndarray  # shape (NUM_FEATURES,)
+    label: float  # continuous in [-1, 1], binarized for classification
     symbol: str = ""
     timestamp: datetime | None = None
 
@@ -140,17 +222,13 @@ class ModelTrainer:
             ModelMetrics with performance on a holdout split.
 
         """
-        from sklearn.ensemble import GradientBoostingClassifier
-        from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
-        from sklearn.model_selection import train_test_split
-
         if len(self._samples) < self._min_samples:
             logger.warning(
                 f"Not enough samples to train: {len(self._samples)}/{self._min_samples}",
             )
             return self._metrics
 
-        X = np.array([s.features for s in self._samples])
+        x = np.array([s.features for s in self._samples])
         y = np.array([1 if s.label > 0 else 0 for s in self._samples])
 
         # Stratified split
@@ -167,32 +245,53 @@ class ModelTrainer:
             )
             return self._metrics
 
-        test_size = min(0.2, max(5, len(self._samples) // 5) / len(self._samples))
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=test_size, stratify=y, random_state=42,
-        )
-
-        model = GradientBoostingClassifier(
-            n_estimators=100,
-            max_depth=4,
-            learning_rate=0.1,
-            subsample=0.8,
-            min_samples_leaf=3,
+        test_ratio = min(0.2, max(5, len(self._samples) // 5) / len(self._samples))
+        x_train, x_test, y_train, y_test = _stratified_train_test_split(
+            x,
+            y,
+            test_ratio=test_ratio,
             random_state=42,
         )
-        model.fit(X_train, y_train)
 
-        y_pred = model.predict(X_test)
+        try:
+            from sklearn.ensemble import GradientBoostingClassifier
+
+            model = GradientBoostingClassifier(
+                n_estimators=100,
+                max_depth=4,
+                learning_rate=0.1,
+                subsample=0.8,
+                min_samples_leaf=3,
+                random_state=42,
+            )
+        except ModuleNotFoundError:
+            model = _FallbackGradientBoostingClassifier()
+
+        model.fit(x_train, y_train)
+
+        y_pred = model.predict(x_test)
+
+        accuracy, precision, recall, f1 = _binary_metrics(y_test, y_pred)
+        feature_importances = getattr(model, "feature_importances_", None)
+        if feature_importances is None or len(feature_importances) != len(FEATURE_NAMES):
+            positive = x[y == 1].mean(axis=0)
+            negative = x[y == 0].mean(axis=0)
+            feature_importances = np.abs(positive - negative)
+            total = float(feature_importances.sum())
+            if total <= 0:
+                feature_importances = np.full(len(FEATURE_NAMES), 1.0 / len(FEATURE_NAMES))
+            else:
+                feature_importances = feature_importances / total
 
         self._metrics = ModelMetrics(
-            accuracy=float(accuracy_score(y_test, y_pred)),
-            precision=float(precision_score(y_test, y_pred, zero_division=0)),
-            recall=float(recall_score(y_test, y_pred, zero_division=0)),
-            f1_score=float(f1_score(y_test, y_pred, zero_division=0)),
+            accuracy=accuracy,
+            precision=precision,
+            recall=recall,
+            f1_score=f1,
             sample_count=len(self._samples),
             trained_at=datetime.now(UTC),
             feature_importances=dict(
-                zip(FEATURE_NAMES, model.feature_importances_.tolist()),
+                zip(FEATURE_NAMES, np.asarray(feature_importances, dtype=float).tolist()),
             ),
         )
 
@@ -222,12 +321,12 @@ class ModelTrainer:
         if not self._is_trained or self._model is None:
             return 0.5, 0.0
 
-        X = features.reshape(1, -1)
-        proba = self._model.predict_proba(X)[0]
+        x = features.reshape(1, -1)
+        proba = self._model.predict_proba(x)[0]
 
         # proba[1] = probability of class 1 (profitable)
         prob_profitable = float(proba[1]) if len(proba) > 1 else 0.5
-        predicted_class = float(self._model.predict(X)[0])
+        predicted_class = float(self._model.predict(x)[0])
 
         return prob_profitable, predicted_class
 

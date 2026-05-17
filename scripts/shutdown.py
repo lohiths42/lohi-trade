@@ -15,7 +15,6 @@ Requirements: 19.8, 19.9
 
 import sys
 import threading
-import time
 from datetime import datetime
 from pathlib import Path
 
@@ -24,8 +23,8 @@ PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from src.utils.config import ConfigurationError, load_config
 from src.utils.logger import get_logger
-from src.utils.config import load_config, ConfigurationError
 
 logger = get_logger("Shutdown")
 
@@ -45,11 +44,11 @@ def close_all_positions(config) -> bool:
     """
     logger.info("Closing all open positions...")
     try:
-        from src.state.redis_client import RedisClient
+        from src.execution.oms import OrderManagementSystem
+        from src.ingestion.broker_interface import BrokerCredentials
         from src.state.database import DatabaseConnectionManager
         from src.state.event_bus import EventBus
-        from src.ingestion.broker_interface import BrokerCredentials
-        from src.execution.oms import OrderManagementSystem
+        from src.state.redis_client import RedisClient
 
         # Set up minimal dependencies for OMS
         redis_client = RedisClient(
@@ -77,9 +76,11 @@ def close_all_positions(config) -> bool:
 
         if primary_name == "shoonya":
             from src.ingestion.shoonya_broker import ShoonyaBroker
+
             broker = ShoonyaBroker()
         else:
             from src.ingestion.angelone_broker import AngelOneBroker
+
             broker = AngelOneBroker()
 
         broker.connect(credentials)
@@ -97,9 +98,7 @@ def close_all_positions(config) -> bool:
         fail_count = sum(1 for r in results if not r.success)
 
         if results:
-            logger.info(
-                f"Square-off complete: {success_count} succeeded, {fail_count} failed"
-            )
+            logger.info(f"Square-off complete: {success_count} succeeded, {fail_count} failed")
         else:
             logger.info("No open positions to close")
 
@@ -119,12 +118,12 @@ def cancel_all_orders(config) -> bool:
     """
     logger.info("Cancelling all pending orders...")
     try:
-        from src.state.redis_client import RedisClient
+        from src.execution.kill_switch import KillSwitch
+        from src.execution.oms import OrderManagementSystem
+        from src.ingestion.broker_interface import BrokerCredentials
         from src.state.database import DatabaseConnectionManager
         from src.state.event_bus import EventBus
-        from src.ingestion.broker_interface import BrokerCredentials
-        from src.execution.oms import OrderManagementSystem
-        from src.execution.kill_switch import KillSwitch
+        from src.state.redis_client import RedisClient
 
         redis_client = RedisClient(
             host=config.redis.host,
@@ -150,9 +149,11 @@ def cancel_all_orders(config) -> bool:
 
         if primary_name == "shoonya":
             from src.ingestion.shoonya_broker import ShoonyaBroker
+
             broker = ShoonyaBroker()
         else:
             from src.ingestion.angelone_broker import AngelOneBroker
+
             broker = AngelOneBroker()
 
         broker.connect(credentials)
@@ -193,13 +194,14 @@ def disconnect_websocket(config) -> bool:
     logger.info("Disconnecting WebSocket...")
     try:
         primary_name = config.broker.primary
-        from src.ingestion.broker_interface import BrokerCredentials
 
         if primary_name == "shoonya":
             from src.ingestion.shoonya_broker import ShoonyaBroker
+
             broker = ShoonyaBroker()
         else:
             from src.ingestion.angelone_broker import AngelOneBroker
+
             broker = AngelOneBroker()
 
         broker.disconnect()
@@ -263,9 +265,7 @@ def schedule_shutdown(config=None):
 
     def _check_and_shutdown():
         """Poll every 30 seconds until shutdown time is reached."""
-        logger.info(
-            f"Automatic shutdown scheduled for {SHUTDOWN_HOUR:02d}:{SHUTDOWN_MINUTE:02d}"
-        )
+        logger.info(f"Automatic shutdown scheduled for {SHUTDOWN_HOUR:02d}:{SHUTDOWN_MINUTE:02d}")
         while not stop_event.is_set():
             now = datetime.now()
             current_minutes = now.hour * 60 + now.minute

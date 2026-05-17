@@ -7,7 +7,6 @@ Requirements: 29.6
 """
 
 import logging
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -97,7 +96,8 @@ async def deactivate_user(
 
     logger.info(
         "ADMIN_EVENT user_deactivated admin=%s target_user=%s",
-        admin_id, user_id,
+        admin_id,
+        user_id,
     )
     return UserStatusResponse(
         user_id=user_id,
@@ -143,7 +143,8 @@ async def activate_user(
 
     logger.info(
         "ADMIN_EVENT user_activated admin=%s target_user=%s",
-        admin_id, user_id,
+        admin_id,
+        user_id,
     )
     return UserStatusResponse(
         user_id=user_id,

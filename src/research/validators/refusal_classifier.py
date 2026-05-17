@@ -169,7 +169,10 @@ class RefusalSignal:
 # definition because a frozen dataclass cannot reference itself in a
 # class-body default.
 RefusalSignal.NO_MATCH = RefusalSignal(
-    matched=False, reason=None, matched_rule_id=None, matched_text=None,
+    matched=False,
+    reason=None,
+    matched_rule_id=None,
+    matched_text=None,
 )
 
 

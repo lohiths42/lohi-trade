@@ -34,7 +34,7 @@ logger = get_logger("AngelOneBroker")
 
 class AngelOneBroker(BrokerInterface):
     """Angel One broker adapter.
-    
+
     Implements WebSocket connection for live ticks and REST API for order placement.
     """
 
@@ -58,13 +58,13 @@ class AngelOneBroker(BrokerInterface):
 
     def connect(self, credentials: BrokerCredentials) -> bool:
         """Connect to Angel One API and authenticate.
-        
+
         Args:
             credentials: Angel One authentication credentials
-            
+
         Returns:
             True if connection successful
-            
+
         Raises:
             ConnectionError: If connection fails
             AuthenticationError: If authentication fails
@@ -239,7 +239,7 @@ class AngelOneBroker(BrokerInterface):
 
     def _handle_ws_message(self, data: dict) -> None:
         """Handle incoming WebSocket messages.
-        
+
         Args:
             data: Parsed JSON message from WebSocket
 
@@ -255,10 +255,10 @@ class AngelOneBroker(BrokerInterface):
 
     def _parse_tick(self, data: dict) -> Tick | None:
         """Parse tick data from WebSocket message.
-        
+
         Args:
             data: WebSocket message data
-            
+
         Returns:
             Tick object or None if parsing fails
 
@@ -297,8 +297,10 @@ class AngelOneBroker(BrokerInterface):
         """Handle WebSocket disconnection and attempt reconnection."""
         if self._reconnect_attempts < self._max_reconnect_attempts:
             self._reconnect_attempts += 1
-            backoff = min(2 ** self._reconnect_attempts, 30)  # Exponential backoff, max 30s
-            logger.info(f"Attempting WebSocket reconnection in {backoff}s (attempt {self._reconnect_attempts})")
+            backoff = min(2**self._reconnect_attempts, 30)  # Exponential backoff, max 30s
+            logger.info(
+                f"Attempting WebSocket reconnection in {backoff}s (attempt {self._reconnect_attempts})"
+            )
             time.sleep(backoff)
 
             try:
@@ -316,14 +318,14 @@ class AngelOneBroker(BrokerInterface):
 
     def subscribe(self, symbols: list[str], on_tick: Callable[[Tick], None]) -> bool:
         """Subscribe to real-time tick data for given symbols.
-        
+
         Args:
             symbols: List of trading symbols to subscribe to
             on_tick: Callback function to handle incoming ticks
-            
+
         Returns:
             True if subscription successful
-            
+
         Raises:
             ConnectionError: If not connected to broker
 
@@ -349,10 +351,12 @@ class AngelOneBroker(BrokerInterface):
                 continue
 
             self._subscribed_symbols[symbol] = token
-            token_list.append({
-                "exchangeType": 1,  # NSE
-                "tokens": [token],
-            })
+            token_list.append(
+                {
+                    "exchangeType": 1,  # NSE
+                    "tokens": [token],
+                }
+            )
             logger.info(f"Subscribed to {symbol} (token: {token})")
 
         # Send subscription message
@@ -370,10 +374,10 @@ class AngelOneBroker(BrokerInterface):
 
     def unsubscribe(self, symbols: list[str]) -> bool:
         """Unsubscribe from real-time tick data for given symbols.
-        
+
         Args:
             symbols: List of trading symbols to unsubscribe from
-            
+
         Returns:
             True if unsubscription successful
 
@@ -385,10 +389,12 @@ class AngelOneBroker(BrokerInterface):
         for symbol in symbols:
             token = self._subscribed_symbols.get(symbol)
             if token:
-                token_list.append({
-                    "exchangeType": 1,  # NSE
-                    "tokens": [token],
-                })
+                token_list.append(
+                    {
+                        "exchangeType": 1,  # NSE
+                        "tokens": [token],
+                    }
+                )
                 del self._subscribed_symbols[symbol]
                 logger.info(f"Unsubscribed from {symbol}")
 
@@ -407,13 +413,13 @@ class AngelOneBroker(BrokerInterface):
 
     def place_order(self, order: Order) -> str:
         """Place an order with Angel One broker.
-        
+
         Args:
             order: Order object with all required details
-            
+
         Returns:
             Broker order ID if successful
-            
+
         Raises:
             OrderRejectionError: If broker rejects the order
             ConnectionError: If not connected to broker
@@ -476,13 +482,13 @@ class AngelOneBroker(BrokerInterface):
 
     def cancel_order(self, broker_order_id: str) -> bool:
         """Cancel a pending order.
-        
+
         Args:
             broker_order_id: Broker's order ID to cancel
-            
+
         Returns:
             True if cancellation successful
-            
+
         Raises:
             OrderNotFoundError: If order ID not found
 
@@ -535,13 +541,13 @@ class AngelOneBroker(BrokerInterface):
 
     def get_order_status(self, broker_order_id: str) -> Order:
         """Get current status of an order.
-        
+
         Args:
             broker_order_id: Broker's order ID to query
-            
+
         Returns:
             Order object with updated status
-            
+
         Raises:
             OrderNotFoundError: If order ID not found
 
@@ -604,14 +610,20 @@ class AngelOneBroker(BrokerInterface):
             return Order(
                 order_id="",  # Internal ID not available from broker
                 symbol=order_info.get("tradingsymbol", ""),
-                side=OrderSide.BUY if order_info.get("transactiontype") == "BUY" else OrderSide.SELL,
+                side=(
+                    OrderSide.BUY if order_info.get("transactiontype") == "BUY" else OrderSide.SELL
+                ),
                 order_type=OrderType.MARKET,  # Simplified
                 quantity=int(order_info.get("quantity", 0)),
                 product_type=ProductType.MIS,  # Simplified
                 status=status,
                 broker_order_id=broker_order_id,
                 filled_qty=int(order_info.get("filledshares", 0)),
-                filled_price=float(order_info.get("averageprice", 0)) if order_info.get("averageprice") else None,
+                filled_price=(
+                    float(order_info.get("averageprice", 0))
+                    if order_info.get("averageprice")
+                    else None
+                ),
                 timestamp=datetime.now(),
                 rejection_reason=order_info.get("text"),
             )
@@ -621,7 +633,7 @@ class AngelOneBroker(BrokerInterface):
 
     def get_positions(self) -> list[dict]:
         """Get all open positions.
-        
+
         Returns:
             List of position dictionaries
 
@@ -659,13 +671,15 @@ class AngelOneBroker(BrokerInterface):
             # Parse positions
             positions = []
             for pos in result.get("data", []):
-                positions.append({
-                    "symbol": pos.get("tradingsymbol"),
-                    "quantity": int(pos.get("netqty", 0)),
-                    "avg_price": float(pos.get("netavgprice", 0)),
-                    "ltp": float(pos.get("ltp", 0)),
-                    "pnl": float(pos.get("pnl", 0)),
-                })
+                positions.append(
+                    {
+                        "symbol": pos.get("tradingsymbol"),
+                        "quantity": int(pos.get("netqty", 0)),
+                        "avg_price": float(pos.get("netavgprice", 0)),
+                        "ltp": float(pos.get("ltp", 0)),
+                        "pnl": float(pos.get("pnl", 0)),
+                    }
+                )
 
             return positions
 
@@ -675,10 +689,10 @@ class AngelOneBroker(BrokerInterface):
 
     def get_instrument_master(self) -> list[dict]:
         """Download instrument master with symbol tokens and trading details.
-        
+
         Returns:
             List of instrument dictionaries with symbol, token, exchange, lot_size, tick_size, trading_symbol
-            
+
         Requirements: 23.1, 23.2
 
         """
@@ -702,16 +716,18 @@ class AngelOneBroker(BrokerInterface):
                 try:
                     # Parse instrument data
                     # Angel One format includes: token, symbol, name, expiry, strike, lotsize, instrumenttype, exch_seg, tick_size
-                    instruments.append({
-                        "symbol": item.get("symbol", "").strip(),
-                        "token": item.get("token", "").strip(),
-                        "exchange": item.get("exch_seg", "NSE").strip(),
-                        "lot_size": int(item.get("lotsize", 1)),
-                        "tick_size": float(item.get("tick_size", 0.05)),
-                        "trading_symbol": item.get("symbol", "").strip(),
-                        "instrument": item.get("instrumenttype", "").strip(),
-                        "name": item.get("name", "").strip(),
-                    })
+                    instruments.append(
+                        {
+                            "symbol": item.get("symbol", "").strip(),
+                            "token": item.get("token", "").strip(),
+                            "exchange": item.get("exch_seg", "NSE").strip(),
+                            "lot_size": int(item.get("lotsize", 1)),
+                            "tick_size": float(item.get("tick_size", 0.05)),
+                            "trading_symbol": item.get("symbol", "").strip(),
+                            "instrument": item.get("instrumenttype", "").strip(),
+                            "name": item.get("name", "").strip(),
+                        }
+                    )
                 except (ValueError, KeyError) as e:
                     logger.debug(f"Skipping invalid instrument: {e}")
                     continue

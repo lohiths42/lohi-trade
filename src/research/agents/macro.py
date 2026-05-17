@@ -68,11 +68,7 @@ class MacroAgent(BaseRetrievalAgent):
         if plan_query:
             return plan_query
         user_prompt = context.user_prompt or ""
-        return (
-            f"{user_prompt} {_MACRO_QUERY_BIAS}".strip()
-            if user_prompt
-            else _MACRO_QUERY_BIAS
-        )
+        return f"{user_prompt} {_MACRO_QUERY_BIAS}".strip() if user_prompt else _MACRO_QUERY_BIAS
 
 
 def build(llm: LLMProvider, config: AgentConfig | None = None) -> MacroAgent:

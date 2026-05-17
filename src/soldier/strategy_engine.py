@@ -130,7 +130,9 @@ class Strategy(ABC):
 
     @abstractmethod
     def generate_signal(
-        self, indicators: IndicatorSet, candles: pd.DataFrame,
+        self,
+        indicators: IndicatorSet,
+        candles: pd.DataFrame,
     ) -> Signal | None:
         """Evaluate indicators and candle data to generate a trading signal.
 
@@ -144,6 +146,7 @@ class Strategy(ABC):
 
         """
         ...
+
 
 class MeanReversionStrategy(Strategy):
     """Mean Reversion strategy: generates BUY signals when price is
@@ -174,7 +177,9 @@ class MeanReversionStrategy(Strategy):
         return self._config.enabled
 
     def generate_signal(
-        self, indicators: IndicatorSet, candles: pd.DataFrame,
+        self,
+        indicators: IndicatorSet,
+        candles: pd.DataFrame,
     ) -> Signal | None:
         if not self._config.enabled:
             return None
@@ -244,7 +249,9 @@ class TrendFollowingStrategy(Strategy):
         return self._config.enabled
 
     def generate_signal(
-        self, indicators: IndicatorSet, candles: pd.DataFrame,
+        self,
+        indicators: IndicatorSet,
+        candles: pd.DataFrame,
     ) -> Signal | None:
         if not self._config.enabled:
             return None
@@ -336,7 +343,9 @@ class OpeningRangeBreakoutStrategy(Strategy):
         self._opening_ranges.clear()
 
     def generate_signal(
-        self, indicators: IndicatorSet, candles: pd.DataFrame,
+        self,
+        indicators: IndicatorSet,
+        candles: pd.DataFrame,
     ) -> Signal | None:
         if not self._config.enabled:
             return None
@@ -407,4 +416,3 @@ class OpeningRangeBreakoutStrategy(Strategy):
             target=target,
             indicators=indicators,
         )
-

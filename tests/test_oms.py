@@ -31,11 +31,13 @@ from src.ingestion.broker_interface import (
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_in_memory_db() -> MagicMock:
     """Create a MagicMock db_manager backed by an in-memory SQLite database."""
     conn = sqlite3.connect(":memory:")
     conn.row_factory = sqlite3.Row
-    conn.executescript("""
+    conn.executescript(
+        """
         CREATE TABLE orders (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             order_id TEXT UNIQUE NOT NULL,
@@ -54,7 +56,8 @@ def _make_in_memory_db() -> MagicMock:
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
-    """)
+    """
+    )
     conn.commit()
 
     db_manager = MagicMock()
@@ -113,7 +116,8 @@ def _get_order_row(db_manager: MagicMock, order_id: str) -> sqlite3.Row:
     """Fetch an order row from the in-memory SQLite."""
     conn = db_manager.connect_sqlite()
     return conn.execute(
-        "SELECT * FROM orders WHERE order_id=?", (order_id,),
+        "SELECT * FROM orders WHERE order_id=?",
+        (order_id,),
     ).fetchone()
 
 

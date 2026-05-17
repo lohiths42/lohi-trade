@@ -364,11 +364,7 @@ class PgVectorVectorStore:
             predicates.append(f"symbol = ${len(params)}")
 
         where_sql = " AND ".join(predicates)
-        sql = (
-            f"DELETE FROM {self._table} "
-            f"WHERE {where_sql} "
-            "RETURNING chunk_id"
-        )
+        sql = f"DELETE FROM {self._table} " f"WHERE {where_sql} " "RETURNING chunk_id"
 
         pool = await self._pool_or_create()
         async with pool.acquire() as conn, conn.transaction():
@@ -387,9 +383,7 @@ class PgVectorVectorStore:
             predicates.append(f"symbol = ${len(params)}")
 
         where_sql = " AND ".join(predicates)
-        sql = (
-            f"SELECT COUNT(*) AS n FROM {self._table} WHERE {where_sql}"
-        )
+        sql = f"SELECT COUNT(*) AS n FROM {self._table} WHERE {where_sql}"
 
         pool = await self._pool_or_create()
         async with pool.acquire() as conn, conn.transaction():
@@ -429,11 +423,7 @@ def build(cfg: dict[str, Any]) -> VectorStore:
     """
     sub = cfg.get("pgvector") if isinstance(cfg.get("pgvector"), dict) else {}
 
-    dsn = (
-        cfg.get("dsn")
-        or sub.get("dsn")
-        or os.environ.get("DATABASE_URL")
-    )
+    dsn = cfg.get("dsn") or sub.get("dsn") or os.environ.get("DATABASE_URL")
     if not dsn:
         raise KeyError(
             "pgvector adapter requires a DSN; checked "

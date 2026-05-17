@@ -116,7 +116,7 @@ start_server {tags {"benchmark network external:skip logreqres:skip"}} {
             # ensure the keyspace has the desired size
             assert_match  {50} [scan [regexp -inline {keys\=([\d]*)} [r info keyspace]] keys=%d]
         }
-        
+
         test {benchmark: clients idle mode should return error when reached maxclients limit} {
             set cmd [redisbenchmark $master_host $master_port "-c 10 -I"]
             set original_maxclients [lindex [r config get maxclients] 1]

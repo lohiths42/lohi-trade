@@ -135,7 +135,7 @@ int list_edit(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
         RedisModule_ReplyWithCString(ctx, "entry");
         RedisModule_ReplyWithString(ctx, v);
         RedisModule_FreeString(ctx, v);
-    } 
+    }
 
     RedisModule_CloseKey(key);
     return REDISMODULE_OK;

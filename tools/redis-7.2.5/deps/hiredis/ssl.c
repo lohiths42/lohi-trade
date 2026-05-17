@@ -614,4 +614,3 @@ redisContextFuncs redisContextSSLFuncs = {
     .read = redisSSLRead,
     .write = redisSSLWrite
 };
-

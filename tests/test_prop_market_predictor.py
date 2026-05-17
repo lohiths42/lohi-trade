@@ -24,16 +24,28 @@ from src.ml.market_predictor import (
 )
 
 positive_float = st.floats(
-    min_value=0.01, max_value=1e4, allow_nan=False, allow_infinity=False,
+    min_value=0.01,
+    max_value=1e4,
+    allow_nan=False,
+    allow_infinity=False,
 )
 price_float = st.floats(
-    min_value=1.0, max_value=1e4, allow_nan=False, allow_infinity=False,
+    min_value=1.0,
+    max_value=1e4,
+    allow_nan=False,
+    allow_infinity=False,
 )
 volume_float = st.floats(
-    min_value=0.0, max_value=1e8, allow_nan=False, allow_infinity=False,
+    min_value=0.0,
+    max_value=1e8,
+    allow_nan=False,
+    allow_infinity=False,
 )
 threshold_pct = st.floats(
-    min_value=0.01, max_value=10.0, allow_nan=False, allow_infinity=False,
+    min_value=0.01,
+    max_value=10.0,
+    allow_nan=False,
+    allow_infinity=False,
 )
 
 
@@ -43,24 +55,30 @@ def candle_arrays(draw, min_len=LOOKBACK_CANDLES, max_len=100):
     n = draw(st.integers(min_value=min_len, max_value=max_len))
     base = draw(price_float)
     # Random walk for closes
-    changes = np.array([
-        draw(st.floats(min_value=-5.0, max_value=5.0, allow_nan=False, allow_infinity=False))
-        for _ in range(n)
-    ])
+    changes = np.array(
+        [
+            draw(st.floats(min_value=-5.0, max_value=5.0, allow_nan=False, allow_infinity=False))
+            for _ in range(n)
+        ]
+    )
     closes = base + np.cumsum(changes)
     closes = np.maximum(closes, 0.01)  # keep positive
 
-    spread = np.array([
-        draw(st.floats(min_value=0.01, max_value=5.0, allow_nan=False, allow_infinity=False))
-        for _ in range(n)
-    ])
+    spread = np.array(
+        [
+            draw(st.floats(min_value=0.01, max_value=5.0, allow_nan=False, allow_infinity=False))
+            for _ in range(n)
+        ]
+    )
     highs = closes + spread
     lows = closes - np.minimum(spread * 0.5, closes - 0.01)
 
-    volumes = np.array([
-        draw(st.floats(min_value=100.0, max_value=1e6, allow_nan=False, allow_infinity=False))
-        for _ in range(n)
-    ])
+    volumes = np.array(
+        [
+            draw(st.floats(min_value=100.0, max_value=1e6, allow_nan=False, allow_infinity=False))
+            for _ in range(n)
+        ]
+    )
 
     return closes, highs, lows, volumes
 
@@ -140,7 +158,9 @@ class TestExtractPatternFeaturesProperties:
 class TestComputeRegimeLabelProperties:
     @given(
         future=st.lists(
-            price_float, min_size=1, max_size=20,
+            price_float,
+            min_size=1,
+            max_size=20,
         ).map(np.array),
         current=price_float,
         threshold=threshold_pct,
@@ -191,9 +211,12 @@ def _build_trained_predictor():
     rng = np.random.RandomState(42)
     for label in [0, 1, 2]:
         for _ in range(20):
-            mp.add_sample(PatternSample(
-                features=rng.randn(12), label=label,
-            ))
+            mp.add_sample(
+                PatternSample(
+                    features=rng.randn(12),
+                    label=label,
+                )
+            )
     mp.train()
     return mp
 
@@ -213,9 +236,12 @@ class TestMarketPredictorProperties:
         """Adding samples always increments count correctly."""
         mp = MarketPredictor()
         for i in range(sample_count):
-            mp.add_sample(PatternSample(
-                features=np.random.randn(12), label=i % 3,
-            ))
+            mp.add_sample(
+                PatternSample(
+                    features=np.random.randn(12),
+                    label=i % 3,
+                )
+            )
         assert mp.sample_count == sample_count
 
     @given(n_samples=st.integers(min_value=1, max_value=40))
@@ -225,9 +251,12 @@ class TestMarketPredictorProperties:
         assume(n_samples < 50)
         mp = MarketPredictor(min_samples=50)
         for i in range(n_samples):
-            mp.add_sample(PatternSample(
-                features=np.random.randn(12), label=i % 3,
-            ))
+            mp.add_sample(
+                PatternSample(
+                    features=np.random.randn(12),
+                    label=i % 3,
+                )
+            )
         result = mp.train()
         assert not result
         assert not mp.is_trained

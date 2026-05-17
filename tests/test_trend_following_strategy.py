@@ -25,6 +25,7 @@ from src.utils.config import TrendFollowingStrategy as TrendFollowingConfig
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _default_config(enabled: bool = True) -> TrendFollowingConfig:
     return TrendFollowingConfig(
         enabled=enabled,
@@ -84,6 +85,7 @@ def _make_candles(close: float = 103.0, volume: float = 60000.0) -> pd.DataFrame
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 class TestTrendFollowingProperties:
     def test_name(self):

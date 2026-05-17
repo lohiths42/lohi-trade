@@ -392,17 +392,8 @@ def build(cfg: dict[str, Any]) -> VectorStore:
 
     sub = cfg.get("qdrant") if isinstance(cfg.get("qdrant"), dict) else {}
 
-    url = (
-        cfg.get("url")
-        or sub.get("url")
-        or os.environ.get("QDRANT_URL")
-        or _DEFAULT_URL
-    )
-    api_key = (
-        cfg.get("api_key")
-        or sub.get("api_key")
-        or os.environ.get("QDRANT_API_KEY")
-    )
+    url = cfg.get("url") or sub.get("url") or os.environ.get("QDRANT_URL") or _DEFAULT_URL
+    api_key = cfg.get("api_key") or sub.get("api_key") or os.environ.get("QDRANT_API_KEY")
 
     client = AsyncQdrantClient(url=url, api_key=api_key)
     return QdrantVectorStore(client=client)

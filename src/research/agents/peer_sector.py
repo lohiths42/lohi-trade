@@ -79,7 +79,8 @@ class PeerSectorAgent(BaseRetrievalAgent):
 
 
 def build(
-    llm: LLMProvider, config: AgentConfig | None = None,
+    llm: LLMProvider,
+    config: AgentConfig | None = None,
 ) -> PeerSectorAgent:
     """Convenience factory for registry-style wiring."""
     return PeerSectorAgent(llm=llm, config=config or AgentConfig())

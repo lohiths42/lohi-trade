@@ -168,9 +168,7 @@ class _FilingsChunkSubAgent(SubAgent):
                 section_name="summary",
                 reason=f"no chunks for {symbol}",
             )
-        citation_markers = " ".join(
-            f"[cite:{hit.chunk.chunk_id}]" for hit in hits
-        )
+        citation_markers = " ".join(f"[cite:{hit.chunk.chunk_id}]" for hit in hits)
         return AgentResult(
             agent_name=self.name,
             kind="ok",
@@ -302,15 +300,15 @@ def llm() -> FakeLLMProvider:
     """Fresh :class:`FakeLLMProvider` per test with a short canned completion."""
     return FakeLLMProvider(
         canned_completion=(
-            "Plan: consult filings for the requested symbol and "
-            "summarise cited claims."
+            "Plan: consult filings for the requested symbol and " "summarise cited claims."
         ),
     )
 
 
 @pytest_asyncio.fixture
 async def vector_store(
-    user_id: UUID, embeddings: FakeEmbeddingsProvider,
+    user_id: UUID,
+    embeddings: FakeEmbeddingsProvider,
 ) -> FakeVectorStore:
     """Fresh :class:`FakeVectorStore` seeded from the filings fixture corpus.
 
@@ -475,9 +473,7 @@ class TestResearchSmokeE2E:
                     break
                 await asyncio.sleep(0.05)
 
-            assert brief is not None, (
-                "Research run did not produce a final brief within 2.5s"
-            )
+            assert brief is not None, "Research run did not produce a final brief within 2.5s"
 
             # Assertion (a) — ResearchBrief-shaped payload.
             for section in (
@@ -514,18 +510,16 @@ class TestResearchSmokeE2E:
             # internal list to avoid re-embedding a probe vector.
             store_ids = {c.chunk_id for c in vector_store._chunks}
             for chunk_id in citations:
-                assert chunk_id in store_ids, (
-                    f"citation {chunk_id!r} does not resolve in FakeVectorStore"
-                )
+                assert (
+                    chunk_id in store_ids
+                ), f"citation {chunk_id!r} does not resolve in FakeVectorStore"
 
         # Assertion (d) — no cloud adapter was loaded during the run.
-        loaded_cloud_modules = {
-            m for m in _CLOUD_PROVIDER_MODULES if m in sys.modules
-        }
+        loaded_cloud_modules = {m for m in _CLOUD_PROVIDER_MODULES if m in sys.modules}
         new_cloud_modules = loaded_cloud_modules - cloud_module_snapshot
-        assert not new_cloud_modules, (
-            f"Cloud provider module(s) imported during run: {new_cloud_modules}"
-        )
+        assert (
+            not new_cloud_modules
+        ), f"Cloud provider module(s) imported during run: {new_cloud_modules}"
 
     def test_no_network_sockets_used(self, smoke_app: FastAPI) -> None:
         """Belt-and-braces check — nothing in the fake stack opens a socket.

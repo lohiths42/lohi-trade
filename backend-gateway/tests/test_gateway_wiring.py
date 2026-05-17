@@ -9,17 +9,16 @@ Verifies task 28.1 requirements:
 Requirements: 29.5, 12.6
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
-
 from app.main import app
+from app.middleware.jwt_auth import _extract_user_id
 from app.services.push_notification_service import (
-    PushNotificationService,
-    PushNotification,
     NotificationType,
+    PushNotification,
+    PushNotificationService,
 )
-from app.middleware.jwt_auth import _extract_user_id, JWTAuthMiddleware
-
 
 # ── Router registration tests ────────────────────────────────────────────────
 
@@ -116,14 +115,26 @@ class TestRouterRegistration:
     def test_v2_routers_use_v2_prefix(self):
         """All new v2 routers should be under /api/v2 prefix."""
         paths = self._get_all_route_paths()
-        v2_keywords = ["/verify/", "/bank/", "/fund/", "/stocks", "/watchlists",
-                       "/screener/", "/brokers/", "/market/", "/chatbot/", "/users/", "/admin/"]
+        v2_keywords = [
+            "/verify/",
+            "/bank/",
+            "/fund/",
+            "/stocks",
+            "/watchlists",
+            "/screener/",
+            "/brokers/",
+            "/market/",
+            "/chatbot/",
+            "/users/",
+            "/admin/",
+        ]
         for keyword in v2_keywords:
             matching = [p for p in paths if keyword in p]
             if matching:
                 for path in matching:
-                    assert "/api/v2" in path or "/v2/" in path.replace("/api/v2", "").replace(keyword, "v2"), \
-                        f"Route {path} with {keyword} should be under /api/v2"
+                    assert "/api/v2" in path or "/v2/" in path.replace("/api/v2", "").replace(
+                        keyword, "v2"
+                    ), f"Route {path} with {keyword} should be under /api/v2"
 
 
 # ── Middleware tests ─────────────────────────────────────────────────────────
@@ -136,8 +147,9 @@ class TestMiddlewareStack:
         """JWTAuthMiddleware should be in the app's middleware configuration."""
         # FastAPI stores middleware in user_middleware list before building the stack
         middleware_classes = [m.cls.__name__ for m in app.user_middleware if hasattr(m, "cls")]
-        assert "JWTAuthMiddleware" in middleware_classes, \
-            f"JWTAuthMiddleware not found in user_middleware: {middleware_classes}"
+        assert (
+            "JWTAuthMiddleware" in middleware_classes
+        ), f"JWTAuthMiddleware not found in user_middleware: {middleware_classes}"
 
     def test_extract_user_id_no_header(self):
         """No auth header should return None."""
@@ -188,9 +200,9 @@ class TestRLSContext:
     @pytest.mark.asyncio
     async def test_jwt_middleware_sets_rls_context(self):
         """JWTAuthMiddleware should set app.state.current_user_id."""
-        from starlette.testclient import TestClient
         from starlette.requests import Request as StarletteRequest
         from starlette.responses import JSONResponse
+        from starlette.testclient import TestClient
 
         with patch("app.services.account_service.verify_access_token") as mock_verify:
             mock_verify.return_value = {"sub": "rls-user-456", "role": "TRADER"}
@@ -199,9 +211,7 @@ class TestRLSContext:
 
             @app.get("/test-rls-context-check")
             async def test_rls_endpoint(request: StarletteRequest):
-                captured_user_id["value"] = getattr(
-                    request.app.state, "current_user_id", None
-                )
+                captured_user_id["value"] = getattr(request.app.state, "current_user_id", None)
                 return JSONResponse({"ok": True})
 
             client = TestClient(app)

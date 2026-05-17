@@ -24,7 +24,9 @@ class ResearchDocument(Base):
     """A parsed, canonicalised source document owned by a single user."""
 
     __tablename__ = "research_documents"
-    __table_args__ = (UniqueConstraint("user_id", "sha256", name="research_documents_user_id_sha256_key"),)
+    __table_args__ = (
+        UniqueConstraint("user_id", "sha256", name="research_documents_user_id_sha256_key"),
+    )
 
     id: Mapped[UUID] = mapped_column(
         PG_UUID(as_uuid=True),
@@ -43,9 +45,7 @@ class ResearchDocument(Base):
         TIMESTAMP(timezone=True), nullable=False, server_default=func.now()
     )
     canonical_text: Mapped[str] = mapped_column(Text, nullable=False)
-    metadata_json: Mapped[dict] = mapped_column(
-        JSONB, nullable=False, server_default="{}"
-    )
+    metadata_json: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default="{}")
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True), nullable=False, server_default=func.now()
     )

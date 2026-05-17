@@ -1,10 +1,7 @@
 """Unit tests for KYCService — document validation, encryption, submission, status checks."""
 
-import asyncio
 import os
 import struct
-import uuid
-from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
@@ -16,18 +13,13 @@ _TEST_KEY = Fernet.generate_key().decode()
 os.environ["PAN_ENCRYPTION_KEY"] = _TEST_KEY
 
 from app.services.verification_service import (
-    KYCService,
-    KYCDocuments,
-    KYCSubmissionResult,
-    KYCStatus,
-    MAX_RETRIES,
-    MIN_DOCUMENT_DPI,
-    MIN_DOCUMENT_SIZE,
     MAX_DOCUMENT_SIZE,
-    ALLOWED_MIME_TYPES,
-    DOCUMENT_RETENTION_DAYS,
+    MAX_RETRIES,
+    MIN_DOCUMENT_SIZE,
+    KYCDocuments,
+    KYCService,
+    KYCStatus,
 )
-
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -90,7 +82,7 @@ def _make_png_image(dpi: int = 300, size_bytes: int = 150_000) -> bytes:
     phys_data = b"pHYs"
     phys_data += struct.pack(">I", ppm)  # X pixels per unit
     phys_data += struct.pack(">I", ppm)  # Y pixels per unit
-    phys_data += b"\x01"                 # unit = meter
+    phys_data += b"\x01"  # unit = meter
 
     combined = header + phys_data
     padding_needed = max(0, size_bytes - len(combined))
@@ -248,9 +240,7 @@ class TestSubmitKYC:
     async def test_bad_document_quality_rejected(self):
         pool, conn = _make_mock_pool()
         svc = _make_service(db_pool=pool)
-        docs = _make_documents(
-            government_id_photo=_make_jpeg_image(dpi=100, size_bytes=150_000)
-        )
+        docs = _make_documents(government_id_photo=_make_jpeg_image(dpi=100, size_bytes=150_000))
 
         result = await svc.submit_kyc("user-1", docs)
 
@@ -344,7 +334,9 @@ class TestSubmitKYC:
             mock_client.post = AsyncMock(side_effect=httpx.ConnectError("refused"))
             mock_cls.return_value = mock_client
 
-            with patch("app.services.verification_service.asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
+            with patch(
+                "app.services.verification_service.asyncio.sleep", new_callable=AsyncMock
+            ) as mock_sleep:
                 result = await svc.submit_kyc("user-1", docs)
 
         assert mock_client.post.call_count == MAX_RETRIES

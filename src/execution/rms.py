@@ -141,8 +141,17 @@ class RiskManagementSystem:
 
         # Market-specific benchmark for volatility guard
         # Uses config/market.yaml settings (defaults to Nifty for backward compatibility)
-        self._benchmark_redis_key = getattr(config.market, "benchmark_redis_key", "nifty")
-        self._benchmark_index_name = getattr(config.market, "benchmark_index_name", "Nifty 50")
+        market_config = getattr(config, "market", None)
+        self._benchmark_redis_key = self._resolve_market_setting(
+            market_config,
+            "benchmark_redis_key",
+            "nifty",
+        )
+        self._benchmark_index_name = self._resolve_market_setting(
+            market_config,
+            "benchmark_index_name",
+            "Nifty 50",
+        )
 
         logger.info(
             f"RMS initialized: capital={self._total_capital}, "
@@ -415,6 +424,12 @@ class RiskManagementSystem:
     # Data access helpers
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _resolve_market_setting(market_config: object, attr: str, default: str) -> str:
+        """Resolve a string market setting while ignoring mock objects and nulls."""
+        value = getattr(market_config, attr, default) if market_config is not None else default
+        return value if isinstance(value, str) and value else default
+
     def _get_daily_pnl(self) -> float:
         """Get realized P&L for today from the trades table."""
         try:
@@ -571,22 +586,26 @@ class RiskManagementSystem:
                 "timestamp": result.timestamp.isoformat(),
             }
             self._event_bus.publish(
-                REJECTION_STREAM, rejection_msg, maxlen=REJECTION_STREAM_MAXLEN,
+                REJECTION_STREAM,
+                rejection_msg,
+                maxlen=REJECTION_STREAM_MAXLEN,
             )
         except Exception as e:
             logger.error(f"Failed to publish rejection to Event Bus: {e}")
 
         # Log to audit_log table
         try:
-            metadata = json.dumps({
-                "signal_id": signal.signal_id,
-                "symbol": signal.symbol,
-                "side": signal.side,
-                "strategy": signal.strategy,
-                "entry_price": signal.entry_price,
-                "checks_passed": result.checks_passed,
-                "checks_failed": result.checks_failed,
-            })
+            metadata = json.dumps(
+                {
+                    "signal_id": signal.signal_id,
+                    "symbol": signal.symbol,
+                    "side": signal.side,
+                    "strategy": signal.strategy,
+                    "entry_price": signal.entry_price,
+                    "checks_passed": result.checks_passed,
+                    "checks_failed": result.checks_failed,
+                }
+            )
             self._db.execute_with_retry(
                 "INSERT INTO audit_log (event_type, component, message, metadata) "
                 "VALUES (?, ?, ?, ?)",

@@ -27,6 +27,7 @@ from src.commander.bias_calculator import BiasCalculator
 # In-memory DB helper (same pattern as unit tests)
 # ---------------------------------------------------------------------------
 
+
 class InMemoryDBManager:
     """Lightweight in-memory SQLite for testing."""
 
@@ -40,7 +41,8 @@ class InMemoryDBManager:
         if self._sqlite_conn is None:
             self._sqlite_conn = sqlite3.connect(":memory:")
             self._sqlite_conn.row_factory = sqlite3.Row
-            self._sqlite_conn.executescript("""
+            self._sqlite_conn.executescript(
+                """
                 CREATE TABLE sentiment_log (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     article_id TEXT NOT NULL,
@@ -55,7 +57,8 @@ class InMemoryDBManager:
                 );
                 CREATE INDEX idx_sentiment_ticker ON sentiment_log(ticker);
                 CREATE INDEX idx_sentiment_created_at ON sentiment_log(created_at);
-            """)
+            """
+            )
         return self._sqlite_conn
 
 
@@ -117,9 +120,9 @@ class TestBiasTimeDecayProperties:
         calc = BiasCalculator(half_life_hours=half_life)
         weight = calc.compute_decay_weight(half_life)
         assert weight == math.exp(-math.log(2) / half_life * half_life)
-        assert abs(weight - 0.5) < 1e-9, (
-            f"Weight at half-life {half_life}h should be 0.5, got {weight}"
-        )
+        assert (
+            abs(weight - 0.5) < 1e-9
+        ), f"Weight at half-life {half_life}h should be 0.5, got {weight}"
 
     @given(
         half_life=_half_life,
@@ -137,9 +140,7 @@ class TestBiasTimeDecayProperties:
         calc = BiasCalculator(half_life_hours=half_life)
         w1 = calc.compute_decay_weight(t1)
         w2 = calc.compute_decay_weight(t2)
-        assert w1 >= w2, (
-            f"Weight should decrease with time: w({t1}h)={w1} < w({t2}h)={w2}"
-        )
+        assert w1 >= w2, f"Weight should decrease with time: w({t1}h)={w1} < w({t2}h)={w2}"
 
     @given(
         score=_sentiment_score,
@@ -232,6 +233,5 @@ class TestBiasTimeDecayProperties:
             expected_score = 0.0
 
         assert abs(result.score - expected_score) < 1e-4, (
-            f"Weighted average mismatch: expected={expected_score:.6f}, "
-            f"got={result.score:.6f}"
+            f"Weighted average mismatch: expected={expected_score:.6f}, " f"got={result.score:.6f}"
         )

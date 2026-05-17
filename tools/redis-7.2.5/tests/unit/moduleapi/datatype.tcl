@@ -111,7 +111,7 @@ start_server {tags {"modules"}} {
             if {$cur == 0} break
         }
 
-        assert_equal 1 [llength $keys]    
+        assert_equal 1 [llength $keys]
     }
 
     test {SCAN module datatype with case sensitive} {

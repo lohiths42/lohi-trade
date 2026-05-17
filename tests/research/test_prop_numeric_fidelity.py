@@ -271,15 +271,15 @@ def _format_decimal(value: Decimal, *, max_places: int) -> str:
 # test is well-defined — the pair is the test-side proof that the
 # validator's cross-shape match path works.
 _RENDERERS: dict[_AtomKind, tuple[Callable[[Decimal], str], Callable[[Decimal], str]]] = {
-    "inr_cr":          (_render_inr_cr, _render_raw_int),
-    "inr_lakh":        (_render_inr_lakh, _render_raw_int),
-    "inr_plain":       (_render_inr_plain, _render_rs_plain),
-    "usd_plain":       (_render_usd_plain, _render_usd_plain),
-    "percent":         (_render_percent, _render_percent_word),
-    "count_cr":        (_render_count_cr, _render_raw_int),
-    "count_lakh":      (_render_count_lakh, _render_raw_int),
-    "fiscal_year":     (_render_fy_two_digit, _render_fy_four_digit),
-    "fiscal_quarter":  (_render_fq_spaced, _render_fq_compact),
+    "inr_cr": (_render_inr_cr, _render_raw_int),
+    "inr_lakh": (_render_inr_lakh, _render_raw_int),
+    "inr_plain": (_render_inr_plain, _render_rs_plain),
+    "usd_plain": (_render_usd_plain, _render_usd_plain),
+    "percent": (_render_percent, _render_percent_word),
+    "count_cr": (_render_count_cr, _render_raw_int),
+    "count_lakh": (_render_count_lakh, _render_raw_int),
+    "fiscal_year": (_render_fy_two_digit, _render_fy_four_digit),
+    "fiscal_quarter": (_render_fq_spaced, _render_fq_compact),
 }
 
 
@@ -740,10 +740,7 @@ def test_mismatched_atom_is_always_flagged(
     violations = validate_numeric_fidelity(brief=brief, cited_chunks=chunks)
 
     # Leg 1 — every violation has the expected shape.
-    assert violations, (
-        "Validator under-flagged: rogue atom "
-        f"{rogue!r} produced no violations"
-    )
+    assert violations, "Validator under-flagged: rogue atom " f"{rogue!r} produced no violations"
     for v in violations:
         assert isinstance(v, UnsupportedClaim)
         assert v.reason == "numeric_drift"
@@ -789,7 +786,8 @@ _MAGNITUDE_COMPARABLE_UNITS: frozenset[str] = frozenset(
 
 
 def _rogue_collides_with_any(
-    rogue: _NumericAtom, good_atoms: list[_NumericAtom],
+    rogue: _NumericAtom,
+    good_atoms: list[_NumericAtom],
 ) -> bool:
     """True iff ``rogue`` is matchable against any entry in ``good_atoms``.
 
@@ -818,10 +816,7 @@ def _rogue_collides_with_any(
                 return True
             continue
         # Magnitude-comparable pool.
-        if (
-            rogue_unit in _MAGNITUDE_COMPARABLE_UNITS
-            and good_unit in _MAGNITUDE_COMPARABLE_UNITS
-        ):
+        if rogue_unit in _MAGNITUDE_COMPARABLE_UNITS and good_unit in _MAGNITUDE_COMPARABLE_UNITS:
             # Any non-fiscal, non-percent kind works here — we pass
             # ``rogue.kind`` purely to select the epsilon regime, not
             # to enforce kind equality.
@@ -841,15 +836,15 @@ def _canonical_unit_for_kind(kind: _AtomKind) -> str:
     check lines up with the validator's own comparator.
     """
     mapping: dict[_AtomKind, str] = {
-        "inr_cr":          "INR",
-        "inr_lakh":        "INR",
-        "inr_plain":       "INR",
-        "usd_plain":       "USD",
-        "percent":         "percent",
-        "count_cr":        "count_or_inr",
-        "count_lakh":      "count_or_inr",
-        "fiscal_year":     "fiscal_year",
-        "fiscal_quarter":  "fiscal_quarter",
+        "inr_cr": "INR",
+        "inr_lakh": "INR",
+        "inr_plain": "INR",
+        "usd_plain": "USD",
+        "percent": "percent",
+        "count_cr": "count_or_inr",
+        "count_lakh": "count_or_inr",
+        "fiscal_year": "fiscal_year",
+        "fiscal_quarter": "fiscal_quarter",
     }
     return mapping[kind]
 
@@ -899,7 +894,8 @@ def test_validator_instance_matches_module_helper(
     """
     brief, chunks = case
     instance_result = NumericValidator().validate(
-        brief=brief, cited_chunks=chunks,
+        brief=brief,
+        cited_chunks=chunks,
     )
     helper_result = validate_numeric_fidelity(brief=brief, cited_chunks=chunks)
     assert instance_result == helper_result == []

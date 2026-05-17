@@ -106,6 +106,7 @@ class TestStructuredFormatter:
             raise ValueError("Test exception")
         except ValueError:
             import sys
+
             exc_info = sys.exc_info()
 
             record = logging.LogRecord(
@@ -356,21 +357,26 @@ class TestLoggingSetup:
 
 # Property-Based Tests
 
+
 @settings(max_examples=5)
 @given(
-    component_name=st.text(min_size=1, max_size=50, alphabet=st.characters(
-        whitelist_categories=("Lu", "Ll", "Nd"),
-        whitelist_characters="_-",
-    )),
+    component_name=st.text(
+        min_size=1,
+        max_size=50,
+        alphabet=st.characters(
+            whitelist_categories=("Lu", "Ll", "Nd"),
+            whitelist_characters="_-",
+        ),
+    ),
     message=st.text(min_size=1, max_size=200),
     level=st.sampled_from(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]),
 )
 def test_property_structured_logging_format(component_name, message, level):
     """Feature: lohi-trade, Property 70: Structured Logging Format
-    
+
     For any log entry, it should include timestamp, component name, log level,
     and message in structured format.
-    
+
     Validates: Requirements 21.2
     """
     # Skip empty or whitespace-only strings
@@ -419,19 +425,23 @@ def test_property_structured_logging_format(component_name, message, level):
 
 @settings(max_examples=5)
 @given(
-    component_name=st.text(min_size=1, max_size=50, alphabet=st.characters(
-        whitelist_categories=("Lu", "Ll", "Nd"),
-        whitelist_characters="_-",
-    )),
+    component_name=st.text(
+        min_size=1,
+        max_size=50,
+        alphabet=st.characters(
+            whitelist_categories=("Lu", "Ll", "Nd"),
+            whitelist_characters="_-",
+        ),
+    ),
     correlation_id=st.text(min_size=1, max_size=100),
     message=st.text(min_size=1, max_size=200),
 )
 def test_property_correlation_id_tracing(component_name, correlation_id, message):
     """Feature: lohi-trade, Property: Correlation ID Tracing
-    
+
     For any log entry with a correlation ID set, the correlation ID should be
     included in the structured log output for tracing.
-    
+
     Validates: Requirements 21.2
     """
     assume(component_name.strip())
@@ -467,23 +477,52 @@ def test_property_correlation_id_tracing(component_name, correlation_id, message
 
 @settings(max_examples=5)
 @given(
-    component_name=st.text(min_size=1, max_size=50, alphabet=st.characters(
-        whitelist_categories=("Lu", "Ll", "Nd"),
-        whitelist_characters="_-",
-    )),
-    extra_fields=st.dictionaries(
-        keys=st.text(min_size=1, max_size=20, alphabet=st.characters(
+    component_name=st.text(
+        min_size=1,
+        max_size=50,
+        alphabet=st.characters(
             whitelist_categories=("Lu", "Ll", "Nd"),
-            whitelist_characters="_",
-        )).filter(lambda k: k not in [
-            # Reserved LogRecord attributes that cannot be overwritten
-            "name", "msg", "args", "created", "filename", "funcName",
-            "levelname", "levelno", "lineno", "module", "msecs",
-            "message", "pathname", "process", "processName",
-            "relativeCreated", "thread", "threadName", "exc_info",
-            "exc_text", "stack_info", "component", "correlation_id",
-            "taskName",
-        ]),
+            whitelist_characters="_-",
+        ),
+    ),
+    extra_fields=st.dictionaries(
+        keys=st.text(
+            min_size=1,
+            max_size=20,
+            alphabet=st.characters(
+                whitelist_categories=("Lu", "Ll", "Nd"),
+                whitelist_characters="_",
+            ),
+        ).filter(
+            lambda k: k
+            not in [
+                # Reserved LogRecord attributes that cannot be overwritten
+                "name",
+                "msg",
+                "args",
+                "created",
+                "filename",
+                "funcName",
+                "levelname",
+                "levelno",
+                "lineno",
+                "module",
+                "msecs",
+                "message",
+                "pathname",
+                "process",
+                "processName",
+                "relativeCreated",
+                "thread",
+                "threadName",
+                "exc_info",
+                "exc_text",
+                "stack_info",
+                "component",
+                "correlation_id",
+                "taskName",
+            ]
+        ),
         values=st.one_of(
             st.text(min_size=0, max_size=50),
             st.integers(),
@@ -496,10 +535,10 @@ def test_property_correlation_id_tracing(component_name, correlation_id, message
 )
 def test_property_extra_context_fields(component_name, extra_fields):
     """Feature: lohi-trade, Property: Extra Context Fields
-    
+
     For any log entry with extra context fields, all extra fields should be
     included in the structured log output.
-    
+
     Validates: Requirements 21.2
     """
     assume(component_name.strip())
@@ -529,4 +568,3 @@ def test_property_extra_context_fields(component_name, extra_fields):
             for key, value in extra_fields.items():
                 assert key in log_data
                 assert log_data[key] == value
-

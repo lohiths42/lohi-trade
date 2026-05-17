@@ -180,10 +180,7 @@ port_occupation_strategy = st.frozensets(
     st.sampled_from(sorted(REQUIRED_PORTS)),
 ).flatmap(
     lambda ports: st.fixed_dictionaries(
-        {
-            port: st.tuples(pid_strategy, process_name_strategy)
-            for port in ports
-        },
+        {port: st.tuples(pid_strategy, process_name_strategy) for port in ports},
     ),
 )
 
@@ -199,7 +196,8 @@ class TestPortConflictDetection:
     @given(occupation=port_occupation_strategy)
     @settings(max_examples=200)
     def test_all_occupied_ports_detected(
-        self, occupation: dict[int, tuple[int, str]],
+        self,
+        occupation: dict[int, tuple[int, str]],
     ) -> None:
         """For any port in {5432, 6379, 8000, 3000} that is occupied,
         check_ports() SHALL detect the conflict and return the port number
@@ -222,7 +220,8 @@ class TestPortConflictDetection:
     @given(occupation=port_occupation_strategy)
     @settings(max_examples=200)
     def test_conflict_contains_port_and_process_info(
-        self, occupation: dict[int, tuple[int, str]],
+        self,
+        occupation: dict[int, tuple[int, str]],
     ) -> None:
         """For each detected conflict, the result SHALL contain the port number
         and the conflicting process information (PID and process name).
@@ -233,29 +232,28 @@ class TestPortConflictDetection:
 
         for conflict in conflicts:
             # Port must be in the required set
-            assert conflict.port in REQUIRED_PORTS, (
-                f"Detected port {conflict.port} is not in required set {REQUIRED_PORTS}"
-            )
+            assert (
+                conflict.port in REQUIRED_PORTS
+            ), f"Detected port {conflict.port} is not in required set {REQUIRED_PORTS}"
 
             # PID must match what was provided
             expected_pid, expected_name = occupation[conflict.port]
-            assert conflict.pid == expected_pid, (
-                f"Port {conflict.port}: expected PID {expected_pid}, got {conflict.pid}"
-            )
+            assert (
+                conflict.pid == expected_pid
+            ), f"Port {conflict.port}: expected PID {expected_pid}, got {conflict.pid}"
             assert conflict.process_name == expected_name, (
                 f"Port {conflict.port}: expected process '{expected_name}', "
                 f"got '{conflict.process_name}'"
             )
 
             # Description must be non-empty
-            assert conflict.description, (
-                f"Port {conflict.port}: description should not be empty"
-            )
+            assert conflict.description, f"Port {conflict.port}: description should not be empty"
 
     @given(occupation=port_occupation_strategy)
     @settings(max_examples=200)
     def test_no_false_positives(
-        self, occupation: dict[int, tuple[int, str]],
+        self,
+        occupation: dict[int, tuple[int, str]],
     ) -> None:
         """check_ports() SHALL NOT report conflicts for ports that are not
         occupied. Only actually occupied ports should appear in the result.
@@ -277,7 +275,8 @@ class TestPortConflictDetection:
     @given(occupation=port_occupation_strategy)
     @settings(max_examples=200)
     def test_conflicts_ordered_by_port(
-        self, occupation: dict[int, tuple[int, str]],
+        self,
+        occupation: dict[int, tuple[int, str]],
     ) -> None:
         """check_ports() SHALL return conflicts in port-number order,
         matching the setup.sh iteration order.
@@ -287,9 +286,7 @@ class TestPortConflictDetection:
         conflicts = check_ports(occupation)
 
         port_list = [c.port for c in conflicts]
-        assert port_list == sorted(port_list), (
-            f"Conflicts not in port order: {port_list}"
-        )
+        assert port_list == sorted(port_list), f"Conflicts not in port order: {port_list}"
 
     @given(data=st.data())
     @settings(max_examples=100)
@@ -307,19 +304,11 @@ class TestPortConflictDetection:
 
         # Use unique PIDs per port to avoid ambiguity in the mock
         occupied_list = sorted(occupied_set)
-        pids = {
-            port: 1000 + i
-            for i, port in enumerate(occupied_list)
-        }
-        names = {
-            port: data.draw(process_name_strategy)
-            for port in occupied_list
-        }
+        pids = {port: 1000 + i for i, port in enumerate(occupied_list)}
+        names = {port: data.draw(process_name_strategy) for port in occupied_list}
 
         # Build reverse lookup: pid -> process_name
-        pid_to_name: dict[int, str] = {
-            pids[port]: names[port] for port in occupied_list
-        }
+        pid_to_name: dict[int, str] = {pids[port]: names[port] for port in occupied_list}
 
         import subprocess
 
@@ -357,8 +346,7 @@ class TestPortConflictDetection:
         # Verify process info for each conflict
         for conflict in conflicts:
             assert conflict.pid == pids[conflict.port], (
-                f"Port {conflict.port}: expected PID {pids[conflict.port]}, "
-                f"got {conflict.pid}"
+                f"Port {conflict.port}: expected PID {pids[conflict.port]}, " f"got {conflict.pid}"
             )
             assert conflict.process_name == names[conflict.port], (
                 f"Port {conflict.port}: expected process '{names[conflict.port]}', "

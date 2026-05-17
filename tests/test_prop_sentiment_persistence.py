@@ -67,7 +67,8 @@ class MockDatabaseManager:
 
     def __init__(self):
         self._conn = sqlite3.connect(":memory:")
-        self._conn.execute("""
+        self._conn.execute(
+            """
             CREATE TABLE sentiment_log (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 article_id TEXT NOT NULL,
@@ -80,7 +81,8 @@ class MockDatabaseManager:
                 news_source TEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
-        """)
+        """
+        )
         self._conn.commit()
 
     def execute_with_retry(self, query, params=(), **kwargs):
@@ -136,8 +138,11 @@ class TestSentimentPersistenceProperties:
         article_id = str(uuid.uuid4())
 
         analyzer.analyze_and_publish(
-            text, article_id=article_id, ticker=ticker,
-            news_title=title, news_source=source,
+            text,
+            article_id=article_id,
+            ticker=ticker,
+            news_title=title,
+            news_source=source,
         )
 
         rows = db.get_all_rows()
@@ -152,8 +157,11 @@ class TestSentimentPersistenceProperties:
         article_id = str(uuid.uuid4())
 
         result = analyzer.analyze_and_publish(
-            text, article_id=article_id, ticker=ticker,
-            news_title=title, news_source=source,
+            text,
+            article_id=article_id,
+            ticker=ticker,
+            news_title=title,
+            news_source=source,
         )
 
         rows = db.get_all_rows()

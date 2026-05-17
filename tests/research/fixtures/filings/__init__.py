@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from src.research.providers.base import ChunkRecord
 

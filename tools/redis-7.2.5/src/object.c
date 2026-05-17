@@ -619,7 +619,7 @@ void trimStringObjectIfNeeded(robj *o, int trim_small_values) {
     if (o->encoding != OBJ_ENCODING_RAW) return;
     /* A string may have free space in the following cases:
      * 1. When an arg len is greater than PROTO_MBULK_BIG_ARG the query buffer may be used directly as the SDS string.
-     * 2. When utilizing the argument caching mechanism in Lua. 
+     * 2. When utilizing the argument caching mechanism in Lua.
      * 3. When calling from RM_TrimStringAllocation (trim_small_values is true). */
     size_t len = sdslen(o->ptr);
     if (len >= PROTO_MBULK_BIG_ARG ||

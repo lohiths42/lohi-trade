@@ -76,12 +76,12 @@ proc cluster_setup {masters node_count slot_allocator code} {
     if {$::tls && !$tls_cluster} {
         for {set i 1} {$i < $node_count} {incr i} {
             R 0 CLUSTER MEET [srv -$i host] [srv -$i pport]
-        }         
+        }
     } else {
         for {set i 1} {$i < $node_count} {incr i} {
             R 0 CLUSTER MEET [srv -$i host] [srv -$i port]
         }
-    }  
+    }
 
     $slot_allocator $masters
 
@@ -110,12 +110,12 @@ proc start_cluster {masters replicas options code {slot_allocator continuous_slo
     set code [list cluster_setup $masters $node_count $slot_allocator $code]
 
     # Configure the starting of multiple servers. Set cluster node timeout
-    # aggressively since many tests depend on ping/pong messages. 
+    # aggressively since many tests depend on ping/pong messages.
     set cluster_options [list overrides [list cluster-enabled yes cluster-ping-interval 100 cluster-node-timeout 3000]]
     set options [concat $cluster_options $options]
 
     # Cluster mode only supports a single database, so before executing the tests
-    # it needs to be configured correctly and needs to be reset after the tests. 
+    # it needs to be configured correctly and needs to be reset after the tests.
     set old_singledb $::singledb
     set ::singledb 1
     start_multiple_servers $node_count $options $code

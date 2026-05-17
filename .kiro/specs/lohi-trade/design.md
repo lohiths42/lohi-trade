@@ -32,65 +32,65 @@ graph TB
         RSS[RSS Feed Poller<br/>News Sources]
         NSE[NSE Announcements]
     end
-    
+
     subgraph Event Bus
         REDIS[(Redis Streams)]
     end
-    
+
     subgraph Processing Layer
         subgraph The Soldier - Fast Path
             CB[Candle Builder]
             IND[Indicator Engine]
             STRAT[Strategy Engine<br/>Mean Rev/Trend/ORB]
         end
-        
+
         subgraph The Commander - Slow Path
             NER[Entity Resolver<br/>spaCy NER]
             SENT[Sentiment Analyzer<br/>FinBERT ONNX]
             BIAS[Bias Calculator<br/>Time Decay]
         end
     end
-    
+
     subgraph Execution Layer
         RMS[Risk Management<br/>9 Pre-Order Checks]
         PS[Position Sizer]
         OMS[Order Management<br/>Broker API]
     end
-    
+
     subgraph State Layer
         SQLITE[(SQLite<br/>Trades/Orders/Sentiment)]
         DUCKDB[(DuckDB<br/>Historical OHLCV)]
     end
-    
+
     subgraph User Interface
         DASH[Streamlit Dashboard]
         TG[Telegram Bot]
     end
-    
+
     WS -->|ticks| REDIS
     RSS -->|news| REDIS
     NSE -->|announcements| REDIS
-    
+
     REDIS -->|ticks| CB
     CB -->|candles| IND
     IND -->|indicators| STRAT
     STRAT -->|signals| REDIS
-    
+
     REDIS -->|news| NER
     NER -->|entities| SENT
     SENT -->|sentiment| BIAS
     BIAS -->|bias| REDIS
-    
+
     REDIS -->|signals| RMS
     REDIS -->|bias| RMS
     RMS -->|validated orders| PS
     PS -->|sized orders| OMS
     OMS -->|orders| WS
-    
+
     OMS --> SQLITE
     SENT --> SQLITE
     BIAS --> SQLITE
-    
+
     SQLITE --> DASH
     REDIS --> DASH
     OMS --> TG
@@ -256,13 +256,13 @@ class IndicatorSet:
 class Strategy(ABC):
     @abstractmethod
     def generate_signal(indicators: IndicatorSet, candles: pd.DataFrame) -> Optional[Signal]
-    
+
 class MeanReversionStrategy(Strategy):
     pass
-    
+
 class TrendFollowingStrategy(Strategy):
     pass
-    
+
 class OpeningRangeBreakoutStrategy(Strategy):
     pass
 ```
@@ -826,14 +826,14 @@ strategies:
     rsi_overbought: 65
     volume_multiplier: 1.5
     stop_loss_atr_multiplier: 1.5
-  
+
   trend_following:
     enabled: true
     ema_fast: 9
     ema_slow: 21
     stop_loss_atr_multiplier: 2.0
     target_atr_multiplier: 3.0
-  
+
   opening_range_breakout:
     enabled: true
     range_start: "09:15"
@@ -1253,7 +1253,7 @@ The properties below focus on unique validation value, avoiding redundancy while
 
 **1. Network Errors (WebSocket, Broker API)**
 - **Strategy**: Automatic retry with exponential backoff
-- **Implementation**: 
+- **Implementation**:
   - WebSocket: Reconnect with backoff (1s, 2s, 4s, 8s, max 30s)
   - Broker API: Circuit breaker pattern (open after 5 consecutive failures)
   - Heartbeat monitoring: Alert if no ticks for 5 seconds
@@ -1431,10 +1431,10 @@ def test_ohlcv_calculation(prices):
     Feature: lohi-trade, Property 6: OHLCV Calculation Correctness
     For any sequence of ticks, OHLCV should be correctly calculated.
     """
-    ticks = [Tick(symbol="TEST", ltp=p, volume=100, timestamp=datetime.now()) 
+    ticks = [Tick(symbol="TEST", ltp=p, volume=100, timestamp=datetime.now())
              for p in prices]
     candle = build_candle(ticks)
-    
+
     assert candle.open == prices[0]
     assert candle.high == max(prices)
     assert candle.low == min(prices)
@@ -1456,10 +1456,10 @@ def test_position_size_calculation(capital, risk_pct, entry_price, stop_loss):
     For any order, quantity should equal (capital × risk_pct) / (entry_price - stop_loss).
     """
     assume(entry_price > stop_loss)  # Valid stop loss
-    
+
     signal = Signal(entry_price=entry_price, stop_loss=stop_loss, ...)
     quantity = calculate_position_size(signal, capital, risk_pct)
-    
+
     expected_quantity = int((capital * risk_pct / 100) / (entry_price - stop_loss))
     assert quantity == expected_quantity
 ```
@@ -1477,10 +1477,10 @@ def test_daily_loss_limit(capital, daily_pnl):
     """
     rms = RiskManagementSystem(capital=capital)
     rms.set_daily_pnl(daily_pnl)
-    
+
     signal = create_test_signal()
     result = rms.validate_order(signal)
-    
+
     if daily_pnl < -0.02 * capital:
         assert not result.is_valid
         assert "Daily loss limit exceeded" in result.rejection_reason
@@ -1605,7 +1605,7 @@ def candle_generator(draw):
     high = draw(st.floats(min_value=open_price, max_value=open_price * 1.1))
     low = draw(st.floats(min_value=open_price * 0.9, max_value=open_price))
     close = draw(st.floats(min_value=low, max_value=high))
-    
+
     return Candle(
         symbol=draw(st.sampled_from(["RELIANCE", "TCS", "INFY"])),
         timeframe=draw(st.sampled_from(["1m", "5m", "15m"])),
@@ -1625,7 +1625,7 @@ def candle_generator(draw):
 def signal_generator(draw):
     entry_price = draw(st.floats(min_value=100, max_value=10000))
     atr = draw(st.floats(min_value=5, max_value=100))
-    
+
     return Signal(
         signal_id=str(uuid.uuid4()),
         symbol=draw(st.sampled_from(["RELIANCE", "TCS", "INFY"])),

@@ -718,7 +718,7 @@ NULL
             return;
         }
         long valsize = 0;
-        if ( c->argc == 5 && getPositiveLongFromObjectOrReply(c, c->argv[4], &valsize, NULL) != C_OK ) 
+        if ( c->argc == 5 && getPositiveLongFromObjectOrReply(c, c->argv[4], &valsize, NULL) != C_OK )
             return;
 
         for (j = 0; j < keys; j++) {
@@ -1856,10 +1856,10 @@ void logStackTrace(void *eip, int uplevel) {
 
 sds genClusterDebugString(sds infostring) {
     infostring = sdscatprintf(infostring, "\r\n# Cluster info\r\n");
-    infostring = sdscatsds(infostring, genClusterInfoString()); 
+    infostring = sdscatsds(infostring, genClusterInfoString());
     infostring = sdscatprintf(infostring, "\n------ CLUSTER NODES OUTPUT ------\n");
     infostring = sdscatsds(infostring, clusterGenNodesDescription(NULL, 0, 0));
-    
+
     return infostring;
 }
 

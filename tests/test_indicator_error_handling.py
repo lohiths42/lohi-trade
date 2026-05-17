@@ -22,12 +22,15 @@ from src.soldier.indicator_engine import MIN_CANDLES_REQUIRED, IndicatorEngine
 # Strategies
 # ---------------------------------------------------------------------------
 
+
 @st.composite
 def valid_candle_series(draw, symbol: str = "RELIANCE", num_candles: int = 50):
     """Generate a series of candles with normal, well-behaved prices for a symbol.
     Prices walk around a base price with small increments.
     """
-    base_price = draw(st.floats(min_value=100.0, max_value=5000.0, allow_nan=False, allow_infinity=False))
+    base_price = draw(
+        st.floats(min_value=100.0, max_value=5000.0, allow_nan=False, allow_infinity=False)
+    )
     candles: list[Candle] = []
     price = base_price
     base_time = datetime(2024, 1, 15, 9, 15, 0)
@@ -36,23 +39,35 @@ def valid_candle_series(draw, symbol: str = "RELIANCE", num_candles: int = 50):
         step = draw(st.floats(min_value=-2.0, max_value=2.0, allow_nan=False, allow_infinity=False))
         price = max(1.0, price + step)
 
-        open_price = max(0.5, price + draw(st.floats(min_value=-1.0, max_value=1.0, allow_nan=False, allow_infinity=False)))
+        open_price = max(
+            0.5,
+            price
+            + draw(st.floats(min_value=-1.0, max_value=1.0, allow_nan=False, allow_infinity=False)),
+        )
         close_price = max(0.5, price)
-        high_price = max(open_price, close_price) + draw(st.floats(min_value=0.0, max_value=3.0, allow_nan=False, allow_infinity=False))
-        low_price = max(0.01, min(open_price, close_price) - draw(st.floats(min_value=0.0, max_value=3.0, allow_nan=False, allow_infinity=False)))
+        high_price = max(open_price, close_price) + draw(
+            st.floats(min_value=0.0, max_value=3.0, allow_nan=False, allow_infinity=False)
+        )
+        low_price = max(
+            0.01,
+            min(open_price, close_price)
+            - draw(st.floats(min_value=0.0, max_value=3.0, allow_nan=False, allow_infinity=False)),
+        )
         volume = draw(st.integers(min_value=100, max_value=500_000))
 
-        candles.append(Candle(
-            symbol=symbol,
-            timeframe="1m",
-            open=open_price,
-            high=high_price,
-            low=low_price,
-            close=close_price,
-            volume=volume,
-            timestamp=base_time + timedelta(minutes=i),
-            is_complete=True,
-        ))
+        candles.append(
+            Candle(
+                symbol=symbol,
+                timeframe="1m",
+                open=open_price,
+                high=high_price,
+                low=low_price,
+                close=close_price,
+                volume=volume,
+                timestamp=base_time + timedelta(minutes=i),
+                is_complete=True,
+            )
+        )
 
     return candles
 
@@ -71,45 +86,55 @@ def bad_candle_series(draw, symbol: str = "BADSTOCK", num_candles: int = 50):
         scenario = draw(st.sampled_from(["near_zero", "zero_volume", "constant", "tiny_range"]))
 
         if scenario == "near_zero":
-            price = draw(st.floats(min_value=0.01, max_value=0.1, allow_nan=False, allow_infinity=False))
+            price = draw(
+                st.floats(min_value=0.01, max_value=0.1, allow_nan=False, allow_infinity=False)
+            )
             open_p = price
             high_p = price + 0.001
             low_p = max(0.001, price - 0.001)
             close_p = price
             vol = draw(st.integers(min_value=0, max_value=10))
         elif scenario == "zero_volume":
-            price = draw(st.floats(min_value=50.0, max_value=200.0, allow_nan=False, allow_infinity=False))
+            price = draw(
+                st.floats(min_value=50.0, max_value=200.0, allow_nan=False, allow_infinity=False)
+            )
             open_p = price
             high_p = price + 1.0
             low_p = price - 1.0
             close_p = price
             vol = 0
         elif scenario == "constant":
-            price = draw(st.floats(min_value=10.0, max_value=100.0, allow_nan=False, allow_infinity=False))
+            price = draw(
+                st.floats(min_value=10.0, max_value=100.0, allow_nan=False, allow_infinity=False)
+            )
             open_p = price
             high_p = price
             low_p = price
             close_p = price
             vol = draw(st.integers(min_value=1, max_value=100))
         else:  # tiny_range
-            price = draw(st.floats(min_value=1.0, max_value=50.0, allow_nan=False, allow_infinity=False))
+            price = draw(
+                st.floats(min_value=1.0, max_value=50.0, allow_nan=False, allow_infinity=False)
+            )
             open_p = price
             high_p = price + 0.0001
             low_p = max(0.001, price - 0.0001)
             close_p = price
             vol = draw(st.integers(min_value=1, max_value=1000))
 
-        candles.append(Candle(
-            symbol=symbol,
-            timeframe="1m",
-            open=open_p,
-            high=high_p,
-            low=low_p,
-            close=close_p,
-            volume=vol,
-            timestamp=base_time + timedelta(minutes=i),
-            is_complete=True,
-        ))
+        candles.append(
+            Candle(
+                symbol=symbol,
+                timeframe="1m",
+                open=open_p,
+                high=high_p,
+                low=low_p,
+                close=close_p,
+                volume=vol,
+                timestamp=base_time + timedelta(minutes=i),
+                is_complete=True,
+            )
+        )
 
     return candles
 
@@ -117,6 +142,7 @@ def bad_candle_series(draw, symbol: str = "BADSTOCK", num_candles: int = 50):
 # ---------------------------------------------------------------------------
 # Property test: error isolation between symbols
 # ---------------------------------------------------------------------------
+
 
 @given(
     good_candles=valid_candle_series(symbol="RELIANCE"),
@@ -176,6 +202,7 @@ def test_property_indicator_error_handling_continues_other_symbols(good_candles,
 # ---------------------------------------------------------------------------
 # Property test: monkey-patched calculate_indicators is handled gracefully
 # ---------------------------------------------------------------------------
+
 
 @given(good_candles=valid_candle_series(symbol="SYMBOL_A", num_candles=50))
 @settings(max_examples=25, deadline=None)
@@ -241,9 +268,9 @@ def test_property_indicator_error_handling_monkey_patched_recovery(good_candles)
             ) from exc
 
     # The result should be None because calculate_indicators is broken
-    assert result_b is None, (
-        "add_candle should return None when calculate_indicators raises, not propagate the error"
-    )
+    assert (
+        result_b is None
+    ), "add_candle should return None when calculate_indicators raises, not propagate the error"
 
     # Step 4: Restore the original method
     engine.calculate_indicators = original_method

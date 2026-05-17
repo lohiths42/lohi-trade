@@ -112,4 +112,3 @@ static int redisMacOSAttach(redisAsyncContext *redisAsyncCtx, CFRunLoopRef runLo
 }
 
 #endif
-

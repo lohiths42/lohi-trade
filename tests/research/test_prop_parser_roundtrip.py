@@ -171,7 +171,8 @@ def _hex_sha256_from(seed: str) -> str:
 
 @st.composite
 def sections_strategy(
-    draw: st.DrawFn, canonical_text: str,
+    draw: st.DrawFn,
+    canonical_text: str,
 ) -> list[SectionSpan]:
     """Draw 0–3 non-overlapping sections with distinct names.
 
@@ -365,7 +366,8 @@ def test_canonical_doc_roundtrip(doc: CanonicalDoc) -> None:
     # compared as their serialised form, matching what actually flows
     # through the meta block.
     assert parsed.model_dump(
-        exclude={"canonical_text"}, mode="json",
+        exclude={"canonical_text"},
+        mode="json",
     ) == doc.model_dump(exclude={"canonical_text"}, mode="json")
 
     # Leg 2: canonical_text round-trips under the documented

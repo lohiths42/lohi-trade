@@ -278,10 +278,13 @@ class SnapshotWorker:
         tick_sec: float = _DEFAULT_TICK_SEC,
         events_per_read: int = _DEFAULT_EVENTS_PER_READ,
         invalidation_stream: str = RESEARCH_SNAPSHOT_INVALIDATIONS_STREAM,
-        hash_resolver: Callable[
-            [UUID, str], Awaitable[Sequence[str]],
-        ]
-        | None = None,
+        hash_resolver: (
+            Callable[
+                [UUID, str],
+                Awaitable[Sequence[str]],
+            ]
+            | None
+        ) = None,
         clock: Callable[[], float] | None = None,
     ) -> None:
         if debounce_sec < 0:
@@ -292,9 +295,7 @@ class SnapshotWorker:
         self._store = snapshot_store
         self._factory = orchestrator_factory
         self._selector = subagent_selector or _default_sub_agent_selector
-        self._prompt_builder = (
-            snapshot_prompt_builder or _default_snapshot_prompt
-        )
+        self._prompt_builder = snapshot_prompt_builder or _default_snapshot_prompt
         self._debounce_sec = float(debounce_sec)
         self._tick_sec = float(tick_sec)
         self._events_per_read = max(1, int(events_per_read))
@@ -608,10 +609,7 @@ def _default_snapshot_prompt(symbol: str) -> str:
     question. The string matches what the gateway's Snapshot read
     path (future Task 16.x) would show on a cold miss.
     """
-    return (
-        f"Produce a research snapshot for {symbol}. "
-        "Cite every non-boilerplate claim."
-    )
+    return f"Produce a research snapshot for {symbol}. " "Cite every non-boilerplate claim."
 
 
 def _coerce_brief(brief: Any) -> dict[str, Any]:
@@ -688,9 +686,7 @@ def _parse_invalidation_entry(
         if not isinstance(maybe_fields, Mapping):
             return None
         entry_id = (
-            maybe_id.decode("utf-8")
-            if isinstance(maybe_id, (bytes, bytearray))
-            else str(maybe_id)
+            maybe_id.decode("utf-8") if isinstance(maybe_id, (bytes, bytearray)) else str(maybe_id)
         )
         raw_fields = maybe_fields
     else:
@@ -725,9 +721,7 @@ def _parse_invalidation_entry(
 
     trigger = str(raw_fields.get("trigger") or "unknown")
     source_event_id = raw_fields.get("source_event_id")
-    source_event_id_str = (
-        str(source_event_id) if source_event_id not in (None, "") else None
-    )
+    source_event_id_str = str(source_event_id) if source_event_id not in (None, "") else None
 
     return InvalidationEvent(
         user_id=user_id,
@@ -880,7 +874,9 @@ async def _run_worker_main(*, once: bool = False) -> None:
         skip_agents: Any = (),
     ) -> Any:
         class _StubOrchestrator:
-            async def run(self, *, run_id: Any, user_id: Any, symbol: str, user_prompt: str) -> dict:
+            async def run(
+                self, *, run_id: Any, user_id: Any, symbol: str, user_prompt: str
+            ) -> dict:
                 return {}
 
         return _StubOrchestrator()

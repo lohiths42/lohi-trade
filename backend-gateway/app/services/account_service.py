@@ -21,7 +21,7 @@ import bcrypt
 import httpx
 import jwt
 from argon2 import PasswordHasher
-from argon2.exceptions import VerifyMismatchError, InvalidHashError, VerificationError
+from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatchError
 
 logger = logging.getLogger(__name__)
 
@@ -29,9 +29,9 @@ logger = logging.getLogger(__name__)
 
 JWT_SECRET = os.getenv("JWT_SECRET", os.getenv("SECRET_KEY", "change-me-in-production"))
 JWT_ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRY_SECONDS = 15 * 60        # 15 minutes
+ACCESS_TOKEN_EXPIRY_SECONDS = 15 * 60  # 15 minutes
 REFRESH_TOKEN_EXPIRY_SECONDS = 30 * 24 * 3600  # 30 days
-OTP_EXPIRY_SECONDS = 15 * 60                 # 15 minutes
+OTP_EXPIRY_SECONDS = 15 * 60  # 15 minutes
 
 # Password policy: min 8 chars, 1 upper, 1 lower, 1 digit, 1 special
 _PASSWORD_MIN_LENGTH = 8
@@ -61,6 +61,7 @@ _EMAIL_RE = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
 
 # ── Data classes ─────────────────────────────────────────────────────────────
 
+
 class UserRole(str, Enum):
     ADMIN = "ADMIN"
     TRADER = "TRADER"
@@ -83,7 +84,7 @@ class KYCStatus(str, Enum):
 
 @dataclass
 class TokenPair:
-    access_token: str   # 15-minute expiry
+    access_token: str  # 15-minute expiry
     refresh_token: str  # 30-day expiry
 
 
@@ -99,6 +100,7 @@ class User:
 
 
 # ── Validation helpers ───────────────────────────────────────────────────────
+
 
 def validate_password(password: str) -> tuple[bool, str]:
     """Validate password against policy. Returns (valid, error_message)."""
@@ -179,6 +181,7 @@ def rehash_if_needed(plain: str, hashed: str) -> Optional[str]:
 
 # ── Token helpers ────────────────────────────────────────────────────────────
 
+
 def _create_access_token(user_id: str, email: str, role: str) -> str:
     """Create a short-lived JWT access token (15 minutes)."""
     now = int(time.time())
@@ -225,6 +228,7 @@ def _generate_otp() -> str:
 
 # ── AccountService ───────────────────────────────────────────────────────────
 
+
 class AccountService:
     """Multi-user account creation with email/password authentication.
 
@@ -235,9 +239,7 @@ class AccountService:
         """Initialize with an asyncpg connection pool."""
         self._pool = db_pool
 
-    async def register_email(
-        self, email: str, password: str, phone: str, name: str
-    ) -> dict:
+    async def register_email(self, email: str, password: str, phone: str, name: str) -> dict:
         """Register a new user via email/password.
 
         Validates email, password policy, phone format. Hashes password with
@@ -271,9 +273,7 @@ class AccountService:
 
         async with self._pool.acquire() as conn:
             # Check for duplicate email
-            existing = await conn.fetchval(
-                "SELECT id FROM users WHERE email = $1", email
-            )
+            existing = await conn.fetchval("SELECT id FROM users WHERE email = $1", email)
             if existing:
                 raise ValueError("An account with this email already exists")
 
@@ -284,7 +284,11 @@ class AccountService:
                 VALUES ($1, $2, $3, $4, $5)
                 RETURNING id, email, phone, name, role, is_onboarded, created_at
                 """,
-                email, pw_hash, phone, name, UserRole.TRADER.value,
+                email,
+                pw_hash,
+                phone,
+                name,
+                UserRole.TRADER.value,
             )
 
         user = User(
@@ -327,9 +331,7 @@ class AccountService:
             raise ValueError("Invalid email or password")
 
         if not row["password_hash"]:
-            raise ValueError(
-                "This account uses social login. Please sign in with Google or Apple."
-            )
+            raise ValueError("This account uses social login. Please sign in with Google or Apple.")
 
         if not verify_password(password, row["password_hash"]):
             raise ValueError("Invalid email or password")
@@ -356,7 +358,9 @@ class AccountService:
                 INSERT INTO refresh_tokens (user_id, token_hash, expires_at)
                 VALUES ($1, $2, $3)
                 """,
-                row["id"], refresh_hash, expires_at,
+                row["id"],
+                refresh_hash,
+                expires_at,
             )
 
         logger.info(f"User logged in: {user_email}")
@@ -390,18 +394,14 @@ class AccountService:
 
             if row["expires_at"].replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
                 # Clean up expired token
-                await conn.execute(
-                    "DELETE FROM refresh_tokens WHERE id = $1", row["token_id"]
-                )
+                await conn.execute("DELETE FROM refresh_tokens WHERE id = $1", row["token_id"])
                 raise ValueError("Refresh token has expired")
 
             if not row["is_active"]:
                 raise ValueError("Account is deactivated")
 
             # Delete old refresh token (rotation)
-            await conn.execute(
-                "DELETE FROM refresh_tokens WHERE id = $1", row["token_id"]
-            )
+            await conn.execute("DELETE FROM refresh_tokens WHERE id = $1", row["token_id"])
 
             # Issue new tokens
             user_id = str(row["user_id"])
@@ -417,7 +417,9 @@ class AccountService:
                 INSERT INTO refresh_tokens (user_id, token_hash, expires_at)
                 VALUES ($1, $2, $3)
                 """,
-                row["user_id"], new_refresh_hash, expires_at,
+                row["user_id"],
+                new_refresh_hash,
+                expires_at,
             )
 
         logger.info(f"Token refreshed for user: {row['email']}")
@@ -439,7 +441,9 @@ class AccountService:
             INSERT INTO refresh_tokens (user_id, token_hash, expires_at)
             VALUES ($1, $2, $3)
             """,
-            user_id, refresh_hash, expires_at,
+            user_id,
+            refresh_hash,
+            expires_at,
         )
         return TokenPair(access_token=access_token, refresh_token=refresh_token)
 
@@ -462,7 +466,8 @@ class AccountService:
             JOIN users u ON u.id = sl.user_id
             WHERE sl.provider = $1 AND sl.provider_id = $2
             """,
-            provider, provider_id,
+            provider,
+            provider_id,
         )
         if row:
             if not row["is_active"]:
@@ -495,11 +500,11 @@ class AccountService:
             VALUES ($1, $2, $3)
             RETURNING id, email, role
             """,
-            email, name, UserRole.TRADER.value,
+            email,
+            name,
+            UserRole.TRADER.value,
         )
-        await self._link_social_provider_internal(
-            conn, new_user["id"], provider, provider_id
-        )
+        await self._link_social_provider_internal(conn, new_user["id"], provider, provider_id)
         logger.info(f"Created new user via {provider}: {email}")
         return await self._issue_tokens_for_user(
             conn, new_user["id"], new_user["email"], new_user["role"]
@@ -515,7 +520,9 @@ class AccountService:
             VALUES ($1, $2, $3)
             ON CONFLICT (provider, provider_id) DO NOTHING
             """,
-            user_id, provider, provider_id,
+            user_id,
+            provider,
+            provider_id,
         )
 
     # ── Google OAuth ─────────────────────────────────────────────────────────
@@ -563,9 +570,7 @@ class AccountService:
             raise ValueError("Invalid Google token: missing sub")
 
         async with self._pool.acquire() as conn:
-            return await self._find_or_create_social_user(
-                conn, "google", provider_id, email, name
-            )
+            return await self._find_or_create_social_user(conn, "google", provider_id, email, name)
 
     # ── Apple Sign-In ────────────────────────────────────────────────────────
 
@@ -638,9 +643,7 @@ class AccountService:
         name = user_name or email.split("@")[0]
 
         async with self._pool.acquire() as conn:
-            return await self._find_or_create_social_user(
-                conn, "apple", provider_id, email, name
-            )
+            return await self._find_or_create_social_user(conn, "apple", provider_id, email, name)
 
     def _build_apple_client_secret(self) -> str:
         """Build a short-lived JWT client_secret for Apple token exchange."""
@@ -681,6 +684,7 @@ class AccountService:
 
         # Build public key from JWK and verify
         from jwt.algorithms import RSAAlgorithm
+
         public_key = RSAAlgorithm.from_jwk(matching_key)
 
         try:
@@ -697,9 +701,7 @@ class AccountService:
 
     # ── Link social provider (public) ────────────────────────────────────────
 
-    async def link_social_provider(
-        self, user_id: str, provider: str, provider_id: str
-    ) -> None:
+    async def link_social_provider(self, user_id: str, provider: str, provider_id: str) -> None:
         """Link a social provider to an existing user account.
 
         Stores only provider_id and provider type — never stores social access tokens.
@@ -719,15 +721,14 @@ class AccountService:
                 SELECT user_id FROM social_logins
                 WHERE provider = $1 AND provider_id = $2
                 """,
-                provider, provider_id,
+                provider,
+                provider_id,
             )
             if existing:
                 existing_uid = str(existing["user_id"])
                 if existing_uid == user_id:
                     return  # Already linked to this user, no-op
-                raise ValueError(
-                    f"This {provider} account is already linked to another user"
-                )
+                raise ValueError(f"This {provider} account is already linked to another user")
 
             # Verify the user exists
             user_uuid = user_id if isinstance(user_id, _uuid.UUID) else _uuid.UUID(user_id)
@@ -743,5 +744,7 @@ class AccountService:
                 INSERT INTO social_logins (user_id, provider, provider_id)
                 VALUES ($1, $2, $3)
                 """,
-                user, provider, provider_id,
+                user,
+                provider,
+                provider_id,
             )

@@ -1,0 +1,121 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test-and-lint:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: lohi
+          POSTGRES_PASSWORD: lohi
+          POSTGRES_DB: lohitrade
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Check Frontend (Lint & Test)
+        working-directory: ./Lohi-TRADE Web App Design
+        run: |
+          npm ci
+          # If a lint script exists, run it. Otherwise, this just passes.
+          npm run lint --if-present
+          npm run test --if-present
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[dev,research]
+
+      - name: Run unit tests
+        run: |
+          pytest -q --cov=src --cov-report=xml -m "not integration"
+
+      - name: Run integration tests
+        env:
+          DATABASE_URL: postgresql://lohi:lohi@localhost:5432/lohitrade
+          REDIS_HOST: localhost
+          JWT_SECRET: test-secret
+          ADMIN_USERNAME: admin
+          ADMIN_PASSWORD: password
+        run: |
+          pytest -q -m "integration"
+
+      - name: Run ruff (lint)
+        run: |
+          pip install ruff
+          ruff check .
+
+      - name: Run mypy (type check — advisory)
+        continue-on-error: true
+        run: |
+          mypy src/ backend-gateway/app/
+
+      - name: Verify Docker Builds
+        run: |
+          docker compose build backend-gateway frontend
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.xml
+
+      - name: Enforce minimal coverage
+        run: |
+          python - <<'PY'
+          import sys
+          import xml.etree.ElementTree as ET
+
+          try:
+            tree = ET.parse("coverage.xml")
+            root = tree.getroot()
+            total = float(root.attrib.get("line-rate", 0)) * 100
+          except Exception:
+            print("Could not parse coverage.xml")
+            sys.exit(1)
+
+          print(f"Coverage: {total:.2f}%")
+          if total < 30.0:
+            print("Coverage below 30% - failing CI")
+            sys.exit(1)
+          PY
+
+      - name: Basic secrets scan (high-signal)
+        run: |
+          set -e
+          grep -RIn --exclude-dir=.git --exclude-dir=lohi_trade_venv -E "ghp_[A-Za-z0-9]{36}|AKIA[0-9A-Z]{16}|BEGIN[ ]PRIVATE[ ]KEY|xoxb-|sk-[A-Za-z0-9]{20,}|SECRET_KEY=|JWT_SECRET=|TELEGRAM_BOT_TOKEN=|PASSWORD=|ADMIN_PASSWORD=" . || true
+          echo "Secrets scan completed (review any matches above)."

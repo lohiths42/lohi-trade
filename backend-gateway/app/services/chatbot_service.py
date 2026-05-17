@@ -51,6 +51,7 @@ NO_DATA_RESPONSE = (
 
 class MessageRole(str, Enum):
     """Role of a message in the conversation."""
+
     SYSTEM = "system"
     USER = "user"
     ASSISTANT = "assistant"
@@ -59,6 +60,7 @@ class MessageRole(str, Enum):
 @dataclass
 class Message:
     """A single message in a conversation."""
+
     role: MessageRole
     content: str
     timestamp: Optional[str] = None
@@ -87,6 +89,7 @@ class Message:
 @dataclass
 class RAGContext:
     """Context retrieved from the user's data for RAG."""
+
     trades: list[dict] = field(default_factory=list)
     sentiment_logs: list[dict] = field(default_factory=list)
     signals: list[dict] = field(default_factory=list)
@@ -119,6 +122,7 @@ class RAGContext:
 @dataclass
 class ChatResponse:
     """Response from the chatbot."""
+
     text: str
     chart_data: Optional[bytes] = None
     chart_type: Optional[str] = None
@@ -253,11 +257,13 @@ class ChartGenerator:
     def _fig_to_svg(fig) -> bytes:
         """Render a matplotlib figure to SVG bytes and close it."""
         import io
+
         buf = io.BytesIO()
         fig.savefig(buf, format="svg", bbox_inches="tight", transparent=False)
         buf.seek(0)
         svg_bytes = buf.read()
         import matplotlib.pyplot as plt
+
         plt.close(fig)
         return svg_bytes
 
@@ -284,9 +290,10 @@ class ChartGenerator:
         Req 20.1: equity curve chart for performance-over-time queries.
         """
         import matplotlib
+
         matplotlib.use("Agg")
-        import matplotlib.pyplot as plt
         import matplotlib.dates as mdates
+        import matplotlib.pyplot as plt
 
         if not data:
             return self._empty_chart("No equity data available", theme)
@@ -315,17 +322,25 @@ class ChartGenerator:
 
         # Label start and end values
         ax.annotate(
-            f"₹{equities[0]:,.0f}", xy=(dates[0], equities[0]),
-            fontsize=7, color=t["fg"], ha="left",
+            f"₹{equities[0]:,.0f}",
+            xy=(dates[0], equities[0]),
+            fontsize=7,
+            color=t["fg"],
+            ha="left",
         )
         ax.annotate(
-            f"₹{equities[-1]:,.0f}", xy=(dates[-1], equities[-1]),
-            fontsize=7, color=t["fg"], ha="right",
+            f"₹{equities[-1]:,.0f}",
+            xy=(dates[-1], equities[-1]),
+            fontsize=7,
+            color=t["fg"],
+            ha="right",
         )
 
         ax.set_xlabel("Date", fontsize=9)
         ax.set_ylabel("Equity (₹)", fontsize=9)
-        ax.legend(loc="upper left", fontsize=8, facecolor=t["bg"], edgecolor=t["grid"], labelcolor=t["fg"])
+        ax.legend(
+            loc="upper left", fontsize=8, facecolor=t["bg"], edgecolor=t["grid"], labelcolor=t["fg"]
+        )
 
         if len(dates) > 10:
             ax.xaxis.set_major_locator(mdates.AutoDateLocator())
@@ -342,6 +357,7 @@ class ChartGenerator:
         Req 20.2: daily P&L bar chart.
         """
         import matplotlib
+
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
 
@@ -376,8 +392,13 @@ class ChartGenerator:
             y_pos = bar_obj.get_height() if pnl >= 0 else bar_obj.get_y()
             va = "bottom" if pnl >= 0 else "top"
             ax.text(
-                bar_obj.get_x() + bar_obj.get_width() / 2, y_pos,
-                f"₹{pnl:,.0f}", ha="center", va=va, fontsize=6, color=t["fg"],
+                bar_obj.get_x() + bar_obj.get_width() / 2,
+                y_pos,
+                f"₹{pnl:,.0f}",
+                ha="center",
+                va=va,
+                fontsize=6,
+                color=t["fg"],
             )
 
         # X-axis labels
@@ -388,7 +409,10 @@ class ChartGenerator:
         else:
             step = max(1, len(dates) // 10)
             ax.set_xticks(range(0, len(dates), step))
-            labels = [dates[i].strftime("%b %d") if hasattr(dates[i], "strftime") else str(dates[i]) for i in range(0, len(dates), step)]
+            labels = [
+                dates[i].strftime("%b %d") if hasattr(dates[i], "strftime") else str(dates[i])
+                for i in range(0, len(dates), step)
+            ]
             ax.set_xticklabels(labels, rotation=30, ha="right", fontsize=7)
 
         ax.axhline(y=0, color=t["fg"], linewidth=0.5, alpha=0.5)
@@ -404,6 +428,7 @@ class ChartGenerator:
         Req 20.3: strategy comparison grouped bar chart.
         """
         import matplotlib
+
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
         import numpy as np
@@ -449,8 +474,13 @@ class ChartGenerator:
                 y_pos = bar_obj.get_height()
                 va = "bottom" if val >= 0 else "top"
                 ax.text(
-                    bar_obj.get_x() + bar_obj.get_width() / 2, y_pos,
-                    fmt.format(val), ha="center", va=va, fontsize=7, color=t["fg"],
+                    bar_obj.get_x() + bar_obj.get_width() / 2,
+                    y_pos,
+                    fmt.format(val),
+                    ha="center",
+                    va=va,
+                    fontsize=7,
+                    color=t["fg"],
                 )
 
             ax.set_xticks(x)
@@ -463,7 +493,9 @@ class ChartGenerator:
         fig.tight_layout()
         return self._fig_to_svg(fig)
 
-    def candlestick(self, ohlcv: list[dict], indicators: list[str] = None, theme: str = "dark") -> bytes:
+    def candlestick(
+        self, ohlcv: list[dict], indicators: list[str] = None, theme: str = "dark"
+    ) -> bytes:
         """Generate candlestick chart with optional indicator overlays as SVG.
 
         Data: list of dicts with 'date', 'open', 'high', 'low', 'close', 'volume' keys.
@@ -471,9 +503,9 @@ class ChartGenerator:
         Req 20.4: candlestick chart with technical indicator overlays.
         """
         import matplotlib
+
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
-        from matplotlib.patches import FancyBboxPatch
 
         if not ohlcv:
             return self._empty_chart("No OHLCV data available", theme)
@@ -520,7 +552,10 @@ class ChartGenerator:
             height_ratios.append(1)
 
         fig, axes = plt.subplots(
-            n_subplots, 1, figsize=(10, 3 + n_subplots * 1.5), dpi=100,
+            n_subplots,
+            1,
+            figsize=(10, 3 + n_subplots * 1.5),
+            dpi=100,
             gridspec_kw={"height_ratios": height_ratios},
             sharex=True,
         )
@@ -538,7 +573,9 @@ class ChartGenerator:
                 spine.set_color(t["grid"])
             ax.grid(True, color=t["grid"], alpha=0.3, linewidth=0.5)
 
-        ax_main.set_title("Candlestick Chart", fontsize=11, fontweight="bold", color=t["fg"], pad=10)
+        ax_main.set_title(
+            "Candlestick Chart", fontsize=11, fontweight="bold", color=t["fg"], pad=10
+        )
 
         # Draw candlesticks
         x_indices = list(range(len(dates_raw)))
@@ -546,18 +583,24 @@ class ChartGenerator:
         wick_width = 0.15
 
         for i in range(len(dates_raw)):
-            o, h, l, c = opens[i], highs[i], lows[i], closes[i]
-            color = t["candle_up"] if c >= o else t["candle_down"]
+            open_val, high_val, low_val, close_val = opens[i], highs[i], lows[i], closes[i]
+            color = t["candle_up"] if close_val >= open_val else t["candle_down"]
 
             # Wick (high-low line)
-            ax_main.plot([i, i], [l, h], color=color, linewidth=wick_width * 5, solid_capstyle="round")
+            ax_main.plot(
+                [i, i], [low_val, high_val], color=color, linewidth=wick_width * 5, solid_capstyle="round"
+            )
 
             # Body
-            body_bottom = min(o, c)
-            body_height = abs(c - o) or (h - l) * 0.01  # tiny body for doji
+            body_bottom = min(open_val, close_val)
+            body_height = abs(close_val - open_val) or (high_val - low_val) * 0.01  # tiny body for doji
             rect = plt.Rectangle(
-                (i - body_width / 2, body_bottom), body_width, body_height,
-                facecolor=color, edgecolor=color, linewidth=0.5,
+                (i - body_width / 2, body_bottom),
+                body_width,
+                body_height,
+                facecolor=color,
+                edgecolor=color,
+                linewidth=0.5,
             )
             ax_main.add_patch(rect)
 
@@ -579,14 +622,20 @@ class ChartGenerator:
                     else:
                         ma_values = self._compute_ema(closes, period)
                     valid_x = list(range(period - 1, len(closes)))
-                    valid_y = ma_values[period - 1:]
-                    line, = ax_main.plot(valid_x, valid_y, color=color, linewidth=1, label=f"{ind_name}({period})")
+                    valid_y = ma_values[period - 1 :]
+                    (line,) = ax_main.plot(
+                        valid_x, valid_y, color=color, linewidth=1, label=f"{ind_name}({period})"
+                    )
                     legend_handles.append(line)
 
         if legend_handles:
             ax_main.legend(
-                handles=legend_handles, loc="upper left", fontsize=7,
-                facecolor=t["bg"], edgecolor=t["grid"], labelcolor=t["fg"],
+                handles=legend_handles,
+                loc="upper left",
+                fontsize=7,
+                facecolor=t["bg"],
+                edgecolor=t["grid"],
+                labelcolor=t["fg"],
             )
 
         # RSI subplot
@@ -597,12 +646,20 @@ class ChartGenerator:
             rsi_values = self._compute_rsi(closes, 14)
             if rsi_values:
                 valid_x = list(range(14, len(closes)))
-                ax_rsi.plot(valid_x, rsi_values[14:], color=t["accent"], linewidth=1, label="RSI(14)")
+                ax_rsi.plot(
+                    valid_x, rsi_values[14:], color=t["accent"], linewidth=1, label="RSI(14)"
+                )
                 ax_rsi.axhline(y=70, color=t["negative"], linewidth=0.5, linestyle="--", alpha=0.7)
                 ax_rsi.axhline(y=30, color=t["positive"], linewidth=0.5, linestyle="--", alpha=0.7)
                 ax_rsi.set_ylim(0, 100)
                 ax_rsi.set_ylabel("RSI", fontsize=8, color=t["fg"])
-                ax_rsi.legend(loc="upper left", fontsize=7, facecolor=t["bg"], edgecolor=t["grid"], labelcolor=t["fg"])
+                ax_rsi.legend(
+                    loc="upper left",
+                    fontsize=7,
+                    facecolor=t["bg"],
+                    edgecolor=t["grid"],
+                    labelcolor=t["fg"],
+                )
 
         # MACD subplot
         if has_macd:
@@ -620,7 +677,13 @@ class ChartGenerator:
                 ax_macd.bar(valid_x, hist, color=hist_colors, width=0.6, alpha=0.6)
                 ax_macd.axhline(y=0, color=t["fg"], linewidth=0.5, alpha=0.5)
                 ax_macd.set_ylabel("MACD", fontsize=8, color=t["fg"])
-                ax_macd.legend(loc="upper left", fontsize=7, facecolor=t["bg"], edgecolor=t["grid"], labelcolor=t["fg"])
+                ax_macd.legend(
+                    loc="upper left",
+                    fontsize=7,
+                    facecolor=t["bg"],
+                    edgecolor=t["grid"],
+                    labelcolor=t["fg"],
+                )
 
         # X-axis labels on bottom subplot
         bottom_ax = axes[-1]
@@ -632,7 +695,14 @@ class ChartGenerator:
             step = max(1, len(dates_raw) // 10)
             ticks = list(range(0, len(dates_raw), step))
             bottom_ax.set_xticks(ticks)
-            labels = [dates_raw[i].strftime("%b %d") if hasattr(dates_raw[i], "strftime") else str(dates_raw[i]) for i in ticks]
+            labels = [
+                (
+                    dates_raw[i].strftime("%b %d")
+                    if hasattr(dates_raw[i], "strftime")
+                    else str(dates_raw[i])
+                )
+                for i in ticks
+            ]
             bottom_ax.set_xticklabels(labels, rotation=30, ha="right", fontsize=7)
 
         bottom_ax.set_xlabel("Date", fontsize=9, color=t["fg"])
@@ -644,6 +714,7 @@ class ChartGenerator:
     def _empty_chart(self, message: str, theme: str) -> bytes:
         """Generate a minimal SVG with a 'no data' message."""
         import matplotlib
+
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
 
@@ -651,7 +722,16 @@ class ChartGenerator:
         fig, ax = plt.subplots(figsize=(6, 3), dpi=100)
         fig.patch.set_facecolor(t["bg"])
         ax.set_facecolor(t["bg"])
-        ax.text(0.5, 0.5, message, ha="center", va="center", fontsize=12, color=t["fg"], transform=ax.transAxes)
+        ax.text(
+            0.5,
+            0.5,
+            message,
+            ha="center",
+            va="center",
+            fontsize=12,
+            color=t["fg"],
+            transform=ax.transAxes,
+        )
         ax.set_xticks([])
         ax.set_yticks([])
         for spine in ax.spines.values():
@@ -665,7 +745,7 @@ class ChartGenerator:
         """Compute Simple Moving Average."""
         result = [0.0] * len(values)
         for i in range(period - 1, len(values)):
-            result[i] = sum(values[i - period + 1: i + 1]) / period
+            result[i] = sum(values[i - period + 1 : i + 1]) / period
         return result
 
     @staticmethod
@@ -748,7 +828,7 @@ class ChartGenerator:
             macd_line[i] = ema_fast[i] - ema_slow[i]
 
         # Signal line: EMA of MACD from index slow-1 onwards
-        macd_subset = macd_line[slow - 1:]
+        macd_subset = macd_line[slow - 1 :]
         signal_ema = ema(macd_subset, signal)
 
         signal_line = [0.0] * len(closes)
@@ -768,6 +848,7 @@ class ChartGenerator:
 @dataclass
 class TradeDetail:
     """Structured trade detail result. (Req 19.1)"""
+
     trade_id: str
     symbol: str
     strategy: str
@@ -783,6 +864,7 @@ class TradeDetail:
 @dataclass
 class PerformanceSummary:
     """Aggregated performance metrics for a time period. (Req 19.2)"""
+
     total_pnl: float
     trade_count: int
     win_count: int
@@ -799,6 +881,7 @@ class PerformanceSummary:
 @dataclass
 class SignalExplanation:
     """Explanation of why a trade was taken. (Req 19.3)"""
+
     symbol: str
     signal_type: str
     strategy: str
@@ -810,6 +893,7 @@ class SignalExplanation:
 @dataclass
 class StockInfo:
     """Aggregated stock info for a symbol. (Req 19.4)"""
+
     symbol: str
     recent_sentiment: list[dict]
     bias_status: Optional[str]
@@ -836,7 +920,9 @@ class TradingQueryHandler:
     # ── Time-range parsing (Req 19.6) ────────────────────────────────────
 
     @staticmethod
-    def parse_time_range(query: str, now: Optional[datetime] = None) -> tuple[Optional[datetime], Optional[datetime]]:
+    def parse_time_range(
+        query: str, now: Optional[datetime] = None
+    ) -> tuple[Optional[datetime], Optional[datetime]]:
         """Parse natural-language time ranges from a query string.
 
         Supports: "last week", "last month", "last N days", "today",
@@ -906,9 +992,18 @@ class TradingQueryHandler:
 
         # "from January", "from February", etc.
         months = {
-            "january": 1, "february": 2, "march": 3, "april": 4,
-            "may": 5, "june": 6, "july": 7, "august": 8,
-            "september": 9, "october": 10, "november": 11, "december": 12,
+            "january": 1,
+            "february": 2,
+            "march": 3,
+            "april": 4,
+            "may": 5,
+            "june": 6,
+            "july": 7,
+            "august": 8,
+            "september": 9,
+            "october": 10,
+            "november": 11,
+            "december": 12,
         }
         match = re.search(r"from\s+(" + "|".join(months.keys()) + r")", lower)
         if match:
@@ -934,7 +1029,8 @@ class TradingQueryHandler:
                     FROM trades
                     WHERE user_id = $1 AND (id::text = $2 OR trade_id = $2)
                     """,
-                    user_id, trade_id,
+                    user_id,
+                    trade_id,
                 )
                 if not row:
                     return None
@@ -944,7 +1040,11 @@ class TradingQueryHandler:
             return None
 
     async def get_trades_by_symbol(
-        self, user_id: str, symbol: str, start: Optional[datetime] = None, end: Optional[datetime] = None
+        self,
+        user_id: str,
+        symbol: str,
+        start: Optional[datetime] = None,
+        end: Optional[datetime] = None,
     ) -> list[TradeDetail]:
         """Retrieve trades for a specific symbol, optionally filtered by time range."""
         if not self.db_pool:
@@ -1010,7 +1110,9 @@ class TradingQueryHandler:
             entry_price=float(row.get("entry_price", 0)),
             exit_price=float(row["exit_price"]) if row.get("exit_price") is not None else None,
             quantity=int(row.get("quantity", 0)),
-            realized_pnl=float(row["realized_pnl"]) if row.get("realized_pnl") is not None else None,
+            realized_pnl=(
+                float(row["realized_pnl"]) if row.get("realized_pnl") is not None else None
+            ),
             entry_time=str(row.get("entry_time", "")),
             exit_time=str(row.get("exit_time", "")) if row.get("exit_time") else None,
             holding_period=holding_period,
@@ -1157,7 +1259,8 @@ class TradingQueryHandler:
                     WHERE user_id = $1 AND ticker = $2
                     ORDER BY created_at DESC LIMIT 5
                     """,
-                    user_id, symbol,
+                    user_id,
+                    symbol,
                 )
 
                 # Latest bias
@@ -1167,7 +1270,8 @@ class TradingQueryHandler:
                     WHERE user_id = $1 AND ticker = $2
                     ORDER BY created_at DESC LIMIT 1
                     """,
-                    user_id, symbol,
+                    user_id,
+                    symbol,
                 )
 
                 # Open positions (trades without exit)
@@ -1178,7 +1282,8 @@ class TradingQueryHandler:
                     WHERE user_id = $1 AND symbol = $2 AND exit_time IS NULL
                     ORDER BY entry_time DESC
                     """,
-                    user_id, symbol,
+                    user_id,
+                    symbol,
                 )
 
                 # Recent closed trades
@@ -1190,7 +1295,8 @@ class TradingQueryHandler:
                     WHERE user_id = $1 AND symbol = $2 AND exit_time IS NOT NULL
                     ORDER BY exit_time DESC LIMIT 5
                     """,
-                    user_id, symbol,
+                    user_id,
+                    symbol,
                 )
 
                 return StockInfo(
@@ -1406,10 +1512,12 @@ class ChatbotService:
         # RAG context as a system message
         if context.has_data:
             context_str = context.to_context_string()
-            messages.append(Message(
-                role=MessageRole.SYSTEM,
-                content=f"User's trading data context:\n{context_str}",
-            ))
+            messages.append(
+                Message(
+                    role=MessageRole.SYSTEM,
+                    content=f"User's trading data context:\n{context_str}",
+                )
+            )
 
         # Conversation history (skip system messages from history)
         for msg in history:
@@ -1427,12 +1535,33 @@ class ChatbotService:
     def _is_data_query(message: str) -> bool:
         """Heuristic: does the message ask about trading data?"""
         data_keywords = [
-            "trade", "trades", "position", "positions", "pnl", "p&l",
-            "profit", "loss", "performance", "win rate", "sharpe",
-            "portfolio", "holding", "stock", "signal", "sentiment",
-            "strategy", "entry", "exit", "buy", "sell",
+            "trade",
+            "trades",
+            "position",
+            "positions",
+            "pnl",
+            "p&l",
+            "profit",
+            "loss",
+            "performance",
+            "win rate",
+            "sharpe",
+            "portfolio",
+            "holding",
+            "stock",
+            "signal",
+            "sentiment",
+            "strategy",
+            "entry",
+            "exit",
+            "buy",
+            "sell",
             # Hinglish keywords
-            "kitna", "kamai", "nuksan", "kharida", "becha",
+            "kitna",
+            "kamai",
+            "nuksan",
+            "kharida",
+            "becha",
         ]
         lower = message.lower()
         return any(kw in lower for kw in data_keywords)
@@ -1550,18 +1679,18 @@ class ChatbotService:
                 continue
             diff = abs(llm_f - db_f)
             if diff > tolerance:
-                discrepancies.append({
-                    "key": key,
-                    "llm_value": llm_f,
-                    "db_value": db_f,
-                    "difference": round(diff, 6),
-                })
+                discrepancies.append(
+                    {
+                        "key": key,
+                        "llm_value": llm_f,
+                        "db_value": db_f,
+                        "difference": round(diff, 6),
+                    }
+                )
         return discrepancies
 
     @staticmethod
-    def validate_trade_ids(
-        trade_ids: list[str], user_trade_ids: list[str]
-    ) -> list[str]:
+    def validate_trade_ids(trade_ids: list[str], user_trade_ids: list[str]) -> list[str]:
         """Verify all trade IDs referenced in LLM responses exist in user's history.
 
         Returns a list of invalid trade IDs (those not found in user_trade_ids).

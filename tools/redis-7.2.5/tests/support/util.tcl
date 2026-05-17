@@ -571,7 +571,7 @@ proc wait_load_handlers_disconnected {{level 0}} {
     }
 }
 
-proc K { x y } { set x } 
+proc K { x y } { set x }
 
 # Shuffle a list with Fisher-Yates algorithm.
 proc lshuffle {list} {
@@ -997,7 +997,7 @@ proc get_nonloopback_client {} {
 }
 
 # The following functions and variables are used only when running large-memory
-# tests. We avoid defining them when not running large-memory tests because the 
+# tests. We avoid defining them when not running large-memory tests because the
 # global variables takes up lots of memory.
 proc init_large_mem_vars {} {
     if {![info exists ::str500]} {
@@ -1114,4 +1114,3 @@ proc format_command {args} {
     }
     set _ $cmd
 }
-

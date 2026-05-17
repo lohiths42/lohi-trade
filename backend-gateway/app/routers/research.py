@@ -37,7 +37,6 @@ from fastapi import (
     Form,
     HTTPException,
     Query,
-    Request,
     Response,
     UploadFile,
 )
@@ -53,7 +52,6 @@ from app.middleware.errors import (
 from app.routers.auth_v2 import get_current_user_id
 from app.services.research_service import ResearchService
 from src.research.providers.errors import ProviderError
-
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -71,7 +69,8 @@ def _user_uuid(user_id: str) -> UUID:
     needs UUIDs for RLS scoping. We derive a stable UUID5 from the
     username so the same user always maps to the same UUID.
     """
-    from uuid import uuid5, NAMESPACE_URL
+    from uuid import NAMESPACE_URL, uuid5
+
     return uuid5(NAMESPACE_URL, f"lohi-user:{user_id}")
 
 
@@ -247,8 +246,9 @@ async def start_run(
 
     Requirements: 1.1, 1.7, 5.1
     """
-    logger.info("start_run called: user_id=%s, symbol=%s, prompt=%.50s",
-                user_id, body.symbol, body.prompt)
+    logger.info(
+        "start_run called: user_id=%s, symbol=%s, prompt=%.50s", user_id, body.symbol, body.prompt
+    )
     # Convert string user_id to UUID. The v1 auth system uses usernames
     # (e.g. "admin") not UUIDs, so we generate a deterministic UUID5
     # from the username for the research subsystem's RLS scoping.
@@ -460,8 +460,7 @@ async def forget_memory(
     scope: str = Query(
         ...,
         description=(
-            "Scope to forget: 'all' | 'working' | 'semantic' | 'episodic' | "
-            "'symbol:<SYMBOL>'"
+            "Scope to forget: 'all' | 'working' | 'semantic' | 'episodic' | " "'symbol:<SYMBOL>'"
         ),
     ),
     user_id: str = Depends(get_current_user_id),

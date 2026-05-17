@@ -51,7 +51,11 @@ class _RaisingLLM(FakeLLMProvider):
 
 
 def _build_hit(
-    *, chunk_id: str, user_id: UUID, symbol: str, text: str,
+    *,
+    chunk_id: str,
+    user_id: UUID,
+    symbol: str,
+    text: str,
 ) -> ChunkHit:
     return ChunkHit(
         chunk=ChunkRecord(
@@ -299,6 +303,8 @@ class TestFailureModes:
         with pytest.raises(RuntimeError, match="fundamentals llm exploded"):
             await agent.invoke(
                 _build_context(
-                    user_id=user_id, symbol="INFY", retriever=retriever,
+                    user_id=user_id,
+                    symbol="INFY",
+                    retriever=retriever,
                 ),
             )

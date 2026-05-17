@@ -66,9 +66,7 @@ _DOCUMENT_TYPE: Final[str] = "announcement"
 
 # Public BSE corporate-announcements JSON endpoint. Operators override
 # via the config key ``research.ingest.sources.bse_feed.endpoint``.
-_DEFAULT_ENDPOINT: Final[str] = (
-    "https://api.bseindia.com/BseIndiaAPI/api/AnnSubCategoryGetData/w"
-)
+_DEFAULT_ENDPOINT: Final[str] = "https://api.bseindia.com/BseIndiaAPI/api/AnnSubCategoryGetData/w"
 
 # Referer required by upstream CORS / bot-filtering layer.
 _DEFAULT_REFERER: Final[str] = "https://www.bseindia.com/"
@@ -217,7 +215,8 @@ class BseFeedPoller:
         }
         try:
             async with httpx.AsyncClient(
-                timeout=_FETCH_TIMEOUT_SEC, headers=headers,
+                timeout=_FETCH_TIMEOUT_SEC,
+                headers=headers,
             ) as client:
                 response = await client.get(self._endpoint)
                 response.raise_for_status()
@@ -257,7 +256,8 @@ class BseFeedPoller:
             ("ATTACHMENTNAME", "attachmentname", "NSURL", "DocumentURL"),
         )
         published_at_raw = _first_nonempty(
-            row, ("NEWS_DT", "news_dt", "DT_TM", "published_at"),
+            row,
+            ("NEWS_DT", "news_dt", "DT_TM", "published_at"),
         )
 
         if not symbol or not document_url or not published_at_raw:

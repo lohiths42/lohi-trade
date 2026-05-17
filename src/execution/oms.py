@@ -48,6 +48,7 @@ class TokenBucketRateLimiter:
         wait = (1 - self._tokens) / self._rate
         return wait
 
+
 from src.ingestion.broker_interface import (
     BrokerInterface,
     Order,
@@ -464,7 +465,8 @@ class OrderManagementSystem:
             conn.commit()
         except Exception as exc:
             logger.error(
-                f"Failed to update order {order.order_id}: {exc}", exc_info=True,
+                f"Failed to update order {order.order_id}: {exc}",
+                exc_info=True,
             )
 
     def _load_order(self, order_id: str) -> Order | None:
@@ -472,7 +474,8 @@ class OrderManagementSystem:
         conn = self._db.connect_sqlite()
         try:
             row = conn.execute(
-                "SELECT * FROM orders WHERE order_id=?", (order_id,),
+                "SELECT * FROM orders WHERE order_id=?",
+                (order_id,),
             ).fetchone()
             if row is None:
                 return None
@@ -489,9 +492,7 @@ class OrderManagementSystem:
                 broker_order_id=row["broker_order_id"],
                 filled_qty=row["filled_qty"] or 0,
                 filled_price=row["filled_price"],
-                timestamp=datetime.fromisoformat(row["created_at"])
-                if row["created_at"]
-                else None,
+                timestamp=datetime.fromisoformat(row["created_at"]) if row["created_at"] else None,
                 rejection_reason=row["rejection_reason"],
             )
         except Exception as exc:

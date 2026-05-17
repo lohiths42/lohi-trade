@@ -106,7 +106,8 @@ class TestSaveSnapshot:
         factory = _factory_for(conn)
         pinned_now = datetime(2024, 1, 1, 12, 0, 0, tzinfo=UTC)
         store = SnapshotStore(
-            connection_factory=factory, clock=lambda: pinned_now,
+            connection_factory=factory,
+            clock=lambda: pinned_now,
         )
 
         user_id = uuid4()
@@ -144,11 +145,16 @@ class TestSaveSnapshot:
             return datetime(2030, 1, 1, tzinfo=UTC)
 
         store = SnapshotStore(
-            connection_factory=_factory_for(conn), clock=clock,
+            connection_factory=_factory_for(conn),
+            clock=clock,
         )
         fixed = datetime(2024, 6, 1, 9, 30, tzinfo=UTC)
         await store.save_snapshot(
-            uuid4(), "TCS", {}, [], generated_at=fixed,
+            uuid4(),
+            "TCS",
+            {},
+            [],
+            generated_at=fixed,
         )
         _, args = conn.execute_calls[0]
         assert args[3] == fixed
@@ -234,7 +240,8 @@ class TestGetFreshSnapshot:
         }
         conn = _FakeConn(fetchrow_returns=[row])
         store = SnapshotStore(
-            connection_factory=_factory_for(conn), clock=lambda: now,
+            connection_factory=_factory_for(conn),
+            clock=lambda: now,
         )
 
         record = await store.get_fresh_snapshot(user_id, "hdfc")
@@ -287,7 +294,8 @@ class TestGetFreshSnapshot:
         }
         conn = _FakeConn(fetchrow_returns=[row])
         store = SnapshotStore(
-            connection_factory=_factory_for(conn), clock=lambda: now,
+            connection_factory=_factory_for(conn),
+            clock=lambda: now,
         )
         assert await store.get_fresh_snapshot(user_id, "X") is None
 
@@ -306,23 +314,29 @@ class TestGetFreshSnapshot:
         }
         conn = _FakeConn(fetchrow_returns=[row])
         store = SnapshotStore(
-            connection_factory=_factory_for(conn), clock=lambda: now,
+            connection_factory=_factory_for(conn),
+            clock=lambda: now,
         )
         # 30 seconds is outside a 15s window.
         assert (
             await store.get_fresh_snapshot(
-                user_id, "X", staleness_window_sec=15,
+                user_id,
+                "X",
+                staleness_window_sec=15,
             )
             is None
         )
         # But inside a 60s window (new row per call).
         conn2 = _FakeConn(fetchrow_returns=[row])
         store2 = SnapshotStore(
-            connection_factory=_factory_for(conn2), clock=lambda: now,
+            connection_factory=_factory_for(conn2),
+            clock=lambda: now,
         )
         assert (
             await store2.get_fresh_snapshot(
-                user_id, "X", staleness_window_sec=60,
+                user_id,
+                "X",
+                staleness_window_sec=60,
             )
             is not None
         )
@@ -334,13 +348,17 @@ class TestGetFreshSnapshot:
         store = SnapshotStore(connection_factory=_factory_for(conn))
         assert (
             await store.get_fresh_snapshot(
-                uuid4(), "X", staleness_window_sec=0,
+                uuid4(),
+                "X",
+                staleness_window_sec=0,
             )
             is None
         )
         assert (
             await store.get_fresh_snapshot(
-                uuid4(), "X", staleness_window_sec=-1,
+                uuid4(),
+                "X",
+                staleness_window_sec=-1,
             )
             is None
         )
@@ -363,7 +381,8 @@ class TestGetFreshSnapshot:
         }
         conn = _FakeConn(fetchrow_returns=[row])
         store = SnapshotStore(
-            connection_factory=_factory_for(conn), clock=lambda: aware_now,
+            connection_factory=_factory_for(conn),
+            clock=lambda: aware_now,
         )
         record = await store.get_fresh_snapshot(user_id, "X")
         assert record is not None
@@ -387,7 +406,8 @@ class TestGetFreshSnapshot:
         }
         conn = _FakeConn(fetchrow_returns=[row])
         store = SnapshotStore(
-            connection_factory=_factory_for(conn), clock=lambda: now,
+            connection_factory=_factory_for(conn),
+            clock=lambda: now,
         )
         record = await store.get_fresh_snapshot(user_id, "X")
         assert record is not None
@@ -410,7 +430,8 @@ class TestGetFreshSnapshot:
         }
         conn_dict = _FakeConn(fetchrow_returns=[row_dict])
         store_dict = SnapshotStore(
-            connection_factory=_factory_for(conn_dict), clock=lambda: now,
+            connection_factory=_factory_for(conn_dict),
+            clock=lambda: now,
         )
         record_dict = await store_dict.get_fresh_snapshot(user_id, "X")
         assert record_dict is not None
@@ -427,7 +448,8 @@ class TestGetFreshSnapshot:
         }
         conn_bytes = _FakeConn(fetchrow_returns=[row_bytes])
         store_bytes = SnapshotStore(
-            connection_factory=_factory_for(conn_bytes), clock=lambda: now,
+            connection_factory=_factory_for(conn_bytes),
+            clock=lambda: now,
         )
         record_bytes = await store_bytes.get_fresh_snapshot(user_id, "X")
         assert record_bytes is not None

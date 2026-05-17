@@ -82,7 +82,7 @@ start_multiple_servers 3 [list overrides $base_conf] {
     set node1_rd [redis_deferring_client 0]
 
     test "use previous hostip in \"cluster-preferred-endpoint-type unknown-endpoint\" mode" {
-        
+
         # backup and set cluster-preferred-endpoint-type unknown-endpoint
         set endpoint_type_before_set [lindex [split [$node1 CONFIG GET cluster-preferred-endpoint-type] " "] 1]
         $node1 CONFIG SET cluster-preferred-endpoint-type unknown-endpoint
@@ -248,10 +248,10 @@ test {Migrate the last slot away from a node using redis-cli} {
         exec src/redis-cli --cluster-yes --cluster add-node \
                      127.0.0.1:[srv -3 port] \
                      127.0.0.1:[srv 0 port]
-        
+
         # First we wait for new node to be recognized by entire cluster
         wait_for_cluster_size 4
-        
+
         wait_for_condition 1000 50 {
             [CI 0 cluster_state] eq {ok} &&
             [CI 1 cluster_state] eq {ok} &&

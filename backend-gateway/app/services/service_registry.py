@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
@@ -316,9 +316,7 @@ class ServiceRegistry:
 
     # ── Internal ────────────────────────────────────────────────────────
 
-    def _is_feature_satisfied(
-        self, deps: list[str], statuses: dict[str, ServiceStatus]
-    ) -> bool:
+    def _is_feature_satisfied(self, deps: list[str], statuses: dict[str, ServiceStatus]) -> bool:
         """Check if all dependency expressions are satisfied.
 
         Each dep is a string like "nvidia_nim|ollama" meaning any one
@@ -326,10 +324,7 @@ class ServiceRegistry:
         """
         for dep_expr in deps:
             alternatives = [g.strip() for g in dep_expr.split("|")]
-            if not any(
-                statuses.get(alt) == ServiceStatus.CONFIGURED
-                for alt in alternatives
-            ):
+            if not any(statuses.get(alt) == ServiceStatus.CONFIGURED for alt in alternatives):
                 return False
         return True
 

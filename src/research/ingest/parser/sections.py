@@ -148,7 +148,8 @@ def _normalise_heading(raw: str) -> str:
 
 
 def _match_section_name(
-    normalised: str, headings_config: dict[str, list[str]],
+    normalised: str,
+    headings_config: dict[str, list[str]],
 ) -> str | None:
     """Return the first section name whose alias list matches *normalised*.
 
@@ -186,11 +187,7 @@ def _iter_heading_lines(
             continue
 
         # Setext: current line has text, next line is an underline.
-        if (
-            line.strip()
-            and i + 1 < n
-            and _SETEXT_UNDERLINE_RE.match(lines[i + 1])
-        ):
+        if line.strip() and i + 1 < n and _SETEXT_UNDERLINE_RE.match(lines[i + 1]):
             yield i, line.strip()
             i += 2
             continue

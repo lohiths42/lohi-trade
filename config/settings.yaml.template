@@ -40,14 +40,14 @@ strategies:
     rsi_overbought: 65
     volume_multiplier: 1.5
     stop_loss_atr_multiplier: 1.5
-  
+
   trend_following:
     enabled: true
     ema_fast: 9
     ema_slow: 21
     stop_loss_atr_multiplier: 2.0
     target_atr_multiplier: 3.0
-  
+
   opening_range_breakout:
     enabled: true
     range_start: "09:15"
@@ -111,3 +111,18 @@ symbols:
   - "SBIN"
   - "BHARTIARTL"
   - "KOTAKBANK"
+
+research:
+  providers:
+    llm:
+      provider: "nvidia_nim"
+      model: "${NIM_MODEL:-meta/llama3.1-8b-instruct}"
+      api_key: "${NIM_API_KEY}"
+      base_url: "${NIM_ENDPOINT:-https://integrate.api.nvidia.com/v1}"
+    embeddings:
+      provider: "nvidia_nim"
+      model: "nvidia/nv-embedqa-e5-v5"
+      api_key: "${NIM_API_KEY}"
+      base_url: "${NIM_ENDPOINT:-https://integrate.api.nvidia.com/v1}"
+      dim: 1024
+      input_type: "passage"

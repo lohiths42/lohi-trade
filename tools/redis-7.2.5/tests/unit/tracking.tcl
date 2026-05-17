@@ -14,7 +14,7 @@ start_server {tags {"tracking network logreqres:skip"}} {
 
     # Client to be used for SET and GET commands
     # We don't read this client's buffer
-    set rd_sg [redis_client] 
+    set rd_sg [redis_client]
 
     proc clean_all {} {
         uplevel {
@@ -228,7 +228,7 @@ start_server {tags {"tracking network logreqres:skip"}} {
         $rd_sg MSET key2{t} 1 key2{t} 1
 
         # If a script doesn't call any read command, don't track any keys
-        r EVAL "redis.call('set', 'key3{t}', 'bar')" 2 key1{t} key2{t} 
+        r EVAL "redis.call('set', 'key3{t}', 'bar')" 2 key1{t} key2{t}
         $rd_sg MSET key2{t} 2 key1{t} 2
         assert_equal "PONG" [r ping]
 
@@ -278,11 +278,11 @@ start_server {tags {"tracking network logreqres:skip"}} {
 
     test {Different clients can redirect to the same connection} {
         r CLIENT TRACKING on REDIRECT $redir_id
-        $rd CLIENT TRACKING on REDIRECT $redir_id 
+        $rd CLIENT TRACKING on REDIRECT $redir_id
         assert_equal OK [$rd read] ; # Consume the TRACKING reply
         $rd_sg MSET key1{t} 1 key2{t} 1
         r GET key1{t}
-        $rd GET key2{t} 
+        $rd GET key2{t}
         assert_equal 1 [$rd read] ; # Consume the GET reply
         $rd_sg INCR key1{t}
         $rd_sg INCR key2{t}
@@ -293,19 +293,19 @@ start_server {tags {"tracking network logreqres:skip"}} {
     }
 
     test {Different clients using different protocols can track the same key} {
-        $rd HELLO 3 
+        $rd HELLO 3
         set reply [$rd read] ; # Consume the HELLO reply
         assert_equal 3 [dict get $reply proto]
-        $rd CLIENT TRACKING on 
+        $rd CLIENT TRACKING on
         assert_equal OK [$rd read] ; # Consume the TRACKING reply
         $rd_sg set key1 1
         r GET key1
-        $rd GET key1 
+        $rd GET key1
         assert_equal 1 [$rd read] ; # Consume the GET reply
         $rd_sg INCR key1
         set res1 [lindex [$rd_redirection read] 2]
         $rd PING ; # Non redirecting client has to talk to the server in order to get invalidation message
-        set res2 [lindex [split [$rd read] " "] 1] 
+        set res2 [lindex [split [$rd read] " "] 1]
         assert_equal PONG [$rd read] ; # Consume the PING reply, which comes together with the invalidation message
         assert {$res1 eq {key1}}
         assert {$res2 eq {key1}}
@@ -340,7 +340,7 @@ start_server {tags {"tracking network logreqres:skip"}} {
         r CLIENT TRACKING off
         r CLIENT TRACKING on OPTOUT REDIRECT $redir_id
         $rd_sg SET key1 1
-        r GET key1 
+        r GET key1
         $rd_sg SET key1 2
         set res [lindex [$rd_redirection read] 2]
         assert {$res eq {key1}}
@@ -386,7 +386,7 @@ start_server {tags {"tracking network logreqres:skip"}} {
         r CLIENT TRACKING on
         $rd_sg SET key1 1
         r GET key1
-        r CLIENT TRACKING off 
+        r CLIENT TRACKING off
         r CLIENT TRACKING on BCAST
         $rd_sg INCR key1
         set inv_msg [r PING]
@@ -396,7 +396,7 @@ start_server {tags {"tracking network logreqres:skip"}} {
     }
 
     test {BCAST with prefix collisions throw errors} {
-        set r [redis_client] 
+        set r [redis_client]
         catch {$r CLIENT TRACKING ON BCAST PREFIX FOOBAR PREFIX FOO} output
         assert_match {ERR Prefix 'FOOBAR'*'FOO'*} $output
 
@@ -581,9 +581,9 @@ start_server {tags {"tracking network logreqres:skip"}} {
 
     # Keys are defined to be evicted 100 at a time by default.
     # If after eviction the number of keys still surpasses the limit
-    # defined in tracking-table-max-keys, we increases eviction 
-    # effort to 200, and then 300, etc. 
-    # This test tests this effort incrementation. 
+    # defined in tracking-table-max-keys, we increases eviction
+    # effort to 200, and then 300, etc.
+    # This test tests this effort incrementation.
     test {Server is able to evacuate enough keys when num of keys surpasses limit by more than defined initial effort} {
         clean_all
         set NUM_OF_KEYS_TO_TEST 250
@@ -610,11 +610,11 @@ start_server {tags {"tracking network logreqres:skip"}} {
         r CLIENT TRACKING on REDIRECT $redir_id
         $rd_sg SET key1 1
         $rd_sg SET key2 2
-        r GET key1 
+        r GET key1
         r GET key2
         $rd CLIENT TRACKING on BCAST PREFIX prefix:
         assert [string match *OK* [$rd read]]
-        $rd_sg SET prefix:key1 1 
+        $rd_sg SET prefix:key1 1
         $rd_sg SET prefix:key2 2
         set info [r info]
         regexp "\r\ntracking_total_items:(.*?)\r\n" $info _ total_items
@@ -746,7 +746,7 @@ start_server {tags {"tracking network logreqres:skip"}} {
     test {Regression test for #11715} {
         # This issue manifests when a client invalidates keys through the max key
         # limit, which invalidates keys to get Redis below the limit, but no command is
-        # then executed. This can occur in several ways but the simplest is through 
+        # then executed. This can occur in several ways but the simplest is through
         # multi-exec which queues commands.
         clean_all
         r config set tracking-table-max-keys 2

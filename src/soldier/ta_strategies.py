@@ -16,7 +16,6 @@ All strategies follow the Strategy ABC interface and produce Signal objects
 compatible with the existing SignalPipeline and ML filter.
 """
 
-
 import pandas as pd
 
 from src.soldier.indicator_engine import IndicatorSet
@@ -80,7 +79,9 @@ class VWAPBounceStrategyImpl(Strategy):
         return self._config.enabled
 
     def generate_signal(
-        self, indicators: IndicatorSet, candles: pd.DataFrame,
+        self,
+        indicators: IndicatorSet,
+        candles: pd.DataFrame,
     ) -> Signal | None:
         if not self._config.enabled or candles.empty:
             return None
@@ -120,8 +121,12 @@ class VWAPBounceStrategyImpl(Strategy):
             f"entry={close:.2f} vwap={indicators.vwap:.2f}",
         )
         return create_signal(
-            symbol=indicators.symbol, strategy=self.name, side=side,
-            entry_price=close, stop_loss=stop_loss, target=target,
+            symbol=indicators.symbol,
+            strategy=self.name,
+            side=side,
+            entry_price=close,
+            stop_loss=stop_loss,
+            target=target,
             indicators=indicators,
         )
 
@@ -149,7 +154,9 @@ class StochasticRSIStrategyImpl(Strategy):
         return self._config.enabled
 
     def generate_signal(
-        self, indicators: IndicatorSet, candles: pd.DataFrame,
+        self,
+        indicators: IndicatorSet,
+        candles: pd.DataFrame,
     ) -> Signal | None:
         if not self._config.enabled or candles.empty:
             return None
@@ -160,13 +167,17 @@ class StochasticRSIStrategyImpl(Strategy):
         rsi = indicators.rsi_14
 
         side = None
-        if (stoch_k < self._config.stoch_oversold
-                and rsi < self._config.rsi_oversold
-                and stoch_k > stoch_d):  # %K crossing above %D
+        if (
+            stoch_k < self._config.stoch_oversold
+            and rsi < self._config.rsi_oversold
+            and stoch_k > stoch_d
+        ):  # %K crossing above %D
             side = "BUY"
-        elif (stoch_k > self._config.stoch_overbought
-              and rsi > self._config.rsi_overbought
-              and stoch_k < stoch_d):  # %K crossing below %D
+        elif (
+            stoch_k > self._config.stoch_overbought
+            and rsi > self._config.rsi_overbought
+            and stoch_k < stoch_d
+        ):  # %K crossing below %D
             side = "SELL"
 
         if side is None:
@@ -184,8 +195,12 @@ class StochasticRSIStrategyImpl(Strategy):
             f"StochK={stoch_k:.1f} RSI={rsi:.1f}",
         )
         return create_signal(
-            symbol=indicators.symbol, strategy=self.name, side=side,
-            entry_price=close, stop_loss=stop_loss, target=target,
+            symbol=indicators.symbol,
+            strategy=self.name,
+            side=side,
+            entry_price=close,
+            stop_loss=stop_loss,
+            target=target,
             indicators=indicators,
         )
 
@@ -213,7 +228,9 @@ class ADXTrendStrategyImpl(Strategy):
         return self._config.enabled
 
     def generate_signal(
-        self, indicators: IndicatorSet, candles: pd.DataFrame,
+        self,
+        indicators: IndicatorSet,
+        candles: pd.DataFrame,
     ) -> Signal | None:
         if not self._config.enabled or candles.empty:
             return None
@@ -250,8 +267,12 @@ class ADXTrendStrategyImpl(Strategy):
             f"ADX={indicators.adx:.1f} +DI={indicators.plus_di:.1f} -DI={indicators.minus_di:.1f}",
         )
         return create_signal(
-            symbol=indicators.symbol, strategy=self.name, side=side,
-            entry_price=close, stop_loss=stop_loss, target=target,
+            symbol=indicators.symbol,
+            strategy=self.name,
+            side=side,
+            entry_price=close,
+            stop_loss=stop_loss,
+            target=target,
             indicators=indicators,
         )
 
@@ -282,7 +303,9 @@ class BollingerSqueezeStrategyImpl(Strategy):
         return self._config.enabled
 
     def generate_signal(
-        self, indicators: IndicatorSet, candles: pd.DataFrame,
+        self,
+        indicators: IndicatorSet,
+        candles: pd.DataFrame,
     ) -> Signal | None:
         if not self._config.enabled or candles.empty:
             return None
@@ -291,8 +314,11 @@ class BollingerSqueezeStrategyImpl(Strategy):
         volume = float(candles.iloc[-1]["volume"])
 
         # Calculate BB width as percentage
-        bb_width = (indicators.bb_upper - indicators.bb_lower) / indicators.bb_middle \
-            if indicators.bb_middle > 0 else 999
+        bb_width = (
+            (indicators.bb_upper - indicators.bb_lower) / indicators.bb_middle
+            if indicators.bb_middle > 0
+            else 999
+        )
 
         # Check for squeeze condition (narrow bands)
         if bb_width > self._config.squeeze_bb_width_threshold:
@@ -323,8 +349,12 @@ class BollingerSqueezeStrategyImpl(Strategy):
             f"bb_width={bb_width:.4f} close={close:.2f}",
         )
         return create_signal(
-            symbol=indicators.symbol, strategy=self.name, side=side,
-            entry_price=close, stop_loss=stop_loss, target=target,
+            symbol=indicators.symbol,
+            strategy=self.name,
+            side=side,
+            entry_price=close,
+            stop_loss=stop_loss,
+            target=target,
             indicators=indicators,
         )
 
@@ -351,7 +381,9 @@ class PivotPointStrategyImpl(Strategy):
         return self._config.enabled
 
     def generate_signal(
-        self, indicators: IndicatorSet, candles: pd.DataFrame,
+        self,
+        indicators: IndicatorSet,
+        candles: pd.DataFrame,
     ) -> Signal | None:
         if not self._config.enabled or candles.empty:
             return None
@@ -365,15 +397,29 @@ class PivotPointStrategyImpl(Strategy):
             return None
 
         # Check proximity to S1 for BUY
-        s1_dist_pct = abs(close - indicators.pivot_s1) / indicators.pivot_s1 * 100 \
-            if indicators.pivot_s1 > 0 else 999
-        r1_dist_pct = abs(close - indicators.pivot_r1) / indicators.pivot_r1 * 100 \
-            if indicators.pivot_r1 > 0 else 999
+        s1_dist_pct = (
+            abs(close - indicators.pivot_s1) / indicators.pivot_s1 * 100
+            if indicators.pivot_s1 > 0
+            else 999
+        )
+        r1_dist_pct = (
+            abs(close - indicators.pivot_r1) / indicators.pivot_r1 * 100
+            if indicators.pivot_r1 > 0
+            else 999
+        )
 
         side = None
-        if s1_dist_pct < self._config.proximity_pct and close > open_price and indicators.rsi_14 < 40:
+        if (
+            s1_dist_pct < self._config.proximity_pct
+            and close > open_price
+            and indicators.rsi_14 < 40
+        ):
             side = "BUY"
-        elif r1_dist_pct < self._config.proximity_pct and close < open_price and indicators.rsi_14 > 60:
+        elif (
+            r1_dist_pct < self._config.proximity_pct
+            and close < open_price
+            and indicators.rsi_14 > 60
+        ):
             side = "SELL"
 
         if side is None:
@@ -391,8 +437,12 @@ class PivotPointStrategyImpl(Strategy):
             f"pivot={indicators.pivot:.2f} S1={indicators.pivot_s1:.2f} R1={indicators.pivot_r1:.2f}",
         )
         return create_signal(
-            symbol=indicators.symbol, strategy=self.name, side=side,
-            entry_price=close, stop_loss=stop_loss, target=target,
+            symbol=indicators.symbol,
+            strategy=self.name,
+            side=side,
+            entry_price=close,
+            stop_loss=stop_loss,
+            target=target,
             indicators=indicators,
         )
 
@@ -422,7 +472,9 @@ class IchimokuCloudStrategyImpl(Strategy):
         return self._config.enabled
 
     def generate_signal(
-        self, indicators: IndicatorSet, candles: pd.DataFrame,
+        self,
+        indicators: IndicatorSet,
+        candles: pd.DataFrame,
     ) -> Signal | None:
         if not self._config.enabled or candles.empty:
             return None
@@ -432,13 +484,17 @@ class IchimokuCloudStrategyImpl(Strategy):
         cloud_bottom = min(indicators.ichimoku_senkou_a, indicators.ichimoku_senkou_b)
 
         side = None
-        if (close > cloud_top
-                and indicators.ichimoku_tenkan > indicators.ichimoku_kijun
-                and close > indicators.vwap):
+        if (
+            close > cloud_top
+            and indicators.ichimoku_tenkan > indicators.ichimoku_kijun
+            and close > indicators.vwap
+        ):
             side = "BUY"
-        elif (close < cloud_bottom
-              and indicators.ichimoku_tenkan < indicators.ichimoku_kijun
-              and close < indicators.vwap):
+        elif (
+            close < cloud_bottom
+            and indicators.ichimoku_tenkan < indicators.ichimoku_kijun
+            and close < indicators.vwap
+        ):
             side = "SELL"
 
         if side is None:
@@ -456,8 +512,12 @@ class IchimokuCloudStrategyImpl(Strategy):
             f"tenkan={indicators.ichimoku_tenkan:.2f} kijun={indicators.ichimoku_kijun:.2f}",
         )
         return create_signal(
-            symbol=indicators.symbol, strategy=self.name, side=side,
-            entry_price=close, stop_loss=stop_loss, target=target,
+            symbol=indicators.symbol,
+            strategy=self.name,
+            side=side,
+            entry_price=close,
+            stop_loss=stop_loss,
+            target=target,
             indicators=indicators,
         )
 
@@ -485,7 +545,9 @@ class MACDDivergenceStrategyImpl(Strategy):
         return self._config.enabled
 
     def generate_signal(
-        self, indicators: IndicatorSet, candles: pd.DataFrame,
+        self,
+        indicators: IndicatorSet,
+        candles: pd.DataFrame,
     ) -> Signal | None:
         if not self._config.enabled or candles.empty:
             return None
@@ -517,16 +579,12 @@ class MACDDivergenceStrategyImpl(Strategy):
         side = None
 
         # Bullish divergence: price lower low, but MACD hist turning up
-        if (second_half_low < first_half_low
-                and macd_hist > 0
-                and macd_signal_cross > 0):
+        if second_half_low < first_half_low and macd_hist > 0 and macd_signal_cross > 0:
             if not self._config.rsi_confirmation or indicators.rsi_14 < 45:
                 side = "BUY"
 
         # Bearish divergence: price higher high, but MACD hist turning down
-        elif (second_half_high > first_half_high
-              and macd_hist < 0
-              and macd_signal_cross < 0):
+        elif second_half_high > first_half_high and macd_hist < 0 and macd_signal_cross < 0:
             if not self._config.rsi_confirmation or indicators.rsi_14 > 55:
                 side = "SELL"
 
@@ -541,12 +599,15 @@ class MACDDivergenceStrategyImpl(Strategy):
             target = close - self._config.target_atr_multiplier * indicators.atr_14
 
         logger.info(
-            f"MACDDivergence signal: {indicators.symbol} {side} "
-            f"MACD_hist={macd_hist:.4f}",
+            f"MACDDivergence signal: {indicators.symbol} {side} " f"MACD_hist={macd_hist:.4f}",
         )
         return create_signal(
-            symbol=indicators.symbol, strategy=self.name, side=side,
-            entry_price=close, stop_loss=stop_loss, target=target,
+            symbol=indicators.symbol,
+            strategy=self.name,
+            side=side,
+            entry_price=close,
+            stop_loss=stop_loss,
+            target=target,
             indicators=indicators,
         )
 
@@ -574,7 +635,9 @@ class ParabolicSARTrendStrategyImpl(Strategy):
         return self._config.enabled
 
     def generate_signal(
-        self, indicators: IndicatorSet, candles: pd.DataFrame,
+        self,
+        indicators: IndicatorSet,
+        candles: pd.DataFrame,
     ) -> Signal | None:
         if not self._config.enabled or candles.empty:
             return None
@@ -614,8 +677,12 @@ class ParabolicSARTrendStrategyImpl(Strategy):
             f"SAR={indicators.psar:.2f} dir={indicators.psar_direction}",
         )
         return create_signal(
-            symbol=indicators.symbol, strategy=self.name, side=side,
-            entry_price=close, stop_loss=stop_loss, target=target,
+            symbol=indicators.symbol,
+            strategy=self.name,
+            side=side,
+            entry_price=close,
+            stop_loss=stop_loss,
+            target=target,
             indicators=indicators,
         )
 
@@ -645,7 +712,9 @@ class VolumeBreakoutStrategyImpl(Strategy):
         return self._config.enabled
 
     def generate_signal(
-        self, indicators: IndicatorSet, candles: pd.DataFrame,
+        self,
+        indicators: IndicatorSet,
+        candles: pd.DataFrame,
     ) -> Signal | None:
         if not self._config.enabled or candles.empty:
             return None
@@ -662,7 +731,7 @@ class VolumeBreakoutStrategyImpl(Strategy):
             return None
 
         # Calculate range from lookback (excluding current candle)
-        lookback_candles = candles.iloc[-(lookback + 1):-1]
+        lookback_candles = candles.iloc[-(lookback + 1) : -1]
         range_high = float(lookback_candles["high"].max())
         range_low = float(lookback_candles["low"].min())
 
@@ -688,8 +757,12 @@ class VolumeBreakoutStrategyImpl(Strategy):
             f"range=({range_low:.2f}-{range_high:.2f})",
         )
         return create_signal(
-            symbol=indicators.symbol, strategy=self.name, side=side,
-            entry_price=close, stop_loss=stop_loss, target=target,
+            symbol=indicators.symbol,
+            strategy=self.name,
+            side=side,
+            entry_price=close,
+            stop_loss=stop_loss,
+            target=target,
             indicators=indicators,
         )
 
@@ -721,7 +794,9 @@ class MultiTimeframeMomentumStrategyImpl(Strategy):
         return self._config.enabled
 
     def generate_signal(
-        self, indicators: IndicatorSet, candles: pd.DataFrame,
+        self,
+        indicators: IndicatorSet,
+        candles: pd.DataFrame,
     ) -> Signal | None:
         if not self._config.enabled or candles.empty:
             return None
@@ -811,11 +886,14 @@ class MultiTimeframeMomentumStrategyImpl(Strategy):
 
         score = bullish if side == "BUY" else bearish
         logger.info(
-            f"MultiMomentum signal: {indicators.symbol} {side} "
-            f"confluence={score}/10",
+            f"MultiMomentum signal: {indicators.symbol} {side} " f"confluence={score}/10",
         )
         return create_signal(
-            symbol=indicators.symbol, strategy=self.name, side=side,
-            entry_price=close, stop_loss=stop_loss, target=target,
+            symbol=indicators.symbol,
+            strategy=self.name,
+            side=side,
+            entry_price=close,
+            stop_loss=stop_loss,
+            target=target,
             indicators=indicators,
         )

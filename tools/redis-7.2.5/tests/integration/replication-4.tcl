@@ -266,8 +266,8 @@ start_server {tags {"repl external:skip"}} {
             wait_for_sync $replica
         }
 
-        test {Data divergence can happen under default conditions} {       
-            $replica config set propagation-error-behavior ignore     
+        test {Data divergence can happen under default conditions} {
+            $replica config set propagation-error-behavior ignore
             $master debug replicate fake-command-1
 
             # Wait for replication to normalize
@@ -280,7 +280,7 @@ start_server {tags {"repl external:skip"}} {
             assert_equal [count_log_message 0 "== CRITICAL =="] 1
         }
 
-        test {Data divergence is allowed on writable replicas} {            
+        test {Data divergence is allowed on writable replicas} {
             $replica config set replica-read-only no
             $replica set number2 foo
             $master incrby number2 1

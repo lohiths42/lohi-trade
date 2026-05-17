@@ -21,7 +21,9 @@ from src.data.historical_data import HistoricalDataManager
 # Strategies
 # ---------------------------------------------------------------------------
 
-reasonable_float = st.floats(min_value=1.0, max_value=100_000.0, allow_nan=False, allow_infinity=False)
+reasonable_float = st.floats(
+    min_value=1.0, max_value=100_000.0, allow_nan=False, allow_infinity=False
+)
 reasonable_volume = st.integers(min_value=1, max_value=10**9)
 
 
@@ -29,7 +31,9 @@ reasonable_volume = st.integers(min_value=1, max_value=10**9)
 def ohlcv_row(draw):
     """Generate a single valid OHLCV row."""
     low = draw(st.floats(min_value=1.0, max_value=50_000.0, allow_nan=False, allow_infinity=False))
-    high = draw(st.floats(min_value=low, max_value=low + 5000.0, allow_nan=False, allow_infinity=False))
+    high = draw(
+        st.floats(min_value=low, max_value=low + 5000.0, allow_nan=False, allow_infinity=False)
+    )
     open_ = draw(st.floats(min_value=low, max_value=high, allow_nan=False, allow_infinity=False))
     close = draw(st.floats(min_value=low, max_value=high, allow_nan=False, allow_infinity=False))
     volume = draw(reasonable_volume)
@@ -65,6 +69,7 @@ def date_range_pair(draw):
 # Helpers – use tempfile instead of tmp_path to avoid fixture issues
 # ---------------------------------------------------------------------------
 
+
 def _fresh_db():
     """Create a fresh in-memory DuckDB connection wrapped in a mock db_manager."""
     conn = duckdb.connect(":memory:")
@@ -82,6 +87,7 @@ def _make_config(symbols=None):
 # ---------------------------------------------------------------------------
 # Property 75: Historical Data Storage
 # ---------------------------------------------------------------------------
+
 
 class TestProperty75HistoricalDataStorage:
     """Property 75: For any downloaded data stored in DuckDB, querying it back
@@ -136,6 +142,7 @@ class TestProperty75HistoricalDataStorage:
 # Property 76: Historical Data Backfill
 # ---------------------------------------------------------------------------
 
+
 class TestProperty76HistoricalDataBackfill:
     """Property 76: For any missing date range, the backfill should download
     and store data for all missing dates.
@@ -157,25 +164,29 @@ class TestProperty76HistoricalDataBackfill:
             dates = pd.bdate_range(s, e).date.tolist()
             n = len(dates)
             if n == 0:
-                return pd.DataFrame(columns=["symbol", "date", "open", "high", "low", "close", "volume"])
-            return pd.DataFrame({
-                "symbol": ["RELIANCE"] * n,
-                "date": dates,
-                "open": [100.0] * n,
-                "high": [105.0] * n,
-                "low": [95.0] * n,
-                "close": [102.0] * n,
-                "volume": [1000] * n,
-            })
+                return pd.DataFrame(
+                    columns=["symbol", "date", "open", "high", "low", "close", "volume"]
+                )
+            return pd.DataFrame(
+                {
+                    "symbol": ["RELIANCE"] * n,
+                    "date": dates,
+                    "open": [100.0] * n,
+                    "high": [105.0] * n,
+                    "low": [95.0] * n,
+                    "close": [102.0] * n,
+                    "volume": [1000] * n,
+                }
+            )
 
         with patch.object(hdm, "download_daily_data", side_effect=fake_download):
             hdm.backfill_missing("RELIANCE", missing_before)
 
         # After backfill, no dates should be missing
         missing_after = hdm.detect_missing_dates("RELIANCE", start, end)
-        assert len(missing_after) == 0, (
-            f"Still missing {len(missing_after)} dates after backfill: {missing_after[:5]}"
-        )
+        assert (
+            len(missing_after) == 0
+        ), f"Still missing {len(missing_after)} dates after backfill: {missing_after[:5]}"
 
     @given(date_pair=date_range_pair())
     @settings(max_examples=25, deadline=None)
@@ -191,16 +202,20 @@ class TestProperty76HistoricalDataBackfill:
             dates = pd.bdate_range(s, e).date.tolist()
             n = len(dates)
             if n == 0:
-                return pd.DataFrame(columns=["symbol", "date", "open", "high", "low", "close", "volume"])
-            return pd.DataFrame({
-                "symbol": ["RELIANCE"] * n,
-                "date": dates,
-                "open": [100.0] * n,
-                "high": [105.0] * n,
-                "low": [95.0] * n,
-                "close": [102.0] * n,
-                "volume": [1000] * n,
-            })
+                return pd.DataFrame(
+                    columns=["symbol", "date", "open", "high", "low", "close", "volume"]
+                )
+            return pd.DataFrame(
+                {
+                    "symbol": ["RELIANCE"] * n,
+                    "date": dates,
+                    "open": [100.0] * n,
+                    "high": [105.0] * n,
+                    "low": [95.0] * n,
+                    "close": [102.0] * n,
+                    "volume": [1000] * n,
+                }
+            )
 
         with patch.object(hdm, "download_daily_data", side_effect=fake_download):
             hdm.backfill_missing("RELIANCE", missing)

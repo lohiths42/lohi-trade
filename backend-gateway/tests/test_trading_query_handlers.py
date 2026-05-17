@@ -6,13 +6,11 @@ signal explanation, stock info queries, and edge cases.
 Requirements: 19.1, 19.2, 19.3, 19.4, 19.6
 """
 
-import json
 import math
 from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-
 from app.services.chatbot_service import (
     PerformanceSummary,
     SignalExplanation,
@@ -20,7 +18,6 @@ from app.services.chatbot_service import (
     TradeDetail,
     TradingQueryHandler,
 )
-
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -37,16 +34,26 @@ def _make_mock_pool():
 
 
 def _make_trade_row(
-    id="trade-1", symbol="RELIANCE", strategy="mean_reversion",
-    entry_price=2500.0, exit_price=2550.0, quantity=10,
-    realized_pnl=500.0, entry_time="2024-01-15T10:00:00",
+    id="trade-1",
+    symbol="RELIANCE",
+    strategy="mean_reversion",
+    entry_price=2500.0,
+    exit_price=2550.0,
+    quantity=10,
+    realized_pnl=500.0,
+    entry_time="2024-01-15T10:00:00",
     exit_time="2024-01-15T14:00:00",
 ):
     return {
-        "id": id, "symbol": symbol, "strategy": strategy,
-        "entry_price": entry_price, "exit_price": exit_price,
-        "quantity": quantity, "realized_pnl": realized_pnl,
-        "entry_time": entry_time, "exit_time": exit_time,
+        "id": id,
+        "symbol": symbol,
+        "strategy": strategy,
+        "entry_price": entry_price,
+        "exit_price": exit_price,
+        "quantity": quantity,
+        "realized_pnl": realized_pnl,
+        "entry_time": entry_time,
+        "exit_time": exit_time,
     }
 
 
@@ -56,24 +63,36 @@ def _make_pnl_row(symbol="RELIANCE", realized_pnl=500.0):
 
 
 def _make_signal_row(
-    symbol="RELIANCE", signal_type="BUY", strategy="mean_reversion",
-    indicator_values='{"rsi": 30, "sma_50": 2480}', bias_state="BULLISH",
+    symbol="RELIANCE",
+    signal_type="BUY",
+    strategy="mean_reversion",
+    indicator_values='{"rsi": 30, "sma_50": 2480}',
+    bias_state="BULLISH",
     created_at="2024-01-15T09:30:00",
 ):
     return {
-        "symbol": symbol, "signal_type": signal_type, "strategy": strategy,
-        "indicator_values": indicator_values, "bias_state": bias_state,
+        "symbol": symbol,
+        "signal_type": signal_type,
+        "strategy": strategy,
+        "indicator_values": indicator_values,
+        "bias_state": bias_state,
         "created_at": created_at,
     }
 
 
 def _make_sentiment_row(
-    ticker="RELIANCE", sentiment="BULLISH", score=0.85,
-    headline="Reliance Q3 results beat estimates", created_at="2024-01-15T09:00:00",
+    ticker="RELIANCE",
+    sentiment="BULLISH",
+    score=0.85,
+    headline="Reliance Q3 results beat estimates",
+    created_at="2024-01-15T09:00:00",
 ):
     return {
-        "ticker": ticker, "sentiment": sentiment, "score": score,
-        "headline": headline, "created_at": created_at,
+        "ticker": ticker,
+        "sentiment": sentiment,
+        "score": score,
+        "headline": headline,
+        "created_at": created_at,
     }
 
 
@@ -105,12 +124,16 @@ class TestParseTimeRange:
         assert end.day == 14
 
     def test_last_week(self):
-        start, end = TradingQueryHandler.parse_time_range("How did I perform last week?", self._now())
+        start, end = TradingQueryHandler.parse_time_range(
+            "How did I perform last week?", self._now()
+        )
         assert start == self._now() - timedelta(weeks=1)
         assert end == self._now()
 
     def test_last_month(self):
-        start, end = TradingQueryHandler.parse_time_range("Show my trades from last month", self._now())
+        start, end = TradingQueryHandler.parse_time_range(
+            "Show my trades from last month", self._now()
+        )
         assert start == self._now() - timedelta(days=30)
 
     def test_last_year(self):
@@ -144,7 +167,9 @@ class TestParseTimeRange:
         assert start == datetime(2024, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
 
     def test_from_january(self):
-        start, end = TradingQueryHandler.parse_time_range("Show my trades from January", self._now())
+        start, end = TradingQueryHandler.parse_time_range(
+            "Show my trades from January", self._now()
+        )
         assert start == datetime(2024, 1, 1, tzinfo=timezone.utc)
         assert end == self._now()
 
@@ -477,8 +502,16 @@ class TestGetStockInfo:
         pool, conn = _make_mock_pool()
         conn.fetch.side_effect = [
             [_make_sentiment_row()],  # sentiment
-            [{"id": "t1", "symbol": "RELIANCE", "strategy": "orb",
-              "entry_price": 2500, "quantity": 10, "entry_time": "2024-01-15T10:00:00"}],  # open positions
+            [
+                {
+                    "id": "t1",
+                    "symbol": "RELIANCE",
+                    "strategy": "orb",
+                    "entry_price": 2500,
+                    "quantity": 10,
+                    "entry_time": "2024-01-15T10:00:00",
+                }
+            ],  # open positions
             [_make_trade_row()],  # recent trades
         ]
         conn.fetchrow.return_value = _make_bias_row("BULLISH")

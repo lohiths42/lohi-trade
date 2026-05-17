@@ -96,17 +96,17 @@ if {$system_name eq {linux}} {
 
         test {CONFIG SET oom-score-adj-values doesn't touch proc when disabled} {
             set orig_osa [get_oom_score_adj]
-            
+
             set other_val1 [expr $orig_osa + 1]
             set other_val2 [expr $orig_osa + 2]
-            
+
             r config set oom-score-adj no
-            
+
             set_oom_score_adj $other_val2
             assert_equal [get_oom_score_adj] $other_val2
 
             r config set oom-score-adj-values "$other_val1 $other_val1 $other_val1"
-            
+
             assert_equal [get_oom_score_adj] $other_val2
         }
 
@@ -135,8 +135,8 @@ if {$system_name eq {linux}} {
         }
 
         test {CONFIG SET out-of-range oom score} {
-            assert_error {ERR *must be between -2000 and 2000*} {r config set oom-score-adj-values "-2001 -2001 -2001"} 
-            assert_error {ERR *must be between -2000 and 2000*} {r config set oom-score-adj-values "2001 2001 2001"} 
+            assert_error {ERR *must be between -2000 and 2000*} {r config set oom-score-adj-values "-2001 -2001 -2001"}
+            assert_error {ERR *must be between -2000 and 2000*} {r config set oom-score-adj-values "2001 2001 2001"}
         }
     }
 }

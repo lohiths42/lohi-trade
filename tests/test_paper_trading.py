@@ -34,6 +34,7 @@ from src.utils.config import PaperTradingConfig
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_config(
     enabled: bool = True,
     delay_ms: list = None,
@@ -69,6 +70,7 @@ def _make_order(
 # 1. Enabled / disabled flag
 # ---------------------------------------------------------------------------
 
+
 class TestPaperTradingFlag:
     def test_is_enabled_true(self):
         engine = PaperTradingEngine(_make_config(enabled=True))
@@ -83,6 +85,7 @@ class TestPaperTradingFlag:
 # 2. Database path
 # ---------------------------------------------------------------------------
 
+
 class TestDatabasePath:
     def test_paper_db_path_when_enabled(self):
         engine = PaperTradingEngine(_make_config(enabled=True))
@@ -90,13 +93,15 @@ class TestDatabasePath:
 
     def test_normal_db_path_when_disabled(self):
         engine = PaperTradingEngine(
-            _make_config(enabled=False), sqlite_path="data/lohi_trade.db",
+            _make_config(enabled=False),
+            sqlite_path="data/lohi_trade.db",
         )
         assert engine.get_db_path() == "data/lohi_trade.db"
 
     def test_custom_db_path_overrides(self):
         engine = PaperTradingEngine(
-            _make_config(enabled=True), db_path="/tmp/custom.db",
+            _make_config(enabled=True),
+            db_path="/tmp/custom.db",
         )
         assert engine.get_db_path() == "/tmp/custom.db"
 
@@ -108,6 +113,7 @@ class TestDatabasePath:
 # ---------------------------------------------------------------------------
 # 3. Simulated order fill
 # ---------------------------------------------------------------------------
+
 
 class TestSimulatedFill:
     @patch("src.execution.paper_trading.time.sleep")
@@ -175,6 +181,7 @@ class TestSimulatedFill:
 # 4. Fill delay
 # ---------------------------------------------------------------------------
 
+
 class TestFillDelay:
     @patch("src.execution.paper_trading.time.sleep")
     @patch("src.execution.paper_trading.random.randint", return_value=250)
@@ -206,6 +213,7 @@ class TestFillDelay:
 # 5. No broker API calls
 # ---------------------------------------------------------------------------
 
+
 class TestNoApiCalls:
     @patch("src.execution.paper_trading.time.sleep")
     def test_api_calls_empty_after_fill(self, mock_sleep):
@@ -234,6 +242,7 @@ class TestNoApiCalls:
 # 6. Order cancel simulation
 # ---------------------------------------------------------------------------
 
+
 class TestOrderCancel:
     def test_cancel_sets_status(self):
         engine = PaperTradingEngine(_make_config())
@@ -251,6 +260,7 @@ class TestOrderCancel:
 # ---------------------------------------------------------------------------
 # 7. Notification formatting
 # ---------------------------------------------------------------------------
+
 
 class TestNotificationFormatting:
     def test_prepends_paper_prefix(self):
@@ -270,6 +280,7 @@ class TestNotificationFormatting:
 # ---------------------------------------------------------------------------
 # 8. Paper trade logging
 # ---------------------------------------------------------------------------
+
 
 class TestPaperTradeLogging:
     @patch("src.execution.paper_trading.time.sleep")
@@ -302,6 +313,7 @@ class TestPaperTradeLogging:
 # ---------------------------------------------------------------------------
 # 9. Various order types
 # ---------------------------------------------------------------------------
+
 
 class TestVariousOrderTypes:
     @patch("src.execution.paper_trading.time.sleep")
@@ -338,6 +350,7 @@ class TestVariousOrderTypes:
 # ---------------------------------------------------------------------------
 # 10. Edge cases
 # ---------------------------------------------------------------------------
+
 
 class TestEdgeCases:
     @patch("src.execution.paper_trading.time.sleep")

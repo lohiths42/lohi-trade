@@ -1,7 +1,8 @@
 """Logs endpoint."""
 
-from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional
+
+from fastapi import APIRouter, HTTPException, Query
 
 from app.models.logs import LogResponse
 from app.services import db_service

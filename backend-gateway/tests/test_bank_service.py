@@ -1,8 +1,6 @@
 """Unit tests for BankAccountService — IFSC validation, encryption, registration, penny drop."""
 
-import asyncio
 import os
-from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
@@ -14,16 +12,12 @@ _TEST_KEY = Fernet.generate_key().decode()
 os.environ["PAN_ENCRYPTION_KEY"] = _TEST_KEY
 
 from app.services.bank_service import (
-    BankAccountService,
-    BankAccountDetails,
-    BankAccount,
-    BankAccountStatus,
-    BankAccountRejectionReason,
-    IFSC_REGEX,
-    MAX_BANK_ACCOUNTS_PER_USER,
     MAX_RETRIES,
+    BankAccountDetails,
+    BankAccountRejectionReason,
+    BankAccountService,
+    BankAccountStatus,
 )
-
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -148,6 +142,7 @@ class TestEncryptDecrypt:
 
     def test_missing_key_raises(self):
         import app.services.bank_service as bs
+
         original_key = bs._ENCRYPTION_KEY
         original_env = os.environ.pop("PAN_ENCRYPTION_KEY", None)
         bs._ENCRYPTION_KEY = ""
@@ -310,7 +305,7 @@ class TestRegisterBankAccount:
         conn.fetchrow = AsyncMock(
             side_effect=[
                 {"status": "VERIFIED"},  # KYC check
-                {"cnt": 0},              # account count
+                {"cnt": 0},  # account count
             ]
         )
         svc = _make_service(db_pool=pool)
@@ -338,8 +333,8 @@ class TestRegisterBankAccount:
         conn.fetchrow = AsyncMock(
             side_effect=[
                 {"status": "VERIFIED"},  # KYC check
-                {"cnt": 0},              # account count
-                {"id": "bank-1"},        # store returns id
+                {"cnt": 0},  # account count
+                {"id": "bank-1"},  # store returns id
             ]
         )
         svc = _make_service(db_pool=pool)
@@ -371,8 +366,8 @@ class TestRegisterBankAccount:
         conn.fetchrow = AsyncMock(
             side_effect=[
                 {"status": "VERIFIED"},  # KYC check
-                {"cnt": 0},              # account count
-                {"id": "bank-1"},        # store returns id
+                {"cnt": 0},  # account count
+                {"id": "bank-1"},  # store returns id
             ]
         )
         svc = _make_service(db_pool=pool)
@@ -404,10 +399,10 @@ class TestRegisterBankAccount:
         pool, conn = _make_mock_pool()
         conn.fetchrow = AsyncMock(
             side_effect=[
-                {"status": "VERIFIED"},          # KYC check
-                {"cnt": 0},                      # account count
-                {"full_name": "JANE SMITH"},     # KYC name
-                {"id": "bank-1"},                # store returns id
+                {"status": "VERIFIED"},  # KYC check
+                {"cnt": 0},  # account count
+                {"full_name": "JANE SMITH"},  # KYC name
+                {"id": "bank-1"},  # store returns id
             ]
         )
         svc = _make_service(db_pool=pool)
@@ -443,10 +438,10 @@ class TestRegisterBankAccount:
         pool, conn = _make_mock_pool()
         conn.fetchrow = AsyncMock(
             side_effect=[
-                {"status": "VERIFIED"},          # KYC check
-                {"cnt": 0},                      # account count (first account)
-                {"full_name": "JOHN DOE"},       # KYC name
-                {"id": "bank-uuid-1"},           # store returns id
+                {"status": "VERIFIED"},  # KYC check
+                {"cnt": 0},  # account count (first account)
+                {"full_name": "JOHN DOE"},  # KYC name
+                {"id": "bank-uuid-1"},  # store returns id
             ]
         )
         svc = _make_service(db_pool=pool)
@@ -489,10 +484,10 @@ class TestRegisterBankAccount:
         pool, conn = _make_mock_pool()
         conn.fetchrow = AsyncMock(
             side_effect=[
-                {"status": "VERIFIED"},          # KYC check
-                {"cnt": 1},                      # account count (second account)
-                {"full_name": "JOHN DOE"},       # KYC name
-                {"id": "bank-uuid-2"},           # store returns id
+                {"status": "VERIFIED"},  # KYC check
+                {"cnt": 1},  # account count (second account)
+                {"full_name": "JOHN DOE"},  # KYC name
+                {"id": "bank-uuid-2"},  # store returns id
             ]
         )
         svc = _make_service(db_pool=pool)
@@ -582,7 +577,7 @@ class TestRegisterBankAccount:
             if call_count == 1:
                 return {"status": "VERIFIED"}  # KYC check
             elif call_count == 2:
-                return {"cnt": 0}              # account count
+                return {"cnt": 0}  # account count
             elif call_count == 3:
                 return {"full_name": "JOHN DOE"}  # KYC name
             elif call_count == 4:

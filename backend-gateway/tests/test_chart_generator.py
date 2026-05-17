@@ -9,7 +9,6 @@ Requirements: 20.1, 20.2, 20.3, 20.4, 20.5, 20.6, 20.7
 from datetime import datetime, timedelta, timezone
 
 import pytest
-
 from app.services.chatbot_service import ChartGenerator
 
 
@@ -25,24 +24,27 @@ def _make_equity_data(n=30, start_equity=100000):
     equity = start_equity
     for i in range(n):
         equity += (i % 5 - 2) * 500  # fluctuate
-        data.append({
-            "date": (base + timedelta(days=i)).isoformat(),
-            "equity": equity,
-        })
+        data.append(
+            {
+                "date": (base + timedelta(days=i)).isoformat(),
+                "equity": equity,
+            }
+        )
     return data
 
 
 def _make_pnl_data(n=15):
     """Generate sample daily P&L data with positive and negative values."""
     base = datetime(2024, 1, 1, tzinfo=timezone.utc)
-    pnls = [1200, -500, 800, -300, 1500, -200, 600, -1000, 900, 400,
-            -700, 1100, -150, 2000, -800]
+    pnls = [1200, -500, 800, -300, 1500, -200, 600, -1000, 900, 400, -700, 1100, -150, 2000, -800]
     data = []
     for i in range(min(n, len(pnls))):
-        data.append({
-            "date": (base + timedelta(days=i)).isoformat(),
-            "pnl": pnls[i],
-        })
+        data.append(
+            {
+                "date": (base + timedelta(days=i)).isoformat(),
+                "pnl": pnls[i],
+            }
+        )
     return data
 
 
@@ -66,14 +68,16 @@ def _make_ohlcv_data(n=30):
         l = o - abs(i % 5) * 5 - 5
         c = o + (i % 4 - 2) * 8
         v = 100000 + i * 5000
-        data.append({
-            "date": (base + timedelta(days=i)).isoformat(),
-            "open": o,
-            "high": h,
-            "low": l,
-            "close": c,
-            "volume": v,
-        })
+        data.append(
+            {
+                "date": (base + timedelta(days=i)).isoformat(),
+                "open": o,
+                "high": h,
+                "low": l,
+                "close": c,
+                "volume": v,
+            }
+        )
         price = c
     return data
 
@@ -145,14 +149,19 @@ class TestDailyPnlBar:
 
     def test_all_positive_pnl(self, gen):
         base = datetime(2024, 1, 1, tzinfo=timezone.utc)
-        data = [{"date": (base + timedelta(days=i)).isoformat(), "pnl": 500 + i * 100} for i in range(5)]
+        data = [
+            {"date": (base + timedelta(days=i)).isoformat(), "pnl": 500 + i * 100} for i in range(5)
+        ]
         result = gen.daily_pnl_bar(data, theme="dark")
         assert isinstance(result, bytes)
         assert b"<svg" in result
 
     def test_all_negative_pnl(self, gen):
         base = datetime(2024, 1, 1, tzinfo=timezone.utc)
-        data = [{"date": (base + timedelta(days=i)).isoformat(), "pnl": -500 - i * 100} for i in range(5)]
+        data = [
+            {"date": (base + timedelta(days=i)).isoformat(), "pnl": -500 - i * 100}
+            for i in range(5)
+        ]
         result = gen.daily_pnl_bar(data, theme="dark")
         assert isinstance(result, bytes)
         assert b"<svg" in result
@@ -160,7 +169,10 @@ class TestDailyPnlBar:
     def test_many_bars(self, gen):
         """Test with >15 bars to trigger label stepping."""
         base = datetime(2024, 1, 1, tzinfo=timezone.utc)
-        data = [{"date": (base + timedelta(days=i)).isoformat(), "pnl": (i % 5 - 2) * 300} for i in range(25)]
+        data = [
+            {"date": (base + timedelta(days=i)).isoformat(), "pnl": (i % 5 - 2) * 300}
+            for i in range(25)
+        ]
         result = gen.daily_pnl_bar(data, theme="dark")
         assert isinstance(result, bytes)
         assert b"<svg" in result

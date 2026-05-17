@@ -74,7 +74,7 @@ proc test_slave_load_expired_keys {aof} {
         } else {
             fail "replica didn't sync"
         }
-        
+
         set replica_dbsize_1 [R $replica_id dbsize]
         assert {$replica_dbsize_1 > $replica_dbsize_0}
 
@@ -107,7 +107,7 @@ proc test_slave_load_expired_keys {aof} {
         # make sure the keys are still there
         set replica_dbsize_3 [R $replica_id dbsize]
         assert {$replica_dbsize_3 > $replica_dbsize_0}
-        
+
         # restore settings
         R $master_id DEBUG SET-ACTIVE-EXPIRE 1
 

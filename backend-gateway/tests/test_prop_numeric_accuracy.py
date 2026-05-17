@@ -6,26 +6,38 @@ Property 20: Numeric accuracy — all numeric values in validated responses
     match source DB values within 0.01 tolerance.
 """
 
-import pytest
-from hypothesis import given, settings, assume
-from hypothesis import strategies as st
-
 from app.services.chatbot_service import ChatbotService
-
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
 # ── Strategies ───────────────────────────────────────────────────────────────
 
 # Finite floats for DB source values
 finite_floats = st.floats(
-    min_value=-1e9, max_value=1e9, allow_nan=False, allow_infinity=False,
+    min_value=-1e9,
+    max_value=1e9,
+    allow_nan=False,
+    allow_infinity=False,
 )
 
 # Keys that look like real trading data fields
-numeric_keys = st.sampled_from([
-    "pnl", "price", "entry_price", "exit_price", "quantity",
-    "win_rate", "sharpe_ratio", "total_pnl", "avg_profit",
-    "best_trade_pnl", "worst_trade_pnl", "volume", "change_pct",
-])
+numeric_keys = st.sampled_from(
+    [
+        "pnl",
+        "price",
+        "entry_price",
+        "exit_price",
+        "quantity",
+        "win_rate",
+        "sharpe_ratio",
+        "total_pnl",
+        "avg_profit",
+        "best_trade_pnl",
+        "worst_trade_pnl",
+        "volume",
+        "change_pct",
+    ]
+)
 
 # Dict of numeric key-value pairs representing DB source values
 numeric_dict_strategy = st.dictionaries(
@@ -39,7 +51,10 @@ numeric_dict_strategy = st.dictionaries(
 # Use ±0.009 to avoid floating-point arithmetic edge cases where
 # val + 0.01 produces a result with abs difference slightly > 0.01.
 within_tolerance_delta = st.floats(
-    min_value=-0.009, max_value=0.009, allow_nan=False, allow_infinity=False,
+    min_value=-0.009,
+    max_value=0.009,
+    allow_nan=False,
+    allow_infinity=False,
 )
 
 # Perturbation that exceeds default tolerance (> 0.01 in absolute value)

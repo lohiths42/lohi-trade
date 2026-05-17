@@ -182,8 +182,7 @@ class SnapshotStore:
     # affected via asyncpg's command tag so the caller can distinguish
     # "flipped" from "no row yet".
     _MARK_STALE_SQL: Final[str] = (
-        "UPDATE research_snapshots SET stale = TRUE "
-        "WHERE user_id = $1 AND symbol = $2"
+        "UPDATE research_snapshots SET stale = TRUE " "WHERE user_id = $1 AND symbol = $2"
     )
 
     _SELECT_SQL: Final[str] = (
@@ -197,7 +196,8 @@ class SnapshotStore:
         self,
         *,
         connection_factory: Callable[
-            [UUID], AbstractAsyncContextManager[asyncpg.Connection],
+            [UUID],
+            AbstractAsyncContextManager[asyncpg.Connection],
         ],
         clock: Callable[[], datetime] | None = None,
     ) -> None:

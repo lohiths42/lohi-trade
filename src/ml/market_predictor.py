@@ -18,6 +18,48 @@ from datetime import UTC, datetime
 
 import numpy as np
 
+try:
+    from sklearn.ensemble import RandomForestClassifier
+
+    HAS_SKLEARN = True
+except ModuleNotFoundError:
+    HAS_SKLEARN = False
+
+
+class _FallbackRandomForestClassifier:
+    """Lightweight centroid-based fallback when scikit-learn is unavailable."""
+
+    def __init__(self, **_kwargs) -> None:
+        self.classes_: np.ndarray | None = None
+        self._centroids: dict[int, np.ndarray] = {}
+
+    def fit(self, x: np.ndarray, y: np.ndarray):
+        classes = np.unique(y)
+        self.classes_ = classes
+        self._centroids = {int(cls): x[y == cls].mean(axis=0) for cls in classes}
+        return self
+
+    def predict_proba(self, x: np.ndarray) -> np.ndarray:
+        if self.classes_ is None:
+            raise RuntimeError("Model is not fitted")
+
+        probabilities: list[np.ndarray] = []
+        for row in x:
+            scores = []
+            for cls in self.classes_:
+                centroid = self._centroids[int(cls)]
+                distance = float(np.linalg.norm(row - centroid))
+                scores.append(1.0 / (distance + 1e-8))
+            score_array = np.asarray(scores, dtype=float)
+            probabilities.append(score_array / score_array.sum())
+        return np.asarray(probabilities)
+
+    def predict(self, x: np.ndarray) -> np.ndarray:
+        proba = self.predict_proba(x)
+        indices = np.argmax(proba, axis=1)
+        return np.asarray([self.classes_[idx] for idx in indices])
+
+
 logger = logging.getLogger(__name__)
 
 REGIME_UP = "TRENDING_UP"
@@ -143,20 +185,23 @@ def extract_pattern_features(
     else:
         mom_accel = 0.0
 
-    features = np.array([
-        float(np.mean(returns)),
-        float(np.std(returns)),
-        float(np.mean(hl_range)),
-        close_pos,
-        vol_trend,
-        up_candles,
-        max_dd,
-        max_ru,
-        float(consec_up),
-        float(consec_down),
-        range_exp,
-        mom_accel,
-    ], dtype=np.float64)
+    features = np.array(
+        [
+            float(np.mean(returns)),
+            float(np.std(returns)),
+            float(np.mean(hl_range)),
+            close_pos,
+            vol_trend,
+            up_candles,
+            max_dd,
+            max_ru,
+            float(consec_up),
+            float(consec_down),
+            range_exp,
+            mom_accel,
+        ],
+        dtype=np.float64,
+    )
 
     return np.nan_to_num(features, nan=0.0, posinf=0.0, neginf=0.0)
 
@@ -239,7 +284,10 @@ class MarketPredictor:
         count = 0
         for i in range(LOOKBACK_CANDLES, n - FORECAST_CANDLES):
             features = extract_pattern_features(
-                closes[: i + 1], highs[: i + 1], lows[: i + 1], volumes[: i + 1],
+                closes[: i + 1],
+                highs[: i + 1],
+                lows[: i + 1],
+                volumes[: i + 1],
             )
             if features is None:
                 continue
@@ -262,15 +310,13 @@ class MarketPredictor:
 
         Returns True if training succeeded.
         """
-        from sklearn.ensemble import RandomForestClassifier
-
         if len(self._samples) < self._min_samples:
             logger.warning(
                 f"Not enough pattern samples: {len(self._samples)}/{self._min_samples}",
             )
             return False
 
-        X = np.array([s.features for s in self._samples])
+        x = np.array([s.features for s in self._samples])
         y = np.array([s.label for s in self._samples])
 
         unique = np.unique(y)
@@ -278,14 +324,18 @@ class MarketPredictor:
             logger.warning("Only one regime class in data, skipping training")
             return False
 
-        model = RandomForestClassifier(
-            n_estimators=50,
-            max_depth=6,
-            min_samples_leaf=5,
-            random_state=42,
-            n_jobs=-1,
+        model = (
+            RandomForestClassifier(
+                n_estimators=50,
+                max_depth=6,
+                min_samples_leaf=5,
+                random_state=42,
+                n_jobs=-1,
+            )
+            if HAS_SKLEARN
+            else _FallbackRandomForestClassifier()
         )
-        model.fit(X, y)
+        model.fit(x, y)
 
         self._model = model
         self._is_trained = True
@@ -319,9 +369,9 @@ class MarketPredictor:
         if features is None:
             return MarketRegime()
 
-        X = features.reshape(1, -1)
-        proba = self._model.predict_proba(X)[0]
-        pred_class = int(self._model.predict(X)[0])
+        x = features.reshape(1, -1)
+        proba = self._model.predict_proba(x)[0]
+        pred_class = int(self._model.predict(x)[0])
 
         regime_map = {0: REGIME_DOWN, 1: REGIME_SIDEWAYS, 2: REGIME_UP}
 

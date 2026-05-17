@@ -4,28 +4,25 @@ from datetime import date
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-
-from app.routers.stock_universe import (
-    router,
-    get_stock_universe_service,
-    get_sector_service,
-)
 from app.routers.auth_v2 import get_current_user_id, get_current_user_payload
+from app.routers.stock_universe import (
+    get_sector_service,
+    get_stock_universe_service,
+    router,
+)
+from app.services.sector_service import (
+    SectorAggregate,
+    SectorSecurity,
+    SectorService,
+    SecurityGainerLoser,
+)
 from app.services.stock_universe_service import (
     PaginatedResult,
     Security,
     StockUniverseService,
 )
-from app.services.sector_service import (
-    SectorAggregate,
-    SectorService,
-    SectorSecurity,
-    SecurityGainerLoser,
-)
-
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -83,10 +80,14 @@ def _make_security(**overrides) -> Security:
 class TestSearchStocks:
     def test_search_returns_results(self):
         mock_svc = AsyncMock(spec=StockUniverseService)
-        mock_svc.search_securities = AsyncMock(return_value=[
-            _make_security(id=1, symbol="RELIANCE", company_name="Reliance Industries"),
-            _make_security(id=2, symbol="RIL", company_name="Reliance Infra", isin="INE036A01016"),
-        ])
+        mock_svc.search_securities = AsyncMock(
+            return_value=[
+                _make_security(id=1, symbol="RELIANCE", company_name="Reliance Industries"),
+                _make_security(
+                    id=2, symbol="RIL", company_name="Reliance Infra", isin="INE036A01016"
+                ),
+            ]
+        )
 
         app = _create_test_app(stock_svc=mock_svc)
         client = TestClient(app)
@@ -120,9 +121,11 @@ class TestSearchStocks:
 
     def test_search_with_custom_limit(self):
         mock_svc = AsyncMock(spec=StockUniverseService)
-        mock_svc.search_securities = AsyncMock(return_value=[
-            _make_security(id=1, symbol="TCS"),
-        ])
+        mock_svc.search_securities = AsyncMock(
+            return_value=[
+                _make_security(id=1, symbol="TCS"),
+            ]
+        )
 
         app = _create_test_app(stock_svc=mock_svc)
         client = TestClient(app)
@@ -136,7 +139,10 @@ class TestSearchStocks:
         app.include_router(router, prefix="/api/v2")
         app.dependency_overrides[get_current_user_id] = lambda: TEST_USER_ID
         app.dependency_overrides[get_current_user_payload] = lambda: {
-            "sub": TEST_USER_ID, "email": "t@t.com", "role": "TRADER", "type": "access",
+            "sub": TEST_USER_ID,
+            "email": "t@t.com",
+            "role": "TRADER",
+            "type": "access",
         }
         client = TestClient(app)
         resp = client.get("/api/v2/stocks/search?q=test")
@@ -149,13 +155,15 @@ class TestSearchStocks:
 class TestListStocks:
     def test_list_default_pagination(self):
         mock_svc = AsyncMock(spec=StockUniverseService)
-        mock_svc.list_securities = AsyncMock(return_value=PaginatedResult(
-            items=[_make_security(id=1, symbol="INFY"), _make_security(id=2, symbol="TCS")],
-            total=2,
-            page=1,
-            page_size=50,
-            total_pages=1,
-        ))
+        mock_svc.list_securities = AsyncMock(
+            return_value=PaginatedResult(
+                items=[_make_security(id=1, symbol="INFY"), _make_security(id=2, symbol="TCS")],
+                total=2,
+                page=1,
+                page_size=50,
+                total_pages=1,
+            )
+        )
 
         app = _create_test_app(stock_svc=mock_svc)
         client = TestClient(app)
@@ -170,17 +178,21 @@ class TestListStocks:
 
     def test_list_with_filters(self):
         mock_svc = AsyncMock(spec=StockUniverseService)
-        mock_svc.list_securities = AsyncMock(return_value=PaginatedResult(
-            items=[_make_security(id=1, symbol="HDFCBANK", sector="Banking & Finance")],
-            total=1,
-            page=1,
-            page_size=50,
-            total_pages=1,
-        ))
+        mock_svc.list_securities = AsyncMock(
+            return_value=PaginatedResult(
+                items=[_make_security(id=1, symbol="HDFCBANK", sector="Banking & Finance")],
+                total=1,
+                page=1,
+                page_size=50,
+                total_pages=1,
+            )
+        )
 
         app = _create_test_app(stock_svc=mock_svc)
         client = TestClient(app)
-        resp = client.get("/api/v2/stocks?exchange=NSE&sector=Banking+%26+Finance&market_cap_category=large-cap&status=ACTIVE")
+        resp = client.get(
+            "/api/v2/stocks?exchange=NSE&sector=Banking+%26+Finance&market_cap_category=large-cap&status=ACTIVE"
+        )
 
         assert resp.status_code == 200
         mock_svc.list_securities.assert_called_once_with(
@@ -194,13 +206,15 @@ class TestListStocks:
 
     def test_list_with_pagination(self):
         mock_svc = AsyncMock(spec=StockUniverseService)
-        mock_svc.list_securities = AsyncMock(return_value=PaginatedResult(
-            items=[],
-            total=100,
-            page=3,
-            page_size=10,
-            total_pages=10,
-        ))
+        mock_svc.list_securities = AsyncMock(
+            return_value=PaginatedResult(
+                items=[],
+                total=100,
+                page=3,
+                page_size=10,
+                total_pages=10,
+            )
+        )
 
         app = _create_test_app(stock_svc=mock_svc)
         client = TestClient(app)
@@ -232,9 +246,13 @@ class TestListStocks:
 class TestGetStockBySymbol:
     def test_get_existing_stock(self):
         mock_svc = AsyncMock(spec=StockUniverseService)
-        mock_svc.get_security_by_symbol = AsyncMock(return_value=_make_security(
-            id=1, symbol="INFY", company_name="Infosys Limited",
-        ))
+        mock_svc.get_security_by_symbol = AsyncMock(
+            return_value=_make_security(
+                id=1,
+                symbol="INFY",
+                company_name="Infosys Limited",
+            )
+        )
 
         app = _create_test_app(stock_svc=mock_svc)
         client = TestClient(app)
@@ -258,19 +276,21 @@ class TestGetStockBySymbol:
 
     def test_get_stock_includes_all_fields(self):
         mock_svc = AsyncMock(spec=StockUniverseService)
-        mock_svc.get_security_by_symbol = AsyncMock(return_value=_make_security(
-            id=42,
-            symbol="RELIANCE",
-            isin="INE002A01018",
-            company_name="Reliance Industries Limited",
-            exchange="BOTH",
-            sector="Energy",
-            industry="Oil & Gas",
-            market_cap_category="large-cap",
-            listing_date=date(1977, 1, 1),
-            face_value=Decimal("10"),
-            status="ACTIVE",
-        ))
+        mock_svc.get_security_by_symbol = AsyncMock(
+            return_value=_make_security(
+                id=42,
+                symbol="RELIANCE",
+                isin="INE002A01018",
+                company_name="Reliance Industries Limited",
+                exchange="BOTH",
+                sector="Energy",
+                industry="Oil & Gas",
+                market_cap_category="large-cap",
+                listing_date=date(1977, 1, 1),
+                face_value=Decimal("10"),
+                status="ACTIVE",
+            )
+        )
 
         app = _create_test_app(stock_svc=mock_svc)
         client = TestClient(app)
@@ -293,12 +313,25 @@ class TestGetStockBySymbol:
 class TestListSectors:
     def test_list_all_sectors(self):
         mock_svc = MagicMock(spec=SectorService)
-        mock_svc.get_sectors = MagicMock(return_value=[
-            "Pharma", "IT/Technology", "AI/Deep Tech", "Metals & Mining",
-            "Banking & Finance", "FMCG", "Energy", "Automobile",
-            "Telecom", "Real Estate", "Infrastructure", "Chemicals",
-            "Media & Entertainment", "Insurance", "Miscellaneous",
-        ])
+        mock_svc.get_sectors = MagicMock(
+            return_value=[
+                "Pharma",
+                "IT/Technology",
+                "AI/Deep Tech",
+                "Metals & Mining",
+                "Banking & Finance",
+                "FMCG",
+                "Energy",
+                "Automobile",
+                "Telecom",
+                "Real Estate",
+                "Infrastructure",
+                "Chemicals",
+                "Media & Entertainment",
+                "Insurance",
+                "Miscellaneous",
+            ]
+        )
 
         app = _create_test_app(sector_svc=mock_svc)
         client = TestClient(app)
@@ -317,19 +350,31 @@ class TestListSectors:
 class TestGetSectorAggregate:
     def test_aggregate_with_data(self):
         mock_svc = AsyncMock(spec=SectorService)
-        mock_svc.get_sector_aggregate = AsyncMock(return_value=SectorAggregate(
-            sector="Pharma",
-            total_market_cap=Decimal("5000000000000"),
-            stock_count=120,
-            top_gainers=[
-                SecurityGainerLoser(security_id=1, symbol="SUNPHARMA", company_name="Sun Pharma",
-                                    price_change_1d=Decimal("3.5"), market_cap=Decimal("1200000000000")),
-            ],
-            top_losers=[
-                SecurityGainerLoser(security_id=2, symbol="CIPLA", company_name="Cipla Ltd",
-                                    price_change_1d=Decimal("-2.1"), market_cap=Decimal("300000000000")),
-            ],
-        ))
+        mock_svc.get_sector_aggregate = AsyncMock(
+            return_value=SectorAggregate(
+                sector="Pharma",
+                total_market_cap=Decimal("5000000000000"),
+                stock_count=120,
+                top_gainers=[
+                    SecurityGainerLoser(
+                        security_id=1,
+                        symbol="SUNPHARMA",
+                        company_name="Sun Pharma",
+                        price_change_1d=Decimal("3.5"),
+                        market_cap=Decimal("1200000000000"),
+                    ),
+                ],
+                top_losers=[
+                    SecurityGainerLoser(
+                        security_id=2,
+                        symbol="CIPLA",
+                        company_name="Cipla Ltd",
+                        price_change_1d=Decimal("-2.1"),
+                        market_cap=Decimal("300000000000"),
+                    ),
+                ],
+            )
+        )
 
         app = _create_test_app(sector_svc=mock_svc)
         client = TestClient(app)
@@ -346,13 +391,15 @@ class TestGetSectorAggregate:
 
     def test_aggregate_empty_sector(self):
         mock_svc = AsyncMock(spec=SectorService)
-        mock_svc.get_sector_aggregate = AsyncMock(return_value=SectorAggregate(
-            sector="Unknown",
-            total_market_cap=Decimal("0"),
-            stock_count=0,
-            top_gainers=[],
-            top_losers=[],
-        ))
+        mock_svc.get_sector_aggregate = AsyncMock(
+            return_value=SectorAggregate(
+                sector="Unknown",
+                total_market_cap=Decimal("0"),
+                stock_count=0,
+                top_gainers=[],
+                top_losers=[],
+            )
+        )
 
         app = _create_test_app(sector_svc=mock_svc)
         client = TestClient(app)
@@ -371,9 +418,15 @@ class TestGetSectorAggregate:
 class TestGetSectorSubIndustries:
     def test_sub_industries_for_known_sector(self):
         mock_svc = MagicMock(spec=SectorService)
-        mock_svc.get_sub_industries = MagicMock(return_value=[
-            "Private Banks", "PSU Banks", "NBFCs", "Microfinance", "Wealth Management",
-        ])
+        mock_svc.get_sub_industries = MagicMock(
+            return_value=[
+                "Private Banks",
+                "PSU Banks",
+                "NBFCs",
+                "Microfinance",
+                "Wealth Management",
+            ]
+        )
 
         app = _create_test_app(sector_svc=mock_svc)
         client = TestClient(app)
@@ -405,23 +458,33 @@ class TestGetSectorSubIndustries:
 class TestGetSectorStocks:
     def test_filter_with_results(self):
         mock_svc = AsyncMock(spec=SectorService)
-        mock_svc.filter_sector_securities = AsyncMock(return_value=(
-            [
-                SectorSecurity(
-                    security_id=1, symbol="HDFCBANK", company_name="HDFC Bank",
-                    industry="Private Banks", market_cap=Decimal("900000000000"),
-                    pe_ratio=Decimal("22.5"), dividend_yield=Decimal("1.2"),
-                    price_change_1d=Decimal("1.5"),
-                ),
-                SectorSecurity(
-                    security_id=2, symbol="SBIN", company_name="State Bank of India",
-                    industry="PSU Banks", market_cap=Decimal("600000000000"),
-                    pe_ratio=Decimal("10.3"), dividend_yield=Decimal("2.8"),
-                    price_change_1d=Decimal("-0.5"),
-                ),
-            ],
-            2,
-        ))
+        mock_svc.filter_sector_securities = AsyncMock(
+            return_value=(
+                [
+                    SectorSecurity(
+                        security_id=1,
+                        symbol="HDFCBANK",
+                        company_name="HDFC Bank",
+                        industry="Private Banks",
+                        market_cap=Decimal("900000000000"),
+                        pe_ratio=Decimal("22.5"),
+                        dividend_yield=Decimal("1.2"),
+                        price_change_1d=Decimal("1.5"),
+                    ),
+                    SectorSecurity(
+                        security_id=2,
+                        symbol="SBIN",
+                        company_name="State Bank of India",
+                        industry="PSU Banks",
+                        market_cap=Decimal("600000000000"),
+                        pe_ratio=Decimal("10.3"),
+                        dividend_yield=Decimal("2.8"),
+                        price_change_1d=Decimal("-0.5"),
+                    ),
+                ],
+                2,
+            )
+        )
 
         app = _create_test_app(sector_svc=mock_svc)
         client = TestClient(app)

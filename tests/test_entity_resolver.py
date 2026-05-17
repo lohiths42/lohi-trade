@@ -80,10 +80,12 @@ class TestEntityExtraction:
 
     def test_extracts_org_entities(self):
         """ORG entities should be extracted from text."""
-        mock_nlp = _MockSpacyModel([
-            ("Reliance Industries", "ORG"),
-            ("TCS", "ORG"),
-        ])
+        mock_nlp = _MockSpacyModel(
+            [
+                ("Reliance Industries", "ORG"),
+                ("TCS", "ORG"),
+            ]
+        )
         resolver = EntityResolver(
             ticker_mapper=_make_ticker_mapper(),
             spacy_model=mock_nlp,
@@ -94,11 +96,13 @@ class TestEntityExtraction:
 
     def test_ignores_non_org_entities(self):
         """Non-ORG entities (PERSON, GPE, etc.) should be ignored."""
-        mock_nlp = _MockSpacyModel([
-            ("Reliance Industries", "ORG"),
-            ("Mumbai", "GPE"),
-            ("Mukesh Ambani", "PERSON"),
-        ])
+        mock_nlp = _MockSpacyModel(
+            [
+                ("Reliance Industries", "ORG"),
+                ("Mumbai", "GPE"),
+                ("Mukesh Ambani", "PERSON"),
+            ]
+        )
         resolver = EntityResolver(
             ticker_mapper=_make_ticker_mapper(),
             spacy_model=mock_nlp,
@@ -108,11 +112,13 @@ class TestEntityExtraction:
 
     def test_deduplicates_entities(self):
         """Duplicate entity names should appear only once."""
-        mock_nlp = _MockSpacyModel([
-            ("TCS", "ORG"),
-            ("TCS", "ORG"),
-            ("tcs", "ORG"),
-        ])
+        mock_nlp = _MockSpacyModel(
+            [
+                ("TCS", "ORG"),
+                ("TCS", "ORG"),
+                ("tcs", "ORG"),
+            ]
+        )
         resolver = EntityResolver(
             ticker_mapper=_make_ticker_mapper(),
             spacy_model=mock_nlp,
@@ -146,11 +152,13 @@ class TestTickerMapping:
 
     def test_handles_multiple_companies(self):
         """Multiple companies in one article should all be resolved."""
-        mock_nlp = _MockSpacyModel([
-            ("Reliance Industries", "ORG"),
-            ("TCS", "ORG"),
-            ("Infosys", "ORG"),
-        ])
+        mock_nlp = _MockSpacyModel(
+            [
+                ("Reliance Industries", "ORG"),
+                ("TCS", "ORG"),
+                ("Infosys", "ORG"),
+            ]
+        )
         resolver = EntityResolver(
             ticker_mapper=_make_ticker_mapper(),
             spacy_model=mock_nlp,
@@ -164,10 +172,12 @@ class TestTickerMapping:
 
     def test_no_duplicate_tickers(self):
         """Same ticker from different entity names should appear once."""
-        mock_nlp = _MockSpacyModel([
-            ("Reliance Industries", "ORG"),
-            ("Reliance", "ORG"),
-        ])
+        mock_nlp = _MockSpacyModel(
+            [
+                ("Reliance Industries", "ORG"),
+                ("Reliance", "ORG"),
+            ]
+        )
         mapper = _make_ticker_mapper()
         resolver = EntityResolver(ticker_mapper=mapper, spacy_model=mock_nlp)
         result = resolver.resolve_entities(_make_article())
@@ -189,10 +199,12 @@ class TestUnmappedEntities:
 
     def test_unmapped_entities_logged(self):
         """Unmapped entities should be in unmapped_entities list."""
-        mock_nlp = _MockSpacyModel([
-            ("Reliance Industries", "ORG"),
-            ("Unknown Corp", "ORG"),
-        ])
+        mock_nlp = _MockSpacyModel(
+            [
+                ("Reliance Industries", "ORG"),
+                ("Unknown Corp", "ORG"),
+            ]
+        )
         resolver = EntityResolver(
             ticker_mapper=_make_ticker_mapper(),
             spacy_model=mock_nlp,
@@ -214,11 +226,13 @@ class TestUnmappedEntities:
 
     def test_mixed_mapped_and_unmapped(self):
         """Both mapped and unmapped entities should be handled correctly."""
-        mock_nlp = _MockSpacyModel([
-            ("TCS", "ORG"),
-            ("SomeRandom Inc", "ORG"),
-            ("Infosys", "ORG"),
-        ])
+        mock_nlp = _MockSpacyModel(
+            [
+                ("TCS", "ORG"),
+                ("SomeRandom Inc", "ORG"),
+                ("Infosys", "ORG"),
+            ]
+        )
         resolver = EntityResolver(
             ticker_mapper=_make_ticker_mapper(),
             spacy_model=mock_nlp,

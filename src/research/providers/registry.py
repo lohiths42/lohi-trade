@@ -90,14 +90,14 @@ Factory = str | Callable[[dict], Any]
 # single point of registration is this dict, so the "new provider = new
 # file + one line here" contract is visually obvious.
 LLM_FACTORIES: dict[str, Factory] = {
-    "nvidia_nim":  "src.research.providers.llm.nvidia_nim:build",  # Task 2.3
-    "openai":      "src.research.providers.llm.openai:build",      # Task 2.4
-    "anthropic":   "src.research.providers.llm.anthropic:build",   # Task 2.5
-    "gemini":      "src.research.providers.llm.gemini:build",      # Task 2.6
-    "groq":        "src.research.providers.llm.groq:build",        # Task 2.7
-    "together":    "src.research.providers.llm.together:build",    # Task 2.8
-    "openrouter":  "src.research.providers.llm.openrouter:build",  # Task 2.9
-    "ollama":      "src.research.providers.llm.ollama:build",      # Task 2.10
+    "nvidia_nim": "src.research.providers.llm.nvidia_nim:build",  # Task 2.3
+    "openai": "src.research.providers.llm.openai:build",  # Task 2.4
+    "anthropic": "src.research.providers.llm.anthropic:build",  # Task 2.5
+    "gemini": "src.research.providers.llm.gemini:build",  # Task 2.6
+    "groq": "src.research.providers.llm.groq:build",  # Task 2.7
+    "together": "src.research.providers.llm.together:build",  # Task 2.8
+    "openrouter": "src.research.providers.llm.openrouter:build",  # Task 2.9
+    "ollama": "src.research.providers.llm.ollama:build",  # Task 2.10
     # Add a new LLM provider here:
     # "mistral":   "src.research.providers.llm.mistral:build",
 }
@@ -108,9 +108,9 @@ LLM_FACTORIES: dict[str, Factory] = {
 # --------------------------------------------------------------------------- #
 EMBEDDINGS_FACTORIES: dict[str, Factory] = {
     "sentence_transformers": "src.research.providers.embeddings.sentence_transformers:build",  # Task 2.11
-    "nvidia_nim":            "src.research.providers.embeddings.nvidia_nim:build",             # Task 2.12
-    "openai":                "src.research.providers.embeddings.openai:build",                 # Task 2.13
-    "ollama":                "src.research.providers.embeddings.ollama:build",                 # Task 2.14
+    "nvidia_nim": "src.research.providers.embeddings.nvidia_nim:build",  # Task 2.12
+    "openai": "src.research.providers.embeddings.openai:build",  # Task 2.13
+    "ollama": "src.research.providers.embeddings.ollama:build",  # Task 2.14
     # Add a new embeddings provider here.
 }
 
@@ -119,10 +119,10 @@ EMBEDDINGS_FACTORIES: dict[str, Factory] = {
 # Vector-store registry (Req 2.6, Req 2.13–2.15, design §3.1, §8, §9)         #
 # --------------------------------------------------------------------------- #
 VECTOR_STORE_FACTORIES: dict[str, Factory] = {
-    "chroma":   "src.research.providers.vector_store.chroma:build",    # Task 2.15
+    "chroma": "src.research.providers.vector_store.chroma:build",  # Task 2.15
     "pgvector": "src.research.providers.vector_store.pgvector:build",  # Task 2.16
-    "qdrant":   "src.research.providers.vector_store.qdrant:build",    # Task 2.17
-    "lancedb":  "src.research.providers.vector_store.lancedb:build",   # Task 2.18
+    "qdrant": "src.research.providers.vector_store.qdrant:build",  # Task 2.17
+    "lancedb": "src.research.providers.vector_store.lancedb:build",  # Task 2.18
     # Add a new vector-store backend here.
 }
 
@@ -143,8 +143,7 @@ def _resolve(factory: Factory) -> Callable[[dict], Any]:
         return factory
     if not isinstance(factory, str) or ":" not in factory:
         raise TypeError(
-            "Factory must be a callable or a 'module:attr' string; "
-            f"got {factory!r}.",
+            "Factory must be a callable or a 'module:attr' string; " f"got {factory!r}.",
         )
     module_path, attr = factory.split(":", 1)
     module = importlib.import_module(module_path)
@@ -157,7 +156,9 @@ def _resolve(factory: Factory) -> Callable[[dict], Any]:
 
 
 def _lookup(
-    registry: dict[str, Factory], kind: str, name: str,
+    registry: dict[str, Factory],
+    kind: str,
+    name: str,
 ) -> Callable[[dict], Any]:
     """Fetch a factory by name or raise ``UnknownProviderError``.
 

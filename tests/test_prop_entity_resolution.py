@@ -288,8 +288,7 @@ class TestMultiEntityAssociation:
 
         for name in selected_names:
             assert name in result.entities_found, (
-                f"Expected entity '{name}' in entities_found, "
-                f"got {result.entities_found}"
+                f"Expected entity '{name}' in entities_found, " f"got {result.entities_found}"
             )
 
 
@@ -320,10 +319,7 @@ class TestUnmappedEntityHandling:
 
         # Generate unmapped entity names that are definitely not in the mapping
         num_unmapped = data.draw(st.integers(min_value=1, max_value=3))
-        unmapped_names = [
-            data.draw(unmapped_entity_names())
-            for _ in range(num_unmapped)
-        ]
+        unmapped_names = [data.draw(unmapped_entity_names()) for _ in range(num_unmapped)]
         # Ensure none of the unmapped names are in the mapping
         for name in unmapped_names:
             assume(name.strip().lower() not in mapping)
@@ -346,8 +342,7 @@ class TestUnmappedEntityHandling:
         # All unmapped names should be in unmapped_entities
         for name in unmapped_names:
             assert name in result.unmapped_entities, (
-                f"Expected '{name}' in unmapped_entities, "
-                f"got {result.unmapped_entities}"
+                f"Expected '{name}' in unmapped_entities, " f"got {result.unmapped_entities}"
             )
 
     @given(data=st.data())
@@ -383,13 +378,13 @@ class TestUnmappedEntityHandling:
         # Mapped entities should be in tickers
         for name in mapped_names:
             expected_ticker = mapping[name]
-            assert expected_ticker in result.tickers, (
-                f"Expected ticker '{expected_ticker}' for mapped entity '{name}'"
-            )
+            assert (
+                expected_ticker in result.tickers
+            ), f"Expected ticker '{expected_ticker}' for mapped entity '{name}'"
 
         # Unmapped entity should NOT be in tickers
         all_ticker_values = set(mapping.values())
         # The unmapped name shouldn't resolve to any ticker
-        assert unmapped_name in result.unmapped_entities, (
-            f"Expected '{unmapped_name}' in unmapped_entities"
-        )
+        assert (
+            unmapped_name in result.unmapped_entities
+        ), f"Expected '{unmapped_name}' in unmapped_entities"

@@ -13,30 +13,29 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
-from app.routers.stock_universe import (
-    SecurityItem,
-    SearchResponse,
-    PaginatedSecuritiesResponse,
-    SectorListResponse,
-    get_stock_universe_service,
-    get_sector_service,
-    _security_to_item,
-    _decimal_to_str,
-    GainerLoserItem,
-    SectorAggregateResponse,
-)
 from app.routers.screener import (
     ScreenerSearchRequest,
     ScreenerSearchResponse,
-    ScreenerResultItemResponse,
     TemplateListResponse,
-    _request_to_filters,
     _item_to_response,
     _preset_to_response,
+    _request_to_filters,
 )
-from app.services.stock_universe_service import StockUniverseService
-from app.services.sector_service import SectorService
+from app.routers.stock_universe import (
+    GainerLoserItem,
+    PaginatedSecuritiesResponse,
+    SearchResponse,
+    SectorAggregateResponse,
+    SectorListResponse,
+    SecurityItem,
+    _decimal_to_str,
+    _security_to_item,
+    get_sector_service,
+    get_stock_universe_service,
+)
 from app.services.screener_service import ScreenerEngine
+from app.services.sector_service import SectorService
+from app.services.stock_universe_service import StockUniverseService
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -85,6 +84,7 @@ def _get_sector_svc() -> SectorService:
 
 def _get_screener() -> ScreenerEngine:
     from app.routers.screener import get_screener_engine
+
     try:
         return get_screener_engine()
     except HTTPException:
@@ -96,12 +96,11 @@ def _fetch_chart_data(symbol: str, period: str, interval: str) -> dict:
 
     Priority: Nubra SDK → yfinance → direct Yahoo Finance API (curl_cffi).
     """
-    import math
-    import time
 
     # 1) Try Nubra first (if configured)
     try:
-        from app.services.nubra_service import is_nubra_configured, fetch_chart_nubra
+        from app.services.nubra_service import fetch_chart_nubra, is_nubra_configured
+
         if is_nubra_configured():
             result = fetch_chart_nubra(symbol, period, interval)
             if result:
@@ -113,6 +112,7 @@ def _fetch_chart_data(symbol: str, period: str, interval: str) -> dict:
     # 2) Try yfinance
     try:
         import yfinance as yf
+
         for suffix in (".NS", ".BO"):
             yf_sym = f"{symbol.upper()}{suffix}"
             try:
@@ -134,7 +134,6 @@ def _fetch_chart_data(symbol: str, period: str, interval: str) -> dict:
 
 def _fetch_chart_direct(symbol: str, period: str, interval: str) -> dict:
     """Fetch chart data directly from Yahoo Finance API using curl_cffi."""
-    import math
 
     try:
         from curl_cffi import requests as cffi_requests
@@ -170,14 +169,15 @@ def _fetch_chart_direct(symbol: str, period: str, interval: str) -> dict:
 
             bars = []
             from datetime import datetime, timezone
-            for i, ts in enumerate(timestamps):
-                o = opens[i] if i < len(opens) else None
-                h = highs[i] if i < len(highs) else None
-                l = lows[i] if i < len(lows) else None
-                c = closes[i] if i < len(closes) else None
-                v = volumes[i] if i < len(volumes) else 0
 
-                if any(x is None for x in [o, h, l, c]):
+            for i, ts in enumerate(timestamps):
+                open_val = opens[i] if i < len(opens) else None
+                high_val = highs[i] if i < len(highs) else None
+                low_val = lows[i] if i < len(lows) else None
+                close_val = closes[i] if i < len(closes) else None
+                vol_val = volumes[i] if i < len(volumes) else 0
+
+                if any(x is None for x in [open_val, high_val, low_val, close_val]):
                     continue
 
                 dt = datetime.fromtimestamp(ts, tz=timezone.utc)
@@ -186,14 +186,16 @@ def _fetch_chart_direct(symbol: str, period: str, interval: str) -> dict:
                 else:
                     time_str = dt.strftime("%Y-%m-%dT%H:%M:%S")
 
-                bars.append({
-                    "time": time_str,
-                    "open": round(float(o), 2),
-                    "high": round(float(h), 2),
-                    "low": round(float(l), 2),
-                    "close": round(float(c), 2),
-                    "volume": int(v) if v else 0,
-                })
+                bars.append(
+                    {
+                        "time": time_str,
+                        "open": round(float(open_val), 2),
+                        "high": round(float(high_val), 2),
+                        "low": round(float(low_val), 2),
+                        "close": round(float(close_val), 2),
+                        "volume": int(vol_val) if vol_val else 0,
+                    }
+                )
 
             if not bars:
                 continue
@@ -214,7 +216,11 @@ def _fetch_chart_direct(symbol: str, period: str, interval: str) -> dict:
                 "interval": interval,
                 "bars": bars,
                 "count": len(bars),
-                "current_price": round(float(current_price), 2) if current_price else (bars[-1]["close"] if bars else None),
+                "current_price": (
+                    round(float(current_price), 2)
+                    if current_price
+                    else (bars[-1]["close"] if bars else None)
+                ),
                 "previous_close": round(float(previous_close), 2) if previous_close else None,
                 "change": change,
                 "change_percent": change_pct,
@@ -233,21 +239,29 @@ def _parse_yfinance_hist(symbol: str, period: str, interval: str, hist, ticker) 
 
     bars = []
     for idx, row in hist.iterrows():
-        o, h, l, c, v = row.get("Open"), row.get("High"), row.get("Low"), row.get("Close"), row.get("Volume", 0)
-        if any(x is None or (isinstance(x, float) and math.isnan(x)) for x in [o, h, l, c]):
+        open_val, high_val, low_val, close_val, vol_val = (
+            row.get("Open"),
+            row.get("High"),
+            row.get("Low"),
+            row.get("Close"),
+            row.get("Volume", 0),
+        )
+        if any(x is None or (isinstance(x, float) and math.isnan(x)) for x in [open_val, high_val, low_val, close_val]):
             continue
         if interval in ("1d", "5d", "1wk", "1mo"):
             time_str = idx.strftime("%Y-%m-%d")
         else:
             time_str = idx.strftime("%Y-%m-%dT%H:%M:%S")
-        bars.append({
-            "time": time_str,
-            "open": round(float(o), 2),
-            "high": round(float(h), 2),
-            "low": round(float(l), 2),
-            "close": round(float(c), 2),
-            "volume": int(v) if v and not (isinstance(v, float) and math.isnan(v)) else 0,
-        })
+        bars.append(
+            {
+                "time": time_str,
+                "open": round(float(open_val), 2),
+                "high": round(float(high_val), 2),
+                "low": round(float(low_val), 2),
+                "close": round(float(close_val), 2),
+                "volume": int(vol_val) if vol_val and not (isinstance(vol_val, float) and math.isnan(vol_val)) else 0,
+            }
+        )
 
     current_price = None
     previous_close = None
@@ -302,9 +316,13 @@ async def public_stock_chart(
     valid_intervals = {"1m", "2m", "5m", "15m", "30m", "1h", "1d", "5d", "1wk", "1mo"}
 
     if period not in valid_periods:
-        raise HTTPException(400, f"Invalid period '{period}'. Use: {', '.join(sorted(valid_periods))}")
+        raise HTTPException(
+            400, f"Invalid period '{period}'. Use: {', '.join(sorted(valid_periods))}"
+        )
     if interval not in valid_intervals:
-        raise HTTPException(400, f"Invalid interval '{interval}'. Use: {', '.join(sorted(valid_intervals))}")
+        raise HTTPException(
+            400, f"Invalid interval '{interval}'. Use: {', '.join(sorted(valid_intervals))}"
+        )
 
     try:
         # Offload the blocking yfinance call via `asyncio.to_thread` —
@@ -316,9 +334,17 @@ async def public_stock_chart(
         raise
     except Exception as e:
         err_name = type(e).__name__
-        logger.exception("Chart fetch failed for %s (period=%s, interval=%s): %s", symbol, period, interval, err_name)
+        logger.exception(
+            "Chart fetch failed for %s (period=%s, interval=%s): %s",
+            symbol,
+            period,
+            interval,
+            err_name,
+        )
         if "RateLimit" in err_name or "rate" in str(e).lower():
-            raise HTTPException(429, "Yahoo Finance rate limit reached. Please try again in a minute.")
+            raise HTTPException(
+                429, "Yahoo Finance rate limit reached. Please try again in a minute."
+            )
         raise HTTPException(500, f"Failed to fetch chart data: {err_name}")
 
 
@@ -343,14 +369,20 @@ async def public_list_stocks(
 ):
     svc = _get_stock_svc()
     result = await svc.list_securities(
-        exchange=exchange, sector=sector,
+        exchange=exchange,
+        sector=sector,
         market_cap_category=market_cap_category,
-        status=status, page=page, page_size=page_size,
+        status=status,
+        page=page,
+        page_size=page_size,
     )
     items = [_security_to_item(s) for s in result.items]
     return PaginatedSecuritiesResponse(
-        items=items, total=result.total, page=result.page,
-        page_size=result.page_size, total_pages=result.total_pages,
+        items=items,
+        total=result.total,
+        page=result.page,
+        page_size=result.page_size,
+        total_pages=result.total_pages,
     )
 
 
@@ -370,23 +402,30 @@ async def public_sector_aggregate(name: str):
     agg = await svc.get_sector_aggregate(name)
     gainers = [
         GainerLoserItem(
-            security_id=g.security_id, symbol=g.symbol,
+            security_id=g.security_id,
+            symbol=g.symbol,
             company_name=g.company_name,
             price_change_1d=_decimal_to_str(g.price_change_1d),
             market_cap=_decimal_to_str(g.market_cap),
-        ) for g in agg.top_gainers
+        )
+        for g in agg.top_gainers
     ]
     losers = [
         GainerLoserItem(
-            security_id=g.security_id, symbol=g.symbol,
+            security_id=g.security_id,
+            symbol=g.symbol,
             company_name=g.company_name,
             price_change_1d=_decimal_to_str(g.price_change_1d),
             market_cap=_decimal_to_str(g.market_cap),
-        ) for g in agg.top_losers
+        )
+        for g in agg.top_losers
     ]
     return SectorAggregateResponse(
-        sector=agg.sector, total_market_cap=str(agg.total_market_cap),
-        stock_count=agg.stock_count, top_gainers=gainers, top_losers=losers,
+        sector=agg.sector,
+        total_market_cap=str(agg.total_market_cap),
+        stock_count=agg.stock_count,
+        top_gainers=gainers,
+        top_losers=losers,
     )
 
 
@@ -398,13 +437,18 @@ async def public_screener_search(req: ScreenerSearchRequest):
     engine = _get_screener()
     filters = _request_to_filters(req)
     result = await engine.screen(
-        filters=filters, sort_by=req.sort_by, order=req.order,
-        page=req.page, page_size=req.page_size,
+        filters=filters,
+        sort_by=req.sort_by,
+        order=req.order,
+        page=req.page,
+        page_size=req.page_size,
     )
     return ScreenerSearchResponse(
         items=[_item_to_response(item) for item in result.items],
-        total=result.total, page=result.page,
-        page_size=result.page_size, total_pages=result.total_pages,
+        total=result.total,
+        page=result.page,
+        page_size=result.page_size,
+        total_pages=result.total_pages,
     )
 
 
@@ -429,16 +473,24 @@ async def public_data_status():
         return {"total": 0, "with_fundamentals": 0, "with_technicals": 0}
 
     async with svc.db_pool.acquire() as conn:
-        total = (await conn.fetchrow("SELECT COUNT(*) AS c FROM securities WHERE status='ACTIVE'"))["c"]
-        with_fund = (await conn.fetchrow(
-            "SELECT COUNT(*) AS c FROM security_fundamentals WHERE pe_ratio IS NOT NULL OR market_cap IS NOT NULL"
-        ))["c"]
-        with_tech = (await conn.fetchrow(
-            "SELECT COUNT(*) AS c FROM security_technicals WHERE rsi_14 IS NOT NULL OR price_change_1d IS NOT NULL"
-        ))["c"]
-        last_update = (await conn.fetchrow(
-            "SELECT MAX(updated_at) AS t FROM security_technicals WHERE price_change_1d IS NOT NULL"
-        ))["t"]
+        total = (await conn.fetchrow("SELECT COUNT(*) AS c FROM securities WHERE status='ACTIVE'"))[
+            "c"
+        ]
+        with_fund = (
+            await conn.fetchrow(
+                "SELECT COUNT(*) AS c FROM security_fundamentals WHERE pe_ratio IS NOT NULL OR market_cap IS NOT NULL"
+            )
+        )["c"]
+        with_tech = (
+            await conn.fetchrow(
+                "SELECT COUNT(*) AS c FROM security_technicals WHERE rsi_14 IS NOT NULL OR price_change_1d IS NOT NULL"
+            )
+        )["c"]
+        last_update = (
+            await conn.fetchrow(
+                "SELECT MAX(updated_at) AS t FROM security_technicals WHERE price_change_1d IS NOT NULL"
+            )
+        )["t"]
 
     return {
         "total_securities": total,
@@ -452,6 +504,7 @@ async def public_data_status():
 async def public_trigger_refresh():
     """Manually trigger a live data refresh cycle."""
     from app.main import app as main_app
+
     live_svc = getattr(main_app.state, "live_data_service", None)
     if not live_svc:
         raise HTTPException(503, "Live data service not available")
@@ -466,7 +519,8 @@ async def public_data_source():
     nubra_configured = False
     nubra_connected = False
     try:
-        from app.services.nubra_service import is_nubra_configured, _nubra_client
+        from app.services.nubra_service import _nubra_client, is_nubra_configured
+
         nubra_configured = is_nubra_configured()
         nubra_connected = _nubra_client is not None
     except Exception:
@@ -478,7 +532,11 @@ async def public_data_source():
             "configured": nubra_configured,
             "connected": nubra_connected,
         },
-        "fallback_chain": ["nubra", "yfinance", "yahoo_direct_api"] if nubra_configured else ["yfinance", "yahoo_direct_api"],
+        "fallback_chain": (
+            ["nubra", "yfinance", "yahoo_direct_api"]
+            if nubra_configured
+            else ["yfinance", "yahoo_direct_api"]
+        ),
     }
 
 
@@ -506,11 +564,11 @@ def _fetch_live_quote(symbol: str) -> dict:
 
     Priority: Nubra SDK → yfinance → direct Yahoo Finance API (curl_cffi).
     """
-    import math
 
     # 1) Try Nubra first (if configured)
     try:
-        from app.services.nubra_service import is_nubra_configured, fetch_quote_nubra
+        from app.services.nubra_service import fetch_quote_nubra, is_nubra_configured
+
         if is_nubra_configured():
             result = fetch_quote_nubra(symbol)
             if result:
@@ -522,6 +580,7 @@ def _fetch_live_quote(symbol: str) -> dict:
     # 2) Try yfinance
     try:
         import yfinance as yf
+
         for suffix in (".NS", ".BO"):
             yf_sym = f"{symbol.upper()}{suffix}"
             try:
@@ -531,7 +590,9 @@ def _fetch_live_quote(symbol: str) -> dict:
                     current = float(fi.last_price)
                     prev_close = float(fi.previous_close) if fi.previous_close else None
                     change = round(current - prev_close, 2) if prev_close else None
-                    change_pct = round((change / prev_close) * 100, 2) if change and prev_close else None
+                    change_pct = (
+                        round((change / prev_close) * 100, 2) if change and prev_close else None
+                    )
 
                     info = {}
                     try:
@@ -545,18 +606,40 @@ def _fetch_live_quote(symbol: str) -> dict:
                         "previous_close": round(prev_close, 2) if prev_close else None,
                         "change": change,
                         "change_percent": change_pct,
-                        "day_high": round(float(fi.day_high), 2) if getattr(fi, 'day_high', None) else info.get("dayHigh"),
-                        "day_low": round(float(fi.day_low), 2) if getattr(fi, 'day_low', None) else info.get("dayLow"),
-                        "open_price": round(float(fi.open), 2) if getattr(fi, 'open', None) else info.get("open"),
-                        "volume": int(fi.last_volume) if getattr(fi, 'last_volume', None) else info.get("volume"),
-                        "market_cap": float(fi.market_cap) if getattr(fi, 'market_cap', None) else info.get("marketCap"),
+                        "day_high": (
+                            round(float(fi.day_high), 2)
+                            if getattr(fi, "day_high", None)
+                            else info.get("dayHigh")
+                        ),
+                        "day_low": (
+                            round(float(fi.day_low), 2)
+                            if getattr(fi, "day_low", None)
+                            else info.get("dayLow")
+                        ),
+                        "open_price": (
+                            round(float(fi.open), 2)
+                            if getattr(fi, "open", None)
+                            else info.get("open")
+                        ),
+                        "volume": (
+                            int(fi.last_volume)
+                            if getattr(fi, "last_volume", None)
+                            else info.get("volume")
+                        ),
+                        "market_cap": (
+                            float(fi.market_cap)
+                            if getattr(fi, "market_cap", None)
+                            else info.get("marketCap")
+                        ),
                         "pe_ratio": info.get("trailingPE"),
                         "high_52w": info.get("fiftyTwoWeekHigh"),
                         "low_52w": info.get("fiftyTwoWeekLow"),
                     }
             except Exception as e:
                 if "RateLimit" in type(e).__name__:
-                    logger.info("yfinance rate limited for quote %s, falling back to direct API", yf_sym)
+                    logger.info(
+                        "yfinance rate limited for quote %s, falling back to direct API", yf_sym
+                    )
                     break
                 continue
     except ImportError:
@@ -635,5 +718,7 @@ async def public_live_quote(symbol: str):
         err_name = type(e).__name__
         logger.exception("Live quote failed for %s: %s", symbol, err_name)
         if "RateLimit" in err_name or "rate" in str(e).lower():
-            raise HTTPException(429, "Yahoo Finance rate limit reached. Please try again in a minute.")
+            raise HTTPException(
+                429, "Yahoo Finance rate limit reached. Please try again in a minute."
+            )
         raise HTTPException(500, "Failed to fetch live quote")

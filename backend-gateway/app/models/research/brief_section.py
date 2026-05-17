@@ -34,9 +34,7 @@ class ResearchBriefSection(Base):
     )
     section_name: Mapped[str] = mapped_column(String(64), nullable=False)
     content_md: Mapped[str] = mapped_column(Text, nullable=False)
-    citations_json: Mapped[list] = mapped_column(
-        JSONB, nullable=False, server_default="[]"
-    )
+    citations_json: Mapped[list] = mapped_column(JSONB, nullable=False, server_default="[]")
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True), nullable=False, server_default=func.now()
     )

@@ -117,10 +117,22 @@ class TestCandlePublisher:
         from src.ingestion.broker_interface import Tick
 
         # Process ticks in two different 1m buckets to trigger candle completion
-        t1 = Tick(symbol="RELIANCE", token=2885, ltp=2500.0, volume=100,
-                   timestamp=datetime(2024, 1, 15, 10, 0, 30), exchange="NSE")
-        t2 = Tick(symbol="RELIANCE", token=2885, ltp=2510.0, volume=200,
-                   timestamp=datetime(2024, 1, 15, 10, 1, 0), exchange="NSE")
+        t1 = Tick(
+            symbol="RELIANCE",
+            token=2885,
+            ltp=2500.0,
+            volume=100,
+            timestamp=datetime(2024, 1, 15, 10, 0, 30),
+            exchange="NSE",
+        )
+        t2 = Tick(
+            symbol="RELIANCE",
+            token=2885,
+            ltp=2510.0,
+            volume=200,
+            timestamp=datetime(2024, 1, 15, 10, 1, 0),
+            exchange="NSE",
+        )
 
         builder.process_tick(t1)
         assert event_bus.publish.call_count == 0

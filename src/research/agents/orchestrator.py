@@ -396,8 +396,7 @@ async def _default_plan(
         Message(
             role="user",
             content=(
-                f"Available agents: {', '.join(available_agents)}\n"
-                f"User prompt: {user_prompt}"
+                f"Available agents: {', '.join(available_agents)}\n" f"User prompt: {user_prompt}"
             ),
         ),
     ]
@@ -584,7 +583,8 @@ class ResearchOrchestrator:
         the caller did not wire a budget).
         """
         offline = os.environ.get(
-            "LOHI_RESEARCH_OFFLINE", "",
+            "LOHI_RESEARCH_OFFLINE",
+            "",
         ).strip().lower() in ("true", "1", "yes")
         if offline and self._offline_full_brief_ms_budget is not None:
             return self._offline_full_brief_ms_budget
@@ -846,7 +846,9 @@ class ResearchOrchestrator:
             async with semaphore:
                 return await self._invoke_agent(agent, context)
 
-        tasks = [asyncio.create_task(_run_one(agent), name=f"agent:{agent.name}") for agent in agents]
+        tasks = [
+            asyncio.create_task(_run_one(agent), name=f"agent:{agent.name}") for agent in agents
+        ]
         results = list(await asyncio.gather(*tasks))
 
         # Prometheus: observe first-agent-partial latency (Task 20.2,
@@ -1054,9 +1056,7 @@ class ResearchOrchestrator:
             "run_id": str(run_id),
             "symbol": symbol,
             **sections,
-            "citations": [
-                hit.chunk.chunk_id for hit in _collect_chunks(agent_results)
-            ],
+            "citations": [hit.chunk.chunk_id for hit in _collect_chunks(agent_results)],
             "provenance": [r.to_payload() for r in agent_results],
             "judge": outcome.judge_report.model_dump(mode="json"),
             "quality": outcome.quality,
@@ -1133,8 +1133,7 @@ def _coerce_brief_sections(
     """
     if isinstance(brief, Mapping):
         return {
-            str(name): "" if content is None else str(content)
-            for name, content in brief.items()
+            str(name): "" if content is None else str(content) for name, content in brief.items()
         }
     coerced: dict[str, str] = {}
     for name in _BRIEF_SECTIONS:

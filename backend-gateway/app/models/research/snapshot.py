@@ -19,15 +19,9 @@ class ResearchSnapshot(Base):
 
     __tablename__ = "research_snapshots"
 
-    user_id: Mapped[UUID] = mapped_column(
-        PG_UUID(as_uuid=True), primary_key=True, nullable=False
-    )
+    user_id: Mapped[UUID] = mapped_column(PG_UUID(as_uuid=True), primary_key=True, nullable=False)
     symbol: Mapped[str] = mapped_column(String(32), primary_key=True, nullable=False)
     brief_json: Mapped[dict] = mapped_column(JSONB, nullable=False)
-    generated_at: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True), nullable=False
-    )
-    input_document_hashes: Mapped[list[str]] = mapped_column(
-        ARRAY(Text), nullable=False
-    )
+    generated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False)
+    input_document_hashes: Mapped[list[str]] = mapped_column(ARRAY(Text), nullable=False)
     stale: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="false")

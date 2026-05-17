@@ -1,34 +1,30 @@
 """Unit tests for verification API router endpoints (PAN, KYC, DMAT)."""
 
-import io
 from contextlib import asynccontextmanager
-from unittest.mock import AsyncMock, MagicMock, patch
 from datetime import datetime, timezone
+from unittest.mock import AsyncMock, MagicMock
 
-import pytest
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-
-from app.routers.verification import (
-    router,
-    get_pan_service,
-    get_kyc_service,
-    get_dmat_service,
-)
 from app.routers.auth_v2 import get_current_user_id, get_current_user_payload
-from app.services.verification_service import (
-    PANVerificationService,
-    PANVerificationResult,
-    PANStatus,
-    KYCService,
-    KYCSubmissionResult,
-    KYCStatus,
-    DMATService,
-    DMATVerificationResult,
-    DMATStatus,
+from app.routers.verification import (
+    get_dmat_service,
+    get_kyc_service,
+    get_pan_service,
+    router,
 )
 from app.services.account_service import _create_access_token
-
+from app.services.verification_service import (
+    DMATService,
+    DMATStatus,
+    DMATVerificationResult,
+    KYCService,
+    KYCStatus,
+    KYCSubmissionResult,
+    PANStatus,
+    PANVerificationResult,
+    PANVerificationService,
+)
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -87,12 +83,14 @@ def _make_mock_pool(mock_conn):
 class TestSubmitPAN:
     def test_successful_pan_verification(self):
         mock_pan = AsyncMock(spec=PANVerificationService)
-        mock_pan.verify_pan = AsyncMock(return_value=PANVerificationResult(
-            status=PANStatus.VERIFIED,
-            holder_name="John Doe",
-            pan_masked="AB****Z1",
-            verified_at=datetime(2024, 1, 15, tzinfo=timezone.utc),
-        ))
+        mock_pan.verify_pan = AsyncMock(
+            return_value=PANVerificationResult(
+                status=PANStatus.VERIFIED,
+                holder_name="John Doe",
+                pan_masked="AB****Z1",
+                verified_at=datetime(2024, 1, 15, tzinfo=timezone.utc),
+            )
+        )
 
         app = _create_test_app(pan_svc=mock_pan)
         client = TestClient(app)
@@ -108,10 +106,12 @@ class TestSubmitPAN:
 
     def test_pan_rejected_invalid_format(self):
         mock_pan = AsyncMock(spec=PANVerificationService)
-        mock_pan.verify_pan = AsyncMock(return_value=PANVerificationResult(
-            status=PANStatus.REJECTED,
-            rejection_reason="invalid_pan",
-        ))
+        mock_pan.verify_pan = AsyncMock(
+            return_value=PANVerificationResult(
+                status=PANStatus.REJECTED,
+                rejection_reason="invalid_pan",
+            )
+        )
 
         app = _create_test_app(pan_svc=mock_pan)
         client = TestClient(app)
@@ -135,7 +135,10 @@ class TestSubmitPAN:
         app.include_router(router, prefix="/api/v2")
         app.dependency_overrides[get_current_user_id] = lambda: TEST_USER_ID
         app.dependency_overrides[get_current_user_payload] = lambda: {
-            "sub": TEST_USER_ID, "email": "t@t.com", "role": "TRADER", "type": "access",
+            "sub": TEST_USER_ID,
+            "email": "t@t.com",
+            "role": "TRADER",
+            "type": "access",
         }
         client = TestClient(app)
         resp = client.post("/api/v2/verify/pan", json={"pan": "ABCDE1234Z"})
@@ -146,13 +149,15 @@ class TestGetPANStatus:
     def test_pan_status_with_db(self):
         mock_pan = AsyncMock(spec=PANVerificationService)
         mock_conn = AsyncMock()
-        mock_conn.fetchrow = AsyncMock(return_value={
-            "status": "VERIFIED",
-            "pan_masked": "AB****Z1",
-            "holder_name": "John Doe",
-            "rejection_reason": None,
-            "verified_at": datetime(2024, 1, 15, tzinfo=timezone.utc),
-        })
+        mock_conn.fetchrow = AsyncMock(
+            return_value={
+                "status": "VERIFIED",
+                "pan_masked": "AB****Z1",
+                "holder_name": "John Doe",
+                "rejection_reason": None,
+                "verified_at": datetime(2024, 1, 15, tzinfo=timezone.utc),
+            }
+        )
         mock_pan.db_pool = _make_mock_pool(mock_conn)
 
         app = _create_test_app(pan_svc=mock_pan)
@@ -195,12 +200,14 @@ class TestGetPANStatus:
 class TestSubmitKYC:
     def test_successful_kyc_submission(self):
         mock_kyc = AsyncMock(spec=KYCService)
-        mock_kyc.submit_kyc = AsyncMock(return_value=KYCSubmissionResult(
-            status=KYCStatus.VERIFIED,
-            verification_ref="KYC-REF-123",
-            submitted_at=datetime(2024, 1, 15, tzinfo=timezone.utc),
-            verified_at=datetime(2024, 1, 15, tzinfo=timezone.utc),
-        ))
+        mock_kyc.submit_kyc = AsyncMock(
+            return_value=KYCSubmissionResult(
+                status=KYCStatus.VERIFIED,
+                verification_ref="KYC-REF-123",
+                submitted_at=datetime(2024, 1, 15, tzinfo=timezone.utc),
+                verified_at=datetime(2024, 1, 15, tzinfo=timezone.utc),
+            )
+        )
 
         app = _create_test_app(kyc_svc=mock_kyc)
         client = TestClient(app)
@@ -225,10 +232,12 @@ class TestSubmitKYC:
 
     def test_kyc_rejected_pan_not_verified(self):
         mock_kyc = AsyncMock(spec=KYCService)
-        mock_kyc.submit_kyc = AsyncMock(return_value=KYCSubmissionResult(
-            status=KYCStatus.NOT_STARTED,
-            rejection_reason="PAN verification must be completed before KYC",
-        ))
+        mock_kyc.submit_kyc = AsyncMock(
+            return_value=KYCSubmissionResult(
+                status=KYCStatus.NOT_STARTED,
+                rejection_reason="PAN verification must be completed before KYC",
+            )
+        )
 
         app = _create_test_app(kyc_svc=mock_kyc)
         client = TestClient(app)
@@ -249,12 +258,14 @@ class TestSubmitKYC:
 
     def test_kyc_queued_for_retry(self):
         mock_kyc = AsyncMock(spec=KYCService)
-        mock_kyc.submit_kyc = AsyncMock(return_value=KYCSubmissionResult(
-            status=KYCStatus.PENDING,
-            queued_for_retry=True,
-            rejection_reason="KYC provider temporarily unavailable",
-            submitted_at=datetime.now(timezone.utc),
-        ))
+        mock_kyc.submit_kyc = AsyncMock(
+            return_value=KYCSubmissionResult(
+                status=KYCStatus.PENDING,
+                queued_for_retry=True,
+                rejection_reason="KYC provider temporarily unavailable",
+                submitted_at=datetime.now(timezone.utc),
+            )
+        )
 
         app = _create_test_app(kyc_svc=mock_kyc)
         client = TestClient(app)
@@ -275,10 +286,12 @@ class TestSubmitKYC:
 
     def test_kyc_with_aadhaar(self):
         mock_kyc = AsyncMock(spec=KYCService)
-        mock_kyc.submit_kyc = AsyncMock(return_value=KYCSubmissionResult(
-            status=KYCStatus.VERIFIED,
-            verification_ref="KYC-AAD-456",
-        ))
+        mock_kyc.submit_kyc = AsyncMock(
+            return_value=KYCSubmissionResult(
+                status=KYCStatus.VERIFIED,
+                verification_ref="KYC-AAD-456",
+            )
+        )
 
         app = _create_test_app(kyc_svc=mock_kyc)
         client = TestClient(app)
@@ -305,10 +318,12 @@ class TestGetKYCStatus:
         mock_kyc = AsyncMock(spec=KYCService)
         mock_kyc.check_kyc_status = AsyncMock(return_value=KYCStatus.VERIFIED)
         mock_conn = AsyncMock()
-        mock_conn.fetchrow = AsyncMock(return_value={
-            "rejection_reason": None,
-            "verification_ref": "KYC-REF-789",
-        })
+        mock_conn.fetchrow = AsyncMock(
+            return_value={
+                "rejection_reason": None,
+                "verification_ref": "KYC-REF-789",
+            }
+        )
         mock_kyc.db_pool = _make_mock_pool(mock_conn)
 
         app = _create_test_app(kyc_svc=mock_kyc)
@@ -339,13 +354,15 @@ class TestGetKYCStatus:
 class TestLinkDMAT:
     def test_successful_dmat_link(self):
         mock_dmat = AsyncMock(spec=DMATService)
-        mock_dmat.verify_dmat = AsyncMock(return_value=DMATVerificationResult(
-            status=DMATStatus.LINKED,
-            dmat_id="dmat-uuid-001",
-            depository="CDSL",
-            dp_name="HDFC Securities",
-            linked_at=datetime(2024, 1, 15, tzinfo=timezone.utc),
-        ))
+        mock_dmat.verify_dmat = AsyncMock(
+            return_value=DMATVerificationResult(
+                status=DMATStatus.LINKED,
+                dmat_id="dmat-uuid-001",
+                depository="CDSL",
+                dp_name="HDFC Securities",
+                linked_at=datetime(2024, 1, 15, tzinfo=timezone.utc),
+            )
+        )
 
         app = _create_test_app(dmat_svc=mock_dmat)
         client = TestClient(app)
@@ -362,10 +379,12 @@ class TestLinkDMAT:
 
     def test_dmat_rejected_invalid_format(self):
         mock_dmat = AsyncMock(spec=DMATService)
-        mock_dmat.verify_dmat = AsyncMock(return_value=DMATVerificationResult(
-            status=DMATStatus.REJECTED,
-            rejection_reason="invalid_format",
-        ))
+        mock_dmat.verify_dmat = AsyncMock(
+            return_value=DMATVerificationResult(
+                status=DMATStatus.REJECTED,
+                rejection_reason="invalid_format",
+            )
+        )
 
         app = _create_test_app(dmat_svc=mock_dmat)
         client = TestClient(app)
@@ -378,11 +397,13 @@ class TestLinkDMAT:
 
     def test_dmat_rejected_kyc_not_verified(self):
         mock_dmat = AsyncMock(spec=DMATService)
-        mock_dmat.verify_dmat = AsyncMock(return_value=DMATVerificationResult(
-            status=DMATStatus.REJECTED,
-            depository="NSDL",
-            rejection_reason="kyc_not_verified",
-        ))
+        mock_dmat.verify_dmat = AsyncMock(
+            return_value=DMATVerificationResult(
+                status=DMATStatus.REJECTED,
+                depository="NSDL",
+                rejection_reason="kyc_not_verified",
+            )
+        )
 
         app = _create_test_app(dmat_svc=mock_dmat)
         client = TestClient(app)
@@ -395,11 +416,13 @@ class TestLinkDMAT:
 
     def test_dmat_rejected_max_accounts(self):
         mock_dmat = AsyncMock(spec=DMATService)
-        mock_dmat.verify_dmat = AsyncMock(return_value=DMATVerificationResult(
-            status=DMATStatus.REJECTED,
-            depository="CDSL",
-            rejection_reason="max_accounts_reached",
-        ))
+        mock_dmat.verify_dmat = AsyncMock(
+            return_value=DMATVerificationResult(
+                status=DMATStatus.REJECTED,
+                depository="CDSL",
+                rejection_reason="max_accounts_reached",
+            )
+        )
 
         app = _create_test_app(dmat_svc=mock_dmat)
         client = TestClient(app)
@@ -449,22 +472,24 @@ class TestListDMATAccounts:
     def test_list_with_accounts(self):
         mock_dmat = AsyncMock(spec=DMATService)
         mock_conn = AsyncMock()
-        mock_conn.fetch = AsyncMock(return_value=[
-            {
-                "id": "dmat-001",
-                "depository": "CDSL",
-                "dp_name": "HDFC Securities",
-                "status": "LINKED",
-                "linked_at": datetime(2024, 1, 10, tzinfo=timezone.utc),
-            },
-            {
-                "id": "dmat-002",
-                "depository": "NSDL",
-                "dp_name": "Zerodha",
-                "status": "LINKED",
-                "linked_at": datetime(2024, 2, 5, tzinfo=timezone.utc),
-            },
-        ])
+        mock_conn.fetch = AsyncMock(
+            return_value=[
+                {
+                    "id": "dmat-001",
+                    "depository": "CDSL",
+                    "dp_name": "HDFC Securities",
+                    "status": "LINKED",
+                    "linked_at": datetime(2024, 1, 10, tzinfo=timezone.utc),
+                },
+                {
+                    "id": "dmat-002",
+                    "depository": "NSDL",
+                    "dp_name": "Zerodha",
+                    "status": "LINKED",
+                    "linked_at": datetime(2024, 2, 5, tzinfo=timezone.utc),
+                },
+            ]
+        )
         mock_dmat.db_pool = _make_mock_pool(mock_conn)
 
         app = _create_test_app(dmat_svc=mock_dmat)
@@ -521,11 +546,13 @@ class TestRBACEnforcement:
     def test_admin_role_allowed(self):
         """ADMIN role should have access to verification endpoints."""
         mock_pan = AsyncMock(spec=PANVerificationService)
-        mock_pan.verify_pan = AsyncMock(return_value=PANVerificationResult(
-            status=PANStatus.VERIFIED,
-            holder_name="Admin User",
-            pan_masked="AD****N1",
-        ))
+        mock_pan.verify_pan = AsyncMock(
+            return_value=PANVerificationResult(
+                status=PANStatus.VERIFIED,
+                holder_name="Admin User",
+                pan_masked="AD****N1",
+            )
+        )
 
         app = _create_test_app(pan_svc=mock_pan, role="ADMIN")
         client = TestClient(app)

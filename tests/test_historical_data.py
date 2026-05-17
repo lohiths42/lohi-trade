@@ -22,6 +22,7 @@ from src.data.historical_data import HistoricalDataManager
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_db_manager(tmp_path: Path) -> MagicMock:
     """Create a real DuckDB-backed db_manager mock."""
     db_path = str(tmp_path / "test.duckdb")
@@ -42,35 +43,40 @@ def _sample_daily_df(symbol="RELIANCE", days=5, start=None):
     """Return a small daily OHLCV DataFrame."""
     start = start or date(2024, 1, 2)
     dates = pd.bdate_range(start, periods=days).date.tolist()
-    return pd.DataFrame({
-        "symbol": [symbol] * days,
-        "date": dates,
-        "open": [100.0 + i for i in range(days)],
-        "high": [105.0 + i for i in range(days)],
-        "low": [95.0 + i for i in range(days)],
-        "close": [102.0 + i for i in range(days)],
-        "volume": [1000 * (i + 1) for i in range(days)],
-    })
+    return pd.DataFrame(
+        {
+            "symbol": [symbol] * days,
+            "date": dates,
+            "open": [100.0 + i for i in range(days)],
+            "high": [105.0 + i for i in range(days)],
+            "low": [95.0 + i for i in range(days)],
+            "close": [102.0 + i for i in range(days)],
+            "volume": [1000 * (i + 1) for i in range(days)],
+        }
+    )
 
 
 def _sample_intraday_df(symbol="RELIANCE", rows=10):
     """Return a small intraday OHLCV DataFrame."""
     base = datetime(2024, 1, 2, 9, 15)
     timestamps = [base + timedelta(minutes=i) for i in range(rows)]
-    return pd.DataFrame({
-        "symbol": [symbol] * rows,
-        "timestamp": timestamps,
-        "open": [100.0 + i * 0.1 for i in range(rows)],
-        "high": [100.5 + i * 0.1 for i in range(rows)],
-        "low": [99.5 + i * 0.1 for i in range(rows)],
-        "close": [100.2 + i * 0.1 for i in range(rows)],
-        "volume": [500 + i * 10 for i in range(rows)],
-    })
+    return pd.DataFrame(
+        {
+            "symbol": [symbol] * rows,
+            "timestamp": timestamps,
+            "open": [100.0 + i * 0.1 for i in range(rows)],
+            "high": [100.5 + i * 0.1 for i in range(rows)],
+            "low": [99.5 + i * 0.1 for i in range(rows)],
+            "close": [100.2 + i * 0.1 for i in range(rows)],
+            "volume": [500 + i * 10 for i in range(rows)],
+        }
+    )
 
 
 # ---------------------------------------------------------------------------
 # DuckDB table initialisation
 # ---------------------------------------------------------------------------
+
 
 class TestDuckDBInit:
     def test_tables_created(self, tmp_path):
@@ -91,6 +97,7 @@ class TestDuckDBInit:
 # ---------------------------------------------------------------------------
 # store_to_duckdb
 # ---------------------------------------------------------------------------
+
 
 class TestStoreToDuckDB:
     def test_store_daily_data(self, tmp_path):
@@ -133,6 +140,7 @@ class TestStoreToDuckDB:
 # get_historical_data (query)
 # ---------------------------------------------------------------------------
 
+
 class TestGetHistoricalData:
     def test_query_daily(self, tmp_path):
         mgr = _make_db_manager(tmp_path)
@@ -161,7 +169,10 @@ class TestGetHistoricalData:
         hdm.store_to_duckdb(df, "historical_intraday")
 
         result = hdm.get_historical_data(
-            "RELIANCE", date(2024, 1, 2), date(2024, 1, 2), timeframe="intraday",
+            "RELIANCE",
+            date(2024, 1, 2),
+            date(2024, 1, 2),
+            timeframe="intraday",
         )
         assert len(result) == 10
 
@@ -176,6 +187,7 @@ class TestGetHistoricalData:
 # ---------------------------------------------------------------------------
 # store_to_parquet
 # ---------------------------------------------------------------------------
+
 
 class TestStoreToParquet:
     def test_partitioned_write(self, tmp_path):
@@ -209,6 +221,7 @@ class TestStoreToParquet:
 # ---------------------------------------------------------------------------
 # detect_missing_dates
 # ---------------------------------------------------------------------------
+
 
 class TestDetectMissingDates:
     def test_all_missing(self, tmp_path):
@@ -248,6 +261,7 @@ class TestDetectMissingDates:
 # backfill_missing
 # ---------------------------------------------------------------------------
 
+
 class TestBackfillMissing:
     @patch.object(HistoricalDataManager, "download_daily_data")
     def test_backfill_downloads_and_stores(self, mock_dl, tmp_path):
@@ -279,6 +293,7 @@ class TestBackfillMissing:
 # download_daily_data (mocked yfinance)
 # ---------------------------------------------------------------------------
 
+
 class TestDownloadDailyData:
     @patch("src.data.historical_data.yf")
     def test_downloads_for_symbols(self, mock_yf, tmp_path):
@@ -286,14 +301,16 @@ class TestDownloadDailyData:
         hdm = HistoricalDataManager(_make_config(), mgr)
 
         mock_ticker = MagicMock()
-        hist_df = pd.DataFrame({
-            "Date": pd.date_range("2024-01-02", periods=3, freq="B"),
-            "Open": [100, 101, 102],
-            "High": [105, 106, 107],
-            "Low": [95, 96, 97],
-            "Close": [102, 103, 104],
-            "Volume": [1000, 2000, 3000],
-        }).set_index("Date")
+        hist_df = pd.DataFrame(
+            {
+                "Date": pd.date_range("2024-01-02", periods=3, freq="B"),
+                "Open": [100, 101, 102],
+                "High": [105, 106, 107],
+                "Low": [95, 96, 97],
+                "Close": [102, 103, 104],
+                "Volume": [1000, 2000, 3000],
+            }
+        ).set_index("Date")
         # yfinance returns DatetimeIndex-indexed DF
         hist_df.index.name = "Date"
         mock_ticker.history.return_value = hist_df
@@ -328,6 +345,7 @@ class TestDownloadDailyData:
 # ---------------------------------------------------------------------------
 # download_intraday_data
 # ---------------------------------------------------------------------------
+
 
 class TestDownloadIntradayData:
     def test_no_broker(self, tmp_path):
@@ -365,6 +383,7 @@ class TestDownloadIntradayData:
 # Scheduler
 # ---------------------------------------------------------------------------
 
+
 class TestScheduler:
     def test_schedule_starts_thread(self, tmp_path):
         mgr = _make_db_manager(tmp_path)
@@ -395,6 +414,7 @@ class TestScheduler:
 # ---------------------------------------------------------------------------
 # _contiguous_ranges helper
 # ---------------------------------------------------------------------------
+
 
 class TestContiguousRanges:
     def test_single_date(self):

@@ -214,7 +214,11 @@ class ChromaVectorStore:
 
         hits: list[ChunkHit] = []
         for chunk_id, meta, text, embedding, distance in zip(
-            ids, metadatas, documents, embeddings, distances,
+            ids,
+            metadatas,
+            documents,
+            embeddings,
+            distances,
         ):
             # Cosine distance in Chroma is in [0, 2]; similarity = 1 - distance
             # lies in [-1, 1] with 1 being identical. Matches the pgvector

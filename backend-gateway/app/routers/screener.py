@@ -16,8 +16,7 @@ Requirements: 10.4, 10.6, 10.7, 11.4
 """
 
 import logging
-from decimal import Decimal
-from typing import Any, Optional
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
@@ -26,14 +25,13 @@ from pydantic import BaseModel, Field
 from app.middleware.rbac import require_role
 from app.routers.auth_v2 import get_current_user_id
 from app.services.screener_service import (
+    Range,
     ScreenerEngine,
     ScreenerFilters,
     ScreenerPreset,
-    ScreenerResult,
     ScreenerResultItem,
-    Range,
-    filters_to_dict,
     dict_to_filters,
+    filters_to_dict,
 )
 
 logger = logging.getLogger(__name__)
@@ -50,6 +48,7 @@ class RangeModel(BaseModel):
 
 class ScreenerSearchRequest(BaseModel):
     """Request body for POST /screener/search."""
+
     # Fundamental
     pe_ratio: Optional[RangeModel] = None
     pb_ratio: Optional[RangeModel] = None
@@ -93,6 +92,7 @@ class ScreenerSearchRequest(BaseModel):
 
 class SavePresetRequest(BaseModel):
     """Request body for POST /screener/presets."""
+
     name: str = Field(..., description="Preset name")
     filters: dict = Field(..., description="Filter configuration dict")
 
@@ -166,6 +166,7 @@ class MessageResponse(BaseModel):
 
 class StockDetailResponse(BaseModel):
     """Full fundamental + technical data for a stock."""
+
     security_id: int
     symbol: str
     company_name: str
@@ -247,12 +248,30 @@ def _request_to_filters(req: ScreenerSearchRequest) -> ScreenerFilters:
     """Convert a ScreenerSearchRequest to ScreenerFilters."""
     filters = ScreenerFilters()
     range_fields = [
-        "pe_ratio", "pb_ratio", "market_cap", "dividend_yield", "eps", "roe",
-        "debt_to_equity", "revenue_growth_1y", "revenue_growth_3y",
-        "profit_growth_1y", "profit_growth_3y", "rsi_14", "avg_volume",
-        "price_change_1d", "price_change_1w", "price_change_1m",
-        "price_change_3m", "price_change_6m", "price_change_1y",
-        "price_change_3y", "price_change_5y", "return_1y", "cagr_3y", "cagr_5y",
+        "pe_ratio",
+        "pb_ratio",
+        "market_cap",
+        "dividend_yield",
+        "eps",
+        "roe",
+        "debt_to_equity",
+        "revenue_growth_1y",
+        "revenue_growth_3y",
+        "profit_growth_1y",
+        "profit_growth_3y",
+        "rsi_14",
+        "avg_volume",
+        "price_change_1d",
+        "price_change_1w",
+        "price_change_1m",
+        "price_change_3m",
+        "price_change_6m",
+        "price_change_1y",
+        "price_change_3y",
+        "price_change_5y",
+        "return_1y",
+        "cagr_3y",
+        "cagr_5y",
     ]
     for fld in range_fields:
         val = getattr(req, fld, None)
@@ -470,10 +489,26 @@ async def export_csv(
     """
     try:
         filters = ScreenerFilters(
-            pe_ratio=Range(min=pe_ratio_min, max=pe_ratio_max) if pe_ratio_min is not None or pe_ratio_max is not None else None,
-            pb_ratio=Range(min=pb_ratio_min, max=pb_ratio_max) if pb_ratio_min is not None or pb_ratio_max is not None else None,
-            market_cap=Range(min=market_cap_min, max=market_cap_max) if market_cap_min is not None or market_cap_max is not None else None,
-            dividend_yield=Range(min=dividend_yield_min, max=dividend_yield_max) if dividend_yield_min is not None or dividend_yield_max is not None else None,
+            pe_ratio=(
+                Range(min=pe_ratio_min, max=pe_ratio_max)
+                if pe_ratio_min is not None or pe_ratio_max is not None
+                else None
+            ),
+            pb_ratio=(
+                Range(min=pb_ratio_min, max=pb_ratio_max)
+                if pb_ratio_min is not None or pb_ratio_max is not None
+                else None
+            ),
+            market_cap=(
+                Range(min=market_cap_min, max=market_cap_max)
+                if market_cap_min is not None or market_cap_max is not None
+                else None
+            ),
+            dividend_yield=(
+                Range(min=dividend_yield_min, max=dividend_yield_max)
+                if dividend_yield_min is not None or dividend_yield_max is not None
+                else None
+            ),
             sector=sector,
             exchange=exchange,
             market_cap_category=market_cap_category,

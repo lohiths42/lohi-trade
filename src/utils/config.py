@@ -19,7 +19,6 @@ class ConfigurationError(Exception):
     """Raised when configuration is invalid or missing required fields."""
 
 
-
 @dataclass
 class CapitalConfig:
     """Capital and risk configuration."""
@@ -348,10 +347,10 @@ class Config:
     logging: LoggingConfig
     paper_trading: PaperTradingConfig
     symbols: list[str]
-    ml_strategy: MLStrategyConfig = None
-    market: MarketConfig = None
+    ml_strategy: MLStrategyConfig | None = None
+    market: MarketConfig | None = None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.ml_strategy is None:
             self.ml_strategy = MLStrategyConfig()
         if self.market is None:
@@ -390,15 +389,15 @@ class Config:
 
 def substitute_env_vars(value: Any) -> Any:
     """Recursively substitute environment variables in configuration values.
-    
+
     Environment variables are specified as ${VAR_NAME} in the YAML file.
-    
+
     Args:
         value: Configuration value (can be dict, list, str, or other types)
-        
+
     Returns:
         Value with environment variables substituted
-        
+
     Raises:
         ConfigurationError: If environment variable is not set
 
@@ -430,11 +429,11 @@ def substitute_env_vars(value: Any) -> Any:
 
 def validate_time_format(time_str: str, field_name: str) -> None:
     """Validate time string is in HH:MM format.
-    
+
     Args:
         time_str: Time string to validate
         field_name: Name of the field for error messages
-        
+
     Raises:
         ConfigurationError: If time format is invalid
 
@@ -447,14 +446,16 @@ def validate_time_format(time_str: str, field_name: str) -> None:
         )
 
 
-def validate_required_fields(data: dict[str, Any], required_fields: list[str], section: str) -> None:
+def validate_required_fields(
+    data: dict[str, Any], required_fields: list[str], section: str
+) -> None:
     """Validate that all required fields are present in configuration section.
-    
+
     Args:
         data: Configuration data dictionary
         required_fields: List of required field names
         section: Name of the configuration section for error messages
-        
+
     Raises:
         ConfigurationError: If any required field is missing
 
@@ -468,11 +469,11 @@ def validate_required_fields(data: dict[str, Any], required_fields: list[str], s
 
 def validate_positive_number(value: Any, field_name: str) -> None:
     """Validate that a value is a positive number.
-    
+
     Args:
         value: Value to validate
         field_name: Name of the field for error messages
-        
+
     Raises:
         ConfigurationError: If value is not a positive number
 
@@ -485,11 +486,11 @@ def validate_positive_number(value: Any, field_name: str) -> None:
 
 def validate_percentage(value: Any, field_name: str) -> None:
     """Validate that a value is a valid percentage (0-100).
-    
+
     Args:
         value: Value to validate
         field_name: Name of the field for error messages
-        
+
     Raises:
         ConfigurationError: If value is not a valid percentage
 
@@ -502,13 +503,13 @@ def validate_percentage(value: Any, field_name: str) -> None:
 
 def load_config(config_path: str = "config/settings.yaml") -> Config:
     """Load and validate configuration from YAML file.
-    
+
     Args:
         config_path: Path to configuration file
-        
+
     Returns:
         Validated Config object
-        
+
     Raises:
         ConfigurationError: If configuration is invalid or missing required fields
 
@@ -555,8 +556,13 @@ def load_config(config_path: str = "config/settings.yaml") -> Config:
         # Risk limits configuration
         validate_required_fields(
             raw_config.get("risk_limits", {}),
-            ["max_open_positions", "max_orders_per_day", "cooldown_after_loss_minutes",
-             "volatility_guard_threshold_pct", "volatility_guard_window_minutes"],
+            [
+                "max_open_positions",
+                "max_orders_per_day",
+                "cooldown_after_loss_minutes",
+                "volatility_guard_threshold_pct",
+                "volatility_guard_window_minutes",
+            ],
             "risk_limits",
         )
         risk_limits_data = raw_config["risk_limits"]
@@ -569,7 +575,13 @@ def load_config(config_path: str = "config/settings.yaml") -> Config:
             "trading_hours",
         )
         trading_hours_data = raw_config["trading_hours"]
-        for field in ["market_open", "trading_start", "trading_end", "square_off_time", "market_close"]:
+        for field in [
+            "market_open",
+            "trading_start",
+            "trading_end",
+            "square_off_time",
+            "market_close",
+        ]:
             validate_time_format(trading_hours_data[field], f"trading_hours.{field}")
 
         trading_hours = TradingHoursConfig(**trading_hours_data)
@@ -610,29 +622,76 @@ def load_config(config_path: str = "config/settings.yaml") -> Config:
 
         mean_reversion = MeanReversionStrategy(**strategies_data["mean_reversion"])
         trend_following = TrendFollowingStrategy(**strategies_data["trend_following"])
-        opening_range_breakout = OpeningRangeBreakoutStrategy(**strategies_data["opening_range_breakout"])
+        opening_range_breakout = OpeningRangeBreakoutStrategy(
+            **strategies_data["opening_range_breakout"]
+        )
 
         strategies = StrategiesConfig(
             mean_reversion=mean_reversion,
             trend_following=trend_following,
             opening_range_breakout=opening_range_breakout,
-            vwap_bounce=VWAPBounceStrategy(**strategies_data["vwap_bounce"]) if "vwap_bounce" in strategies_data else VWAPBounceStrategy(),
-            stochastic_rsi=StochasticRSIStrategy(**strategies_data["stochastic_rsi"]) if "stochastic_rsi" in strategies_data else StochasticRSIStrategy(),
-            adx_trend=ADXTrendStrategy(**strategies_data["adx_trend"]) if "adx_trend" in strategies_data else ADXTrendStrategy(),
-            bollinger_squeeze=BollingerSqueezeStrategy(**strategies_data["bollinger_squeeze"]) if "bollinger_squeeze" in strategies_data else BollingerSqueezeStrategy(),
-            pivot_point=PivotPointStrategy(**strategies_data["pivot_point"]) if "pivot_point" in strategies_data else PivotPointStrategy(),
-            ichimoku_cloud=IchimokuCloudStrategy(**strategies_data["ichimoku_cloud"]) if "ichimoku_cloud" in strategies_data else IchimokuCloudStrategy(),
-            macd_divergence=MACDDivergenceStrategy(**strategies_data["macd_divergence"]) if "macd_divergence" in strategies_data else MACDDivergenceStrategy(),
-            parabolic_sar_trend=ParabolicSARTrendStrategy(**strategies_data["parabolic_sar_trend"]) if "parabolic_sar_trend" in strategies_data else ParabolicSARTrendStrategy(),
-            volume_breakout=VolumeBreakoutStrategy(**strategies_data["volume_breakout"]) if "volume_breakout" in strategies_data else VolumeBreakoutStrategy(),
-            multi_timeframe_momentum=MultiTimeframeMomentumStrategy(**strategies_data["multi_timeframe_momentum"]) if "multi_timeframe_momentum" in strategies_data else MultiTimeframeMomentumStrategy(),
+            vwap_bounce=(
+                VWAPBounceStrategy(**strategies_data["vwap_bounce"])
+                if "vwap_bounce" in strategies_data
+                else VWAPBounceStrategy()
+            ),
+            stochastic_rsi=(
+                StochasticRSIStrategy(**strategies_data["stochastic_rsi"])
+                if "stochastic_rsi" in strategies_data
+                else StochasticRSIStrategy()
+            ),
+            adx_trend=(
+                ADXTrendStrategy(**strategies_data["adx_trend"])
+                if "adx_trend" in strategies_data
+                else ADXTrendStrategy()
+            ),
+            bollinger_squeeze=(
+                BollingerSqueezeStrategy(**strategies_data["bollinger_squeeze"])
+                if "bollinger_squeeze" in strategies_data
+                else BollingerSqueezeStrategy()
+            ),
+            pivot_point=(
+                PivotPointStrategy(**strategies_data["pivot_point"])
+                if "pivot_point" in strategies_data
+                else PivotPointStrategy()
+            ),
+            ichimoku_cloud=(
+                IchimokuCloudStrategy(**strategies_data["ichimoku_cloud"])
+                if "ichimoku_cloud" in strategies_data
+                else IchimokuCloudStrategy()
+            ),
+            macd_divergence=(
+                MACDDivergenceStrategy(**strategies_data["macd_divergence"])
+                if "macd_divergence" in strategies_data
+                else MACDDivergenceStrategy()
+            ),
+            parabolic_sar_trend=(
+                ParabolicSARTrendStrategy(**strategies_data["parabolic_sar_trend"])
+                if "parabolic_sar_trend" in strategies_data
+                else ParabolicSARTrendStrategy()
+            ),
+            volume_breakout=(
+                VolumeBreakoutStrategy(**strategies_data["volume_breakout"])
+                if "volume_breakout" in strategies_data
+                else VolumeBreakoutStrategy()
+            ),
+            multi_timeframe_momentum=(
+                MultiTimeframeMomentumStrategy(**strategies_data["multi_timeframe_momentum"])
+                if "multi_timeframe_momentum" in strategies_data
+                else MultiTimeframeMomentumStrategy()
+            ),
         )
 
         # Sentiment configuration
         validate_required_fields(
             raw_config.get("sentiment", {}),
-            ["bias_bullish_threshold", "bias_bearish_threshold", "time_decay_half_life_hours",
-             "lookback_hours", "recalculation_interval_minutes"],
+            [
+                "bias_bullish_threshold",
+                "bias_bearish_threshold",
+                "time_decay_half_life_hours",
+                "lookback_hours",
+                "recalculation_interval_minutes",
+            ],
             "sentiment",
         )
         sentiment = SentimentConfig(**raw_config["sentiment"])
@@ -690,7 +749,9 @@ def load_config(config_path: str = "config/settings.yaml") -> Config:
 
         # ML Strategy configuration (optional, defaults if missing)
         ml_strategy_data = raw_config.get("ml_strategy", {})
-        ml_strategy = MLStrategyConfig(**ml_strategy_data) if ml_strategy_data else MLStrategyConfig()
+        ml_strategy = (
+            MLStrategyConfig(**ml_strategy_data) if ml_strategy_data else MLStrategyConfig()
+        )
 
         # Build final config
         config = Config(
@@ -718,17 +779,17 @@ def load_config(config_path: str = "config/settings.yaml") -> Config:
 
 
 # Global configuration instance
-_config: Config = None
+_config: Config | None = None
 
 
 def get_config(config_path: str = "config/settings.yaml") -> Config:
     """Get the global configuration instance.
-    
+
     Loads configuration on first call and caches it for subsequent calls.
-    
+
     Args:
         config_path: Path to configuration file
-        
+
     Returns:
         Config object
 
@@ -741,10 +802,10 @@ def get_config(config_path: str = "config/settings.yaml") -> Config:
 
 def reload_config(config_path: str = "config/settings.yaml") -> Config:
     """Reload configuration from file.
-    
+
     Args:
         config_path: Path to configuration file
-        
+
     Returns:
         Reloaded Config object
 

@@ -23,20 +23,25 @@ from src.utils.config import CapitalConfig, Config, RiskLimitsConfig, TradingHou
 # Hypothesis strategies
 # ---------------------------------------------------------------------------
 
-_reason = st.text(min_size=1, max_size=200, alphabet=st.characters(
-    whitelist_categories=("L", "N", "P", "Z"),
-))
+_reason = st.text(
+    min_size=1,
+    max_size=200,
+    alphabet=st.characters(
+        whitelist_categories=("L", "N", "P", "Z"),
+    ),
+)
 _num_orders = st.integers(min_value=0, max_value=20)
-_capital = st.floats(min_value=10_000.0, max_value=1_000_000.0,
-                     allow_nan=False, allow_infinity=False)
-_max_loss_pct = st.floats(min_value=0.5, max_value=10.0,
-                          allow_nan=False, allow_infinity=False)
-_volatility_threshold = st.floats(min_value=0.5, max_value=10.0,
-                                  allow_nan=False, allow_infinity=False)
-_nifty_price = st.floats(min_value=1000.0, max_value=30000.0,
-                         allow_nan=False, allow_infinity=False)
-_daily_pnl = st.floats(min_value=-100_000.0, max_value=100_000.0,
-                        allow_nan=False, allow_infinity=False)
+_capital = st.floats(
+    min_value=10_000.0, max_value=1_000_000.0, allow_nan=False, allow_infinity=False
+)
+_max_loss_pct = st.floats(min_value=0.5, max_value=10.0, allow_nan=False, allow_infinity=False)
+_volatility_threshold = st.floats(
+    min_value=0.5, max_value=10.0, allow_nan=False, allow_infinity=False
+)
+_nifty_price = st.floats(min_value=1000.0, max_value=30000.0, allow_nan=False, allow_infinity=False)
+_daily_pnl = st.floats(
+    min_value=-100_000.0, max_value=100_000.0, allow_nan=False, allow_infinity=False
+)
 
 
 # ---------------------------------------------------------------------------
@@ -76,8 +81,9 @@ def _make_config(
     return config
 
 
-def _make_redis(active: bool = False, reason: str = None,
-                nifty_current: str = None, nifty_start: str = None) -> MagicMock:
+def _make_redis(
+    active: bool = False, reason: str = None, nifty_current: str = None, nifty_start: str = None
+) -> MagicMock:
     store = {}
     if active:
         store["killswitch:active"] = "true"
@@ -130,9 +136,15 @@ def _make_oms(order_ids: list = None) -> MagicMock:
 
 
 def _build_ks(
-    capital=200_000.0, max_loss_pct=2.0, vol_threshold=2.0,
-    active=False, reason=None, daily_pnl=0.0,
-    nifty_current=None, nifty_start=None, order_ids=None,
+    capital=200_000.0,
+    max_loss_pct=2.0,
+    vol_threshold=2.0,
+    active=False,
+    reason=None,
+    daily_pnl=0.0,
+    nifty_current=None,
+    nifty_start=None,
+    order_ids=None,
 ):
     config = _make_config(capital, max_loss_pct, vol_threshold)
     redis = _make_redis(active, reason, nifty_current, nifty_start)
@@ -142,8 +154,12 @@ def _build_ks(
     event_bus.publish.return_value = "msg-id"
     now = datetime(2024, 1, 15, 10, 30)
     ks = KillSwitch(
-        config=config, redis_client=redis, oms=oms,
-        db_manager=db, event_bus=event_bus, now_fn=lambda: now,
+        config=config,
+        redis_client=redis,
+        oms=oms,
+        db_manager=db,
+        event_bus=event_bus,
+        now_fn=lambda: now,
     )
     return ks, redis, oms, db, event_bus
 
@@ -181,12 +197,13 @@ def test_prop_57_kill_switch_order_cancellation(reason, num_orders):
 @given(
     start_price=_nifty_price,
     vol_threshold=_volatility_threshold,
-    extra_drop_pct=st.floats(min_value=0.01, max_value=5.0,
-                             allow_nan=False, allow_infinity=False),
+    extra_drop_pct=st.floats(min_value=0.01, max_value=5.0, allow_nan=False, allow_infinity=False),
 )
 @settings(max_examples=50)
 def test_prop_58_automatic_kill_switch_on_volatility(
-    start_price, vol_threshold, extra_drop_pct,
+    start_price,
+    vol_threshold,
+    extra_drop_pct,
 ):
     """Property 58: Kill switch activates when Nifty drop > threshold."""
     # Compute a current price that drops more than the threshold
@@ -207,12 +224,13 @@ def test_prop_58_automatic_kill_switch_on_volatility(
 @given(
     start_price=_nifty_price,
     vol_threshold=_volatility_threshold,
-    below_drop_pct=st.floats(min_value=0.0, max_value=0.99,
-                             allow_nan=False, allow_infinity=False),
+    below_drop_pct=st.floats(min_value=0.0, max_value=0.99, allow_nan=False, allow_infinity=False),
 )
 @settings(max_examples=50)
 def test_prop_58_no_activation_below_threshold(
-    start_price, vol_threshold, below_drop_pct,
+    start_price,
+    vol_threshold,
+    below_drop_pct,
 ):
     """Property 58 (negative): No activation when drop < threshold."""
     # Drop is below_drop_pct * threshold, so always < threshold
@@ -239,12 +257,13 @@ def test_prop_58_no_activation_below_threshold(
 @given(
     capital=_capital,
     max_loss_pct=_max_loss_pct,
-    extra_loss=st.floats(min_value=0.01, max_value=50_000.0,
-                         allow_nan=False, allow_infinity=False),
+    extra_loss=st.floats(min_value=0.01, max_value=50_000.0, allow_nan=False, allow_infinity=False),
 )
 @settings(max_examples=50)
 def test_prop_59_automatic_kill_switch_on_daily_loss(
-    capital, max_loss_pct, extra_loss,
+    capital,
+    max_loss_pct,
+    extra_loss,
 ):
     """Property 59: Kill switch activates when daily loss exceeds limit."""
     loss_limit = -(max_loss_pct / 100) * capital
@@ -264,12 +283,13 @@ def test_prop_59_automatic_kill_switch_on_daily_loss(
 @given(
     capital=_capital,
     max_loss_pct=_max_loss_pct,
-    within_pct=st.floats(min_value=0.0, max_value=0.99,
-                         allow_nan=False, allow_infinity=False),
+    within_pct=st.floats(min_value=0.0, max_value=0.99, allow_nan=False, allow_infinity=False),
 )
 @settings(max_examples=50)
 def test_prop_59_no_activation_within_limits(
-    capital, max_loss_pct, within_pct,
+    capital,
+    max_loss_pct,
+    within_pct,
 ):
     """Property 59 (negative): No activation when loss within limits."""
     loss_limit = -(max_loss_pct / 100) * capital

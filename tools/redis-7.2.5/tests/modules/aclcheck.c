@@ -203,7 +203,7 @@ int commandBlockCheck(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
 
     result = RedisModule_CreateSubcommand(parent,"subcommand.that.should.fail",module_test_acl_category,"",0,0,0);
     response_ok |= (result == REDISMODULE_OK);
-    
+
     /* This validates that it's not possible to create commands outside OnLoad,
      * thus returns an error if they succeed. */
     if (response_ok) {

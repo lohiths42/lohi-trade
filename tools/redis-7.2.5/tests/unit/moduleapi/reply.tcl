@@ -2,7 +2,7 @@ set testmodule [file normalize tests/modules/reply.so]
 
 start_server {tags {"modules"}} {
     r module load $testmodule
-    
+
     #   test all with hello 2/3
     for {set proto 2} {$proto <= 3} {incr proto} {
         if {[lsearch $::denytags "resp3"] >= 0} {

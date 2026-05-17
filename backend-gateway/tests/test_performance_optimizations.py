@@ -14,18 +14,15 @@ import hashlib
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-from starlette.middleware.gzip import GZipMiddleware
-
 from app.middleware.caching import (
-    CACHEABLE_PREFIXES,
     CACHE_CONTROL_VALUE,
     CacheHeadersMiddleware,
     _compute_etag,
     _is_cacheable_path,
 )
-
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+from starlette.middleware.gzip import GZipMiddleware
 
 # ── Caching helper tests ────────────────────────────────────────────────────
 
@@ -175,13 +172,15 @@ class TestCacheHeadersMiddleware:
 class TestPoolConfiguration:
     def test_pg_pool_defaults(self):
         """Verify default asyncpg pool config values from config module."""
-        from app.config import PG_POOL_MIN_SIZE, PG_POOL_MAX_SIZE
+        from app.config import PG_POOL_MAX_SIZE, PG_POOL_MIN_SIZE
+
         assert PG_POOL_MIN_SIZE == 5
         assert PG_POOL_MAX_SIZE == 20
 
     def test_redis_pool_defaults(self):
         """Verify default Redis pool config values from config module."""
-        from app.config import REDIS_POOL_MIN_CONNECTIONS, REDIS_POOL_MAX_CONNECTIONS
+        from app.config import REDIS_POOL_MAX_CONNECTIONS, REDIS_POOL_MIN_CONNECTIONS
+
         assert REDIS_POOL_MIN_CONNECTIONS == 2
         assert REDIS_POOL_MAX_CONNECTIONS == 10
 
@@ -190,7 +189,9 @@ class TestPoolConfiguration:
         monkeypatch.setenv("PG_POOL_MIN_SIZE", "10")
         monkeypatch.setenv("PG_POOL_MAX_SIZE", "50")
         import importlib
+
         import app.config as cfg
+
         importlib.reload(cfg)
         assert cfg.PG_POOL_MIN_SIZE == 10
         assert cfg.PG_POOL_MAX_SIZE == 50
@@ -203,7 +204,9 @@ class TestPoolConfiguration:
         """Redis pool sizes should be configurable via environment variables."""
         monkeypatch.setenv("REDIS_POOL_MAX_CONNECTIONS", "25")
         import importlib
+
         import app.config as cfg
+
         importlib.reload(cfg)
         assert cfg.REDIS_POOL_MAX_CONNECTIONS == 25
         # Reset
@@ -270,6 +273,7 @@ class TestPgPoolLifecycle:
     async def test_close_pg_pool_noop_when_none(self):
         """close_pg_pool should be safe to call when no pool exists."""
         from app.services import db_service
+
         db_service._pg_pool = None
         await db_service.close_pg_pool()  # Should not raise
 
@@ -365,6 +369,7 @@ class TestRedisPoolLifecycle:
     async def test_close_redis_pools_noop_when_none(self):
         """close_redis_pools should be safe when no pools exist."""
         from app.services import db_service
+
         db_service._redis_pool = None
         db_service._redis_async_client = None
         await db_service.close_redis_pools()  # Should not raise

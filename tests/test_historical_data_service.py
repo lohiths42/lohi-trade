@@ -41,11 +41,7 @@ class FakeS3Client:
 
     def list_keys(self, bucket: str, prefix: str) -> list[str]:
         full_prefix = f"{bucket}/{prefix}"
-        return [
-            k[len(bucket) + 1 :]
-            for k in self.store
-            if k.startswith(full_prefix)
-        ]
+        return [k[len(bucket) + 1 :] for k in self.store if k.startswith(full_prefix)]
 
     def delete_key(self, bucket: str, key: str) -> None:
         self.store.pop(f"{bucket}/{key}", None)
@@ -59,7 +55,10 @@ class FakeDataSource:
         self.calls: list[tuple] = []
 
     def download_daily_ohlcv(
-        self, symbol: str, start_date: date, end_date: date,
+        self,
+        symbol: str,
+        start_date: date,
+        end_date: date,
     ) -> list[OHLCV]:
         self.calls.append((symbol, start_date, end_date))
         return [b for b in self.bars if b.symbol == symbol and start_date <= b.date <= end_date]
@@ -69,7 +68,10 @@ class FailingDataSource:
     """Data source that always raises."""
 
     def download_daily_ohlcv(
-        self, symbol: str, start_date: date, end_date: date,
+        self,
+        symbol: str,
+        start_date: date,
+        end_date: date,
     ) -> list[OHLCV]:
         raise ConnectionError("Source unavailable")
 
@@ -143,7 +145,15 @@ class TestOHLCV:
         assert restored.volume == original.volume
 
     def test_from_dict_with_date_object(self):
-        d = {"symbol": "TCS", "date": date(2024, 1, 1), "open": 10, "high": 11, "low": 9, "close": 10.5, "volume": 500}
+        d = {
+            "symbol": "TCS",
+            "date": date(2024, 1, 1),
+            "open": 10,
+            "high": 11,
+            "low": 9,
+            "close": 10.5,
+            "volume": 500,
+        }
         bar = OHLCV.from_dict(d)
         assert bar.date == date(2024, 1, 1)
 
@@ -338,11 +348,13 @@ class TestAdjustForCorporateActions:
             _bar(d=date(2024, 6, 1), o=1000, h=1100, l=950, c=1050),
             _bar(d=date(2024, 6, 15), o=500, h=550, l=475, c=525),
         ]
-        actions = [_action(
-            action_type=CorporateActionType.BONUS,
-            ex_date=date(2024, 6, 10),
-            ratio="1:1",
-        )]
+        actions = [
+            _action(
+                action_type=CorporateActionType.BONUS,
+                ex_date=date(2024, 6, 10),
+                ratio="1:1",
+            )
+        ]
         adjusted = HistoricalDataService.adjust_for_corporate_actions(bars, actions)
 
         # factor = 1/(1+1) = 0.5
@@ -450,11 +462,13 @@ class TestRevertAdjustments:
             _bar(d=date(2024, 6, 1), o=1000, h=1100, l=950, c=1050),
             _bar(d=date(2024, 6, 15), o=500, h=550, l=475, c=525),
         ]
-        actions = [_action(
-            action_type=CorporateActionType.BONUS,
-            ex_date=date(2024, 6, 10),
-            ratio="1:1",
-        )]
+        actions = [
+            _action(
+                action_type=CorporateActionType.BONUS,
+                ex_date=date(2024, 6, 10),
+                ratio="1:1",
+            )
+        ]
 
         adjusted = HistoricalDataService.adjust_for_corporate_actions(bars, actions)
         reverted = HistoricalDataService.revert_adjustments(adjusted, actions)
@@ -534,7 +548,9 @@ class TestQueryAPI:
         self._populate(svc, s3)
 
         result = svc.query(
-            "RELIANCE", date(2024, 1, 1), date(2024, 1, 31),
+            "RELIANCE",
+            date(2024, 1, 1),
+            date(2024, 1, 31),
             timeframe=Timeframe.WEEKLY,
         )
         # January 2024 has ~5 trading weeks
@@ -546,7 +562,9 @@ class TestQueryAPI:
         self._populate(svc, s3)
 
         result = svc.query(
-            "RELIANCE", date(2024, 1, 1), date(2024, 1, 31),
+            "RELIANCE",
+            date(2024, 1, 1),
+            date(2024, 1, 31),
             timeframe=Timeframe.MONTHLY,
         )
         assert len(result) == 1
@@ -562,8 +580,12 @@ class TestQueryAPI:
         svc, s3, _ = _make_service()
         bars_2023 = [_bar(d=date(2023, 12, 29), c=100)]
         bars_2024 = [_bar(d=date(2024, 1, 2), c=200)]
-        s3.upload_bytes(svc.S3_BUCKET, svc._s3_key("RELIANCE", 2023), svc._serialize_bars(bars_2023))
-        s3.upload_bytes(svc.S3_BUCKET, svc._s3_key("RELIANCE", 2024), svc._serialize_bars(bars_2024))
+        s3.upload_bytes(
+            svc.S3_BUCKET, svc._s3_key("RELIANCE", 2023), svc._serialize_bars(bars_2023)
+        )
+        s3.upload_bytes(
+            svc.S3_BUCKET, svc._s3_key("RELIANCE", 2024), svc._serialize_bars(bars_2024)
+        )
 
         result = svc.query("RELIANCE", date(2023, 12, 1), date(2024, 1, 31))
         assert len(result) == 2
@@ -584,7 +606,7 @@ class TestQueryAPI:
         week_bar = result[0]
         assert week_bar.open == 100.0  # first bar's open
         assert week_bar.high == 125.0  # max high
-        assert week_bar.low == 90.0    # min low
+        assert week_bar.low == 90.0  # min low
         assert week_bar.close == 108.0  # last bar's close
         assert week_bar.volume == 4500  # sum of volumes
 
@@ -650,7 +672,9 @@ class TestComputeAdjustmentFactor:
 
     def test_missing_ratio_returns_none(self):
         action = CorporateAction(
-            symbol="X", action_type=CorporateActionType.SPLIT, details={},
+            symbol="X",
+            action_type=CorporateActionType.SPLIT,
+            details={},
         )
         assert HistoricalDataService._compute_adjustment_factor(action) is None
 

@@ -3,24 +3,23 @@
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock
 
-import pytest
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-
-from app.routers.watchlist import (
-    router,
-    get_watchlist_service,
-)
 from app.routers.auth_v2 import get_current_user_id, get_current_user_payload
+from app.routers.watchlist import (
+    get_watchlist_service,
+    router,
+)
 from app.services.watchlist_service import (
+    SecurityPrice,
     Watchlist,
     WatchlistError,
-    WatchlistItem as WLItem,
     WatchlistService,
     WatchlistWithPrices,
-    SecurityPrice,
 )
-
+from app.services.watchlist_service import (
+    WatchlistItem as WLItem,
+)
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -56,14 +55,16 @@ def _create_test_app(
 class TestCreateWatchlist:
     def test_successful_creation(self):
         mock_svc = AsyncMock(spec=WatchlistService)
-        mock_svc.create_watchlist = AsyncMock(return_value=Watchlist(
-            id="wl-001",
-            user_id=TEST_USER_ID,
-            name="My Stocks",
-            is_prebuilt=False,
-            sort_order=0,
-            created_at=NOW,
-        ))
+        mock_svc.create_watchlist = AsyncMock(
+            return_value=Watchlist(
+                id="wl-001",
+                user_id=TEST_USER_ID,
+                name="My Stocks",
+                is_prebuilt=False,
+                sort_order=0,
+                created_at=NOW,
+            )
+        )
 
         app = _create_test_app(wl_svc=mock_svc)
         client = TestClient(app)
@@ -92,7 +93,9 @@ class TestCreateWatchlist:
     def test_create_max_watchlists_returns_400(self):
         mock_svc = AsyncMock(spec=WatchlistService)
         mock_svc.create_watchlist = AsyncMock(
-            side_effect=WatchlistError("max_watchlists_reached", "Maximum 20 watchlists allowed per user")
+            side_effect=WatchlistError(
+                "max_watchlists_reached", "Maximum 20 watchlists allowed per user"
+            )
         )
 
         app = _create_test_app(wl_svc=mock_svc)
@@ -114,7 +117,10 @@ class TestCreateWatchlist:
         app.include_router(router, prefix="/api/v2")
         app.dependency_overrides[get_current_user_id] = lambda: TEST_USER_ID
         app.dependency_overrides[get_current_user_payload] = lambda: {
-            "sub": TEST_USER_ID, "email": "t@t.com", "role": "TRADER", "type": "access",
+            "sub": TEST_USER_ID,
+            "email": "t@t.com",
+            "role": "TRADER",
+            "type": "access",
         }
         client = TestClient(app)
         resp = client.post("/api/v2/watchlists", json={"name": "Test"})
@@ -127,10 +133,16 @@ class TestCreateWatchlist:
 class TestListWatchlists:
     def test_list_with_watchlists(self):
         mock_svc = AsyncMock(spec=WatchlistService)
-        mock_svc.get_user_watchlists = AsyncMock(return_value=[
-            Watchlist(id="wl-001", user_id=TEST_USER_ID, name="Tech", sort_order=0, created_at=NOW),
-            Watchlist(id="wl-002", user_id=TEST_USER_ID, name="Banks", sort_order=1, created_at=NOW),
-        ])
+        mock_svc.get_user_watchlists = AsyncMock(
+            return_value=[
+                Watchlist(
+                    id="wl-001", user_id=TEST_USER_ID, name="Tech", sort_order=0, created_at=NOW
+                ),
+                Watchlist(
+                    id="wl-002", user_id=TEST_USER_ID, name="Banks", sort_order=1, created_at=NOW
+                ),
+            ]
+        )
 
         app = _create_test_app(wl_svc=mock_svc)
         client = TestClient(app)
@@ -162,15 +174,31 @@ class TestListWatchlists:
 class TestGetWatchlist:
     def test_get_with_securities(self):
         mock_svc = AsyncMock(spec=WatchlistService)
-        mock_svc.get_watchlist_with_prices = AsyncMock(return_value=WatchlistWithPrices(
-            id="wl-001",
-            name="Tech",
-            is_prebuilt=False,
-            securities=[
-                SecurityPrice(symbol="TCS", company_name="TCS Ltd", ltp=3500.0, change_percent=1.5, volume=100000, sort_order=0),
-                SecurityPrice(symbol="INFY", company_name="Infosys", ltp=1500.0, change_percent=-0.5, volume=200000, sort_order=1),
-            ],
-        ))
+        mock_svc.get_watchlist_with_prices = AsyncMock(
+            return_value=WatchlistWithPrices(
+                id="wl-001",
+                name="Tech",
+                is_prebuilt=False,
+                securities=[
+                    SecurityPrice(
+                        symbol="TCS",
+                        company_name="TCS Ltd",
+                        ltp=3500.0,
+                        change_percent=1.5,
+                        volume=100000,
+                        sort_order=0,
+                    ),
+                    SecurityPrice(
+                        symbol="INFY",
+                        company_name="Infosys",
+                        ltp=1500.0,
+                        change_percent=-0.5,
+                        volume=200000,
+                        sort_order=1,
+                    ),
+                ],
+            )
+        )
 
         app = _create_test_app(wl_svc=mock_svc)
         client = TestClient(app)
@@ -205,14 +233,16 @@ class TestGetWatchlist:
 class TestRenameWatchlist:
     def test_rename_success(self):
         mock_svc = AsyncMock(spec=WatchlistService)
-        mock_svc.rename_watchlist = AsyncMock(return_value=Watchlist(
-            id="wl-001",
-            user_id=TEST_USER_ID,
-            name="Renamed",
-            is_prebuilt=False,
-            sort_order=0,
-            created_at=NOW,
-        ))
+        mock_svc.rename_watchlist = AsyncMock(
+            return_value=Watchlist(
+                id="wl-001",
+                user_id=TEST_USER_ID,
+                name="Renamed",
+                is_prebuilt=False,
+                sort_order=0,
+                created_at=NOW,
+            )
+        )
 
         app = _create_test_app(wl_svc=mock_svc)
         client = TestClient(app)
@@ -282,15 +312,17 @@ class TestDeleteWatchlist:
 class TestAddSecurity:
     def test_add_success(self):
         mock_svc = AsyncMock(spec=WatchlistService)
-        mock_svc.add_security = AsyncMock(return_value=WLItem(
-            id="item-001",
-            watchlist_id="wl-001",
-            security_id=42,
-            symbol="RELIANCE",
-            company_name="Reliance Industries",
-            sort_order=0,
-            added_at=NOW,
-        ))
+        mock_svc.add_security = AsyncMock(
+            return_value=WLItem(
+                id="item-001",
+                watchlist_id="wl-001",
+                security_id=42,
+                symbol="RELIANCE",
+                company_name="Reliance Industries",
+                sort_order=0,
+                added_at=NOW,
+            )
+        )
 
         app = _create_test_app(wl_svc=mock_svc)
         client = TestClient(app)
@@ -318,7 +350,9 @@ class TestAddSecurity:
     def test_add_duplicate_returns_400(self):
         mock_svc = AsyncMock(spec=WatchlistService)
         mock_svc.add_security = AsyncMock(
-            side_effect=WatchlistError("duplicate_security", "Security 'TCS' is already in this watchlist")
+            side_effect=WatchlistError(
+                "duplicate_security", "Security 'TCS' is already in this watchlist"
+            )
         )
 
         app = _create_test_app(wl_svc=mock_svc)
@@ -331,7 +365,9 @@ class TestAddSecurity:
     def test_add_max_securities_returns_400(self):
         mock_svc = AsyncMock(spec=WatchlistService)
         mock_svc.add_security = AsyncMock(
-            side_effect=WatchlistError("max_securities_reached", "Maximum 100 securities per watchlist")
+            side_effect=WatchlistError(
+                "max_securities_reached", "Maximum 100 securities per watchlist"
+            )
         )
 
         app = _create_test_app(wl_svc=mock_svc)
@@ -367,7 +403,9 @@ class TestRemoveSecurity:
     def test_remove_not_in_watchlist_returns_400(self):
         mock_svc = AsyncMock(spec=WatchlistService)
         mock_svc.remove_security = AsyncMock(
-            side_effect=WatchlistError("security_not_in_watchlist", "Security 'XYZ' is not in this watchlist")
+            side_effect=WatchlistError(
+                "security_not_in_watchlist", "Security 'XYZ' is not in this watchlist"
+            )
         )
 
         app = _create_test_app(wl_svc=mock_svc)
@@ -384,10 +422,16 @@ class TestRemoveSecurity:
 class TestPrebuiltWatchlists:
     def test_get_prebuilt(self):
         mock_svc = AsyncMock(spec=WatchlistService)
-        mock_svc.get_prebuilt_watchlists = AsyncMock(return_value=[
-            Watchlist(id="pb-001", name="Nifty 50", is_prebuilt=True, sort_order=0, created_at=NOW),
-            Watchlist(id="pb-002", name="Nifty Bank", is_prebuilt=True, sort_order=1, created_at=NOW),
-        ])
+        mock_svc.get_prebuilt_watchlists = AsyncMock(
+            return_value=[
+                Watchlist(
+                    id="pb-001", name="Nifty 50", is_prebuilt=True, sort_order=0, created_at=NOW
+                ),
+                Watchlist(
+                    id="pb-002", name="Nifty Bank", is_prebuilt=True, sort_order=1, created_at=NOW
+                ),
+            ]
+        )
 
         app = _create_test_app(wl_svc=mock_svc)
         client = TestClient(app)

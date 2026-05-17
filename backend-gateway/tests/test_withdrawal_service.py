@@ -13,17 +13,14 @@ import pytest
 # Ensure encryption key is set
 if "PAN_ENCRYPTION_KEY" not in os.environ:
     from cryptography.fernet import Fernet
+
     os.environ["PAN_ENCRYPTION_KEY"] = Fernet.generate_key().decode()
 
 from app.services.fund_service import (
     FundService,
-    WithdrawalTransaction,
-    WithdrawalStatus,
     PaymentMethod,
-    MIN_WITHDRAWAL,
-    DAILY_MAX_WITHDRAWAL,
+    WithdrawalStatus,
 )
-
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -106,10 +103,12 @@ class TestGetWithdrawableBalance:
     @pytest.mark.asyncio
     async def test_balance_minus_margin(self):
         pool, conn = _make_mock_pool()
-        conn.fetchrow = AsyncMock(return_value={
-            "available_balance": Decimal("50000"),
-            "blocked_margin": Decimal("10000"),
-        })
+        conn.fetchrow = AsyncMock(
+            return_value={
+                "available_balance": Decimal("50000"),
+                "blocked_margin": Decimal("10000"),
+            }
+        )
         svc = _make_service(db_pool=pool)
         result = await svc.get_withdrawable_balance("user-1")
         assert result == Decimal("40000")
@@ -117,10 +116,12 @@ class TestGetWithdrawableBalance:
     @pytest.mark.asyncio
     async def test_zero_margin_full_balance(self):
         pool, conn = _make_mock_pool()
-        conn.fetchrow = AsyncMock(return_value={
-            "available_balance": Decimal("100000"),
-            "blocked_margin": Decimal("0"),
-        })
+        conn.fetchrow = AsyncMock(
+            return_value={
+                "available_balance": Decimal("100000"),
+                "blocked_margin": Decimal("0"),
+            }
+        )
         svc = _make_service(db_pool=pool)
         result = await svc.get_withdrawable_balance("user-1")
         assert result == Decimal("100000")
@@ -128,10 +129,12 @@ class TestGetWithdrawableBalance:
     @pytest.mark.asyncio
     async def test_margin_exceeds_balance_returns_zero(self):
         pool, conn = _make_mock_pool()
-        conn.fetchrow = AsyncMock(return_value={
-            "available_balance": Decimal("5000"),
-            "blocked_margin": Decimal("10000"),
-        })
+        conn.fetchrow = AsyncMock(
+            return_value={
+                "available_balance": Decimal("5000"),
+                "blocked_margin": Decimal("10000"),
+            }
+        )
         svc = _make_service(db_pool=pool)
         result = await svc.get_withdrawable_balance("user-1")
         assert result == Decimal("0")
@@ -212,8 +215,12 @@ class TestInitiateWithdrawal:
             call_count += 1
             if call_count == 1:
                 # _get_verified_bank_account
-                return {"id": "bank-1", "ifsc_code": "HDFC0001234",
-                        "bank_name": "HDFC", "account_holder_name": "Test User"}
+                return {
+                    "id": "bank-1",
+                    "ifsc_code": "HDFC0001234",
+                    "bank_name": "HDFC",
+                    "account_holder_name": "Test User",
+                }
             elif call_count == 2:
                 # get_withdrawable_balance
                 return {"available_balance": Decimal("200"), "blocked_margin": Decimal("100")}
@@ -235,8 +242,12 @@ class TestInitiateWithdrawal:
             call_count += 1
             if call_count == 1:
                 # _get_verified_bank_account
-                return {"id": "bank-1", "ifsc_code": "HDFC0001234",
-                        "bank_name": "HDFC", "account_holder_name": "Test User"}
+                return {
+                    "id": "bank-1",
+                    "ifsc_code": "HDFC0001234",
+                    "bank_name": "HDFC",
+                    "account_holder_name": "Test User",
+                }
             elif call_count == 2:
                 # get_withdrawable_balance
                 return {"available_balance": Decimal("5000000"), "blocked_margin": Decimal("0")}
@@ -260,8 +271,12 @@ class TestInitiateWithdrawal:
             nonlocal call_count
             call_count += 1
             if call_count == 1:
-                return {"id": "bank-1", "ifsc_code": "HDFC0001234",
-                        "bank_name": "HDFC", "account_holder_name": "Test User"}
+                return {
+                    "id": "bank-1",
+                    "ifsc_code": "HDFC0001234",
+                    "bank_name": "HDFC",
+                    "account_holder_name": "Test User",
+                }
             elif call_count == 2:
                 return {"available_balance": Decimal("50000"), "blocked_margin": Decimal("0")}
             elif call_count == 3:
@@ -296,8 +311,12 @@ class TestInitiateWithdrawal:
             nonlocal call_count
             call_count += 1
             if call_count == 1:
-                return {"id": "bank-1", "ifsc_code": "HDFC0001234",
-                        "bank_name": "HDFC", "account_holder_name": "Test User"}
+                return {
+                    "id": "bank-1",
+                    "ifsc_code": "HDFC0001234",
+                    "bank_name": "HDFC",
+                    "account_holder_name": "Test User",
+                }
             elif call_count == 2:
                 return {"available_balance": Decimal("50000"), "blocked_margin": Decimal("0")}
             elif call_count == 3:
@@ -337,8 +356,12 @@ class TestInitiateWithdrawal:
             nonlocal call_count
             call_count += 1
             if call_count == 1:
-                return {"id": "bank-1", "ifsc_code": "HDFC0001234",
-                        "bank_name": "HDFC", "account_holder_name": "Test User"}
+                return {
+                    "id": "bank-1",
+                    "ifsc_code": "HDFC0001234",
+                    "bank_name": "HDFC",
+                    "account_holder_name": "Test User",
+                }
             elif call_count == 2:
                 return {"available_balance": Decimal("100000"), "blocked_margin": Decimal("10000")}
             elif call_count == 3:
@@ -384,8 +407,12 @@ class TestInitiateWithdrawal:
             nonlocal call_count
             call_count += 1
             if call_count == 1:
-                return {"id": "bank-1", "ifsc_code": "SBIN0012345",
-                        "bank_name": "SBI", "account_holder_name": "Test User"}
+                return {
+                    "id": "bank-1",
+                    "ifsc_code": "SBIN0012345",
+                    "bank_name": "SBI",
+                    "account_holder_name": "Test User",
+                }
             elif call_count == 2:
                 return {"available_balance": Decimal("50000"), "blocked_margin": Decimal("0")}
             elif call_count == 3:
@@ -425,8 +452,12 @@ class TestInitiateWithdrawal:
             nonlocal call_count
             call_count += 1
             if call_count == 1:
-                return {"id": "bank-1", "ifsc_code": "HDFC0001234",
-                        "bank_name": "HDFC", "account_holder_name": "Test User"}
+                return {
+                    "id": "bank-1",
+                    "ifsc_code": "HDFC0001234",
+                    "bank_name": "HDFC",
+                    "account_holder_name": "Test User",
+                }
             elif call_count == 2:
                 return {"available_balance": Decimal("50000"), "blocked_margin": Decimal("0")}
             elif call_count == 3:
@@ -467,8 +498,12 @@ class TestInitiateWithdrawal:
             nonlocal call_count
             call_count += 1
             if call_count == 1:
-                return {"id": "bank-1", "ifsc_code": "HDFC0001234",
-                        "bank_name": "HDFC", "account_holder_name": "Test User"}
+                return {
+                    "id": "bank-1",
+                    "ifsc_code": "HDFC0001234",
+                    "bank_name": "HDFC",
+                    "account_holder_name": "Test User",
+                }
             elif call_count == 2:
                 return {"available_balance": Decimal("5000000"), "blocked_margin": Decimal("0")}
             elif call_count == 3:

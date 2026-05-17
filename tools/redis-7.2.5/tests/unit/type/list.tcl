@@ -1178,12 +1178,12 @@ foreach {pop} {BLPOP BLMPOP_LEFT} {
         r client unblock $id
         assert_equal {} [$rd read]
         $rd deferred 0
-        # We want to force key deletion to be propagated to the replica 
-        # in order to verify it was expiered on the replication stream. 
+        # We want to force key deletion to be propagated to the replica
+        # in order to verify it was expiered on the replication stream.
         $rd set somekey1 someval1
         $rd exists k
         r set somekey2 someval2
-        
+
         assert_replication_stream $repl {
             {select *}
             {flushall}
@@ -1226,8 +1226,8 @@ foreach {pop} {BLPOP BLMPOP_LEFT} {
         assert_match "*flags=b*" [r client list id $id]
         r client unblock $id
         assert_equal {} [$rd read]
-        # We want to force key deletion to be propagated to the replica 
-        # in order to verify it was expiered on the replication stream. 
+        # We want to force key deletion to be propagated to the replica
+        # in order to verify it was expiered on the replication stream.
         $rd exists k
         assert_equal {0} [$rd read]
         assert_replication_stream $repl {
@@ -1309,10 +1309,10 @@ foreach {pop} {BLPOP BLMPOP_LEFT} {
         # Timeout is parsed as float and multiplied by 1000, added mstime()
         # and stored in long-long which might lead to out-of-range value.
         # (Even though given timeout is smaller than LLONG_MAX, the result
-        # will be bigger)            
+        # will be bigger)
         assert_error "ERR *is out of range*" {r BLPOP blist1 0x7FFFFFFFFFFFFF}
-    }  
-        
+    }
+
     foreach {pop} {BLPOP BRPOP BLMPOP_LEFT BLMPOP_RIGHT} {
         test "$pop: with single empty list argument" {
             set rd [redis_deferring_client]
@@ -1729,7 +1729,7 @@ foreach {type large} [array get largevalue] {
         assert_equal {} [r rpoplpush srclist{t} dstlist{t}]
     } {}
 
-    foreach {type large} [array get largevalue] { 
+    foreach {type large} [array get largevalue] {
         test "Basic LPOP/RPOP/LMPOP - $type" {
             create_$type mylist "$large 1 2"
             assert_equal $large [r lpop mylist]
@@ -2204,7 +2204,7 @@ foreach {pop} {BLPOP BLMPOP_RIGHT} {
         # when a quicklist has only one packed node, it will be
         # converted to listpack during rdb loading
         r RPOP lst
-        assert_encoding quicklist lst 
+        assert_encoding quicklist lst
         r DEBUG RELOAD
         assert_encoding listpack lst
 
@@ -2283,18 +2283,18 @@ foreach {pop} {BLPOP BLMPOP_RIGHT} {
         assert_equal [lpop k] [string repeat x 31]
         set _ $k
     } {12 0 9223372036854775808 2147483647 32767 127}
-    
+
     test "Unblock fairness is kept while pipelining" {
         set rd1 [redis_deferring_client]
         set rd2 [redis_deferring_client]
-        
+
         # delete the list in case already exists
         r del mylist
-        
+
         # block a client on the list
         $rd1 BLPOP mylist 0
         wait_for_blocked_clients_count 1
-        
+
         # pipeline on other client a list push and a blocking pop
         # we should expect the fairness to be kept and have $rd1
         # being unblocked
@@ -2303,83 +2303,83 @@ foreach {pop} {BLPOP BLMPOP_RIGHT} {
         append buf "BLPOP mylist 0\r\n"
         $rd2 write $buf
         $rd2 flush
-        
+
         # we check that we still have 1 blocked client
         # and that the first blocked client has been served
         assert_equal [$rd1 read] {mylist 1}
         assert_equal [$rd2 read] {1}
         wait_for_blocked_clients_count 1
-        
-        # We no unblock the last client and verify it was served last 
+
+        # We no unblock the last client and verify it was served last
         r LPUSH mylist 2
         wait_for_blocked_clients_count 0
         assert_equal [$rd2 read] {mylist 2}
-        
+
         $rd1 close
         $rd2 close
     }
-    
+
     test "Unblock fairness is kept during nested unblock" {
         set rd1 [redis_deferring_client]
         set rd2 [redis_deferring_client]
         set rd3 [redis_deferring_client]
-        
+
         # delete the list in case already exists
         r del l1{t} l2{t} l3{t}
-        
+
         # block a client on the list
         $rd1 BRPOPLPUSH l1{t} l3{t} 0
         wait_for_blocked_clients_count 1
-        
+
         $rd2 BLPOP l2{t} 0
         wait_for_blocked_clients_count 2
-        
+
         $rd3 BLMPOP 0 2 l2{t} l3{t} LEFT COUNT 1
         wait_for_blocked_clients_count 3
-        
+
         r multi
         r lpush l1{t} 1
         r lpush l2{t} 2
         r exec
-        
+
         wait_for_blocked_clients_count 0
-        
+
         assert_equal [$rd1 read] {1}
         assert_equal [$rd2 read] {l2{t} 2}
         assert_equal [$rd3 read] {l3{t} 1}
-        
+
         $rd1 close
         $rd2 close
         $rd3 close
     }
-    
+
     test "Blocking command accounted only once in commandstats" {
         # cleanup first
         r del mylist
-        
+
         # create a test client
         set rd [redis_deferring_client]
-        
+
         # reset the server stats
         r config resetstat
-        
+
         # block a client on the list
         $rd BLPOP mylist 0
         wait_for_blocked_clients_count 1
-        
+
         # unblock the list
         r LPUSH mylist 1
         wait_for_blocked_clients_count 0
-        
+
         assert_match {*calls=1,*,rejected_calls=0,failed_calls=0} [cmdrstat blpop r]
-        
+
         $rd close
     }
-    
+
     test "Blocking command accounted only once in commandstats after timeout" {
         # cleanup first
         r del mylist
-        
+
         # create a test client
         set rd [redis_deferring_client]
         $rd client id
@@ -2387,16 +2387,16 @@ foreach {pop} {BLPOP BLMPOP_RIGHT} {
 
         # reset the server stats
         r config resetstat
-        
+
         # block a client on the list
         $rd BLPOP mylist 0
         wait_for_blocked_clients_count 1
-        
+
         # unblock the client on timeout
         r client unblock $id timeout
-        
+
         assert_match {*calls=1,*,rejected_calls=0,failed_calls=0} [cmdrstat blpop r]
-        
+
         $rd close
     }
 

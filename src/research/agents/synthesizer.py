@@ -249,8 +249,7 @@ class Synthesizer:
             # and the error message here is clearer than an
             # AttributeError on ``llm.complete``.
             raise ValueError(
-                "Synthesizer requires an LLMProvider; construct with "
-                "``llm=...``.",
+                "Synthesizer requires an LLMProvider; construct with " "``llm=...``.",
             )
 
         # 1) Render the prompt. Every slot present in the v1 template
@@ -468,9 +467,7 @@ def _format_brief_sections(sections: Mapping[str, str]) -> str:
     """Render ``{section: content}`` as fenced blocks for the LLM."""
     if not sections:
         return "<empty brief>"
-    return "\n\n".join(
-        f"## {name}\n{content}" for name, content in sections.items()
-    )
+    return "\n\n".join(f"## {name}\n{content}" for name, content in sections.items())
 
 
 def _coerce_brief_sections(
@@ -486,8 +483,7 @@ def _coerce_brief_sections(
     """
     if isinstance(brief, Mapping):
         return {
-            str(name): "" if content is None else str(content)
-            for name, content in brief.items()
+            str(name): "" if content is None else str(content) for name, content in brief.items()
         }
     coerced: dict[str, str] = {}
     for name in _BRIEF_SECTIONS:

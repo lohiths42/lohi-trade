@@ -174,8 +174,7 @@ class NvidiaNimEmbeddings:
             key=lambda item: item.get("index", 0),
         )
         vectors: list[list[float]] = [
-            [float(x) for x in (item.get("embedding") or [])]
-            for item in ordered
+            [float(x) for x in (item.get("embedding") or [])] for item in ordered
         ]
 
         # Cache the dim on first successful call so the ``dim`` property
@@ -253,9 +252,7 @@ def build(cfg: dict[str, Any]) -> EmbeddingsProvider:
     input_type = cfg.get("input_type") or _DEFAULT_INPUT_TYPE
 
     timeout_ms = cfg.get("timeout_ms")
-    timeout_seconds = (
-        timeout_ms / 1000.0 if timeout_ms is not None else _DEFAULT_TIMEOUT_SECONDS
-    )
+    timeout_seconds = timeout_ms / 1000.0 if timeout_ms is not None else _DEFAULT_TIMEOUT_SECONDS
 
     dim_cfg = cfg.get("dim")
     dim = int(dim_cfg) if dim_cfg is not None else None

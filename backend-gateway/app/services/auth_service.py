@@ -25,14 +25,14 @@ from typing import Optional
 import jwt
 import pyotp
 from argon2 import PasswordHasher
-from argon2.exceptions import VerifyMismatchError, InvalidHashError, VerificationError
+from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatchError
 
 logger = logging.getLogger(__name__)
 
 # ── Config ───────────────────────────────────────────────────────────────────
 JWT_SECRET = os.getenv("JWT_SECRET", os.getenv("SECRET_KEY", "change-me-in-production"))
 JWT_ALGORITHM = "HS256"
-JWT_IDLE_SECONDS = 24 * 60 * 60          # 24h idle
+JWT_IDLE_SECONDS = 24 * 60 * 60  # 24h idle
 JWT_ABSOLUTE_SECONDS = 7 * 24 * 60 * 60  # 7d absolute
 
 # Argon2id parameters per spec §1.3: t=3, m=64MB, p=4
@@ -46,6 +46,7 @@ _PH = PasswordHasher(
 
 
 # ── Password hashing ─────────────────────────────────────────────────────────
+
 
 def hash_password(plain: str) -> str:
     """Argon2id-hash a plaintext password. Use on signup/change-password."""
@@ -67,6 +68,7 @@ def verify_password(plain: str, hashed: str) -> tuple[bool, Optional[str]]:
     if hashed.startswith("$2a$") or hashed.startswith("$2b$") or hashed.startswith("$2y$"):
         try:
             import bcrypt
+
             ok = bcrypt.checkpw(plain.encode(), hashed.encode())
         except Exception:
             return False, None
@@ -99,11 +101,11 @@ def _default_user() -> dict:
     """First-run admin created from env vars."""
     return {
         "username": os.getenv("ADMIN_USERNAME", "admin"),
-        "password_hash": hash_password(os.getenv("ADMIN_PASSWORD", "admin123")),
+        "password_hash": hash_password(os.getenv("ADMIN_PASSWORD", "change-me-in-production")),
         "role": "admin",
         "totp_secret": os.getenv("TOTP_SECRET", ""),  # empty → TOTP not yet enrolled
         "recovery_hash": "",  # 12-word phrase hash, populated at setup
-        "backup_codes": [],   # hashed single-use codes
+        "backup_codes": [],  # hashed single-use codes
     }
 
 
@@ -144,6 +146,7 @@ def _update_user(username: str, updates: dict) -> None:
 
 # ── JWT sessions ─────────────────────────────────────────────────────────────
 
+
 def create_token(username: str, role: str = "admin") -> str:
     """Issue a new session token. Carries iat and abs_exp so we enforce both
     idle timeout (via exp) and an absolute 7-day expiry."""
@@ -176,6 +179,7 @@ def verify_token(token: str) -> Optional[dict]:
 
 # ── TOTP (RFC 6238 via pyotp) ────────────────────────────────────────────────
 
+
 def generate_totp_secret() -> str:
     """Generate a fresh base32 secret for a new user."""
     return pyotp.random_base32()
@@ -199,6 +203,7 @@ def verify_totp(secret: str, code: str) -> bool:
 
 
 # ── Authentication flow ──────────────────────────────────────────────────────
+
 
 def authenticate(username: str, password: str) -> Optional[dict]:
     """Verify credentials. Returns user dict (no hash) or None."""

@@ -14,7 +14,7 @@ start_server {tags {"modules"}} {
         assert_equal 1 [r mem.alloc k1 1]
         assert_equal 5 [r mem.alloc k2 5]
 
-        r select 0 
+        r select 0
         assert_equal 1 [r mem.free k1]
         assert_equal 1 [r mem.free k2]
 
@@ -37,7 +37,7 @@ start_server {tags {"modules"}} {
         r flushall
 
         assert_equal 3 [r mem.alloc k1 3]
-        
+
         set data datatype2
         assert_equal [string length $data] [r mem.write k1 0 $data]
         assert_equal $data [r mem.read k1 0]
@@ -67,7 +67,7 @@ start_server {tags {"modules"}} {
         r bgsave
         waitForBgsave r
         r debug reload
- 
+
         r select 0
         assert_equal k1 [r mem.read k1 1]
         assert_equal k2 [r mem.read k2 0]
@@ -101,7 +101,7 @@ start_server {tags {"modules"}} {
         r bgrewriteaof
         waitForBgrewriteaof r
         r debug loadaof
- 
+
         r select 0
         assert_equal k1 [r mem.read k1 1]
         assert_equal k2 [r mem.read k2 0]
@@ -227,6 +227,6 @@ start_server {tags {"modules"}} {
         assert_equal [string length $data] [r mem.write k2 0 $data]
         assert_equal $data [r mem.read k2 0]
 
-        assert_equal [memory_usage k1] [memory_usage k2] 
+        assert_equal [memory_usage k1] [memory_usage k2]
     }
 }

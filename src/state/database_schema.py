@@ -180,7 +180,7 @@ CREATE INDEX IF NOT EXISTS idx_ml_predictions_created_at ON ml_predictions(creat
 
 def get_sqlite_schema() -> str:
     """Returns the complete SQLite schema as a string.
-    
+
     Returns:
         str: SQL statements to create all tables and indexes
 

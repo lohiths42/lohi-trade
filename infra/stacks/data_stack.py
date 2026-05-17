@@ -11,16 +11,25 @@ Requirements covered:
 """
 
 from aws_cdk import (
-    Stack,
+    CfnOutput,
     Duration,
     RemovalPolicy,
-    CfnOutput,
+    Stack,
+)
+from aws_cdk import (
     aws_ec2 as ec2,
-    aws_rds as rds,
+)
+from aws_cdk import (
     aws_elasticache as elasticache,
+)
+from aws_cdk import (
+    aws_rds as rds,
+)
+from aws_cdk import (
     aws_s3 as s3,
+)
+from aws_cdk import (
     aws_secretsmanager as secretsmanager,
-    aws_iam as iam,
 )
 from constructs import Construct
 
@@ -41,9 +50,7 @@ class DataStack(Stack):
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        private_subnets = ec2.SubnetSelection(
-            subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS
-        )
+        private_subnets = ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS)
 
         # ── RDS PostgreSQL (Multi-AZ, 7-day backup, PITR) ────────
         self.db_instance = rds.DatabaseInstance(
@@ -52,9 +59,7 @@ class DataStack(Stack):
             engine=rds.DatabaseInstanceEngine.postgres(
                 version=rds.PostgresEngineVersion.VER_16_4,
             ),
-            instance_type=ec2.InstanceType.of(
-                ec2.InstanceClass.T4G, ec2.InstanceSize.MEDIUM
-            ),
+            instance_type=ec2.InstanceType.of(ec2.InstanceClass.T4G, ec2.InstanceSize.MEDIUM),
             vpc=vpc,
             vpc_subnets=private_subnets,
             security_groups=[rds_sg],
@@ -94,7 +99,6 @@ class DataStack(Stack):
             at_rest_encryption_enabled=True,
             transit_encryption_enabled=True,
         )
-
 
         # ── S3 Bucket: Historical Data (Parquet) ─────────────────
         self.historical_data_bucket = s3.Bucket(

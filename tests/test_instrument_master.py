@@ -24,7 +24,9 @@ from src.ingestion.ticker_mapper import TickerMapper
 @st.composite
 def instrument_dict(draw):
     """Generate a valid instrument dictionary."""
-    symbol = draw(st.text(min_size=2, max_size=20, alphabet=st.characters(whitelist_categories=("Lu",))))
+    symbol = draw(
+        st.text(min_size=2, max_size=20, alphabet=st.characters(whitelist_categories=("Lu",)))
+    )
     return {
         "symbol": symbol,
         "token": draw(st.integers(min_value=1, max_value=99999)),
@@ -120,10 +122,10 @@ class TestInstrumentMaster:
     @settings(max_examples=5, deadline=5000)
     def test_property_77_instrument_master_validation(self, instruments):
         """Property 77: Instrument Master Validation
-        
+
         For any configured symbol in settings.yaml, it should exist in the
         downloaded instrument master file, otherwise a warning should be logged.
-        
+
         Validates: Requirements 23.4
         """
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -217,9 +219,30 @@ class TestInstrumentMaster:
             # Mock broker with many instruments
             mock_broker = Mock()
             mock_instruments = [
-                {"symbol": "RELIANCE", "token": 2885, "exchange": "NSE", "lot_size": 1, "tick_size": 0.05, "trading_symbol": "RELIANCE-EQ"},
-                {"symbol": "TCS", "token": 11536, "exchange": "NSE", "lot_size": 1, "tick_size": 0.05, "trading_symbol": "TCS-EQ"},
-                {"symbol": "INFY", "token": 1594, "exchange": "NSE", "lot_size": 1, "tick_size": 0.05, "trading_symbol": "INFY-EQ"},
+                {
+                    "symbol": "RELIANCE",
+                    "token": 2885,
+                    "exchange": "NSE",
+                    "lot_size": 1,
+                    "tick_size": 0.05,
+                    "trading_symbol": "RELIANCE-EQ",
+                },
+                {
+                    "symbol": "TCS",
+                    "token": 11536,
+                    "exchange": "NSE",
+                    "lot_size": 1,
+                    "tick_size": 0.05,
+                    "trading_symbol": "TCS-EQ",
+                },
+                {
+                    "symbol": "INFY",
+                    "token": 1594,
+                    "exchange": "NSE",
+                    "lot_size": 1,
+                    "tick_size": 0.05,
+                    "trading_symbol": "INFY-EQ",
+                },
             ]
             mock_broker.get_instrument_master.return_value = mock_instruments
 
@@ -280,8 +303,14 @@ class TestTickerMapper:
                 assert ticker == "RELIANCE"
 
     @given(
-        company_name=st.text(min_size=3, max_size=50, alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd", "Zs"))),
-        ticker=st.text(min_size=2, max_size=20, alphabet=st.characters(whitelist_categories=("Lu",))),
+        company_name=st.text(
+            min_size=3,
+            max_size=50,
+            alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd", "Zs")),
+        ),
+        ticker=st.text(
+            min_size=2, max_size=20, alphabet=st.characters(whitelist_categories=("Lu",))
+        ),
     )
     @settings(max_examples=5, deadline=5000)
     def test_save_and_load_roundtrip(self, company_name, ticker):
@@ -356,8 +385,14 @@ class TestTickerMapper:
     @given(
         mappings=st.lists(
             st.tuples(
-                st.text(min_size=3, max_size=30, alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Zs"))),
-                st.text(min_size=2, max_size=10, alphabet=st.characters(whitelist_categories=("Lu",))),
+                st.text(
+                    min_size=3,
+                    max_size=30,
+                    alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Zs")),
+                ),
+                st.text(
+                    min_size=2, max_size=10, alphabet=st.characters(whitelist_categories=("Lu",))
+                ),
             ),
             min_size=1,
             max_size=20,
@@ -366,10 +401,10 @@ class TestTickerMapper:
     @settings(max_examples=5, deadline=5000)
     def test_property_entity_resolution_mapping(self, mappings):
         """Property 19: Entity Resolution Mapping
-        
+
         For any company name in the ticker mapping dictionary, it should be
         correctly mapped to its corresponding NSE ticker symbol.
-        
+
         Validates: Requirements 6.2
         """
         # Filter out empty strings and ensure unique company names (last one wins)
@@ -392,15 +427,16 @@ class TestTickerMapper:
             # Property: Every added mapping should be retrievable
             for company_name, expected_ticker in unique_mappings.items():
                 retrieved_ticker = mapper.get_ticker(company_name, use_fuzzy=False)
-                assert retrieved_ticker == expected_ticker.upper(), \
-                    f"Mapping for '{company_name}' should return '{expected_ticker.upper()}', got '{retrieved_ticker}'"
+                assert (
+                    retrieved_ticker == expected_ticker.upper()
+                ), f"Mapping for '{company_name}' should return '{expected_ticker.upper()}', got '{retrieved_ticker}'"
 
     def test_unmapped_entity_handling(self):
         """Property 21: Unmapped Entity Handling
-        
+
         For any company name not found in the ticker mapping dictionary,
         it should be logged as unmapped and sentiment processing should be skipped.
-        
+
         Validates: Requirements 6.4
         """
         with tempfile.TemporaryDirectory() as tmpdir:

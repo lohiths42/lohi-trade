@@ -87,7 +87,10 @@ class TestFullWizardFlow:
 
     @patch("app.routers.setup.reload_registry")
     def test_full_flow_credentials_test_complete(
-        self, mock_reload, app_client: TestClient, setup_service: SetupService,
+        self,
+        mock_reload,
+        app_client: TestClient,
+        setup_service: SetupService,
     ):
         """Full wizard flow: submit credentials → test connection → complete setup → verify status.
 
@@ -137,14 +140,15 @@ class TestFullWizardFlow:
         assert data["setup_complete"] is True
 
         # broker_shoonya should be configured
-        shoonya_svc = next(
-            s for s in data["services"] if s["group_id"] == "broker_shoonya"
-        )
+        shoonya_svc = next(s for s in data["services"] if s["group_id"] == "broker_shoonya")
         assert shoonya_svc["status"] == "configured"
 
     @patch("app.routers.setup.reload_registry")
     def test_full_flow_multiple_groups(
-        self, mock_reload, app_client: TestClient, setup_service: SetupService,
+        self,
+        mock_reload,
+        app_client: TestClient,
+        setup_service: SetupService,
     ):
         """Full wizard flow with multiple credential groups configured.
 
@@ -203,12 +207,8 @@ class TestFullWizardFlow:
         data = response.json()
         assert data["setup_complete"] is True
 
-        nvidia_svc = next(
-            s for s in data["services"] if s["group_id"] == "nvidia_nim"
-        )
-        telegram_svc = next(
-            s for s in data["services"] if s["group_id"] == "telegram"
-        )
+        nvidia_svc = next(s for s in data["services"] if s["group_id"] == "nvidia_nim")
+        telegram_svc = next(s for s in data["services"] if s["group_id"] == "telegram")
         assert nvidia_svc["status"] == "configured"
         assert telegram_svc["status"] == "configured"
 
@@ -223,7 +223,10 @@ class TestUpdateCredentialFlow:
 
     @patch("app.routers.setup.reload_registry")
     def test_update_credential_triggers_reload(
-        self, mock_reload, app_client: TestClient, setup_service: SetupService,
+        self,
+        mock_reload,
+        app_client: TestClient,
+        setup_service: SetupService,
     ):
         """Update credential: submit initial → submit updated → verify registry updated.
 
@@ -247,9 +250,7 @@ class TestUpdateCredentialFlow:
         # Verify initial status is configured
         response = app_client.get("/api/setup/status")
         data = response.json()
-        shoonya_svc = next(
-            s for s in data["services"] if s["group_id"] == "broker_shoonya"
-        )
+        shoonya_svc = next(s for s in data["services"] if s["group_id"] == "broker_shoonya")
         assert shoonya_svc["status"] == "configured"
 
         # Step 2: Update credentials with new values
@@ -270,14 +271,15 @@ class TestUpdateCredentialFlow:
         # Step 3: Verify status still shows configured after update
         response = app_client.get("/api/setup/status")
         data = response.json()
-        shoonya_svc = next(
-            s for s in data["services"] if s["group_id"] == "broker_shoonya"
-        )
+        shoonya_svc = next(s for s in data["services"] if s["group_id"] == "broker_shoonya")
         assert shoonya_svc["status"] == "configured"
 
     @patch("app.routers.setup.reload_registry")
     def test_update_credential_persists_new_values(
-        self, mock_reload, app_client: TestClient, setup_service: SetupService,
+        self,
+        mock_reload,
+        app_client: TestClient,
+        setup_service: SetupService,
     ):
         """Updated credentials are persisted and readable from the store.
 
@@ -322,7 +324,9 @@ class TestDegradedMode:
     """Test skip-all-optional flow and degraded mode behavior."""
 
     def test_skip_all_optional_groups_degraded_mode(
-        self, app_client: TestClient, setup_service: SetupService,
+        self,
+        app_client: TestClient,
+        setup_service: SetupService,
     ):
         """Skip all optional groups → verify degraded mode works correctly.
 
@@ -351,25 +355,23 @@ class TestDegradedMode:
 
         # All optional groups should be "skipped"
         for group in optional_groups:
-            svc = next(
-                s for s in data["services"] if s["group_id"] == group.group_id
-            )
-            assert svc["status"] == "skipped", (
-                f"Expected '{group.group_id}' to be 'skipped', got '{svc['status']}'"
-            )
+            svc = next(s for s in data["services"] if s["group_id"] == group.group_id)
+            assert (
+                svc["status"] == "skipped"
+            ), f"Expected '{group.group_id}' to be 'skipped', got '{svc['status']}'"
 
         # Required groups that were not configured should remain "unconfigured"
         required_groups = [g for g in CREDENTIAL_GROUPS if g.required]
         for group in required_groups:
-            svc = next(
-                s for s in data["services"] if s["group_id"] == group.group_id
-            )
-            assert svc["status"] == "unconfigured", (
-                f"Expected '{group.group_id}' to be 'unconfigured', got '{svc['status']}'"
-            )
+            svc = next(s for s in data["services"] if s["group_id"] == group.group_id)
+            assert (
+                svc["status"] == "unconfigured"
+            ), f"Expected '{group.group_id}' to be 'unconfigured', got '{svc['status']}'"
 
     def test_skip_all_optional_features_unavailable(
-        self, app_client: TestClient, setup_service: SetupService,
+        self,
+        app_client: TestClient,
+        setup_service: SetupService,
     ):
         """Skipped services correctly mark their dependent features as unavailable.
 
@@ -393,7 +395,9 @@ class TestDegradedMode:
         assert features.get("live_trading") is False
 
     def test_partial_config_mixed_status(
-        self, app_client: TestClient, setup_service: SetupService,
+        self,
+        app_client: TestClient,
+        setup_service: SetupService,
     ):
         """Configure some groups, skip others → verify mixed status in health endpoint.
 
@@ -426,12 +430,8 @@ class TestDegradedMode:
         response = app_client.get("/api/health/services")
         data = response.json()
 
-        shoonya_svc = next(
-            s for s in data["services"] if s["group_id"] == "broker_shoonya"
-        )
-        telegram_svc = next(
-            s for s in data["services"] if s["group_id"] == "telegram"
-        )
+        shoonya_svc = next(s for s in data["services"] if s["group_id"] == "broker_shoonya")
+        telegram_svc = next(s for s in data["services"] if s["group_id"] == "telegram")
 
         assert shoonya_svc["status"] == "configured"
         assert telegram_svc["status"] == "skipped"
@@ -444,7 +444,9 @@ class TestDegradedMode:
 
     @patch("app.routers.setup.reload_registry")
     def test_health_services_returns_all_groups(
-        self, mock_reload, app_client: TestClient,
+        self,
+        mock_reload,
+        app_client: TestClient,
     ):
         """GET /health/services returns entries for every registered credential group.
 

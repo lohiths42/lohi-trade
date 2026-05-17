@@ -263,14 +263,14 @@ typedef struct {
 } clusterMsgModule;
 
 /* The cluster supports optional extension messages that can be sent
- * along with ping/pong/meet messages to give additional info in a 
+ * along with ping/pong/meet messages to give additional info in a
  * consistent manner. */
 typedef enum {
     CLUSTERMSG_EXT_TYPE_HOSTNAME,
     CLUSTERMSG_EXT_TYPE_HUMAN_NODENAME,
     CLUSTERMSG_EXT_TYPE_FORGOTTEN_NODE,
     CLUSTERMSG_EXT_TYPE_SHARDID,
-} clusterMsgPingtypes; 
+} clusterMsgPingtypes;
 
 /* Helper function for making sure extensions are eight byte aligned. */
 #define EIGHT_BYTE_ALIGN(size) ((((size) + 7) / 8) * 8)
@@ -303,7 +303,7 @@ typedef struct {
 	clusterMsgPingExtHumanNodename human_nodename;
         clusterMsgPingExtForgottenNode forgotten_node;
         clusterMsgPingExtShardId shard_id;
-    } ext[]; /* Actual extension information, formatted so that the data is 8 
+    } ext[]; /* Actual extension information, formatted so that the data is 8
               * byte aligned, regardless of its content. */
 } clusterMsgPingExt;
 
@@ -359,7 +359,7 @@ typedef struct {
     char myip[NET_IP_STR_LEN];    /* Sender IP, if not all zeroed. */
     uint16_t extensions; /* Number of extensions sent along with this packet. */
     char notused1[30];   /* 30 bytes reserved for future usage. */
-    uint16_t pport;      /* Secondary port number: if primary port is TCP port, this is 
+    uint16_t pport;      /* Secondary port number: if primary port is TCP port, this is
                             TLS port, and if primary port is TLS port, this is TCP port.*/
     uint16_t cport;      /* Sender TCP cluster bus port */
     uint16_t flags;      /* Sender node flags */

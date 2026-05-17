@@ -67,7 +67,9 @@ class SignalPipeline:
         return start_minutes <= current_minutes <= end_minutes
 
     def process_indicators(
-        self, indicators: IndicatorSet, candles: pd.DataFrame,
+        self,
+        indicators: IndicatorSet,
+        candles: pd.DataFrame,
     ) -> Signal | None:
         """Process indicators through all enabled strategies and publish valid signals.
 
@@ -106,7 +108,9 @@ class SignalPipeline:
 
                 message = self._serialize_signal(signal)
                 self._event_bus.publish(
-                    SIGNAL_STREAM, message, maxlen=SIGNAL_STREAM_MAXLEN,
+                    SIGNAL_STREAM,
+                    message,
+                    maxlen=SIGNAL_STREAM_MAXLEN,
                 )
                 self._open_positions.add(signal.symbol)
                 logger.info(
@@ -136,7 +140,9 @@ class SignalPipeline:
             # Publish to Event Bus
             message = self._serialize_signal(signal)
             self._event_bus.publish(
-                SIGNAL_STREAM, message, maxlen=SIGNAL_STREAM_MAXLEN,
+                SIGNAL_STREAM,
+                message,
+                maxlen=SIGNAL_STREAM_MAXLEN,
             )
 
             # Track open position
@@ -183,7 +189,11 @@ class SignalPipeline:
         """
         if self._ml_strategy is not None:
             return self._ml_strategy.record_outcome(
-                signal_id, entry_price, exit_price, side, atr,
+                signal_id,
+                entry_price,
+                exit_price,
+                side,
+                atr,
             )
         return False
 

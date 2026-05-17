@@ -102,7 +102,8 @@ class SemanticMemory:
         self,
         *,
         connection_factory: Callable[
-            [UUID], AbstractAsyncContextManager[asyncpg.Connection],
+            [UUID],
+            AbstractAsyncContextManager[asyncpg.Connection],
         ],
     ) -> None:
         self._conn_factory = connection_factory
@@ -143,8 +144,7 @@ class SemanticMemory:
         """
         if kind not in _KNOWN_KINDS and not kind.startswith("symbol_fact:"):
             logger.warning(
-                "semantic_memory.add: unknown kind=%r (known: %s); "
-                "inserting anyway",
+                "semantic_memory.add: unknown kind=%r (known: %s); " "inserting anyway",
                 kind,
                 sorted(_KNOWN_KINDS),
             )

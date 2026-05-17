@@ -26,8 +26,10 @@ from src.soldier.strategy_engine import Signal
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _make_tick(symbol: str = "RELIANCE", ltp: float = 2500.0,
-               volume: int = 100, ts: datetime | None = None) -> Tick:
+
+def _make_tick(
+    symbol: str = "RELIANCE", ltp: float = 2500.0, volume: int = 100, ts: datetime | None = None
+) -> Tick:
     """Create a Tick for testing."""
     return Tick(
         symbol=symbol,
@@ -93,6 +95,7 @@ def _build_mock_config():
 # 1. Tick Processing Latency  (p99 < 10 ms)
 # ---------------------------------------------------------------------------
 
+
 class TestTickProcessingLatency:
     """Validate that processing a tick through CandleBuilder is fast."""
 
@@ -121,8 +124,7 @@ class TestTickProcessingLatency:
         p99_ms = sorted(latencies)[int(len(latencies) * 0.99)]
 
         assert p99_ms < 10, (
-            f"p99 tick latency {p99_ms:.3f}ms exceeds 10ms threshold "
-            f"(avg={avg_ms:.3f}ms)"
+            f"p99 tick latency {p99_ms:.3f}ms exceeds 10ms threshold " f"(avg={avg_ms:.3f}ms)"
         )
 
     def test_tick_processing_average_under_1ms(self):
@@ -149,6 +151,7 @@ class TestTickProcessingLatency:
 # ---------------------------------------------------------------------------
 # 2. Throughput  (>= 1000 ticks / second)
 # ---------------------------------------------------------------------------
+
 
 class TestThroughput:
     """Validate tick processing throughput."""
@@ -208,6 +211,7 @@ class TestThroughput:
 # 3. Order Validation Latency  (p99 < 50 ms)
 # ---------------------------------------------------------------------------
 
+
 class TestOrderValidationLatency:
     """Validate that RMS order validation is fast with mocked dependencies."""
 
@@ -259,8 +263,7 @@ class TestOrderValidationLatency:
         p99_ms = sorted(latencies)[int(len(latencies) * 0.99)]
 
         assert p99_ms < 50, (
-            f"p99 validation latency {p99_ms:.3f}ms exceeds 50ms threshold "
-            f"(avg={avg_ms:.3f}ms)"
+            f"p99 validation latency {p99_ms:.3f}ms exceeds 50ms threshold " f"(avg={avg_ms:.3f}ms)"
         )
 
     def test_order_validation_average_under_5ms(self):

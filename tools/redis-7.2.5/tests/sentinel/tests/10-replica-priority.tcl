@@ -73,4 +73,3 @@ proc 10_set_replica_announced {master_id announced n_replicas} {
 10_set_replica_announced $master_id "yes" "all"
 # ensure all replicas are not announced by sentinels
 10_test_number_of_replicas 4
-

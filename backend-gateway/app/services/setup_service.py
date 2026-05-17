@@ -16,15 +16,14 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Optional
 
 from .connection_tester import ConnectionTester, TestResult
 from .credential_store import CredentialStore
 from .service_registry import (
+    _GROUPS_BY_ID,
     CREDENTIAL_GROUPS,
     ServiceRegistry,
     ServiceStatus,
-    _GROUPS_BY_ID,
 )
 
 logger = logging.getLogger(__name__)
@@ -74,9 +73,7 @@ class SetupService:
 
     # ── Public API ──────────────────────────────────────────────────────
 
-    async def submit_credentials(
-        self, group_id: str, credentials: dict[str, str]
-    ) -> None:
+    async def submit_credentials(self, group_id: str, credentials: dict[str, str]) -> None:
         """Validate format, write to .env, update registry status.
 
         Validates credential format using regex patterns defined in the
@@ -138,9 +135,7 @@ class SetupService:
 
         return result
 
-    async def submit_and_test(
-        self, group_id: str, credentials: dict[str, str]
-    ) -> TestResult:
+    async def submit_and_test(self, group_id: str, credentials: dict[str, str]) -> TestResult:
         """Submit credentials and test connection with rollback on failure.
 
         This is the full workflow with rollback logic (Requirement 8.5):
@@ -270,9 +265,7 @@ class SetupService:
 
     # ── Internal ────────────────────────────────────────────────────────
 
-    async def _run_connection_test(
-        self, group_id: str, credentials: dict[str, str]
-    ) -> TestResult:
+    async def _run_connection_test(self, group_id: str, credentials: dict[str, str]) -> TestResult:
         """Route to the appropriate ConnectionTester method based on group_id."""
         if group_id == "nvidia_nim":
             api_key = credentials.get("NVIDIA_NIM_API_KEY", "")

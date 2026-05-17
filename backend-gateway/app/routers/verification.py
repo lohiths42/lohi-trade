@@ -66,7 +66,9 @@ class KYCSubmitResponse(BaseModel):
 
 
 class DMATLinkRequest(BaseModel):
-    account_number: str = Field(..., description="DMAT account number (CDSL 16-digit or NSDL IN+14)")
+    account_number: str = Field(
+        ..., description="DMAT account number (CDSL 16-digit or NSDL IN+14)"
+    )
 
 
 class DMATLinkResponse(BaseModel):
@@ -155,17 +157,21 @@ async def submit_pan(
         result = await svc.verify_pan(user_id, req.pan)
         logger.info(
             "VERIFY_EVENT pan_submit user=%s status=%s",
-            user_id, result.status.value,
+            user_id,
+            result.status.value,
         )
         return PANSubmitResponse(
             status=result.status.value,
             pan_masked=result.pan_masked,
             holder_name=result.holder_name,
             rejection_reason=result.rejection_reason,
-            message="PAN verified successfully" if result.status == PANStatus.VERIFIED
-            else f"PAN verification failed: {result.rejection_reason}",
+            message=(
+                "PAN verified successfully"
+                if result.status == PANStatus.VERIFIED
+                else f"PAN verification failed: {result.rejection_reason}"
+            ),
         )
-    except Exception as exc:
+    except Exception:
         logger.exception("PAN verification error for user %s", user_id)
         raise HTTPException(status_code=500, detail="PAN verification failed unexpectedly")
 
@@ -242,7 +248,8 @@ async def submit_kyc(
         result = await svc.submit_kyc(user_id, documents)
         logger.info(
             "VERIFY_EVENT kyc_submit user=%s status=%s",
-            user_id, result.status.value,
+            user_id,
+            result.status.value,
         )
 
         if result.status == KYCStatus.VERIFIED:
@@ -261,7 +268,7 @@ async def submit_kyc(
             queued_for_retry=result.queued_for_retry,
             message=message,
         )
-    except Exception as exc:
+    except Exception:
         logger.exception("KYC submission error for user %s", user_id)
         raise HTTPException(status_code=500, detail="KYC submission failed unexpectedly")
 
@@ -324,7 +331,9 @@ async def link_dmat(
         result = await svc.verify_dmat(user_id, req.account_number)
         logger.info(
             "VERIFY_EVENT dmat_link user=%s status=%s depository=%s",
-            user_id, result.status.value, result.depository,
+            user_id,
+            result.status.value,
+            result.depository,
         )
         return DMATLinkResponse(
             status=result.status.value,
@@ -332,8 +341,11 @@ async def link_dmat(
             depository=result.depository,
             dp_name=result.dp_name,
             rejection_reason=result.rejection_reason,
-            message="DMAT account linked successfully" if result.status == DMATStatus.LINKED
-            else f"DMAT linking failed: {result.rejection_reason}",
+            message=(
+                "DMAT account linked successfully"
+                if result.status == DMATStatus.LINKED
+                else f"DMAT linking failed: {result.rejection_reason}"
+            ),
         )
     except Exception:
         logger.exception("DMAT linking error for user %s", user_id)

@@ -20,10 +20,10 @@ start_server {tags {"modules"}} {
     test {Blocking command are not block the client on RM_Call} {
     	r lpush l test
     	assert_equal [r do_rm_call blpop l 0] {l test}
-    	
+
     	r lpush l test
     	assert_equal [r do_rm_call brpop l 0] {l test}
-    	
+
     	r lpush l1 test
     	assert_equal [r do_rm_call brpoplpush l1 l2 0] {test}
     	assert_equal [r do_rm_call brpop l2 0] {l2 test}
@@ -45,10 +45,10 @@ start_server {tags {"modules"}} {
         assert {[r do_rm_call brpop empty_list 0] eq {}}
         assert {[r do_rm_call brpoplpush empty_list1 empty_list2 0] eq {}}
         assert {[r do_rm_call blmove empty_list1 empty_list2 LEFT LEFT 0] eq {}}
-        
+
         assert {[r do_rm_call bzpopmin empty_zset 0] eq {}}
         assert {[r do_rm_call bzpopmax empty_zset 0] eq {}}
-       
+
         r xgroup create empty_stream g $ MKSTREAM
         assert {[r do_rm_call xread BLOCK 0 STREAMS empty_stream $] eq {}}
         assert {[r do_rm_call xreadgroup group g c BLOCK 0 STREAMS empty_stream >] eq {}}
@@ -280,7 +280,7 @@ foreach call_type {nested normal} {
     test {Unblock by timer} {
         assert_match "OK" [r unblock_by_timer 100]
     }
-    
+
     test "Unload the module - blockedclient" {
         assert_equal {OK} [r module unload blockedclient]
     }

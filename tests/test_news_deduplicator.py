@@ -69,7 +69,9 @@ class TestMarkSeen:
 
         expected_key = f"{HASH_KEY_PREFIX}{article.content_hash}"
         mock_redis.set.assert_called_once_with(
-            expected_key, article.article_id, ex=HASH_TTL_SECONDS,
+            expected_key,
+            article.article_id,
+            ex=HASH_TTL_SECONDS,
         )
 
     def test_ttl_is_86400_seconds(self):

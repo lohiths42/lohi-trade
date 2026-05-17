@@ -108,12 +108,9 @@ class StockUniverseService:
         self.nse_url = nse_url or NSE_LISTINGS_URL
         self.bse_url = bse_url or BSE_LISTINGS_URL
 
-
     # ── Search ───────────────────────────────────────────────────────────
 
-    async def search_securities(
-        self, query: str, limit: int = 20
-    ) -> list[Security]:
+    async def search_securities(self, query: str, limit: int = 20) -> list[Security]:
         """Full-text search by symbol, name, or ISIN using PostgreSQL GIN index.
 
         Target <200ms response time. Uses ts_rank for relevance ordering.
@@ -132,9 +129,7 @@ class StockUniverseService:
         try:
             async with self.db_pool.acquire() as conn:
                 # Build tsquery from the user input — prefix matching with :*
-                ts_query = " & ".join(
-                    f"{word}:*" for word in sanitized.split() if word
-                )
+                ts_query = " & ".join(f"{word}:*" for word in sanitized.split() if word)
 
                 rows = await conn.fetch(
                     """
@@ -273,7 +268,6 @@ class StockUniverseService:
             logger.exception("list_securities failed")
             return PaginatedResult()
 
-
     # ── Get single security ──────────────────────────────────────────────
 
     async def get_security_by_symbol(self, symbol: str) -> Optional[Security]:
@@ -382,9 +376,7 @@ class StockUniverseService:
                         fetched_isins,
                     )
 
-                logger.info(
-                    "Catalog refresh complete: %d securities upserted", updated_count
-                )
+                logger.info("Catalog refresh complete: %d securities upserted", updated_count)
                 return updated_count
 
         except Exception:
@@ -472,7 +464,6 @@ class StockUniverseService:
         sec = await self.get_security_by_symbol(symbol)
         return sec is not None and sec.status == SecurityStatus.ACTIVE.value
 
-
     # ── NSE/BSE data fetching ────────────────────────────────────────────
 
     async def _fetch_nse_listings(self) -> list[dict]:
@@ -483,9 +474,7 @@ class StockUniverseService:
         """Fetch current BSE listings with retry."""
         return await self._fetch_exchange_data(self.bse_url, "BSE")
 
-    async def _fetch_exchange_data(
-        self, url: str, exchange: str
-    ) -> list[dict]:
+    async def _fetch_exchange_data(self, url: str, exchange: str) -> list[dict]:
         """Fetch listing data from an exchange API with retries.
 
         Returns a list of dicts with keys: symbol, isin, company_name, exchange,
@@ -504,9 +493,7 @@ class StockUniverseService:
                         },
                     )
                     if response.status_code == 200:
-                        return self._parse_exchange_response(
-                            response.json(), exchange
-                        )
+                        return self._parse_exchange_response(response.json(), exchange)
                     else:
                         logger.warning(
                             "%s API returned status %d on attempt %d",
@@ -541,9 +528,7 @@ class StockUniverseService:
         return []
 
     @staticmethod
-    def _parse_exchange_response(
-        data: Any, exchange: str
-    ) -> list[dict]:
+    def _parse_exchange_response(data: Any, exchange: str) -> list[dict]:
         """Parse exchange API JSON into a list of security dicts.
 
         Handles both NSE and BSE response formats. Returns a normalized list.
@@ -560,16 +545,8 @@ class StockUniverseService:
             if not isinstance(item, dict):
                 continue
 
-            isin = (
-                item.get("isin", "")
-                or item.get("ISIN", "")
-                or item.get("isin_code", "")
-            )
-            symbol = (
-                item.get("symbol", "")
-                or item.get("Symbol", "")
-                or item.get("scrip_code", "")
-            )
+            isin = item.get("isin", "") or item.get("ISIN", "") or item.get("isin_code", "")
+            symbol = item.get("symbol", "") or item.get("Symbol", "") or item.get("scrip_code", "")
             company_name = (
                 item.get("company_name", "")
                 or item.get("companyName", "")
@@ -590,12 +567,8 @@ class StockUniverseService:
                 "sector": item.get("sector") or item.get("Sector"),
                 "industry": item.get("industry") or item.get("Industry"),
                 "market_cap_category": item.get("market_cap_category"),
-                "listing_date": _parse_date(
-                    item.get("listing_date") or item.get("listingDate")
-                ),
-                "face_value": _parse_decimal(
-                    item.get("face_value") or item.get("faceValue")
-                ),
+                "listing_date": _parse_date(item.get("listing_date") or item.get("listingDate")),
+                "face_value": _parse_decimal(item.get("face_value") or item.get("faceValue")),
             }
             securities.append(sec)
 

@@ -13,18 +13,16 @@ from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from hypothesis import given, settings, assume
-from hypothesis import strategies as st
-
 from app.services.watchlist_service import (
-    WatchlistService,
-    WatchlistError,
-    MAX_WATCHLISTS_PER_USER,
     MAX_SECURITIES_PER_WATCHLIST,
-    REASON_MAX_WATCHLISTS,
+    MAX_WATCHLISTS_PER_USER,
     REASON_MAX_SECURITIES,
+    REASON_MAX_WATCHLISTS,
+    WatchlistError,
+    WatchlistService,
 )
-
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -56,24 +54,16 @@ def _make_mock_row(data: dict):
 # ── Strategies ───────────────────────────────────────────────────────────────
 
 # Counts at or above the watchlist limit (20..50)
-at_or_above_watchlist_limit = st.integers(
-    min_value=MAX_WATCHLISTS_PER_USER, max_value=50
-)
+at_or_above_watchlist_limit = st.integers(min_value=MAX_WATCHLISTS_PER_USER, max_value=50)
 
 # Counts below the watchlist limit (0..19)
-below_watchlist_limit = st.integers(
-    min_value=0, max_value=MAX_WATCHLISTS_PER_USER - 1
-)
+below_watchlist_limit = st.integers(min_value=0, max_value=MAX_WATCHLISTS_PER_USER - 1)
 
 # Counts at or above the securities-per-watchlist limit (100..200)
-at_or_above_securities_limit = st.integers(
-    min_value=MAX_SECURITIES_PER_WATCHLIST, max_value=200
-)
+at_or_above_securities_limit = st.integers(min_value=MAX_SECURITIES_PER_WATCHLIST, max_value=200)
 
 # Counts below the securities-per-watchlist limit (0..99)
-below_securities_limit = st.integers(
-    min_value=0, max_value=MAX_SECURITIES_PER_WATCHLIST - 1
-)
+below_securities_limit = st.integers(min_value=0, max_value=MAX_SECURITIES_PER_WATCHLIST - 1)
 
 # Valid watchlist names
 watchlist_names = st.text(
@@ -120,9 +110,7 @@ class TestWatchlistCapacityEnforcementProperty:
     @given(existing_count=below_watchlist_limit, name=watchlist_names)
     @settings(max_examples=100)
     @pytest.mark.asyncio
-    async def test_create_watchlist_accepted_below_limit(
-        self, existing_count: int, name: str
-    ):
+    async def test_create_watchlist_accepted_below_limit(self, existing_count: int, name: str):
         """When a user has < 20 watchlists, creating a new one must succeed
         (not raise max_watchlists_reached)."""
         pool, conn = _make_mock_pool()
@@ -138,32 +126,32 @@ class TestWatchlistCapacityEnforcementProperty:
                 return _make_mock_row({"cnt": existing_count})
             else:
                 # INSERT RETURNING
-                return _make_mock_row({
-                    "id": WATCHLIST_ID,
-                    "user_id": USER_ID,
-                    "name": name.strip(),
-                    "is_prebuilt": False,
-                    "sort_order": existing_count,
-                    "created_at": now,
-                })
+                return _make_mock_row(
+                    {
+                        "id": WATCHLIST_ID,
+                        "user_id": USER_ID,
+                        "name": name.strip(),
+                        "is_prebuilt": False,
+                        "sort_order": existing_count,
+                        "created_at": now,
+                    }
+                )
 
         conn.fetchrow = AsyncMock(side_effect=mock_fetchrow)
 
         svc = _make_service(db_pool=pool)
         result = await svc.create_watchlist(USER_ID, name)
 
-        assert result.name == name.strip(), (
-            f"Expected watchlist name '{name.strip()}', got '{result.name}'"
-        )
+        assert (
+            result.name == name.strip()
+        ), f"Expected watchlist name '{name.strip()}', got '{result.name}'"
 
     # ── 9.2: Max 100 securities per watchlist ────────────────────────────
 
     @given(existing_count=at_or_above_securities_limit)
     @settings(max_examples=100)
     @pytest.mark.asyncio
-    async def test_add_security_rejected_at_or_above_limit(
-        self, existing_count: int
-    ):
+    async def test_add_security_rejected_at_or_above_limit(self, existing_count: int):
         """When a watchlist already has >= 100 securities, adding another must
         raise WatchlistError with reason max_securities_reached."""
         pool, conn = _make_mock_pool()
@@ -199,9 +187,7 @@ class TestWatchlistCapacityEnforcementProperty:
     @given(existing_count=below_securities_limit)
     @settings(max_examples=100)
     @pytest.mark.asyncio
-    async def test_add_security_accepted_below_limit(
-        self, existing_count: int
-    ):
+    async def test_add_security_accepted_below_limit(self, existing_count: int):
         """When a watchlist has < 100 securities, adding a new one must succeed
         (not raise max_securities_reached)."""
         pool, conn = _make_mock_pool()
@@ -226,13 +212,15 @@ class TestWatchlistCapacityEnforcementProperty:
                 return None
             elif call_count == 5:
                 # INSERT RETURNING
-                return _make_mock_row({
-                    "id": "new-item-id",
-                    "watchlist_id": WATCHLIST_ID,
-                    "security_id": 42,
-                    "sort_order": existing_count,
-                    "added_at": now,
-                })
+                return _make_mock_row(
+                    {
+                        "id": "new-item-id",
+                        "watchlist_id": WATCHLIST_ID,
+                        "security_id": 42,
+                        "sort_order": existing_count,
+                        "added_at": now,
+                    }
+                )
             return None
 
         conn.fetchrow = AsyncMock(side_effect=mock_fetchrow)
@@ -240,9 +228,7 @@ class TestWatchlistCapacityEnforcementProperty:
         svc = _make_service(db_pool=pool)
         result = await svc.add_security(USER_ID, WATCHLIST_ID, "TCS")
 
-        assert result.symbol == "TCS", (
-            f"Expected symbol 'TCS', got '{result.symbol}'"
-        )
+        assert result.symbol == "TCS", f"Expected symbol 'TCS', got '{result.symbol}'"
 
     # ── Boundary: exact limit values ─────────────────────────────────────
 

@@ -95,7 +95,7 @@ proc test_psync {descr duration backlog_size backlog_ttl delay cond mdl sdl reco
                     [lindex [$slave role] 3] eq {connected}
                 } else {
                     fail "Slave still not connected after some time"
-                }  
+                }
 
                 wait_for_condition 100 100 {
                     [$master debug digest] == [$slave debug digest]

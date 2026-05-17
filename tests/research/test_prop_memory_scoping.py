@@ -123,7 +123,10 @@ class InMemoryWorkingMemory:
         self._store: dict[tuple[UUID, UUID], list[dict]] = {}
 
     async def append_turn(
-        self, user_id: UUID, conv_id: UUID, turn: dict,
+        self,
+        user_id: UUID,
+        conv_id: UUID,
+        turn: dict,
     ) -> None:
         # The stored turn carries ``user_id`` so the property-test
         # assertion has a concrete field to inspect. Production
@@ -140,7 +143,9 @@ class InMemoryWorkingMemory:
         return list(self._store.get((user_id, conv_id), []))
 
     async def forget(
-        self, user_id: UUID, conv_id: UUID | None = None,
+        self,
+        user_id: UUID,
+        conv_id: UUID | None = None,
     ) -> int:
         if conv_id is not None:
             removed = self._store.pop((user_id, conv_id), None)
@@ -194,7 +199,10 @@ class InMemorySemanticMemory:
         return list(rows[:limit])
 
     async def delete(
-        self, user_id: UUID, *, kind: str | None = None,
+        self,
+        user_id: UUID,
+        *,
+        kind: str | None = None,
     ) -> int:
         rows = self._store.get(user_id, [])
         if not rows:
@@ -236,7 +244,10 @@ class InMemoryEpisodicMemory:
         )
 
     async def read(
-        self, user_id: UUID, symbol: str, limit: int = 10,
+        self,
+        user_id: UUID,
+        symbol: str,
+        limit: int = 10,
     ) -> list[dict]:
         rows = [r for r in self._store.get(user_id, []) if r["symbol"] == symbol]
         # Most-recent-first like the production path. Insertion order
@@ -245,7 +256,10 @@ class InMemoryEpisodicMemory:
         return list(reversed(rows))[:limit]
 
     async def delete(
-        self, user_id: UUID, *, symbol: str | None = None,
+        self,
+        user_id: UUID,
+        *,
+        symbol: str | None = None,
     ) -> int:
         rows = self._store.get(user_id, [])
         if not rows:
@@ -394,7 +408,9 @@ def test_memory_scoping_no_cross_user_leak(ops: list[dict]) -> None:
 
             if op_type == "wm_append":
                 await working.append_turn(
-                    user, payload["conv_id"], payload["turn"],
+                    user,
+                    payload["conv_id"],
+                    payload["turn"],
                 )
             elif op_type == "sem_add":
                 await semantic.add(user, payload["kind"], payload["content"])
@@ -434,8 +450,7 @@ def test_memory_scoping_no_cross_user_leak(ops: list[dict]) -> None:
             sem_rows = await semantic.query(reader, limit=10_000)
             for row in sem_rows:
                 assert row["user_id"] != other, (
-                    f"semantic-memory leak: reader={reader} saw "
-                    f"user_id={other} in row {row!r}"
+                    f"semantic-memory leak: reader={reader} saw " f"user_id={other} in row {row!r}"
                 )
                 assert row["user_id"] == reader, (
                     f"semantic-memory unexpected user_id: reader={reader} "

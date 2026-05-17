@@ -92,7 +92,10 @@ class DataSource(Protocol):
     """Protocol for historical data download sources."""
 
     def download_daily_ohlcv(
-        self, symbol: str, start_date: date, end_date: date,
+        self,
+        symbol: str,
+        start_date: date,
+        end_date: date,
     ) -> list[OHLCV]: ...
 
 
@@ -180,15 +183,17 @@ class HistoricalDataService:
             parts = line.split(",")
             if len(parts) < 7:
                 continue
-            bars.append(OHLCV(
-                symbol=parts[0],
-                date=date.fromisoformat(parts[1]),
-                open=float(parts[2]),
-                high=float(parts[3]),
-                low=float(parts[4]),
-                close=float(parts[5]),
-                volume=int(parts[6]),
-            ))
+            bars.append(
+                OHLCV(
+                    symbol=parts[0],
+                    date=date.fromisoformat(parts[1]),
+                    open=float(parts[2]),
+                    high=float(parts[3]),
+                    low=float(parts[4]),
+                    close=float(parts[5]),
+                    volume=int(parts[6]),
+                )
+            )
         return bars
 
     # ------------------------------------------------------------------
@@ -317,15 +322,23 @@ class HistoricalDataService:
 
         """
         if not raw_data or not actions:
-            return [OHLCV(
-                symbol=b.symbol, date=b.date,
-                open=b.open, high=b.high, low=b.low, close=b.close,
-                volume=b.volume,
-            ) for b in raw_data]
+            return [
+                OHLCV(
+                    symbol=b.symbol,
+                    date=b.date,
+                    open=b.open,
+                    high=b.high,
+                    low=b.low,
+                    close=b.close,
+                    volume=b.volume,
+                )
+                for b in raw_data
+            ]
 
         # Sort actions by ex_date descending (apply most recent first)
         applicable = [
-            a for a in actions
+            a
+            for a in actions
             if a.ex_date is not None
             and a.action_type in (CorporateActionType.SPLIT, CorporateActionType.BONUS)
         ]
@@ -334,8 +347,12 @@ class HistoricalDataService:
         # Deep copy
         adjusted = [
             OHLCV(
-                symbol=b.symbol, date=b.date,
-                open=b.open, high=b.high, low=b.low, close=b.close,
+                symbol=b.symbol,
+                date=b.date,
+                open=b.open,
+                high=b.high,
+                low=b.low,
+                close=b.close,
                 volume=b.volume,
             )
             for b in raw_data
@@ -376,14 +393,22 @@ class HistoricalDataService:
 
         """
         if not adjusted_data or not actions:
-            return [OHLCV(
-                symbol=b.symbol, date=b.date,
-                open=b.open, high=b.high, low=b.low, close=b.close,
-                volume=b.volume,
-            ) for b in adjusted_data]
+            return [
+                OHLCV(
+                    symbol=b.symbol,
+                    date=b.date,
+                    open=b.open,
+                    high=b.high,
+                    low=b.low,
+                    close=b.close,
+                    volume=b.volume,
+                )
+                for b in adjusted_data
+            ]
 
         applicable = [
-            a for a in actions
+            a
+            for a in actions
             if a.ex_date is not None
             and a.action_type in (CorporateActionType.SPLIT, CorporateActionType.BONUS)
         ]
@@ -392,8 +417,12 @@ class HistoricalDataService:
 
         reverted = [
             OHLCV(
-                symbol=b.symbol, date=b.date,
-                open=b.open, high=b.high, low=b.low, close=b.close,
+                symbol=b.symbol,
+                date=b.date,
+                open=b.open,
+                high=b.high,
+                low=b.low,
+                close=b.close,
                 volume=b.volume,
             )
             for b in adjusted_data
@@ -476,10 +505,7 @@ class HistoricalDataService:
             all_bars.extend(year_bars)
 
         # Filter to date range
-        filtered = [
-            b for b in all_bars
-            if start_date <= b.date <= end_date
-        ]
+        filtered = [b for b in all_bars if start_date <= b.date <= end_date]
         filtered.sort(key=lambda b: b.date)
 
         if timeframe == Timeframe.DAILY:
@@ -571,7 +597,8 @@ class HistoricalDataService:
         return dict(self._security_metadata)
 
     def update_security_metadata(
-        self, metadata: dict[str, dict[str, Any]],
+        self,
+        metadata: dict[str, dict[str, Any]],
     ) -> None:
         """Update security metadata (market cap categories etc.)."""
         self._security_metadata.update(metadata)

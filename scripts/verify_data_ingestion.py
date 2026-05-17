@@ -12,24 +12,22 @@ Usage:
     python scripts/verify_data_ingestion.py
 """
 
-import os
 import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import Mock, MagicMock
+from unittest.mock import MagicMock, Mock
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.ingestion.broker_interface import (
-    BrokerInterface,
     BrokerCredentials,
+    BrokerInterface,
     Tick,
-    ConnectionError as BrokerConnectionError,
 )
-from src.ingestion.websocket_client import WebSocketClient
 from src.ingestion.broker_manager import BrokerManager, BrokerState
+from src.ingestion.websocket_client import WebSocketClient
 from src.state.event_bus import EventBus
 
 
@@ -138,6 +136,7 @@ def verify_broker_websocket_connection():
     except Exception as e:
         print(f"  ✗ Broker WebSocket connection verification failed: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -184,9 +183,9 @@ def verify_tick_publishing():
         total_ticks = len(test_symbols) * ticks_per_symbol
 
         # Verify all ticks were published
-        assert mock_event_bus.publish.call_count == total_ticks, (
-            f"Expected {total_ticks} publishes, got {mock_event_bus.publish.call_count}"
-        )
+        assert (
+            mock_event_bus.publish.call_count == total_ticks
+        ), f"Expected {total_ticks} publishes, got {mock_event_bus.publish.call_count}"
         print(f"  ✓ All {total_ticks} ticks published to Event Bus")
 
         # Verify stream names
@@ -218,15 +217,18 @@ def verify_tick_publishing():
         assert stats.total_ticks_received == total_ticks
         assert stats.total_ticks_published == total_ticks
         assert stats.average_latency_ms >= 0
-        print(f"  ✓ Statistics tracked: {stats.total_ticks_received} received, "
-              f"{stats.total_ticks_published} published, "
-              f"avg latency {stats.average_latency_ms:.3f}ms")
+        print(
+            f"  ✓ Statistics tracked: {stats.total_ticks_received} received, "
+            f"{stats.total_ticks_published} published, "
+            f"avg latency {stats.average_latency_ms:.3f}ms"
+        )
 
         return True
 
     except Exception as e:
         print(f"  ✗ Tick publishing verification failed: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -265,12 +267,14 @@ def verify_throughput_no_data_loss():
         ticks = []
         for sym_idx, symbol in enumerate(symbols):
             for t in range(ticks_per_symbol):
-                ticks.append(_make_tick(
-                    symbol=symbol,
-                    token=1000 + sym_idx,
-                    ltp=100.0 + t * 0.05,
-                    volume=100 + t,
-                ))
+                ticks.append(
+                    _make_tick(
+                        symbol=symbol,
+                        token=1000 + sym_idx,
+                        ltp=100.0 + t * 0.05,
+                        volume=100 + t,
+                    )
+                )
 
         # Process all ticks and measure throughput
         start = time.perf_counter()
@@ -279,12 +283,12 @@ def verify_throughput_no_data_loss():
         elapsed = time.perf_counter() - start
 
         # Zero data loss
-        assert client._stats.total_ticks_received == total_ticks, (
-            f"Data loss: received {client._stats.total_ticks_received}/{total_ticks}"
-        )
-        assert client._stats.total_ticks_published == total_ticks, (
-            f"Data loss: published {client._stats.total_ticks_published}/{total_ticks}"
-        )
+        assert (
+            client._stats.total_ticks_received == total_ticks
+        ), f"Data loss: received {client._stats.total_ticks_received}/{total_ticks}"
+        assert (
+            client._stats.total_ticks_published == total_ticks
+        ), f"Data loss: published {client._stats.total_ticks_published}/{total_ticks}"
         assert mock_event_bus.publish.call_count == total_ticks
         print(f"  ✓ Zero data loss: {total_ticks}/{total_ticks} ticks processed")
 
@@ -296,19 +300,21 @@ def verify_throughput_no_data_loss():
             per_symbol_counts[sym] = per_symbol_counts.get(sym, 0) + 1
 
         for symbol in symbols:
-            assert per_symbol_counts.get(symbol, 0) == ticks_per_symbol, (
-                f"Symbol {symbol}: expected {ticks_per_symbol}, got {per_symbol_counts.get(symbol, 0)}"
-            )
+            assert (
+                per_symbol_counts.get(symbol, 0) == ticks_per_symbol
+            ), f"Symbol {symbol}: expected {ticks_per_symbol}, got {per_symbol_counts.get(symbol, 0)}"
         print(f"  ✓ Per-symbol routing correct for all {num_symbols} symbols")
 
         # Throughput
         throughput = total_ticks / elapsed if elapsed > 0 else float("inf")
-        print(f"  ✓ Throughput: {throughput:,.0f} ticks/second "
-              f"({total_ticks} ticks in {elapsed*1000:.1f}ms)")
+        print(
+            f"  ✓ Throughput: {throughput:,.0f} ticks/second "
+            f"({total_ticks} ticks in {elapsed*1000:.1f}ms)"
+        )
         if throughput >= 1000:
-            print(f"  ✓ Exceeds 1000 ticks/second requirement")
+            print("  ✓ Exceeds 1000 ticks/second requirement")
         else:
-            print(f"  ⚠ Below 1000 ticks/second (may be due to system load)")
+            print("  ⚠ Below 1000 ticks/second (may be due to system load)")
 
         # Latency
         avg_latency = client._stats.average_latency_ms
@@ -319,6 +325,7 @@ def verify_throughput_no_data_loss():
     except Exception as e:
         print(f"  ✗ Throughput verification failed: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 
@@ -342,9 +349,7 @@ def verify_reconnection():
 
         for attempt, expected in expected_delays.items():
             actual = min(base_delay * (2 ** (attempt - 1)), max_delay)
-            assert actual == expected, (
-                f"Attempt {attempt}: expected {expected}s, got {actual}s"
-            )
+            assert actual == expected, f"Attempt {attempt}: expected {expected}s, got {actual}s"
         print("  ✓ Exponential backoff formula correct: 1s, 2s, 4s, 8s, 16s, 30s (cap)")
 
         # --- Test BrokerManager failover ---
@@ -425,10 +430,12 @@ def verify_reconnection():
 
         # Capture primary subscribe callback
         captured_cb = None
+
         def primary_subscribe(syms, on_tick):
             nonlocal captured_cb
             captured_cb = on_tick
             return True
+
         primary2.subscribe.side_effect = primary_subscribe
 
         manager2.subscribe(["RELIANCE"], tick_callback)
@@ -449,19 +456,21 @@ def verify_reconnection():
 
         # Deliver ticks on backup
         captured_backup_cb = None
+
         def backup_subscribe(syms, on_tick):
             nonlocal captured_backup_cb
             captured_backup_cb = on_tick
             return True
+
         backup2.subscribe.side_effect = backup_subscribe
         manager2.subscribe(["RELIANCE"], tick_callback)
 
         for i in range(5):
             captured_backup_cb(_make_tick("RELIANCE", 2885, 2600.0 + i, 2000 + i))
 
-        assert len(delivered_ticks) == 10, (
-            f"Expected 10 ticks, got {len(delivered_ticks)} — data loss during switch"
-        )
+        assert (
+            len(delivered_ticks) == 10
+        ), f"Expected 10 ticks, got {len(delivered_ticks)} — data loss during switch"
         print("  ✓ Data continuity maintained across broker switch (10/10 ticks)")
 
         manager2._stop_recovery_monitor()
@@ -472,6 +481,7 @@ def verify_reconnection():
     except Exception as e:
         print(f"  ✗ Reconnection verification failed: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 

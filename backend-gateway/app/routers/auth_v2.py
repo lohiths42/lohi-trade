@@ -7,7 +7,7 @@ All auth events are logged for security audit (Req 29.7).
 import logging
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Header, Request
+from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel, Field
 
 from app.services.account_service import (
@@ -39,6 +39,7 @@ def _verify_any_token(token: str) -> Optional[dict]:
         pass
     return None
 
+
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
@@ -48,7 +49,9 @@ router = APIRouter()
 
 class RegisterRequest(BaseModel):
     email: str = Field(..., description="User email address")
-    password: str = Field(..., description="Password (min 8 chars, 1 upper, 1 lower, 1 digit, 1 special)")
+    password: str = Field(
+        ..., description="Password (min 8 chars, 1 upper, 1 lower, 1 digit, 1 special)"
+    )
     phone: str = Field(..., description="Indian mobile number (10 digits)")
     name: str = Field(..., description="Full name")
 
@@ -64,7 +67,9 @@ class GoogleLoginRequest(BaseModel):
 
 class AppleLoginRequest(BaseModel):
     auth_code: str = Field(..., description="Apple authorization code")
-    user_name: Optional[str] = Field(None, description="User name (provided on first Apple sign-in)")
+    user_name: Optional[str] = Field(
+        None, description="User name (provided on first Apple sign-in)"
+    )
 
 
 class RefreshRequest(BaseModel):
@@ -178,7 +183,8 @@ async def register(
         user = result["user"]
         logger.info(
             "AUTH_EVENT register_success email=%s user_id=%s",
-            req.email, user.id,
+            req.email,
+            user.id,
         )
         return RegisterResponse(
             user_id=user.id,

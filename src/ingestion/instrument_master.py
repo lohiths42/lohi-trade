@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 class InstrumentMaster:
     """Manages instrument master data for trading symbols.
-    
+
     The instrument master contains:
     - symbol: Trading symbol (e.g., "RELIANCE")
     - token: Exchange token for WebSocket subscription
@@ -31,7 +31,7 @@ class InstrumentMaster:
 
     def __init__(self, data_dir: str = "data"):
         """Initialize instrument master manager.
-        
+
         Args:
             data_dir: Directory to store instrument master files
 
@@ -41,16 +41,18 @@ class InstrumentMaster:
         self.instruments: dict[str, dict] = {}
         self.last_updated: datetime | None = None
 
-    def download_from_broker(self, broker: BrokerInterface, symbols: list[str] | None = None) -> bool:
+    def download_from_broker(
+        self, broker: BrokerInterface, symbols: list[str] | None = None
+    ) -> bool:
         """Download instrument master from broker API.
-        
+
         Args:
             broker: Connected broker instance
             symbols: Optional list of symbols to filter (if None, downloads all)
-            
+
         Returns:
             True if download successful, False otherwise
-            
+
         Requirements: 23.1, 23.2
 
         """
@@ -69,10 +71,13 @@ class InstrumentMaster:
             # Filter to requested symbols if provided
             if symbols:
                 filtered_instruments = [
-                    inst for inst in instruments
+                    inst
+                    for inst in instruments
                     if inst.get("symbol") in symbols or inst.get("trading_symbol") in symbols
                 ]
-                logger.info(f"Filtered to {len(filtered_instruments)} instruments for configured symbols")
+                logger.info(
+                    f"Filtered to {len(filtered_instruments)} instruments for configured symbols"
+                )
                 instruments = filtered_instruments
 
             # Store instruments in memory
@@ -88,13 +93,13 @@ class InstrumentMaster:
 
     def save_to_file(self, filename: str = "nifty50_tokens.json") -> bool:
         """Save instrument master to JSON file.
-        
+
         Args:
             filename: Name of file to save (default: nifty50_tokens.json)
-            
+
         Returns:
             True if save successful, False otherwise
-            
+
         Requirements: 23.2, 23.3
 
         """
@@ -120,13 +125,13 @@ class InstrumentMaster:
 
     def load_from_file(self, filename: str = "nifty50_tokens.json") -> bool:
         """Load instrument master from JSON file.
-        
+
         Args:
             filename: Name of file to load (default: nifty50_tokens.json)
-            
+
         Returns:
             True if load successful, False otherwise
-            
+
         Requirements: 23.3
 
         """
@@ -158,10 +163,10 @@ class InstrumentMaster:
 
     def get_instrument(self, symbol: str) -> dict | None:
         """Get instrument details for a symbol.
-        
+
         Args:
             symbol: Trading symbol
-            
+
         Returns:
             Instrument dictionary or None if not found
 
@@ -170,10 +175,10 @@ class InstrumentMaster:
 
     def get_token(self, symbol: str) -> int | None:
         """Get exchange token for a symbol.
-        
+
         Args:
             symbol: Trading symbol
-            
+
         Returns:
             Exchange token or None if not found
 
@@ -183,13 +188,13 @@ class InstrumentMaster:
 
     def validate_symbols(self, symbols: list[str]) -> tuple[list[str], list[str]]:
         """Validate that symbols exist in instrument master.
-        
+
         Args:
             symbols: List of symbols to validate
-            
+
         Returns:
             Tuple of (valid_symbols, invalid_symbols)
-            
+
         Requirements: 23.4
 
         """
@@ -207,7 +212,7 @@ class InstrumentMaster:
 
     def get_all_symbols(self) -> list[str]:
         """Get list of all available symbols.
-        
+
         Returns:
             List of symbol strings
 
@@ -216,15 +221,12 @@ class InstrumentMaster:
 
     def get_instruments_by_exchange(self, exchange: str) -> list[dict]:
         """Get all instruments for a specific exchange.
-        
+
         Args:
             exchange: Exchange name (e.g., "NSE", "BSE")
-            
+
         Returns:
             List of instrument dictionaries
 
         """
-        return [
-            inst for inst in self.instruments.values()
-            if inst.get("exchange") == exchange
-        ]
+        return [inst for inst in self.instruments.values() if inst.get("exchange") == exchange]

@@ -1,7 +1,8 @@
 """Orders endpoints."""
 
-from fastapi import APIRouter, HTTPException, Query
 from typing import List, Optional
+
+from fastapi import APIRouter, HTTPException, Query
 
 from app.models.orders import OrderResponse
 from app.services import db_service

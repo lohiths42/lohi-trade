@@ -10,20 +10,15 @@ Uses Hypothesis with a FakeRedis in-memory implementation for deterministic,
 fast property testing without a real Redis instance.
 """
 
-import time
-
 import pytest
-from hypothesis import given, settings, assume
-from hypothesis import strategies as st
-
 from app.middleware.rate_limiter import (
     READ_LIMIT,
-    WRITE_LIMIT,
     WINDOW_SECONDS,
+    WRITE_LIMIT,
     check_rate_limit,
-    classify_method,
 )
-
+from hypothesis import assume, given, settings
+from hypothesis import strategies as st
 
 # ── Fake async Redis (in-memory sorted-set implementation) ───────────────────
 
@@ -173,9 +168,7 @@ class TestRateLimitEnforcementProperty:
             allowed, retry_after = await check_rate_limit(
                 redis, user_id, "read", now=base_time + i * 0.001
             )
-            assert allowed is True, (
-                f"Request {i + 1}/{n} should be allowed (limit={READ_LIMIT})"
-            )
+            assert allowed is True, f"Request {i + 1}/{n} should be allowed (limit={READ_LIMIT})"
             assert retry_after == 0
 
     @given(n=write_request_counts, user_id=user_ids)
@@ -190,9 +183,7 @@ class TestRateLimitEnforcementProperty:
             allowed, retry_after = await check_rate_limit(
                 redis, user_id, "write", now=base_time + i * 0.001
             )
-            assert allowed is True, (
-                f"Request {i + 1}/{n} should be allowed (limit={WRITE_LIMIT})"
-            )
+            assert allowed is True, f"Request {i + 1}/{n} should be allowed (limit={WRITE_LIMIT})"
             assert retry_after == 0
 
     @given(user_id=user_ids, endpoint_type=endpoint_types)
@@ -207,17 +198,14 @@ class TestRateLimitEnforcementProperty:
 
         # Fill up to the limit
         for i in range(limit):
-            await check_rate_limit(
-                redis, user_id, endpoint_type, now=base_time + i * 0.001
-            )
+            await check_rate_limit(redis, user_id, endpoint_type, now=base_time + i * 0.001)
 
         # The (limit+1)th request must be rejected
         allowed, retry_after = await check_rate_limit(
             redis, user_id, endpoint_type, now=base_time + limit * 0.001
         )
         assert allowed is False, (
-            f"Request {limit + 1} should be rejected for {endpoint_type} "
-            f"(limit={limit})"
+            f"Request {limit + 1} should be rejected for {endpoint_type} " f"(limit={limit})"
         )
         assert retry_after > 0, "Retry-After must be positive when rate limited"
         assert isinstance(retry_after, int), "Retry-After must be an integer"
@@ -239,27 +227,23 @@ class TestRateLimitEnforcementProperty:
 
         # Fill up to the limit
         for i in range(limit):
-            await check_rate_limit(
-                redis, user_id, endpoint_type, now=base_time + i * 0.001
-            )
+            await check_rate_limit(redis, user_id, endpoint_type, now=base_time + i * 0.001)
 
         # Every excess request must be rejected
         for j in range(excess):
             allowed, retry_after = await check_rate_limit(
-                redis, user_id, endpoint_type,
+                redis,
+                user_id,
+                endpoint_type,
                 now=base_time + (limit + j) * 0.001,
             )
-            assert allowed is False, (
-                f"Excess request {j + 1} should be rejected"
-            )
+            assert allowed is False, f"Excess request {j + 1} should be rejected"
             assert retry_after > 0
 
     @given(user_id=user_ids, endpoint_type=endpoint_types)
     @settings(max_examples=25)
     @pytest.mark.asyncio
-    async def test_window_expiry_allows_new_requests(
-        self, user_id: str, endpoint_type: str
-    ):
+    async def test_window_expiry_allows_new_requests(self, user_id: str, endpoint_type: str):
         """After the sliding window expires, requests must be allowed again."""
         redis = FakeRedis()
         limit = READ_LIMIT if endpoint_type == "read" else WRITE_LIMIT
@@ -267,9 +251,7 @@ class TestRateLimitEnforcementProperty:
 
         # Fill up to the limit
         for i in range(limit):
-            await check_rate_limit(
-                redis, user_id, endpoint_type, now=base_time + i * 0.001
-            )
+            await check_rate_limit(redis, user_id, endpoint_type, now=base_time + i * 0.001)
 
         # Confirm we're rate limited
         allowed, _ = await check_rate_limit(
@@ -282,9 +264,7 @@ class TestRateLimitEnforcementProperty:
         allowed, retry_after = await check_rate_limit(
             redis, user_id, endpoint_type, now=future_time
         )
-        assert allowed is True, (
-            "Request after window expiry should be allowed"
-        )
+        assert allowed is True, "Request after window expiry should be allowed"
         assert retry_after == 0
 
     @given(
@@ -306,9 +286,7 @@ class TestRateLimitEnforcementProperty:
 
         # Fill up to the limit
         for i in range(limit):
-            await check_rate_limit(
-                redis, user_id, endpoint_type, now=base_time + i * 0.001
-            )
+            await check_rate_limit(redis, user_id, endpoint_type, now=base_time + i * 0.001)
 
         # Jump past the window
         future_time = base_time + WINDOW_SECONDS + 2
@@ -318,7 +296,5 @@ class TestRateLimitEnforcementProperty:
             allowed, retry_after = await check_rate_limit(
                 redis, user_id, endpoint_type, now=future_time + i * 0.001
             )
-            assert allowed is True, (
-                f"Post-window request {i + 1}/{new_count} should be allowed"
-            )
+            assert allowed is True, f"Post-window request {i + 1}/{new_count} should be allowed"
             assert retry_after == 0

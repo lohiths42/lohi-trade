@@ -61,16 +61,18 @@ class MarketRegistry:
         """
         countries = []
         for code, profile in sorted(self._profiles.items(), key=lambda x: x[1].country_name):
-            countries.append({
-                "code": code,
-                "name": profile.country_name,
-                "currency": profile.currency,
-                "currency_symbol": profile.currency_symbol,
-                "primary_exchange": profile.primary_exchange.value,
-                "timezone": profile.timezone,
-                "regulator": profile.regulator,
-                "broker_count": len(profile.available_brokers),
-            })
+            countries.append(
+                {
+                    "code": code,
+                    "name": profile.country_name,
+                    "currency": profile.currency,
+                    "currency_symbol": profile.currency_symbol,
+                    "primary_exchange": profile.primary_exchange.value,
+                    "timezone": profile.timezone,
+                    "regulator": profile.regulator,
+                    "broker_count": len(profile.available_brokers),
+                }
+            )
         return countries
 
     def get_profile(self, country_code: str) -> MarketProfile | None:
@@ -97,8 +99,7 @@ class MarketRegistry:
         if profile is None:
             supported = ", ".join(sorted(self._profiles.keys()))
             raise ValueError(
-                f"Unsupported country code: '{country_code}'. "
-                f"Supported: {supported}",
+                f"Unsupported country code: '{country_code}'. " f"Supported: {supported}",
             )
 
         self._active_profile = profile
@@ -173,6 +174,7 @@ class MarketRegistry:
             # If there's a custom tax_profile override in the saved config, apply it
             if "tax_profile_override" in data:
                 from .market_profile import TaxProfile
+
                 try:
                     custom_tax = TaxProfile.model_validate(data["tax_profile_override"])
                     profile = profile.model_copy(update={"tax_profile": custom_tax})
@@ -203,9 +205,11 @@ class MarketRegistry:
             "primary_exchange": profile.primary_exchange.value,
             "benchmark_index": profile.benchmark_index_name,
             "benchmark_symbol": profile.benchmark_symbol,
-            "selected_at": __import__("datetime").datetime.now(
+            "selected_at": __import__("datetime")
+            .datetime.now(
                 __import__("datetime").timezone.utc,
-            ).isoformat(),
+            )
+            .isoformat(),
         }
 
         # Include tax profile override if it differs from the built-in default

@@ -9,7 +9,7 @@ test "Set cluster hostnames and verify they are propagated" {
     for {set j 0} {$j < [llength $::servers]} {incr j} {
         R $j config set cluster-announce-hostname "host-$j.com"
     }
-    
+
     wait_for_condition 50 100 {
         [are_hostnames_propagated "host-*.com"] eq 1
     } else {
@@ -24,7 +24,7 @@ test "Update hostnames and make sure they are all eventually propagated" {
     for {set j 0} {$j < [llength $::servers]} {incr j} {
         R $j config set cluster-announce-hostname "host-updated-$j.com"
     }
-    
+
     wait_for_condition 50 100 {
         [are_hostnames_propagated "host-updated-*.com"] eq 1
     } else {
@@ -39,7 +39,7 @@ test "Remove hostnames and make sure they are all eventually propagated" {
     for {set j 0} {$j < [llength $::servers]} {incr j} {
         R $j config set cluster-announce-hostname ""
     }
-    
+
     wait_for_condition 50 100 {
         [are_hostnames_propagated ""] eq 1
     } else {
@@ -122,7 +122,7 @@ test "Verify the nodes configured with prefer hostname only show hostname for ne
     R 2 config set cluster-announce-hostname "shard-3.com"
 
     # Prevent Node 0 and Node 6 from properly meeting,
-    # they'll hang in the handshake phase. This allows us to 
+    # they'll hang in the handshake phase. This allows us to
     # test the case where we "know" about it but haven't
     # successfully retrieved information about it yet.
     R 0 DEBUG DROP-CLUSTER-PACKET-FILTER 0
@@ -143,7 +143,7 @@ test "Verify the nodes configured with prefer hostname only show hostname for ne
 
     # Now, we wait until the two nodes that aren't filtering packets
     # to accept our isolated nodes connections. At this point they will
-    # start showing up in cluster slots. 
+    # start showing up in cluster slots.
     wait_for_condition 50 100 {
         [llength [R 6 CLUSTER SLOTS]] eq 2
     } else {
@@ -153,7 +153,7 @@ test "Verify the nodes configured with prefer hostname only show hostname for ne
     assert_equal [lindex [get_slot_field $slot_result 0 2 3] 1] "shard-2.com"
     assert_equal [lindex [get_slot_field $slot_result 1 2 3] 1] "shard-3.com"
 
-    # Also make sure we know about the isolated master, we 
+    # Also make sure we know about the isolated master, we
     # just can't reach it.
     set master_id [R 0 CLUSTER MYID]
     assert_match "*$master_id*" [R 6 CLUSTER NODES]
@@ -164,7 +164,7 @@ test "Verify the nodes configured with prefer hostname only show hostname for ne
     R 6 DEBUG DROP-CLUSTER-PACKET-FILTER -1
 
     # This operation sometimes spikes to around 5 seconds to resolve the state,
-    # so it has a higher timeout. 
+    # so it has a higher timeout.
     wait_for_condition 50 500 {
         [llength [R 6 CLUSTER SLOTS]] eq 3
     } else {
@@ -179,7 +179,7 @@ test "Verify the nodes configured with prefer hostname only show hostname for ne
 test "Test restart will keep hostname information" {
     # Set a new hostname, reboot and make sure it sticks
     R 0 config set cluster-announce-hostname "restart-1.com"
-    
+
     # Store the hostname in the config
     R 0 config rewrite
 

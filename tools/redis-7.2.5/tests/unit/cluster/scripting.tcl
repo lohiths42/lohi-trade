@@ -41,7 +41,7 @@ start_cluster 1 0 {tags {external:skip cluster}} {
             redis.register_function{function_name='test_cross_slot', callback=test_cross_slot, flags={ 'allow-cross-slot-keys' }}}
         r FCALL test_cross_slot 0
     }
-    
+
     test {Cross slot commands are also blocked if they disagree with pre-declared keys} {
         assert_error "ERR Script attempted to access keys that do not hash to the same slot*" {
             r 0 eval {#!lua
@@ -64,7 +64,7 @@ start_cluster 1 0 {tags {external:skip cluster}} {
                 return 1
             } 0
         } e
-        
+
         assert_match {*Can not run script on cluster, 'no-cluster' flag is set*} $e
     }
 }

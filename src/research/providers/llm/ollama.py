@@ -227,7 +227,9 @@ class OllamaLLM:
     # ------------------------------------------------------------------ #
 
     async def complete(
-        self, messages: list[Message], params: LLMParams,
+        self,
+        messages: list[Message],
+        params: LLMParams,
     ) -> Completion:
         """Single non-streamed ``/api/chat`` call (Req 2.11)."""
         payload = self._build_payload(messages, params, stream=False)
@@ -259,7 +261,9 @@ class OllamaLLM:
         )
 
     async def stream(
-        self, messages: list[Message], params: LLMParams,
+        self,
+        messages: list[Message],
+        params: LLMParams,
     ) -> AsyncIterator[CompletionChunk]:
         """Async iterator over ``/api/chat`` NDJSON deltas (design §3.1).
 

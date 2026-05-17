@@ -242,10 +242,7 @@ class BaseRetrievalAgent:
                 agent_name=self.name,
                 kind="no_data",
                 section_name=self.section_name,
-                reason=(
-                    f"no_data: no {self.name} chunks found for "
-                    f"symbol={context.symbol}"
-                ),
+                reason=(f"no_data: no {self.name} chunks found for " f"symbol={context.symbol}"),
                 wall_time_ms=int((time.perf_counter() - start) * 1000),
             )
 
@@ -273,8 +270,7 @@ class BaseRetrievalAgent:
             # rather than in the LLM call path avoids a confusing
             # AttributeError on ``llm.complete``.
             raise ValueError(
-                f"{self.name} agent requires an LLMProvider; "
-                "construct with ``llm=...``.",
+                f"{self.name} agent requires an LLMProvider; " "construct with ``llm=...``.",
             )
         completion = await self.llm.complete(messages, self._llm_params())
 

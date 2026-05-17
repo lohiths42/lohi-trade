@@ -121,9 +121,7 @@ class TestDuplicatePositionPreventionProperties:
 
         signal = pipeline.process_indicators(indicators, candles)
 
-        assert signal is not None, (
-            f"Expected first signal for '{symbol}' to be accepted"
-        )
+        assert signal is not None, f"Expected first signal for '{symbol}' to be accepted"
         assert signal.symbol == symbol
 
     @given(symbol=_symbols)
@@ -144,9 +142,9 @@ class TestDuplicatePositionPreventionProperties:
 
         # Second signal for same symbol should be rejected
         second = pipeline.process_indicators(indicators, candles)
-        assert second is None, (
-            f"Expected second signal for '{symbol}' to be rejected (duplicate position)"
-        )
+        assert (
+            second is None
+        ), f"Expected second signal for '{symbol}' to be rejected (duplicate position)"
 
     @given(
         symbol_a=_symbols,
@@ -154,7 +152,9 @@ class TestDuplicatePositionPreventionProperties:
     )
     @settings(max_examples=25)
     def test_signals_for_different_symbols_are_independent(
-        self, symbol_a: str, symbol_b: str,
+        self,
+        symbol_a: str,
+        symbol_b: str,
     ):
         """Property: Generating a signal for symbol A should not prevent
         generating a signal for symbol B.
@@ -170,17 +170,19 @@ class TestDuplicatePositionPreventionProperties:
 
         # Generate signal for symbol A
         signal_a = pipeline.process_indicators(
-            _make_indicators(symbol_a), candles,
+            _make_indicators(symbol_a),
+            candles,
         )
         assert signal_a is not None
 
         # Signal for symbol B should still be accepted
         signal_b = pipeline.process_indicators(
-            _make_indicators(symbol_b), candles,
+            _make_indicators(symbol_b),
+            candles,
         )
-        assert signal_b is not None, (
-            f"Signal for '{symbol_b}' should not be blocked by open position in '{symbol_a}'"
-        )
+        assert (
+            signal_b is not None
+        ), f"Signal for '{symbol_b}' should not be blocked by open position in '{symbol_a}'"
         assert signal_b.symbol == symbol_b
 
     @given(symbol=_symbols)
@@ -198,9 +200,9 @@ class TestDuplicatePositionPreventionProperties:
         candles = _make_candles()
 
         signal = pipeline.process_indicators(indicators, candles)
-        assert signal is None, (
-            f"Expected signal for '{symbol}' to be blocked by pre-added open position"
-        )
+        assert (
+            signal is None
+        ), f"Expected signal for '{symbol}' to be blocked by pre-added open position"
 
     @given(symbol=_symbols)
     @settings(max_examples=25)
@@ -223,9 +225,9 @@ class TestDuplicatePositionPreventionProperties:
 
         # New signal should be accepted
         second = pipeline.process_indicators(indicators, candles)
-        assert second is not None, (
-            f"Expected signal for '{symbol}' to be accepted after removing open position"
-        )
+        assert (
+            second is not None
+        ), f"Expected signal for '{symbol}' to be accepted after removing open position"
 
     @given(data=st.data())
     @settings(max_examples=25)
@@ -246,14 +248,16 @@ class TestDuplicatePositionPreventionProperties:
         # Generate signals for all symbols (adds them to open positions)
         for sym in symbols:
             signal = pipeline.process_indicators(
-                _make_indicators(sym), candles,
+                _make_indicators(sym),
+                candles,
             )
             assert signal is not None
 
         # Verify all are now blocked
         for sym in symbols:
             signal = pipeline.process_indicators(
-                _make_indicators(sym), candles,
+                _make_indicators(sym),
+                candles,
             )
             assert signal is None
 
@@ -263,8 +267,9 @@ class TestDuplicatePositionPreventionProperties:
         # All symbols should now be accepted again
         for sym in symbols:
             signal = pipeline.process_indicators(
-                _make_indicators(sym), candles,
+                _make_indicators(sym),
+                candles,
             )
-            assert signal is not None, (
-                f"Expected signal for '{sym}' to be accepted after clearing open positions"
-            )
+            assert (
+                signal is not None
+            ), f"Expected signal for '{sym}' to be accepted after clearing open positions"

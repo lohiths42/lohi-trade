@@ -20,6 +20,7 @@ from typing import Any
 
 try:
     import duckdb
+
     DUCKDB_AVAILABLE = True
 except ImportError:
     DUCKDB_AVAILABLE = False
@@ -32,7 +33,7 @@ logger = logging.getLogger(__name__)
 
 class DatabaseConnectionManager:
     """Manages database connections for SQLite and DuckDB.
-    
+
     Provides:
     - SQLite connection with WAL mode for concurrent access
     - DuckDB connection for analytical queries on historical data
@@ -46,7 +47,7 @@ class DatabaseConnectionManager:
         duckdb_path: str = "data/historical.duckdb",
     ):
         """Initialize database connection manager.
-        
+
         Args:
             sqlite_path: Path to SQLite database file
             duckdb_path: Path to DuckDB database file
@@ -66,10 +67,10 @@ class DatabaseConnectionManager:
 
     def connect_sqlite(self) -> sqlite3.Connection:
         """Establish SQLite connection with WAL mode.
-        
+
         WAL (Write-Ahead Logging) mode allows concurrent reads while writing,
         which is essential for real-time trading system.
-        
+
         Returns:
             sqlite3.Connection: Active SQLite connection
 
@@ -104,7 +105,7 @@ class DatabaseConnectionManager:
 
     def connect_duckdb(self) -> Any | None:
         """Establish DuckDB connection for historical data.
-        
+
         Returns:
             duckdb.Connection: Active DuckDB connection, or None if unavailable
 
@@ -124,8 +125,7 @@ class DatabaseConnectionManager:
         return self._duckdb_conn
 
     def _initialize_sqlite_schema(self) -> None:
-        """Initialize SQLite schema by creating all tables and indexes.
-        """
+        """Initialize SQLite schema by creating all tables and indexes."""
         try:
             schema = get_sqlite_schema()
             self._sqlite_conn.executescript(schema)
@@ -137,7 +137,7 @@ class DatabaseConnectionManager:
 
     def health_check_sqlite(self) -> bool:
         """Perform health check on SQLite connection.
-        
+
         Returns:
             bool: True if connection is healthy, False otherwise
 
@@ -153,7 +153,7 @@ class DatabaseConnectionManager:
 
     def health_check_duckdb(self) -> bool:
         """Perform health check on DuckDB connection.
-        
+
         Returns:
             bool: True if connection is healthy, False otherwise
 
@@ -174,11 +174,11 @@ class DatabaseConnectionManager:
     @contextmanager
     def get_sqlite_cursor(self):
         """Context manager for SQLite cursor with automatic commit/rollback.
-        
+
         Usage:
             with db_manager.get_sqlite_cursor() as cursor:
                 cursor.execute("INSERT INTO trades ...")
-        
+
         Yields:
             sqlite3.Cursor: Database cursor
 
@@ -203,18 +203,18 @@ class DatabaseConnectionManager:
         backoff_base: float = 1.0,
     ) -> sqlite3.Cursor | None:
         """Execute SQLite query with retry logic and exponential backoff.
-        
+
         Implements retry pattern for handling database lock contention:
         - Retry 1: Wait 1 second
         - Retry 2: Wait 2 seconds
         - Retry 3: Wait 4 seconds
-        
+
         Args:
             query: SQL query to execute
             params: Query parameters
             max_retries: Maximum number of retry attempts (default: 3)
             backoff_base: Base delay for exponential backoff in seconds (default: 1.0)
-        
+
         Returns:
             sqlite3.Cursor: Cursor with query results, or None if all retries failed
 
@@ -229,7 +229,7 @@ class DatabaseConnectionManager:
             except sqlite3.OperationalError as e:
                 if "locked" in str(e).lower() and attempt < max_retries - 1:
                     # Database is locked, retry with exponential backoff
-                    delay = backoff_base * (2 ** attempt)
+                    delay = backoff_base * (2**attempt)
                     logger.warning(
                         f"Database locked, retrying in {delay}s "
                         f"(attempt {attempt + 1}/{max_retries})",
@@ -246,8 +246,7 @@ class DatabaseConnectionManager:
         return None
 
     def close(self) -> None:
-        """Close all database connections.
-        """
+        """Close all database connections."""
         if self._sqlite_conn:
             try:
                 self._sqlite_conn.close()
@@ -282,11 +281,11 @@ def get_database_manager(
     duckdb_path: str = "data/historical.duckdb",
 ) -> DatabaseConnectionManager:
     """Get or create global database manager instance.
-    
+
     Args:
         sqlite_path: Path to SQLite database file
         duckdb_path: Path to DuckDB database file
-    
+
     Returns:
         DatabaseConnectionManager: Global database manager instance
 

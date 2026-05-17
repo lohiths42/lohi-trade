@@ -256,7 +256,7 @@ def _parse_symbol_scope(scope: str) -> str:
     rather than invoking this helper directly; it is internal to
     :func:`forget_memory`.
     """
-    symbol = scope[len(_SYMBOL_PREFIX):].strip()
+    symbol = scope[len(_SYMBOL_PREFIX) :].strip()
     if not symbol:
         raise ValueError(
             "memory.forget scope 'symbol:' requires a non-empty symbol",

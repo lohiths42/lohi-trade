@@ -16,12 +16,8 @@ Design: §5.3, §14
 from __future__ import annotations
 
 import asyncio
-from typing import Any
 
 import pytest
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-
 from app.middleware.errors import (
     ERROR_CODE_CONFIG_MISSING,
     ERROR_CODE_INTERNAL_ERROR,
@@ -38,6 +34,9 @@ from app.middleware.errors import (
     register_research_exception_handlers,
     to_envelope,
 )
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
 from src.research.providers.errors import (
     ProviderAuthError,
     ProviderError,
@@ -82,9 +81,7 @@ class TestBuildErrorEnvelope:
 
     def test_none_extras_are_dropped(self) -> None:
         """``extra=None`` values should not pollute the envelope."""
-        env = build_error_envelope(
-            "CODE", "msg", provider="p", model="m", attempt=None
-        )
+        env = build_error_envelope("CODE", "msg", provider="p", model="m", attempt=None)
         assert "attempt" not in env["error"]
 
 
@@ -228,9 +225,7 @@ class TestFastAPIIntegration:
 
         @app.get("/raise-latency")
         def _raise_latency() -> dict:
-            raise LatencyBudgetExceededError(
-                phase="first_token", observed_ms=1500, budget_ms=800
-            )
+            raise LatencyBudgetExceededError(phase="first_token", observed_ms=1500, budget_ms=800)
 
         return app
 

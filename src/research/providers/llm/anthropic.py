@@ -200,9 +200,7 @@ class AnthropicLLM:
             "model": self._model,
             "messages": turns,
             "max_tokens": (
-                params.max_tokens
-                if params.max_tokens is not None
-                else _DEFAULT_MAX_TOKENS
+                params.max_tokens if params.max_tokens is not None else _DEFAULT_MAX_TOKENS
             ),
             "stream": stream,
         }
@@ -235,7 +233,9 @@ class AnthropicLLM:
     # ------------------------------------------------------------------ #
 
     async def complete(
-        self, messages: list[Message], params: LLMParams,
+        self,
+        messages: list[Message],
+        params: LLMParams,
     ) -> Completion:
         """Single non-streamed Messages API call (Req 2.11)."""
         payload = self._build_payload(messages, params, stream=False)
@@ -277,7 +277,9 @@ class AnthropicLLM:
         )
 
     async def stream(
-        self, messages: list[Message], params: LLMParams,
+        self,
+        messages: list[Message],
+        params: LLMParams,
     ) -> AsyncIterator[CompletionChunk]:
         """Async iterator over Messages API SSE deltas (design §3.1).
 

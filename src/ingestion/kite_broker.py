@@ -206,14 +206,21 @@ class KiteBroker(BrokerInterface):
     # ── HTTP helpers with retry ───────────────────────────────────
 
     def _kite_post(
-        self, path: str, data: dict, auth: bool = True,
+        self,
+        path: str,
+        data: dict,
+        auth: bool = True,
     ) -> dict:
         """POST to Kite API with transient-error retry (Req 15.8)."""
         url = f"{self.BASE_URL}{path}"
-        headers = self._auth_headers() if auth else {
-            "X-Kite-Version": "3",
-            "Content-Type": "application/x-www-form-urlencoded",
-        }
+        headers = (
+            self._auth_headers()
+            if auth
+            else {
+                "X-Kite-Version": "3",
+                "Content-Type": "application/x-www-form-urlencoded",
+            }
+        )
 
         last_exc: Exception | None = None
         for attempt in range(_MAX_RETRIES + 1):
@@ -406,7 +413,10 @@ class KiteBroker(BrokerInterface):
         )
 
     def poll_order_status(
-        self, broker_order_id: str, interval: float = 1.0, max_polls: int = 300,
+        self,
+        broker_order_id: str,
+        interval: float = 1.0,
+        max_polls: int = 300,
     ) -> Order:
         """Poll order status every *interval* seconds until a terminal state.
 
@@ -424,7 +434,9 @@ class KiteBroker(BrokerInterface):
                 return order
             time.sleep(interval)
 
-        logger.warning(f"Order {broker_order_id} did not reach terminal state after {max_polls} polls")
+        logger.warning(
+            f"Order {broker_order_id} did not reach terminal state after {max_polls} polls"
+        )
         return self.get_order_status(broker_order_id)
 
     # ── positions ─────────────────────────────────────────────────
@@ -438,15 +450,21 @@ class KiteBroker(BrokerInterface):
             data = self._kite_get("/portfolio/positions")
             positions = []
             # Kite returns {"net": [...], "day": [...]}
-            net_positions = data.get("net", []) if isinstance(data, dict) else data if isinstance(data, list) else []
+            net_positions = (
+                data.get("net", [])
+                if isinstance(data, dict)
+                else data if isinstance(data, list) else []
+            )
             for pos in net_positions:
-                positions.append({
-                    "symbol": pos.get("tradingsymbol"),
-                    "quantity": int(pos.get("quantity", 0)),
-                    "avg_price": float(pos.get("average_price", 0)),
-                    "ltp": float(pos.get("last_price", 0)),
-                    "pnl": float(pos.get("pnl", 0)),
-                })
+                positions.append(
+                    {
+                        "symbol": pos.get("tradingsymbol"),
+                        "quantity": int(pos.get("quantity", 0)),
+                        "avg_price": float(pos.get("average_price", 0)),
+                        "ltp": float(pos.get("last_price", 0)),
+                        "pnl": float(pos.get("pnl", 0)),
+                    }
+                )
             return positions
         except Exception as exc:
             logger.error(f"Error fetching positions: {exc}")
@@ -462,14 +480,16 @@ class KiteBroker(BrokerInterface):
             holdings = []
             items = data if isinstance(data, list) else []
             for h in items:
-                holdings.append({
-                    "symbol": h.get("tradingsymbol"),
-                    "quantity": int(h.get("quantity", 0)),
-                    "avg_price": float(h.get("average_price", 0)),
-                    "ltp": float(h.get("last_price", 0)),
-                    "pnl": float(h.get("pnl", 0)),
-                    "isin": h.get("isin", ""),
-                })
+                holdings.append(
+                    {
+                        "symbol": h.get("tradingsymbol"),
+                        "quantity": int(h.get("quantity", 0)),
+                        "avg_price": float(h.get("average_price", 0)),
+                        "ltp": float(h.get("last_price", 0)),
+                        "pnl": float(h.get("pnl", 0)),
+                        "isin": h.get("isin", ""),
+                    }
+                )
             return holdings
         except Exception as exc:
             logger.error(f"Error fetching holdings: {exc}")
@@ -498,16 +518,18 @@ class KiteBroker(BrokerInterface):
             instruments: list[dict] = []
             for row in reader:
                 try:
-                    instruments.append({
-                        "symbol": row.get("tradingsymbol", "").strip(),
-                        "token": int(row.get("instrument_token", 0)),
-                        "exchange": row.get("exchange", "NSE").strip(),
-                        "lot_size": int(row.get("lot_size", 1)),
-                        "tick_size": float(row.get("tick_size", 0.05)),
-                        "trading_symbol": row.get("tradingsymbol", "").strip(),
-                        "instrument": row.get("instrument_type", "").strip(),
-                        "name": row.get("name", "").strip(),
-                    })
+                    instruments.append(
+                        {
+                            "symbol": row.get("tradingsymbol", "").strip(),
+                            "token": int(row.get("instrument_token", 0)),
+                            "exchange": row.get("exchange", "NSE").strip(),
+                            "lot_size": int(row.get("lot_size", 1)),
+                            "tick_size": float(row.get("tick_size", 0.05)),
+                            "trading_symbol": row.get("tradingsymbol", "").strip(),
+                            "instrument": row.get("instrument_type", "").strip(),
+                            "name": row.get("name", "").strip(),
+                        }
+                    )
                 except (ValueError, KeyError):
                     continue
 
@@ -584,9 +606,7 @@ class KiteBroker(BrokerInterface):
 
     def _init_websocket(self) -> None:
         """Initialize KiteTicker WebSocket connection."""
-        ws_url = (
-            f"{self.WS_URL}?api_key={self._api_key}&access_token={self._access_token}"
-        )
+        ws_url = f"{self.WS_URL}?api_key={self._api_key}&access_token={self._access_token}"
 
         def on_open(ws):
             logger.info("KiteTicker WebSocket opened")
@@ -667,7 +687,7 @@ class KiteBroker(BrokerInterface):
         """Reconnect KiteTicker with exponential backoff."""
         if self._reconnect_attempts < self._max_reconnect_attempts:
             self._reconnect_attempts += 1
-            backoff = min(2 ** self._reconnect_attempts, 30)
+            backoff = min(2**self._reconnect_attempts, 30)
             logger.info(
                 f"KiteTicker reconnect in {backoff}s (attempt {self._reconnect_attempts})",
             )

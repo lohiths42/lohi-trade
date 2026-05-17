@@ -47,7 +47,8 @@ class TestCounters:
         metrics_module.research_runs_total.labels(status="done").inc()
 
         samples = _collect_samples(
-            metrics_module.research_runs_total, name="research_runs_total",
+            metrics_module.research_runs_total,
+            name="research_runs_total",
         )
         done = [s for s in samples if s.labels.get("status") == "done"]
         assert done, "expected a sample for status=done"
@@ -59,7 +60,8 @@ class TestCounters:
         metrics_module.research_runs_total.labels(status="partial").inc()
 
         samples = _collect_samples(
-            metrics_module.research_runs_total, name="research_runs_total",
+            metrics_module.research_runs_total,
+            name="research_runs_total",
         )
         by_status = {s.labels.get("status"): s.value for s in samples}
         assert by_status.get("done") == 1
@@ -131,9 +133,7 @@ class TestHistograms:
 
         # Bucket containing 50 ms must exist so the dashboard can
         # compute "p95 ≤ 50 ms" directly.
-        bucket_labels = {
-            s.labels.get("le") for s in samples if s.name.endswith("_bucket")
-        }
+        bucket_labels = {s.labels.get("le") for s in samples if s.name.endswith("_bucket")}
         # ``le="50"`` or ``le="50.0"`` depending on the client version.
         assert any(
             lbl is not None and lbl.startswith("50") for lbl in bucket_labels

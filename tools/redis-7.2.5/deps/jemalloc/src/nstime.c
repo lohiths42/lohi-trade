@@ -285,5 +285,3 @@ nstime_prof_init_update(nstime_t *time) {
 	nstime_init_zero(time);
 	nstime_prof_update(time);
 }
-
-

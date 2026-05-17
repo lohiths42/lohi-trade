@@ -64,7 +64,17 @@ def run_start(args: Namespace) -> int:
         python_path = sys.executable
 
     subprocess.Popen(
-        [python_path, "-m", "uvicorn", "app.main:socket_app", "--host", "0.0.0.0", "--port", "8000", "--reload"],
+        [
+            python_path,
+            "-m",
+            "uvicorn",
+            "app.main:socket_app",
+            "--host",
+            "0.0.0.0",
+            "--port",
+            "8000",
+            "--reload",
+        ],
         cwd="backend-gateway",
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
