@@ -74,6 +74,9 @@ export function useResearchStream(runId: string | null | undefined): void {
     // calls connect(); socket.io-client is idempotent.
     ws.connect();
 
+    // Join the Socket.IO room for this run's streamed partials (design §5.2)
+    ws.emit('subscribe_research', { run_id: runId });
+
     // ── Handlers ─────────────────────────────────────────────────────
     const onToken = (payload: ResearchEventPayload) => {
       if (!hasRunId(payload) || payload.run_id !== runId) return;
@@ -153,6 +156,7 @@ export function useResearchStream(runId: string | null | undefined): void {
     /* eslint-enable @typescript-eslint/no-explicit-any */
 
     return () => {
+      ws.emit('unsubscribe_research', { run_id: runId });
       /* eslint-disable @typescript-eslint/no-explicit-any */
       (ws.off as any)(EV_TOKEN, onToken);
       (ws.off as any)(EV_AGENT_PARTIAL, onAgentPartial);

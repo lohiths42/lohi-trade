@@ -9,6 +9,9 @@ import { showToast } from '../shared/Toast';
 import { useThemeColors } from '../../hooks/use-theme-colors';
 import type { TradeNote } from '../../lib/types';
 
+const BASE_URL: string =
+  ((import.meta as any).env?.VITE_API_URL as string | undefined) ?? 'http://localhost:8000';
+
 interface TradeJournalProps { tradeId: string; symbol: string; onClose: () => void; }
 
 export default function TradeJournal({ tradeId, symbol, onClose }: TradeJournalProps) {
@@ -22,7 +25,7 @@ export default function TradeJournal({ tradeId, symbol, onClose }: TradeJournalP
 
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/trades/${tradeId}/notes`)
+    fetch(`${BASE_URL}/api/trades/${tradeId}/notes`)
       .then((r) => r.json())
       .then((data) => setNotes(Array.isArray(data) ? data : []))
       .catch(() => {})
@@ -34,7 +37,7 @@ export default function TradeJournal({ tradeId, symbol, onClose }: TradeJournalP
     setSaving(true);
     try {
       if (editingId) {
-        const res = await fetch(`/api/trades/${tradeId}/notes/${editingId}`, {
+        const res = await fetch(`${BASE_URL}/api/trades/${tradeId}/notes/${editingId}`, {
           method: 'PUT', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ note_text: text.slice(0, MAX_CHARS) }),
         });
@@ -43,7 +46,7 @@ export default function TradeJournal({ tradeId, symbol, onClose }: TradeJournalP
         setNotes((prev) => prev.map((n) => (n.id === editingId ? updated : n)));
         setEditingId(null);
       } else {
-        const res = await fetch(`/api/trades/${tradeId}/notes`, {
+        const res = await fetch(`${BASE_URL}/api/trades/${tradeId}/notes`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ note_text: text.slice(0, MAX_CHARS) }),
         });
@@ -60,7 +63,7 @@ export default function TradeJournal({ tradeId, symbol, onClose }: TradeJournalP
 
   const handleDelete = async (noteId: number) => {
     try {
-      await fetch(`/api/trades/${tradeId}/notes/${noteId}`, { method: 'DELETE' });
+      await fetch(`${BASE_URL}/api/trades/${tradeId}/notes/${noteId}`, { method: 'DELETE' });
       setNotes((prev) => prev.filter((n) => n.id !== noteId));
       showToast('success', 'Note deleted');
     } catch { showToast('error', 'Failed to delete note'); }

@@ -58,6 +58,9 @@ class BrokerCredentials:
     api_key: str
     client_id: str
     password: str
+    totp_secret: str | None = None
+    vendor_code: str | None = None
+    imei: str | None = None
 
 
 @dataclass
@@ -403,17 +406,25 @@ def substitute_env_vars(value: Any) -> Any:
 
     """
     if isinstance(value, str):
-        # Pattern to match ${VAR_NAME}
+        # Pattern to match ${VAR_NAME} or ${VAR_NAME:default}
         pattern = r"\$\{([^}]+)\}"
         matches = re.findall(pattern, value)
 
         for var_name in matches:
-            env_value = os.getenv(var_name)
+            clean_var = var_name
+            default_val = None
+            if ":" in var_name:
+                clean_var, default_val = var_name.split(":", 1)
+
+            env_value = os.getenv(clean_var)
             if env_value is None:
-                raise ConfigurationError(
-                    f"Environment variable '{var_name}' is not set. "
-                    f"Please set it before starting the system.",
-                )
+                if default_val is not None:
+                    env_value = default_val
+                else:
+                    raise ConfigurationError(
+                        f"Environment variable '{clean_var}' is not set. "
+                        f"Please set it before starting the system.",
+                    )
             value = value.replace(f"${{{var_name}}}", env_value)
 
         return value

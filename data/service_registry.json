@@ -1,12 +1,12 @@
 {
-  "setup_complete": false,
-  "completed_at": null,
+  "setup_complete": true,
+  "completed_at": "2026-05-17T16:00:00Z",
   "services": {
-    "nvidia_nim": { "status": "unconfigured", "updated_at": null },
-    "nubra": { "status": "unconfigured", "updated_at": null },
+    "nvidia_nim": { "status": "configured", "updated_at": "2026-05-17T16:00:00Z" },
+    "nubra": { "status": "configured", "updated_at": "2026-05-17T16:00:00Z" },
     "broker_shoonya": { "status": "unconfigured", "updated_at": null },
     "broker_angelone": { "status": "unconfigured", "updated_at": null },
-    "telegram": { "status": "unconfigured", "updated_at": null },
+    "telegram": { "status": "configured", "updated_at": "2026-05-17T16:00:00Z" },
     "ollama": { "status": "unconfigured", "updated_at": null }
   }
 }

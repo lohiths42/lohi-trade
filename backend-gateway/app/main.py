@@ -61,6 +61,7 @@ from app.routers import (
 )
 from app.routers import market as market_router
 from app.routers import research as research_router
+from app.routers import research_ideas as research_ideas_router
 from app.routers import setup as setup_router
 from app.routers.screener import set_screener_service
 from app.routers.stock_universe import set_stock_universe_services
@@ -166,12 +167,18 @@ def _research_enabled() -> bool:
 
 if _research_enabled():
     app.include_router(research_router.router, prefix="/api/v2/research", tags=["research"])
+    # Ideas / Themes / Sectors / Signals surface (multibagg-style)
+    app.include_router(
+        research_ideas_router.router,
+        prefix="/api/v2/research",
+        tags=["research-ideas"],
+    )
     # Install the structured-error envelope handlers (Task 16.4) so
     # provider / config / latency-budget exceptions surface with the
     # canonical {"error": {...}} shape even when an endpoint handler
     # forgets its own try/except (design §5.3).
     register_research_exception_handlers(app)
-    logger.info("Lohi-Research router mounted at /api/v2/research")
+    logger.info("Lohi-Research router mounted at /api/v2/research (incl. ideas/themes/sectors)")
 else:
     logger.info("Lohi-Research router disabled via settings.research.enabled=false")
 
@@ -322,6 +329,7 @@ async def lifespan(app: FastAPI):
     logger.info("Starting Redis stream consumer...")
     consumer_task = asyncio.create_task(_start_consumer())
     research_bridge_task: asyncio.Task | None = None
+    scheduler_task: asyncio.Task | None = None
     if _research_enabled():
         research_bridge_task = asyncio.create_task(_start_research_bridge())
 
@@ -347,10 +355,19 @@ async def lifespan(app: FastAPI):
 
             _settings = {}
             try:
+                from dotenv import load_dotenv
+                import pathlib as _pathlib
+                _env_res = _pathlib.Path(_REPO_ROOT) / ".env.research"
+                if _env_res.exists():
+                    load_dotenv(_env_res)
+
                 with open(_CFG_PATH, "r") as _f:
                     _settings = _yaml.safe_load(_f) or {}
-            except Exception:
-                pass
+
+                from src.utils.config import substitute_env_vars
+                _settings = substitute_env_vars(_settings)
+            except Exception as e:
+                logger.warning("Failed to load or substitute settings: %s", e)
             _research_cfg = _settings.get("research", {})
             _providers_cfg = _research_cfg.get("providers", {})
             _vs_cfg = _research_cfg.get("vector_store", {})
@@ -422,6 +439,101 @@ async def lifespan(app: FastAPI):
             )
             set_research_service(svc)
             logger.info("ResearchService wired with providers + orchestrator")
+
+            # ── Wire Ideas / Themes / Sectors + Scheduler ────────────
+            try:
+                from src.research.ideas.classifier import IdeaClassifier
+                from src.research.ideas.store import IdeaStore
+                from src.research.ideas.theme_generator import ThemeGenerator
+                from src.research.ideas.sector_analyzer import SectorAnalyzer
+                from src.research.workers.scheduler import (
+                    ResearchScheduler,
+                    ScheduleConfig,
+                )
+                from app.routers.research_ideas import set_idea_services
+
+                _idea_store = IdeaStore(db_pool=pool)
+                _idea_classifier = IdeaClassifier(llm=_llm_provider)
+                _theme_gen = ThemeGenerator(llm=_llm_provider)
+                _sector_ana = SectorAnalyzer(llm=_llm_provider)
+
+                # Try loading existing data from DB
+                await _idea_store.load_from_db()
+
+                # Inject into the router
+                set_idea_services(_idea_store, _theme_gen, _sector_ana)
+
+                # Watchlist resolver — reads watchlist from DB if available
+                async def _resolve_watchlist() -> list[str]:
+                    """Return watchlist symbols for the scheduler."""
+                    try:
+                        if pool is not None:
+                            async with pool.acquire() as conn:
+                                rows = await conn.fetch(
+                                    "SELECT DISTINCT symbol FROM watchlist_items "
+                                    "ORDER BY symbol LIMIT 50"
+                                )
+                                return [r["symbol"] for r in rows]
+                    except Exception:
+                        logger.debug("Watchlist query failed — using empty list")
+                    return []
+
+                # Sector resolver — reads sector from securities table
+                async def _resolve_sector(symbol: str) -> str | None:
+                    try:
+                        if pool is not None:
+                            async with pool.acquire() as conn:
+                                row = await conn.fetchrow(
+                                    "SELECT sector FROM securities WHERE symbol = $1",
+                                    symbol,
+                                )
+                                return row["sector"] if row else None
+                    except Exception:
+                        pass
+                    return None
+
+                # Orchestrator factory for the scheduler (reuses gateway's)
+                async def _scheduler_orch_factory(
+                    *, user_id=None, symbol=None, skip_agents=(),
+                ):
+                    return _build_orchestrator(
+                        _llm_provider, _emb_provider, _vs_provider
+                    )
+
+                _schedule_cfg = ScheduleConfig.from_settings(_settings)
+
+                _scheduler = ResearchScheduler(
+                    orchestrator_factory=_scheduler_orch_factory,
+                    idea_classifier=_idea_classifier,
+                    theme_generator=_theme_gen,
+                    sector_analyzer=_sector_ana,
+                    idea_store=_idea_store,
+                    watchlist_resolver=_resolve_watchlist,
+                    sector_resolver=_resolve_sector,
+                    config=_schedule_cfg,
+                )
+
+                # Check if scheduler is enabled in config
+                _sched_enabled = (
+                    _research_cfg.get("scheduler", {}).get("enabled", True)
+                )
+                if _sched_enabled:
+                    scheduler_task = asyncio.create_task(
+                        _start_research_scheduler(_scheduler)
+                    )
+                    logger.info(
+                        "Research scheduler started (watchlist=%dm/%dm)",
+                        _schedule_cfg.watchlist_interval_market,
+                        _schedule_cfg.watchlist_interval_offhours,
+                    )
+                else:
+                    logger.info("Research scheduler disabled via config")
+
+            except Exception:
+                logger.exception(
+                    "Failed to wire Research Scheduler — ideas/themes will be empty"
+                )
+
         except Exception:
             logger.exception(
                 "Failed to wire ResearchService — research endpoints will return 'pending'"
@@ -438,7 +550,7 @@ async def lifespan(app: FastAPI):
         logger.info("Shutting down connection pools...")
         # Stop the background tasks cleanly so Redis connections drain
         # before the pools close.
-        for task in (consumer_task, research_bridge_task):
+        for task in (consumer_task, research_bridge_task, scheduler_task):
             if task is None or task.done():
                 continue
             task.cancel()
@@ -477,6 +589,21 @@ async def _start_research_bridge():
         await consume_research_streams(sio)
     except Exception as e:
         logger.error(f"Lohi-Research Socket.IO bridge failed: {e}")
+
+
+async def _start_research_scheduler(scheduler):
+    """Run the Lohi-Research background scheduler.
+
+    Continuously researches watchlist symbols, generates ideas/themes/sectors.
+    Connection errors are logged; a crashed scheduler must not crash the
+    whole gateway process.
+    """
+    try:
+        await scheduler.run()
+    except asyncio.CancelledError:
+        logger.info("Research scheduler cancelled")
+    except Exception as e:
+        logger.error(f"Research scheduler failed: {e}")
 
 
 # ── Wire the lifespan context manager into the FastAPI app ──────────────────

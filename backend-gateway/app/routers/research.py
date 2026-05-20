@@ -69,9 +69,12 @@ def _user_uuid(user_id: str) -> UUID:
     needs UUIDs for RLS scoping. We derive a stable UUID5 from the
     username so the same user always maps to the same UUID.
     """
-    from uuid import NAMESPACE_URL, uuid5
+    try:
+        return UUID(user_id)
+    except (TypeError, ValueError):
+        from uuid import NAMESPACE_URL, uuid5
 
-    return uuid5(NAMESPACE_URL, f"lohi-user:{user_id}")
+        return uuid5(NAMESPACE_URL, f"lohi-user:{user_id}")
 
 
 # --------------------------------------------------------------------------- #

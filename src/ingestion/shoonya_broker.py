@@ -82,11 +82,11 @@ class ShoonyaBroker(BrokerInterface):
                 "uid": credentials.client_id,
                 "pwd": pwd_hash,
                 "factor2": credentials.totp_secret or "",
-                "vc": credentials.client_id,
+                "vc": credentials.vendor_code or credentials.client_id,
                 "appkey": hashlib.sha256(
                     f"{credentials.client_id}|{credentials.api_key}".encode(),
                 ).hexdigest(),
-                "imei": "abc1234",
+                "imei": credentials.imei or "abc1234",
             }
 
             response = requests.post(

@@ -48,6 +48,9 @@ export interface FeatureGateState {
   refresh: () => Promise<void>;
 }
 
+const BASE_URL: string =
+  ((import.meta as any).env?.VITE_API_URL as string | undefined) ?? 'http://localhost:8000';
+
 export function useFeatureGate(): FeatureGateState {
   const [services, setServices] = useState<ServiceStatus[]>([]);
   const [setupComplete, setSetupComplete] = useState(false);
@@ -56,7 +59,7 @@ export function useFeatureGate(): FeatureGateState {
 
   const fetchHealth = useCallback(async () => {
     try {
-      const response = await fetch('/api/health/services');
+      const response = await fetch(`${BASE_URL}/api/health/services`);
       if (!response.ok) {
         // If the endpoint isn't available, assume all features are available
         // (graceful degradation of the degradation check itself)

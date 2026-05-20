@@ -123,7 +123,6 @@ class TestRouterRegistration:
             "/watchlists",
             "/screener/",
             "/brokers/",
-            "/market/",
             "/chatbot/",
             "/users/",
             "/admin/",

@@ -128,6 +128,8 @@ class BrokerCredentials:
         client_id: Client ID or user ID
         password: Password or API secret
         totp_secret: TOTP secret for 2FA (optional)
+        vendor_code: Vendor code or identifier (optional)
+        imei: IMEI or device ID (optional)
 
     """
 
@@ -135,6 +137,8 @@ class BrokerCredentials:
     client_id: str
     password: str
     totp_secret: str | None = None
+    vendor_code: str | None = None
+    imei: str | None = None
 
 
 class BrokerInterface(ABC):
