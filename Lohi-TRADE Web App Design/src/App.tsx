@@ -48,7 +48,7 @@ const NAV_GROUPS = [
   {
     label: 'Markets',
     items: [
-      { icon: Globe, label: 'Stocks', to: '/stocks' },
+      { icon: Globe, label: 'Stocks', to: '/universe' },
       { icon: SlidersHorizontal, label: 'Screener', to: '/screener', dataTour: 'screener' },
       { icon: Activity, label: 'Market Data', to: '/market-data' },
     ],
@@ -74,7 +74,7 @@ const NAV_GROUPS = [
     items: [
       { icon: Brain, label: 'Commander', to: '/commander', dataTour: 'chatbot' },
       { icon: Crosshair, label: 'Soldier', to: '/soldier' },
-      { icon: FileText, label: 'Logs & Audit', to: '/audit' },
+      { icon: FileText, label: 'Logs & Audit', to: '/logs' },
       { icon: Activity, label: 'System Status', to: '/status' },
       { icon: Workflow, label: 'Architecture', to: '/architecture' },
       { icon: Settings, label: 'Configuration', to: '/settings' },
@@ -93,7 +93,7 @@ const NAV_GROUPS = [
       { icon: ShieldCheck, label: 'Verification', to: '/verification' },
       { icon: Building2, label: 'Bank Accounts', to: '/bank' },
       { icon: Receipt, label: 'Fund Transactions', to: '/funds' },
-      { icon: Link2, label: 'Brokers', to: '/brokers' },
+      { icon: Link2, label: 'Brokers', to: '/settings/brokers' },
       { icon: LayoutDashboard, label: 'Profile', to: '/settings/profile' },
     ],
   },

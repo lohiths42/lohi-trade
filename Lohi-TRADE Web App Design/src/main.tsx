@@ -111,12 +111,10 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/login" element={<GuestOnly><LoginPage /></GuestOnly>} />
           <Route path="/login/2fa" element={<GuestOnly><TwoFactorPage /></GuestOnly>} />
           <Route path="/setup" element={<SetupWizardPage />} />
-          <Route path="/setup/integrations" element={<Navigate to="/setup" replace />} />
           <Route path="/onboarding" element={<OnboardingPage />} />
           <Route path="/create-account" element={<GuestOnly><CreateAccountPage /></GuestOnly>} />
           <Route element={<RequireAuth><App /></RequireAuth>}>
             <Route index element={<ErrorBoundary><DashboardPage /></ErrorBoundary>} />
-            <Route path="dashboard" element={<ErrorBoundary><DashboardPage /></ErrorBoundary>} />
             <Route path="trade" element={<ErrorBoundary><TradePage /></ErrorBoundary>} />
             <Route path="positions" element={<ErrorBoundary><PositionsPage /></ErrorBoundary>} />
             <Route path="orders" element={<ErrorBoundary><OrdersPage /></ErrorBoundary>} />
@@ -136,20 +134,17 @@ createRoot(document.getElementById('root')!).render(
             <Route path="settings/risk" element={<ErrorBoundary><RiskSettingsPage /></ErrorBoundary>} />
             <Route path="settings/brokers" element={<ErrorBoundary><BrokerSettingsPage /></ErrorBoundary>} />
             <Route path="settings/notifications" element={<ErrorBoundary><NotificationsPage /></ErrorBoundary>} />
-            <Route path="settings/integrations" element={<Navigate to="/settings" replace />} />
             <Route path="settings/profile" element={<ErrorBoundary><ProfilePage /></ErrorBoundary>} />
             <Route path="logs" element={<ErrorBoundary><LogsPage /></ErrorBoundary>} />
             <Route path="market-data" element={<ErrorBoundary><MarketDataPage /></ErrorBoundary>} />
             <Route path="status" element={<ErrorBoundary><StatusPage /></ErrorBoundary>} />
             <Route path="help" element={<ErrorBoundary><HelpPage /></ErrorBoundary>} />
             <Route path="universe" element={<ErrorBoundary><StockUniversePage /></ErrorBoundary>} />
-            <Route path="stocks" element={<ErrorBoundary><StockUniversePage /></ErrorBoundary>} />
             <Route path="screener" element={<ErrorBoundary><ScreenerPage /></ErrorBoundary>} />
             <Route path="stocks/:symbol" element={<ErrorBoundary><StockDetailPage /></ErrorBoundary>} />
             <Route path="verification" element={<ErrorBoundary><VerificationPage /></ErrorBoundary>} />
             <Route path="bank" element={<ErrorBoundary><BankAccountPage /></ErrorBoundary>} />
             <Route path="funds" element={<ErrorBoundary><FundTransactionsPage /></ErrorBoundary>} />
-            <Route path="brokers" element={<ErrorBoundary><BrokerSettingsPage /></ErrorBoundary>} />
             <Route path="watchlist" element={<ErrorBoundary><WatchlistPage /></ErrorBoundary>} />
             <Route path="architecture" element={<ErrorBoundary><ArchitecturePage /></ErrorBoundary>} />
           </Route>

@@ -36,7 +36,7 @@ const NAV_COMMANDS: CommandItem[] = [
   { id: 'dashboard', label: 'Dashboard', category: 'Navigate', kind: 'nav', icon: LayoutDashboard, color: 'var(--accent)', to: '/' },
   { id: 'positions', label: 'Positions', category: 'Navigate', kind: 'nav', icon: ClipboardList, color: 'var(--accent)', to: '/positions' },
   { id: 'orders', label: 'Orders', category: 'Navigate', kind: 'nav', icon: ShoppingCart, color: 'var(--accent)', to: '/orders' },
-  { id: 'stocks', label: 'Stock Universe', category: 'Navigate', kind: 'nav', icon: Globe, color: 'var(--accent)', to: '/stocks' },
+  { id: 'stocks', label: 'Stock Universe', category: 'Navigate', kind: 'nav', icon: Globe, color: 'var(--accent)', to: '/universe' },
   { id: 'screener', label: 'Screener', category: 'Navigate', kind: 'nav', icon: SlidersHorizontal, color: 'var(--accent)', to: '/screener' },
   { id: 'strategies', label: 'Strategies', category: 'Navigate', kind: 'nav', icon: TrendingUp, color: 'var(--bull)', to: '/strategies' },
   { id: 'algo', label: 'Algo Performance', category: 'Navigate', kind: 'nav', icon: Gauge, color: 'var(--bull)', to: '/algo-performance' },
@@ -51,7 +51,7 @@ const NAV_COMMANDS: CommandItem[] = [
   { id: 'verification', label: 'Verification', category: 'Navigate', kind: 'nav', icon: ShieldCheck, color: 'var(--warn)', to: '/verification' },
   { id: 'bank', label: 'Bank Accounts', category: 'Navigate', kind: 'nav', icon: Building2, color: 'var(--warn)', to: '/bank' },
   { id: 'funds', label: 'Fund Transactions', category: 'Navigate', kind: 'nav', icon: Receipt, color: 'var(--warn)', to: '/funds' },
-  { id: 'brokers', label: 'Brokers', category: 'Navigate', kind: 'nav', icon: Link2, color: 'var(--warn)', to: '/brokers' },
+  { id: 'brokers', label: 'Brokers', category: 'Navigate', kind: 'nav', icon: Link2, color: 'var(--warn)', to: '/settings/brokers' },
 ];
 
 /* ─── Slash-command parser ───────────────────────────────────────────── */
